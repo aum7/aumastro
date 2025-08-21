@@ -1,9 +1,3 @@
 __pycache__
-pyswisseph/
-swisseph/
 sweph/ephe/
-imgs/icons/_archive/
-.projectstructure.lua
-notes.txt
-user/data/
-user/eventsdb/
+user/data/_archive/
