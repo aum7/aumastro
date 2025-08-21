@@ -1,5 +1,5 @@
 # sweph/calculations/cyclicindex.py
-# ruff: noqa: E402, E701
+# ruff: noqa: E402, E701, F821
 import gi
 
 gi.require_version("Gtk", "4.0")
@@ -34,6 +34,7 @@ def total_cycle(ordered, pos_map):
             lon_slow = pos_map[slow]["lon"]
             lon_fast = pos_map[fast]["lon"]
             angle = abs((lon_fast - lon_slow) % 360)
+            # doolaard example implies shortest angle
             shortest = min(angle, 360 - angle)
             angles.append(shortest)
             pairs.append((f"{slow}-{fast}", shortest))
@@ -44,7 +45,7 @@ def total_cycle(ordered, pos_map):
         "angles": angles,
         "pairs": pairs,
         "pairs num": len(pairs),
-        "result": (total_idx, total_norm),
+        "result": (total_idx, total_norm),  # type:ignore
     }
 
 
@@ -67,7 +68,7 @@ def calculate_cycles(event: str):
     cycle_members = app.chart_settings.get("cycle members")
     if isinstance(cycle_members, list):
         members_str = " ".join(cycle_members)
-    members = [m.strip() for m in members_str.replace(",", " ").split() if m.strip()]
+    members = [m.strip() for m in members_str.replace(",", " ").split() if m.strip()]  # type:ignore
     if use_varga and division > 1:
         pos_map = {
             v["name"]: {"name": v["name"], "lon": v["varga"]}

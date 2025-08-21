@@ -122,7 +122,7 @@ event 1 & 2 can have different objects"""
 
         row.set_child(check)
         manager.lbx_objects.append(row)
-    objects_select_all(check, manager)
+    objects_select_all(check, manager)  # type:ignore
     # ------ sub-sub-panel : extra objects : arabic lots -----------------
     subsubpnl_lots = CollapsePanel(
         title="lots / parts",

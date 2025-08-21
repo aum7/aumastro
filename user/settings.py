@@ -256,7 +256,7 @@ CHART_SETTINGS = {
         "\nshort english names only (mo : moon | ne : neptune etc)"
         "\nuse [space] for separator"
         "\nmin 2 objects are required for a cycle"
-        "\nsee user/settings.py > OBJECTS for all available values",
+        "\nsee user/settings.py > OBJECTS for available values",
     ),
     # --- draw fixed stars
     # in user/fixedstars.py are categories of stars :
@@ -406,10 +406,10 @@ FILES = {
         "user/eventsdb/",
         "path to event / birth charts database folder ; inside go saved charts",
     ),
-    # --- path to data folder; inside goes data to be plotted in graph
+    # --- path to data folder & file ; data to be plotted on graph
     "data\t\t": (
-        "user/data/",
-        "path to data folder ; inside goes data for plotting",
+        "user/data/gold/gold_d",
+        "path to data folder & file name : data for plotting on graph",
     ),
     # --- construct your own 'filename' format: allowed fields
     # 1: event {name} | 2: event {date} | 3: {time}

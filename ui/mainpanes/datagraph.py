@@ -54,8 +54,8 @@ class DataGraph(Gtk.Box):
         # construct file path
         data_folder = self.app.files.get("data")
         # filepath = os.path.join(data_folder, "ejpt/ejpt.csv")
-        # filepath = os.path.join(data_folder, "gold/gold_h_030505_250801.csv")
-        filepath = os.path.join(data_folder, "gold/gold_d_990603_250809.csv")
+        # filepath = os.path.join(data_folder, "gold/gold_h.csv")
+        filepath = os.path.join(data_folder, "gold/gold_d.csv")
         # load csv
         df = pd.read_csv(
             filepath,
