@@ -53,10 +53,9 @@ class DataGraph(Gtk.Box):
         """load & plot data"""
         # construct file path
         data_folder = self.app.files.get("data")
-        # filepath = os.path.join(data_folder, "gold/gold_1h_030505_250801.csv")
-        # filepath = os.path.join(data_folder, "gold/gold_d_1969_240515.csv")
-        # filepath = os.path.join(data_folder, "gold/gold_d_990603_250809.csv")
-        filepath = os.path.join(data_folder, "ejpt/ejpt.csv")
+        # filepath = os.path.join(data_folder, "ejpt/ejpt.csv")
+        # filepath = os.path.join(data_folder, "gold/gold_h_030505_250801.csv")
+        filepath = os.path.join(data_folder, "gold/gold_d_990603_250809.csv")
         # load csv
         df = pd.read_csv(
             filepath,
@@ -232,7 +231,7 @@ class DataGraph(Gtk.Box):
                     # print(f"datagraph : datetime : {dt}")
 
     def jump_bars(self, bars):
-        """fast-jump cca 1 year forward or backward in data range"""
+        """fast-jump cca 1 year (on hourly timeframe) forward or backward in data range"""
         cur_start, cur_end = self.plot_range
         if self.full_df is not None:
             df_len = len(self.full_df)
@@ -269,8 +268,9 @@ class DataGraph(Gtk.Box):
         if cur_start is None or cur_end is None or cur_end <= cur_start:
             return
         n = cur_end - cur_start
-        if self.full_df is not None:
-            df_len = len(self.full_df)
+        # if self.full_df is not None:
+        #     df_len = len(self.full_df)
+        df_len = len(self.full_df) if self.full_df is not None else None
         zoom_amount = int(max(10, n * 0.2))
         min_bars, max_bars = self.min_bars, self.max_bars
         # detect shift for pan
@@ -278,7 +278,7 @@ class DataGraph(Gtk.Box):
         if hasattr(event, "key") and event.key == "shift":
             is_pan = True
         # pan data plot
-        if is_pan:
+        if is_pan and df_len:
             pan = int(n * 0.2)
             if event.button == "up":  # pan forward
                 # print("datagraph : pan : button : up")
@@ -310,12 +310,13 @@ class DataGraph(Gtk.Box):
                 return
             # anchor bar under cursor to same data index
             new_start = idx_under_cursor - int(frac * (new_n - 1))
-            new_start = max(0, min(df_len - new_n, new_start))
-            new_end = new_start + new_n
-            # clamp
-            if new_end > df_len:
-                new_end = df_len
-                new_start = max(0, new_end - new_n)
+            if df_len is not None:
+                new_start = max(0, min(df_len - new_n, new_start))
+                new_end = new_start + new_n
+                # clamp
+                if new_end > df_len:
+                    new_end = df_len
+                    new_start = max(0, new_end - new_n)
         # avoid bad ranges
         if new_end <= new_start or new_end - new_start < min_bars:
             return

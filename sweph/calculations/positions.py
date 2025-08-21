@@ -68,8 +68,8 @@ def calculate_positions(event: Optional[str] = None) -> None:
                 # print(f"positions with speeds & flag used : {result}")
                 positions = result[0] if isinstance(result, tuple) else result
                 naksatra = calculate_naksatra(positions[0], use_28_naks)
-                # retro = retro_marker(code, positions[3])
                 varga = get_varga_lon(positions[0], division)
+                varga_nak = calculate_naksatra(varga, use_28_naks)
                 data[code] = {
                     "name": name,
                     "lon": positions[0],
@@ -79,8 +79,8 @@ def calculate_positions(event: Optional[str] = None) -> None:
                     # "lat speed": data[4],
                     # "dist speed": data[5],
                     "naksatra": naksatra,
-                    # "retro": retro,
                     "varga": varga,
+                    "varga naksatra": varga_nak,
                 }
             except swe.Error as e:
                 notify.error(

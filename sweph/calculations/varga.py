@@ -43,10 +43,6 @@ def calculate_varga(event: str, division: int = 9):
                     name = data.get("name", "")
                     lon = data.get("lon", 0.0)
                     varga = get_varga_lon(lon, division)
-                    # sign = int(lon // 30)
-                    # seg = int((lon % 30) // (30 / division))
-                    # varga_sign = (sign * division + seg) % 12
-                    # varga = (varga_sign * 30) + ((lon % (30 / division)) * division)
                     varga_data.append({"name": name, "lon": varga})
             # add asc & mc from houses / ascmc
             ascmc = e1_houses[1]
@@ -60,6 +56,7 @@ def calculate_varga(event: str, division: int = 9):
                     # varga_sign = (sign * division + seg) % 12
                     # varga = (varga_sign * 30) + ((obj % (30 / division)) * division)
                     varga_data.append({"name": name, "lon": varga})
+
     if event == "e2":
         # check by event 2 sweph attribute
         if not app.e2_sweph.get("jd_ut"):
@@ -79,11 +76,7 @@ def calculate_varga(event: str, division: int = 9):
                     name = data.get("name", "")
                     lon = data.get("lon", 0.0)
                     varga = get_varga_lon(lon, division)
-                    # sign = int(lon // 30)
-                    # seg = int((lon % 30) // (30 / division))
-                    # varga_sign = (sign * division + seg) % 12
-                    # varga = (varga_sign * 30) + ((lon % (30 / division)) * division)
-                    varga_data.append({"name": name, "lon": varga, "var": varga})
+                    varga_data.append({"name": name, "lon": varga})
             # add asc & mc from houses / ascmc
             ascmc = e2_houses[1]
             msg += f"ascmc : {ascmc}\n"
@@ -92,10 +85,6 @@ def calculate_varga(event: str, division: int = 9):
                 mc = ascmc[1]
                 for obj, name in zip((asc, mc), ("asc", "mc")):
                     varga = get_varga_lon(obj, division)
-                    # sign = int(obj // 30)
-                    # seg = int((obj % 30) // (30 / division))
-                    # varga_sign = (sign * division + seg) % 12
-                    # varga = (varga_sign * 30) + ((obj % (30 / division)) * division)
                     varga_data.append({"name": name, "lon": varga})
     msg += f"vargadata : {varga_data}"
     # emit signal
