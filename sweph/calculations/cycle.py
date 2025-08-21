@@ -40,20 +40,14 @@ def total_cycle(ordered, pos_map):
             pairs.append((f"{slow}-{fast}", shortest))
         total_idx = sum(angles)
         total_norm = total_idx % 360
-    return {
-        "members": ordered,
-        "angles": angles,
-        "pairs": pairs,
-        "pairs num": len(pairs),
-        "result": (total_idx, total_norm),  # type: ignore
-    }
-
-
-# def cycle_range(df_dates):
-#     cycle_vals = []
-#     for dt in df_dates:
-#         jd = swe.julday(dt.year, dt.month, dt.day, dt.hour)
-#         members_ordered = [n for n in MEMBERS if n in pos_map]
+    return total_norm  # type:ignore
+    # return {
+    #     "members": ordered,
+    #     "angles": angles,
+    #     "pairs": pairs,
+    #     "pairs num": len(pairs),
+    #     "result": (total_idx, total_norm),  # type: ignore
+    # }
 
 
 def calculate_cycle(event: str):
@@ -65,53 +59,50 @@ def calculate_cycle(event: str):
     if not app_sett:
         notify.error(
             "missing application settings : exiting ...",
-            source="phases",
+            source="cycle",
             route=["terminal"],
         )
         return
     file_name = app.files.get("data")
-    members = app.chart_settings.get("cycle members")
-    cycle_vals = []
+    cycle_members = app.chart_settings.get("cycle members")
+    if isinstance(cycle_members, list):
+        members_str = " ".join(cycle_members)
+    members_list = members_str.replace(",", " ").split()  # type:ignore
+    members = [m.strip() for m in members_list if m.strip()]
+    # print(f"members : {members}")
     # get file to be plotted on graph
-
     price_df = pd.read_csv(file_name)
-    msg += f"pricedf : {price_df}\n"
-    # if event not in ("e1", "e2"):
-    #     return
-    # pos = getattr(app, f"{event}_positions", None)
-    # if not pos or not isinstance(pos, dict):
-    #     notify.error(
-    #         f"missing positions for {event} : phases abort",
-    #         source="phases",
-    #         route=["terminal"],
-    #     )
-    #     return
-    # map by name (only numeric keys)
-    # pos_map = {v["name"]: v for k, v in pos.items() if isinstance(k, int)}
-    # objs_map = [name for name in DRAW_ORDER if name in pos_map]
-    # if not objs_map:
-    #     notify.error(
-    #         f"no objects available for {event}",
-    #         source="phases",
-    #         route=["terminal"],
-    #     )
-    #     return
-    # obj_names, matrix, speeds = phases_matrix(objs_map, pos_map, aspect_orb=3.0)
+    price_df["datetime"] = pd.to_datetime(price_df["datetime"])
+    price_df = price_df.set_index("datetime")
+    cycle_vals = []
+    pos_map = {}
+    for dt in price_df.index:
+        jd = swe.julday(dt.year, dt.month, dt.day, dt.hour)
+        for name in members:
+            code, name = objcode(name, app.chart_settings.get("mean node"))
+            result = swe.calc_ut(jd, code, app.sweph_flag)
+            lon = result[0][0]
+            pos_map[name] = {"lon": lon}
+        members_ordered = [n for n in MEMBERS if n in pos_map]
+        cycle = total_cycle(members_ordered, pos_map)
+        cycle_vals.append(cycle)
+    cycle_df = pd.DataFrame({"datetime": price_df.index, "cycle": cycle_vals})
+    # print(f"cycledf : {cycle_df}")
     cycle_data = {
-        #     "obj names": obj_names,
-        #     "matrix": matrix,
-        #     "speeds": speeds,
+        "dataframe": cycle_df,
     }
-    app.signal_manager._emit("cycle_changed", event, cycle_data)
-    msg += "emitted signal\n"
+    msg += f"cycledata :\nmembers :{members}\ndataframe :\n{cycle_df}\n"
+    # app.signal_manager._emit("cycle_changed", event, cycle_data)
+    # msg += "emitted signal\n"
     notify.debug(
         msg,
-        # f"cycle updated for {event}",
         source="cycle",
-        route=["terminal"],
+        route=[""],
     )
+    return cycle_data
 
 
 def connect_signals_cycle(signal_manager):
-    """update cycle when positions change"""
-    signal_manager._connect("positions_changed", calculate_cycle)
+    """update cycle wave when positions change"""
+    # signal_manager._connect("positions_changed", calculate_cycle)
+    signal_manager._connect("settings_changed", calculate_cycle)

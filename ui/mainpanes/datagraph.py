@@ -1,6 +1,5 @@
 # ui/mainpanes/datagraph.py
 # ruff: noqa: E402
-import os
 import pandas as pd
 import numpy as np
 import matplotlib
@@ -16,6 +15,7 @@ gi.require_version("Gtk", "4.0")
 from gi.repository import Gtk  # type: ignore
 from matplotlib.patches import Rectangle
 from matplotlib.lines import Line2D
+from sweph.calculations.cycle import calculate_cycle
 
 
 class DataGraph(Gtk.Box):
@@ -48,20 +48,17 @@ class DataGraph(Gtk.Box):
         self.shift_held = False
         self.canvas.mpl_connect("key_press_event", self.on_key_press)
         self.canvas.mpl_connect("key_release_event", self.on_key_release)
+        # init / create cycle wave
+        self.cycle_calculated = False
 
     def data_load(self):
         """load & plot data"""
-        # construct file path
-        data_folder = self.app.files.get("data")
-        # filepath = os.path.join(data_folder, "ejpt/ejpt.csv")
-        # filepath = os.path.join(data_folder, "gold/gold_h.csv")
-        filepath = os.path.join(data_folder, "gold/gold_d.csv")
+        filepath = self.app.files.get("data")
         # load csv
         df = pd.read_csv(
             filepath,
             parse_dates=["datetime"],
             index_col="datetime",
-            # filepath, parse_dates=["datetime_utc"], index_col="datetime_utc"
         )
         self.full_df = df
 
@@ -205,6 +202,10 @@ class DataGraph(Gtk.Box):
             self.shift_held = False
 
     def on_click(self, event):
+        if not self.cycle_calculated:
+            self.cycle_wave = calculate_cycle("e1")
+            print(f"datagraph : cyclewave :\n{self.cycle_wave}")
+            self.cycle_calculated = True
         if event.button == 1 and event.inaxes:
             ix = int(round(event.xdata))
             num = len(self.df)
@@ -268,8 +269,6 @@ class DataGraph(Gtk.Box):
         if cur_start is None or cur_end is None or cur_end <= cur_start:
             return
         n = cur_end - cur_start
-        # if self.full_df is not None:
-        #     df_len = len(self.full_df)
         df_len = len(self.full_df) if self.full_df is not None else None
         zoom_amount = int(max(10, n * 0.2))
         min_bars, max_bars = self.min_bars, self.max_bars
@@ -318,7 +317,7 @@ class DataGraph(Gtk.Box):
                     new_end = df_len
                     new_start = max(0, new_end - new_n)
         # avoid bad ranges
-        if new_end <= new_start or new_end - new_start < min_bars:
+        if new_end <= new_start or new_end - new_start < min_bars:  # type:ignore
             return
-        self.plot_range = [new_start, new_end]
-        self.plot_data(new_start, new_end)
+        self.plot_range = [new_start, new_end]  # type:ignore
+        self.plot_data(new_start, new_end)  # type:ignore

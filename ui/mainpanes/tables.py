@@ -87,11 +87,10 @@ class Tables(Gtk.Notebook):
             self.notify.error(
                 f"positions or houses missing for {event} : exiting ...",
                 source="tables",
-                route=[""],  # todo need this ???
+                route=[""],
             )
             return
         pos = self.events_data[event].get("positions")
-        # print(f"tables pos : {pos}")
         pos_map = {k: v for k, v in pos.items() if isinstance(k, int)}
         # print(f"tables posmap : {pos_map}")
         # get houses data if available
@@ -99,15 +98,13 @@ class Tables(Gtk.Notebook):
         cycles = self.update_cycles(event)
         aspects = self.update_aspects(event)
         content = ""
-        if cycles:
-            content += cycles
         if aspects:
             content += aspects
         if houses:
             cusps, ascmc = houses
         else:
             cusps = ()
-        if ascmc:
+        if ascmc:  # type:ignore
             self.ascendant = ascmc[0]
             self.midheaven = ascmc[1]
             self.armc = ascmc[2]
@@ -177,7 +174,7 @@ class Tables(Gtk.Notebook):
                     f" {self.asc} :  {decsigndms(self.ascendant)}\n"
                     f" {self.mc} :  {decsigndms(self.midheaven)}\n"
                     f" ra : {int(raH):02d}h{int(raM):02d}m{int(raS):02d}s\n"
-                    f" {weekday} : {hora_glyph}\n"
+                    f" {weekday} : {hora_glyph}\n"  # type:ignore
                 )
             else:
                 ln_csps += f" houses {self.h_sym * 7}\n"
@@ -189,10 +186,12 @@ class Tables(Gtk.Notebook):
                     f" {self.asc} :  {decsigndms(self.ascendant)}\n"
                     f" {self.mc} :  {decsigndms(self.midheaven)}\n"
                     f" ra : {int(raH):02d}h{int(raM):02d}m{int(raS):02d}s\n"
-                    f" {weekday} : {hora_glyph}\n"
+                    f" {weekday} : {hora_glyph}\n"  # type:ignore
                 )
             ln_csps += separ
             content += ln_csps
+        if cycles:
+            content += cycles
         # update page widget if exists, else create one
         if event in self.page_widgets:
             scroll = self.page_widgets[event]
@@ -237,11 +236,111 @@ class Tables(Gtk.Notebook):
         self.events_data[event]["aspects"] = aspects
         self.update_event_data(event)
 
+    def update_aspects(self, event):
+        # called by update_event_data()
+        if (
+            event not in self.events_data
+            or "aspects" not in self.events_data[event]
+            or not self.events_data[event]["aspects"]
+        ):
+            self.notify.error(
+                f"aspects missing for {event}",
+                source="tables",
+                route=["terminal"],
+            )
+            return
+        aspects = self.events_data[event].get("aspects")
+        obj_names = aspects["obj names"]
+        speeds = aspects["speeds"]
+        name2idx = {n: i for i, n in enumerate(aspects["obj names"])}
+        matrix = aspects["aspects"]
+        # title line
+        text = f" aspects {self.h_sym * 56}\n"
+        # header row
+        text += f"  > {self.v_sym}"
+        for name in obj_names:
+            text += f"{self.vic_spc}{name}   {self.v_sym}"
+        text += "\n"
+        # horizontal bottom line : match above text = f"aspects ..."
+        self.h_line = f"{self.h_sym * 62}\n"
+        # grid
+        for row_name in obj_names:
+            i = name2idx[row_name]
+            speed = speeds.get(row_name, 0.0)
+            retro = "R" if speed < 0 else " "
+            # 1st column
+            text += f" {row_name}{retro}{self.v_sym}"
+            # text += f" {row_name:>2} {v_}"
+            for col_name in obj_names:
+                j = name2idx[col_name]
+                cell = matrix[i][j]
+                if i == j:
+                    text += f"{self.vic_spc}**** {self.v_sym}"
+                elif i < j:
+                    # above diagonal: major aspect if present, else blank
+                    if cell["major"]:
+                        glyph = cell.get("glyph", "")
+                        orb = cell.get("orb")
+                        orb_s = f"{orb:.1f}" if orb is not None else "   "
+                        a_s = "a" if cell.get("applying") else "s"
+                        text += f"{glyph}{orb_s} {a_s}{self.v_sym}"
+                    else:
+                        text += f"{self.vic_spc}  -  {self.v_sym}"
+                else:
+                    # below diagonal: always show angle
+                    angle = cell.get("angle")
+                    angle_s = f"{abs(angle):5.1f}" if angle is not None else "  -   "
+                    text += f"{self.vic_spc}{angle_s}{self.v_sym}"
+            text += "\n"
+        # horizontal line at end
+        text += self.h_line
+        self.notify.debug(
+            f"updateaspects : {text}",
+            source="tables",
+            route=[""],
+        )
+        return text
+
     def cycles_changed(self, event, data):
         if event not in self.events_data:
             self.event_data[event] = {}
         self.events_data[event]["cycles"] = data
         self.update_event_data(event)
+
+    def update_cycles(self, event):
+        # called by update_event_data()
+        if (
+            event not in self.events_data
+            or "cycles" not in self.events_data[event]
+            or not self.events_data[event]["cycles"]
+        ):
+            self.notify.error(
+                f"missing data for {event}",
+                source="tables",
+                route=["terminal"],
+            )
+            return
+        cycles = self.events_data[event]["cycles"]
+        custom_wave = cycles.get("custom wave", {})
+        text = " settings > chart settings > use varga for harmonic cyclic index & select cycle\nmembers for custom cyclic index\n"
+        h_line = f"{self.h_sym * 53}\n"
+        # show custom cyclic index
+        if custom_wave:
+            total_idx, total_norm = custom_wave["result"]
+            phase = "+" if total_norm <= 180 else "-"
+        text += (
+            f" {event} cycle index for {' '.join(custom_wave['members'])} | "
+            f"[pairs : {custom_wave['pairs num']}] | "
+            f"({total_idx:.2f}) {total_norm:.2f} {phase}"  # type:ignore
+            f"{self.vic_spc}\n"
+        )
+        text += f" {h_line}"
+        self.notify.debug(
+            f"updatecycles :\n{text}",
+            source="tables",
+            route=[""],
+        )
+        return text
 
     def vimsottari_changed(self, event, vimsottari):
         # receives table as plain text
@@ -298,7 +397,7 @@ class Tables(Gtk.Notebook):
                 retro_info = next(
                     (r for r in self.p2_retro if r.get("name") == name), None
                 )
-            direction = retro_info["direction"] if retro_info else ""
+            direction = retro_info["direction"] if retro_info else ""  # type:ignore
             # dont show direct indicator
             if direction == "D":
                 direction = ""
@@ -413,7 +512,7 @@ class Tables(Gtk.Notebook):
                 retro_info = next(
                     (r for r in self.p3_retro if r.get("name") == name), None
                 )
-            direction = retro_info["direction"] if retro_info else ""
+            direction = retro_info["direction"] if retro_info else ""  # type:ignore
             # dont show direct indicator
             if direction == "D":
                 direction = ""
@@ -480,152 +579,6 @@ class Tables(Gtk.Notebook):
         self.append_page(scroll, Gtk.Label.new(event))
         self.page_widgets[event] = scroll
         self.set_current_page(self.get_n_pages() - 1)
-
-    def update_aspects(self, event):
-        # called by update_event_data()
-        if (
-            event not in self.events_data
-            or "aspects" not in self.events_data[event]
-            or not self.events_data[event]["aspects"]
-        ):
-            self.notify.error(
-                f"aspects missing for {event}",
-                source="tables",
-                route=["terminal"],
-            )
-            return
-        aspects = self.events_data[event].get("aspects")
-        obj_names = aspects["obj names"]
-        speeds = aspects["speeds"]
-        name2idx = {n: i for i, n in enumerate(aspects["obj names"])}
-        matrix = aspects["aspects"]
-        # title line
-        text = f" aspects {self.h_sym * 56}\n"
-        # header row
-        text += f"  > {self.v_sym}"
-        for name in obj_names:
-            text += f"{self.vic_spc}{name}   {self.v_sym}"
-        text += "\n"
-        # horizontal bottom line : match above text = f"aspects ..."
-        self.h_line = f"{self.h_sym * 62}\n"
-        # grid
-        for row_name in obj_names:
-            i = name2idx[row_name]
-            speed = speeds.get(row_name, 0.0)
-            retro = "R" if speed < 0 else " "
-            # 1st column
-            text += f" {row_name}{retro}{self.v_sym}"
-            # text += f" {row_name:>2} {v_}"
-            for col_name in obj_names:
-                j = name2idx[col_name]
-                cell = matrix[i][j]
-                if i == j:
-                    text += f"{self.vic_spc}**** {self.v_sym}"
-                elif i < j:
-                    # above diagonal: major aspect if present, else blank
-                    if cell["major"]:
-                        glyph = cell.get("glyph", "")
-                        orb = cell.get("orb")
-                        orb_s = f"{orb:.1f}" if orb is not None else "   "
-                        a_s = "a" if cell.get("applying") else "s"
-                        text += f"{glyph}{orb_s} {a_s}{self.v_sym}"
-                    else:
-                        text += f"{self.vic_spc}  -  {self.v_sym}"
-                else:
-                    # below diagonal: always show angle
-                    angle = cell.get("angle")
-                    angle_s = f"{abs(angle):5.1f}" if angle is not None else "  -   "
-                    text += f"{self.vic_spc}{angle_s}{self.v_sym}"
-            text += "\n"
-        # horizontal line at end
-        text += self.h_line
-        self.notify.debug(
-            f"updateaspects : {text}",
-            source="tables",
-            route=[""],
-        )
-        return text
-
-    def update_cycles(self, event):
-        # called by update_event_data()
-        if (
-            event not in self.events_data
-            or "cycles" not in self.events_data[event]
-            or not self.events_data[event]["cycles"]
-        ):
-            self.notify.error(
-                f"missing data for {event}",
-                source="tables",
-                route=["terminal"],
-            )
-            return
-        cycles = self.events_data[event]["cycles"]
-        # obj_names = cycles["obj names"]
-        # matrix = cycles["matrix"]
-        custom_wave = cycles.get("custom wave", {})
-        # keep moon row, but skip last empty (moon) col
-        # row_names = obj_names
-        # col_names = obj_names[:-1]
-        # matrix = [row[:-1] for row in matrix]
-        # name2idx_row = {n: i for i, n in enumerate(row_names)}
-        # name2idx_col = {n: i for i, n in enumerate(col_names)}
-        # headecolr
-        text = " settings > chart settings > use varga for harmonic cyclic index\n & select cycle members for custom cyclic index\n\n"
-        text += f" {event} cyclic index{self.vic_spc}{self.h_sym * 42}\n"
-        # text += f" > {self.v_sym}"
-        # for name in col_names:
-        #     text += f" {name:>2}    {self.v_sym}"
-        # text += "\n"
-        h_line = f"{self.h_sym * 53}\n"
-        # for row_name in row_names:
-        #     i = name2idx_row[row_name]
-        #     text += f" {row_name:>2}{self.v_sym}"
-        #     for col_name in col_names:
-        #         j = name2idx_col[col_name]
-        #         cell = matrix[i][j]
-        #         if cell is None or cell.get("type") == "skip":
-        #             text += f"   -   {self.v_sym}"
-        #         elif i == j:
-        #             text += f" ***** {self.v_sym}"
-        #         else:
-        #             com = cell.get("compound")
-        #             if com is not None:
-        #                 sum = f"{com[0]:5.1f}"
-        #                 phase = com[1]
-        #             text += f"{sum} {phase}{self.v_sym}"
-        #     text += "\n"
-        # # compute per-column totals by scanning matrix for 'total' fields
-        # col_totals = [None] * len(col_names)
-        # for j in range(len(col_names)):
-        #     for i in range(len(row_names)):
-        #         cell = matrix[i][j]
-        #         if cell and cell.get("total") is not None:
-        #             col_totals[j] = cell.get("total")
-        # # append bottom totals line (total_wave per column)
-        # text += f" tt{self.v_sym}"
-        # for j in range(len(col_names)):
-        #     val = col_totals[j]
-        #     if val is not None:
-        #         text += f"{val:6.1f}{self.v_sym}"
-        #     else:
-        #         text += f"   -   {self.v_sym}"
-        # text += "\n"
-        # show custom cyclic index
-        if custom_wave:
-            total_idx, total_norm = custom_wave["result"]
-            phase = "+" if total_norm <= 180 else "-"
-            text += (
-                f" custom wave : members : {' '.join(custom_wave['members'])} | "
-                f"total pairs : {custom_wave['pairs num']} "
-                f"| ({total_idx:.2f}) {total_norm:.2f} {phase}\n"
-            )
-        text += f" {h_line}"
-        self.notify.debug(
-            f"updatecycles :\n{text}",
-            source="tables",
-            route=[""],
-        )
-        return text
 
     def vimsottari_widget(self, event: str, content: str):
         # create a scrollable text view for an event
@@ -703,3 +656,85 @@ class Tables(Gtk.Notebook):
                 if lon >= c0 or lon < c1:
                     return f"{h0:2d}"
         return ""
+
+
+# def update_cycles(self, event):
+#     # called by update_event_data()
+#     if (
+#         event not in self.events_data
+#         or "cycles" not in self.events_data[event]
+#         or not self.events_data[event]["cycles"]
+#     ):
+#         self.notify.error(
+#             f"missing data for {event}",
+#             source="tables",
+#             route=["terminal"],
+#         )
+#         return
+#     cycles = self.events_data[event]["cycles"]
+#     # obj_names = cycles["obj names"]
+#     # matrix = cycles["matrix"]
+#     custom_wave = cycles.get("custom wave", {})
+#     # keep moon row, but skip last empty (moon) col
+#     # row_names = obj_names
+#     # col_names = obj_names[:-1]
+#     # matrix = [row[:-1] for row in matrix]
+#     # name2idx_row = {n: i for i, n in enumerate(row_names)}
+#     # name2idx_col = {n: i for i, n in enumerate(col_names)}
+#     # headecolr
+#     text = " settings > chart settings > use varga for harmonic cyclic index\n & select cycle members for custom cyclic index\n"
+#     text += f" {event} cyclic index{self.vic_spc}{self.h_sym * 42}\n"
+#     # text += f" > {self.v_sym}"
+#     # for name in col_names:
+#     #     text += f" {name:>2}    {self.v_sym}"
+#     # text += "\n"
+#     h_line = f"{self.h_sym * 53}\n"
+#     # for row_name in row_names:
+#     #     i = name2idx_row[row_name]
+#     #     text += f" {row_name:>2}{self.v_sym}"
+#     #     for col_name in col_names:
+#     #         j = name2idx_col[col_name]
+#     #         cell = matrix[i][j]
+#     #         if cell is None or cell.get("type") == "skip":
+#     #             text += f"   -   {self.v_sym}"
+#     #         elif i == j:
+#     #             text += f" ***** {self.v_sym}"
+#     #         else:
+#     #             com = cell.get("compound")
+#     #             if com is not None:
+#     #                 sum = f"{com[0]:5.1f}"
+#     #                 phase = com[1]
+#     #             text += f"{sum} {phase}{self.v_sym}"
+#     #     text += "\n"
+#     # # compute per-column totals by scanning matrix for 'total' fields
+#     # col_totals = [None] * len(col_names)
+#     # for j in range(len(col_names)):
+#     #     for i in range(len(row_names)):
+#     #         cell = matrix[i][j]
+#     #         if cell and cell.get("total") is not None:
+#     #             col_totals[j] = cell.get("total")
+#     # # append bottom totals line (total_wave per column)
+#     # text += f" tt{self.v_sym}"
+#     # for j in range(len(col_names)):
+#     #     val = col_totals[j]
+#     #     if val is not None:
+#     #         text += f"{val:6.1f}{self.v_sym}"
+#     #     else:
+#     #         text += f"   -   {self.v_sym}"
+#     # text += "\n"
+#     # show custom cyclic index
+#     if custom_wave:
+#         total_idx, total_norm = custom_wave["result"]
+#         phase = "+" if total_norm <= 180 else "-"
+#         text += (
+#             f" custom wave : members : {' '.join(custom_wave['members'])} | "
+#             f"total pairs : {custom_wave['pairs num']} "
+#             f"| ({total_idx:.2f}) {total_norm:.2f} {phase}\n"
+#         )
+#     text += f" {h_line}"
+#     self.notify.debug(
+#         f"updatecycles :\n{text}",
+#         source="tables",
+#         route=[""],
+#     )
+#     return text
