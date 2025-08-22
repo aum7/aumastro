@@ -94,12 +94,13 @@ def calculate_cycle(event: str):
     # print(f"cycledf : {cycle_df}")
     cycle_data = {
         "members": members,
+        "division": division,
+        "use varga": use_varga,
         "dataframe": cycle_df,
     }
     store_cycle(cycle_data)
     msg += f"cycledata :\n{cycle_data}\n"
     app.signal_manager._emit("cycle_changed", event, cycle_data)
-    # msg += "emitted signal\n"
     notify.debug(
         msg,
         source="cycle",
@@ -111,13 +112,18 @@ def calculate_cycle(event: str):
 def store_cycle(data):
     # save cycle data for jforex plot
     members = data["members"]
+    division = data["division"]
+    use_varga = data["use varga"]
     dataframe = data["dataframe"]
     df = dataframe.copy()
     df["datetime"] = pd.to_datetime(df["datetime"])
     # filename from members
     members_str = "_".join(members)
-    filename = f"wave_{members_str}.csv"
-    out_path = Path("user/data") / filename
+    if use_varga:
+        filename = f"wave_{members_str}_v{division}.csv"
+    else:
+        filename = f"wave_{members_str}_v1.csv"
+    out_path = Path("user/data/wave") / filename
     df.to_csv(out_path, index=False, date_format="%Y-%m-%d %H:%M:%S")
     return out_path
 

@@ -8,16 +8,11 @@
 # "datetime": "2025-03-29 10:47:34",  # last solecl
 # "datetime": "2025 8 1 17 1", # trading start
 DEFAULT_E1 = {
-    "country": "Finland",
-    "city": "vantaa",  # helsinki
-    "location": "60 17 36 n 25 02 17 e 0038 m",
-    "name": "ejpt",
-    "datetime": "2012 03 23 21 00",
-    # "country": "UK",
-    # "city": "london",
-    # "location": "51 30 54 n 000 05 56 w 10 m",
-    # "name": "nse 230420",  # next solecl
-    # "datetime": "2022-10-25 12:00:16",
+    "country": "UK",
+    "city": "london",
+    "location": "51 30 54 n 000 05 56 w 10 m",
+    "name": "nse 230420",  # next solecl
+    "datetime": "2022-10-25 12:00:16",
     # "datetime": "2000 3 21 12 00",
 }
 DEFAULT_E2 = {

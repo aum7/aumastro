@@ -327,7 +327,7 @@ class DataGraph(Gtk.Box):
         self.plot_data(new_start, new_end)
 
     def on_scroll(self, event):
-        """zoom on mouse-over & mouse-scroll & pan if [shift] is also held"""
+        """zoom on mouse-over & shift-mouse-scroll, pan on mouse-scroll"""
         cur_start, cur_end = self.plot_range
         if cur_start is None or cur_end is None or cur_end <= cur_start:
             return
@@ -336,26 +336,8 @@ class DataGraph(Gtk.Box):
         zoom_amount = int(max(10, n * 0.2))
         min_bars, max_bars = self.min_bars, self.max_bars
         # detect shift for pan
-        is_pan = self.shift_held
-        if hasattr(event, "key") and event.key == "shift":
-            is_pan = True
-        # pan data plot
-        if is_pan and df_len:
-            pan = int(n * 0.2)
-            if event.button == "up":  # pan forward
-                # print("datagraph : pan : button : up")
-                new_start = max(0, cur_start - pan)
-            elif event.button == "down":  # pan backward
-                # print("datagraph : pan : button : down")
-                new_start = min(df_len - n, cur_start + pan)
-            else:
-                return
-            new_end = new_start + n
-            # clamp data
-            if new_end > df_len:
-                new_end = df_len
-                new_start = max(0, new_end - n)
-        else:
+        shift = getattr(event, "key", None) == "shift" or self.shift_held
+        if shift:
             # zoom logic : keep bar under cursor fixed
             if self.last_mouse_x is not None and n > 1:
                 frac = self.last_mouse_x / (n - 1)
@@ -379,6 +361,24 @@ class DataGraph(Gtk.Box):
                 if new_end > df_len:
                     new_end = df_len
                     new_start = max(0, new_end - new_n)
+        else:
+            # pan data plot
+            if not df_len:
+                return
+            pan = int(n * 0.2)
+            if event.button == "up":  # pan forward
+                # print("datagraph : pan : button : up")
+                new_start = max(0, cur_start - pan)
+            elif event.button == "down":  # pan backward
+                # print("datagraph : pan : button : down")
+                new_start = min(df_len - n, cur_start + pan)
+            else:
+                return
+            new_end = new_start + n
+            # clamp data
+            if new_end > df_len:
+                new_end = df_len
+                new_start = max(0, new_end - n)
         # avoid bad ranges
         if new_end <= new_start or new_end - new_start < min_bars:  # type:ignore
             return
