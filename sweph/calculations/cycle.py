@@ -84,6 +84,7 @@ def calculate_cycle(event: str):
             lon = result[0][0]
             pos_map[name] = {"lon": lon}
         members_ordered = [n for n in MEMBERS if n in pos_map]
+        # if set(members).issubset(pos_map):
         cycle = total_cycle(members_ordered, pos_map)
         cycle_vals.append(cycle)
     cycle_df = pd.DataFrame({"datetime": price_df.index, "cycle": cycle_vals})

@@ -36,7 +36,7 @@ class DataGraph(Gtk.Box):
         self.full_df = None
         self.plot_range = [None, None]  # start, end
         self.last_mouse_x = None  # mouse position zoom
-        self.max_bars = 500
+        self.max_bars = 600
         self.min_bars = 100
         self.data_load()
         self.plot_last_n(200)
@@ -50,6 +50,7 @@ class DataGraph(Gtk.Box):
         self.canvas.mpl_connect("key_release_event", self.on_key_release)
         # init / create cycle wave
         self.cycle_calculated = False
+        self.cycle_wave = None
 
     def data_load(self):
         """load & plot data"""
@@ -166,6 +167,30 @@ class DataGraph(Gtk.Box):
         highs = df["high"].max() if not df.empty else 1
         # fill canvas vertically
         self.ax.set_ylim(lows - (highs - lows) * 0.03, highs + (highs - lows) * 0.03)
+        # OVERLAY cycle wave
+        if hasattr(self, "cycle_wave") and self.cycle_wave:
+            dataframe = self.cycle_wave["dataframe"]
+            print(f"dataframe :\n{dataframe}")
+            # align cycle with visible datetime range
+            cycle_visible = dataframe.loc[df.index.min() : df.index.max()]
+            if not cycle_visible.empty:
+                ax2 = self.ax.twinx()
+                ax2.set_facecolor("none")
+                ax2.plot(
+                    cycle_visible.index,
+                    cycle_visible["cycle"],
+                    color="yellow",
+                    lw=1,
+                    alpha=0.7,
+                )
+                ax2.tick_params(
+                    axis="y",
+                    colors="yellow",
+                    labelsize=8,
+                )
+                ax2.set_ylim(0, 360)
+                # hide if desired
+                ax2.axis("off")
         self.init_cursor()
         self.canvas.draw()
 
@@ -205,6 +230,7 @@ class DataGraph(Gtk.Box):
         if not self.cycle_calculated:
             self.cycle_wave = calculate_cycle("e1")
             print(f"datagraph : cyclewave :\n{self.cycle_wave}")
+            # self.plot_data()
             self.cycle_calculated = True
         if event.button == 1 and event.inaxes:
             ix = int(round(event.xdata))
