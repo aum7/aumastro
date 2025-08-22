@@ -79,7 +79,7 @@ class DataGraph(Gtk.Box):
             color="white",
             lw=0.7,
             ls="--",
-            alpha=0.8,
+            alpha=0.7,
         )
         self.cursor_text = self.ax.text(
             0.03,
@@ -94,7 +94,7 @@ class DataGraph(Gtk.Box):
             bbox=dict(
                 facecolor="#181818",
                 edgecolor="white",
-                alpha=0.8,
+                alpha=0.7,
                 pad=2,
             ),
         )
@@ -214,9 +214,9 @@ class DataGraph(Gtk.Box):
                     self.ax.plot(
                         x_vals,
                         y_vals,
-                        color="yellow",
+                        color="grey",
                         lw=0.7,
-                        alpha=0.7,
+                        alpha=0.3,
                     )
         self.init_cursor()
         self.canvas.draw()

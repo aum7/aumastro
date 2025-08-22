@@ -6,6 +6,7 @@ import gi
 
 gi.require_version("Gtk", "4.0")
 from gi.repository import Gtk  # type: ignore
+from pathlib import Path
 from ui.helpers import _object_name_to_code as objcode
 from sweph.calculations.varga import get_varga_lon
 
@@ -39,13 +40,12 @@ def total_cycle(ordered, pos_map):
             shortest = min(angle, 360 - angle)
             angles.append(shortest)
             pairs.append((f"{slow}-{fast}", shortest))
-        total_idx = sum(angles)
-        total_norm = total_idx % 360
-    return total_norm  # type:ignore
+    total_idx = sum(angles)
+    return total_idx
 
 
 def calculate_cycle(event: str):
-    """calculate phases matrix for one event"""
+    """calculate cycle wave for plot"""
     app = Gtk.Application.get_default()
     notify = app.notify_manager
     msg = "cycle wave :\n"
@@ -93,14 +93,11 @@ def calculate_cycle(event: str):
     cycle_df = pd.DataFrame({"datetime": price_df.index, "cycle": cycle_vals})
     # print(f"cycledf : {cycle_df}")
     cycle_data = {
+        "members": members,
         "dataframe": cycle_df,
     }
-    msg += (
-        f"cycledata :\n{cycle_data}\n"
-        # pass
-        f"members :{members}\n"
-        f"dataframe :\n{cycle_data}\n"
-    )
+    store_cycle(cycle_data)
+    msg += f"cycledata :\n{cycle_data}\n"
     app.signal_manager._emit("cycle_changed", event, cycle_data)
     # msg += "emitted signal\n"
     notify.debug(
@@ -109,6 +106,20 @@ def calculate_cycle(event: str):
         route=[""],
     )
     return cycle_data
+
+
+def store_cycle(data):
+    # save cycle data for jforex plot
+    members = data["members"]
+    dataframe = data["dataframe"]
+    df = dataframe.copy()
+    df["datetime"] = pd.to_datetime(df["datetime"])
+    # filename from members
+    members_str = "_".join(members)
+    filename = f"wave_{members_str}.csv"
+    out_path = Path("user/data") / filename
+    df.to_csv(out_path, index=False, date_format="%Y-%m-%d %H:%M:%S")
+    return out_path
 
 
 def connect_signals_cycle(signal_manager):

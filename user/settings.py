@@ -256,6 +256,7 @@ CHART_SETTINGS = {
     # --- use custom planet list for cyclic index
     "cycle members": (
         ["pl ne ur sa ju"],
+        # ["ne ur sa ve"],
         # ["sa ju ma"],
         "select objects for custom cyclic index"
         "\nshort english names only (mo : moon | ne : neptune etc)"
