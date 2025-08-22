@@ -248,6 +248,11 @@ CHART_SETTINGS = {
         False,
         "use varga positions for cyclic index table calculations\nsort of 'harmonic' cyclic index",
     ),
+    # --- invert cycle plotting, ie cycle rising might indicate price falling
+    "invert cycle": (
+        False,
+        "invert cycle plotting (ie up > down & vice versa)",
+    ),
     # --- use custom planet list for cyclic index
     "cycle members": (
         ["pl ne ur sa ju"],
@@ -408,7 +413,7 @@ FILES = {
     ),
     # --- path to data folder & file ; data to be plotted on graph
     "data\t\t": (
-        "user/data/gold/gold_d_test.csv",
+        "user/data/gold/gold_d.csv",
         "path to data folder & file name : data for plotting on graph",
     ),
     # --- construct your own 'filename' format: allowed fields

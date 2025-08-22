@@ -28,7 +28,6 @@ from sweph.calculations.returnsolar import connect_signals_solarreturn
 from sweph.calculations.returnlunar import connect_signals_lunarreturn
 from sweph.calculations.transit import connect_signals_transit
 from sweph.calculations.varga import connect_signals_varga
-# from sweph.calculations.cycle import calculate_cycle
 
 
 class MainWindow(
@@ -250,7 +249,7 @@ class MainWindow(
             and hasattr(self, "pnd_top_h")
             and hasattr(self, "pnd_btm_h")
         ):
-            self.pnd_main_v.set_position(int(self.pnd_main_v.get_height() * 0.12))
+            self.pnd_main_v.set_position(int(self.pnd_main_v.get_height() * 0.4))
             # self.pnd_main_v.set_position(self.pnd_main_v.get_height() // 2)
             self.pnd_top_h.set_position(0)
             self.pnd_btm_h.set_position(self.pnd_btm_h.get_width() // 2)

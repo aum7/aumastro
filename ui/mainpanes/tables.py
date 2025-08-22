@@ -322,8 +322,8 @@ class Tables(Gtk.Notebook):
             return
         cycles = self.events_data[event]["cycles"]
         custom_wave = cycles.get("custom wave", {})
-        text = " settings > chart settings > use varga for harmonic cyclic index & select cycle\nmembers for custom cyclic index\n"
-        h_line = f"{self.h_sym * 53}\n"
+        text = " settings > chart settings > use varga for harmonic cyclic index & select cycle\n members for custom cyclic index\n"
+        h_line = f"{self.h_sym * 59}\n"
         # show custom cyclic index
         if custom_wave:
             total_idx, total_norm = custom_wave["result"]
@@ -334,7 +334,7 @@ class Tables(Gtk.Notebook):
             f"({total_idx:.2f}) {total_norm:.2f} {phase}"  # type:ignore
             f"{self.vic_spc}\n"
         )
-        text += f" {h_line}"
+        text += f"{h_line}"
         self.notify.debug(
             f"updatecycles :\n{text}",
             source="tables",

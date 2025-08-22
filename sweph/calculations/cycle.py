@@ -7,6 +7,7 @@ import gi
 gi.require_version("Gtk", "4.0")
 from gi.repository import Gtk  # type: ignore
 from ui.helpers import _object_name_to_code as objcode
+from sweph.calculations.varga import get_varga_lon
 
 MEMBERS = [
     "pl",
@@ -41,13 +42,6 @@ def total_cycle(ordered, pos_map):
         total_idx = sum(angles)
         total_norm = total_idx % 360
     return total_norm  # type:ignore
-    # return {
-    #     "members": ordered,
-    #     "angles": angles,
-    #     "pairs": pairs,
-    #     "pairs num": len(pairs),
-    #     "result": (total_idx, total_norm),  # type: ignore
-    # }
 
 
 def calculate_cycle(event: str):
@@ -63,10 +57,16 @@ def calculate_cycle(event: str):
             route=["terminal"],
         )
         return
+    division = int(app.chart_settings.get("harmonic ring", "1").strip())
+    use_varga = app.chart_settings.get("use varga", False)
     file_name = app.files.get("data")
     cycle_members = app.chart_settings.get("cycle members")
     if isinstance(cycle_members, list):
         members_str = " ".join(cycle_members)
+    elif isinstance(cycle_members, str):
+        members_str = cycle_members
+    else:
+        members_str = "sa ju"  # fallback
     members_list = members_str.replace(",", " ").split()  # type:ignore
     members = [m.strip() for m in members_list if m.strip()]
     # print(f"members : {members}")
@@ -81,7 +81,10 @@ def calculate_cycle(event: str):
         for name in members:
             code, name = objcode(name, app.chart_settings.get("mean node"))
             result = swe.calc_ut(jd, code, app.sweph_flag)
+            # allow for varga positions
             lon = result[0][0]
+            if lon and use_varga:
+                lon = get_varga_lon(lon, division)
             pos_map[name] = {"lon": lon}
         members_ordered = [n for n in MEMBERS if n in pos_map]
         # if set(members).issubset(pos_map):
@@ -92,8 +95,13 @@ def calculate_cycle(event: str):
     cycle_data = {
         "dataframe": cycle_df,
     }
-    msg += f"cycledata :\nmembers :{members}\ndataframe :\n{cycle_df}\n"
-    # app.signal_manager._emit("cycle_changed", event, cycle_data)
+    msg += (
+        f"cycledata :\n{cycle_data}\n"
+        # pass
+        f"members :{members}\n"
+        f"dataframe :\n{cycle_data}\n"
+    )
+    app.signal_manager._emit("cycle_changed", event, cycle_data)
     # msg += "emitted signal\n"
     notify.debug(
         msg,
@@ -105,5 +113,4 @@ def calculate_cycle(event: str):
 
 def connect_signals_cycle(signal_manager):
     """update cycle wave when positions change"""
-    # signal_manager._connect("positions_changed", calculate_cycle)
-    signal_manager._connect("settings_changed", calculate_cycle)
+    signal_manager._connect("cycle_settings_changed", calculate_cycle)

@@ -50,7 +50,16 @@ class DataGraph(Gtk.Box):
         self.canvas.mpl_connect("key_release_event", self.on_key_release)
         # init / create cycle wave
         self.cycle_calculated = False
+        self.app.signal_manager._connect("cycle_changed", self.on_cycle_changed)
         self.cycle_wave = None
+
+    def on_cycle_changed(self, event, cycle_data):
+        """called when cycle is recalculated, ie on settings change"""
+        self.cycle_wave = cycle_data
+        # print(f"datagraph : cyclechanged :\n{cycle_data}")
+        # re-plot overlay
+        if self.plot_range[0] is not None and self.plot_range[1] is not None:
+            self.plot_data(self.plot_range[0], self.plot_range[1])
 
     def data_load(self):
         """load & plot data"""
@@ -73,7 +82,7 @@ class DataGraph(Gtk.Box):
             alpha=0.8,
         )
         self.cursor_text = self.ax.text(
-            0.01,
+            0.03,
             0.99,
             "",
             color="white",
@@ -167,30 +176,48 @@ class DataGraph(Gtk.Box):
         highs = df["high"].max() if not df.empty else 1
         # fill canvas vertically
         self.ax.set_ylim(lows - (highs - lows) * 0.03, highs + (highs - lows) * 0.03)
-        # OVERLAY cycle wave
+        # overlay cycle wave
         if hasattr(self, "cycle_wave") and self.cycle_wave:
-            dataframe = self.cycle_wave["dataframe"]
-            print(f"dataframe :\n{dataframe}")
+            dataframe = self.cycle_wave["dataframe"].copy()
+            # ensure datetime column is actual datetime
+            dataframe["datetime"] = pd.to_datetime(dataframe["datetime"])
+            # print(f"dataframe :\n{dataframe}")
             # align cycle with visible datetime range
-            cycle_visible = dataframe.loc[df.index.min() : df.index.max()]
-            if not cycle_visible.empty:
-                ax2 = self.ax.twinx()
-                ax2.set_facecolor("none")
-                ax2.plot(
-                    cycle_visible.index,
-                    cycle_visible["cycle"],
-                    color="yellow",
-                    lw=1,
-                    alpha=0.7,
-                )
-                ax2.tick_params(
-                    axis="y",
-                    colors="yellow",
-                    labelsize=8,
-                )
-                ax2.set_ylim(0, 360)
-                # hide if desired
-                ax2.axis("off")
+            if not dataframe.empty:
+                start_dt = df.index.min()
+                end_dt = df.index.max()
+                cycle_visible = dataframe[
+                    (dataframe["datetime"] >= start_dt)
+                    & (dataframe["datetime"] <= end_dt)
+                ]
+                if not cycle_visible.empty:
+                    x_vals = df.index.get_indexer(
+                        cycle_visible["datetime"], method="nearest"
+                    )
+                    # scale cycle to price y-range
+                    ymin, ymax = self.ax.get_ylim()
+                    # print(f"datagraph : ylim : {ymin}-{ymax}")
+                    c_min, c_max = (
+                        cycle_visible["cycle"].min(),
+                        cycle_visible["cycle"].max(),
+                    )
+                    margin = 0.05
+                    y_vals = ymin + (cycle_visible["cycle"] - c_min) / (
+                        c_max - c_min
+                    ) * (ymax - ymin)
+                    y_vals = (
+                        ymin
+                        + margin * (ymax - ymin)
+                        + (1 - 2 * margin) * (y_vals - ymin)
+                    )
+                    # plot
+                    self.ax.plot(
+                        x_vals,
+                        y_vals,
+                        color="yellow",
+                        lw=0.7,
+                        alpha=0.7,
+                    )
         self.init_cursor()
         self.canvas.draw()
 
@@ -213,6 +240,16 @@ class DataGraph(Gtk.Box):
             dt_str = self.df.index[ix].strftime("%Y-%m-%d %H:%M")
             op, hi, lo, cl = self.candles[ix][2:]
             info = f"{dt_str}\nh={hi:.2f}\no={op:.2f}\nc={cl:.2f}\nl={lo:.2f}"
+            # add cycle index value
+            if hasattr(self, "cycle_wave") and self.cycle_wave:
+                dataframe = self.cycle_wave["dataframe"].copy()
+                # ensure datetime column
+                dataframe["datetime"] = pd.to_datetime(dataframe["datetime"])
+                dt_hover = self.df.index[ix]
+                # find neares cycle value
+                nearest_idx = (dataframe["datetime"] - dt_hover).abs().idxmin()
+                cycle_val = dataframe.loc[nearest_idx, "cycle"]
+                info += f"\nwave : {cycle_val:.2f}"
         self.cursor_text.set_text(info)
         self.canvas.draw_idle()
 
@@ -229,7 +266,7 @@ class DataGraph(Gtk.Box):
     def on_click(self, event):
         if not self.cycle_calculated:
             self.cycle_wave = calculate_cycle("e1")
-            print(f"datagraph : cyclewave :\n{self.cycle_wave}")
+            # print(f"datagraph : cyclewave :\n{self.cycle_wave}")
             # self.plot_data()
             self.cycle_calculated = True
         if event.button == 1 and event.inaxes:

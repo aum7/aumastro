@@ -477,36 +477,31 @@ event 1 & 2 can have different objects"""
     manager.app.chart_settings["transit"] = data_tran[0]
     row_var_tran.set_child(box_var_tran)
     lbx_chart_setts_btm.append(row_var_tran)
-    # checkbox to use varga for cyclic index table
-    row_use_varga = Gtk.ListBoxRow()
-    data_use_varga = CHART_SETTINGS["use varga"]
-    chk_use_varga = Gtk.CheckButton(label="use varga")
-    chk_use_varga.set_active(data_use_varga[0])
-    chk_use_varga.set_tooltip_text(data_use_varga[1])
-    chk_use_varga.connect(
-        "toggled",
-        lambda chk, k="use varga", m=manager: chart_settings_toggled(chk, k, m),
-    )
-    manager.app.checkbox_chart_settings["use varga"] = chk_use_varga
-    manager.app.chart_settings["use varga"] = data_use_varga[0]
-    row_use_varga.set_child(chk_use_varga)
-    lbx_chart_setts_btm.append(row_use_varga)
-    # row for selected members for custom cyclic index calculation
+    # row for selected members for custom cycle data
     row_cycle_members = Gtk.ListBoxRow()
     box_cycle_members = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=7)
     lbl_cycle_members = Gtk.Label(label="cycle members")
     box_cycle_members.append(lbl_cycle_members)
     ent_cycle_members = Gtk.Entry()
-    # ent_cycle_members.set_text(" ".join(CHART_SETTINGS["cycle members"][0]))
     ent_cycle_members.set_text(", ".join(CHART_SETTINGS["cycle members"][0]))
     ent_cycle_members.set_tooltip_text(CHART_SETTINGS["cycle members"][1])
-    ent_cycle_members.connect("activate", cycle_members, manager)
+    ent_cycle_members.connect("activate", cycle_settings_changed, manager)
     box_cycle_members.append(ent_cycle_members)
     app.chart_settings["cycle members"] = CHART_SETTINGS["cycle members"][0]
-    # ent_cycle_members.get_text()
     row_cycle_members.set_child(box_cycle_members)
 
     lbx_chart_setts_btm.append(row_cycle_members)
+    # checkbox to use varga for cycle data
+    row_use_varga = Gtk.ListBoxRow()
+    data_use_varga = CHART_SETTINGS["use varga"]
+    chk_use_varga = Gtk.CheckButton(label="use varga")
+    chk_use_varga.set_active(data_use_varga[0])
+    chk_use_varga.set_tooltip_text(data_use_varga[1])
+    chk_use_varga.connect("toggled", cycle_settings_changed, manager)
+    manager.app.checkbox_chart_settings["use varga"] = chk_use_varga
+    manager.app.chart_settings["use varga"] = data_use_varga[0]
+    row_use_varga.set_child(chk_use_varga)
+    lbx_chart_setts_btm.append(row_use_varga)
     # fixed stars --------------------------------------
     row = Gtk.ListBoxRow()
     box_fixed_stars = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=7)
@@ -1101,34 +1096,42 @@ def harmonic_ring(entry, manager):
     )
 
 
-def cycle_members(entry, manager):
-    """planets used to calculate cyclic index table"""
-    # app_cyc_mem = manager.app.chart_settings["cycle members"]
-    text = entry.get_text().replace(",", " ")
-    members = [m.strip() for m in text.split() if m.strip()]
-    valid_objects = set()
-    for obj in OBJECTS.values():
-        valid_objects.add(obj[0])
-    if all(member in valid_objects for member in members):
-        entry.remove_css_class("entry-warning")
-        manager.app.chart_settings["cycle members"] = " ".join(members)
-        entry.set_text(manager.app.chart_settings["cycle members"])
-    else:
-        entry.set_text(manager.app.chart_settings["cycle members"])
-        manager.notify.warning(
-            "allowed are 2-character short english names only"
-            "\nie su (sun) | me (mercury) etc"
-            "\nsee user/settings.py > OBJECTS for details",
-            source="panel.settings",
-            route=["terminal", "user"],
-        )
-    setting = manager.app.chart_settings["cycle members"]
-    manager.signal._emit("settings_changed", None)
+def cycle_settings_changed(widget, manager):
+    """update cycle-related settings : cycle members & use varga"""
+    members = None
+    if isinstance(widget, Gtk.Entry):
+        # cycle members
+        text = widget.get_text().replace(",", " ")
+        members = [m.strip() for m in text.split() if m.strip()]
+        valid_objects = set()
+        for obj in OBJECTS.values():
+            valid_objects.add(obj[0])
+        if all(member in valid_objects for member in members):
+            widget.remove_css_class("entry-warning")
+            manager.app.chart_settings["cycle members"] = " ".join(members)
+            widget.set_text(manager.app.chart_settings["cycle members"])
+        else:
+            widget.set_text(manager.app.chart_settings["cycle members"])
+            manager.notify.warning(
+                "allowed are 2-character short english names only"
+                "\nie su (sun) | me (mercury) etc"
+                "\nsee user/settings.py > OBJECTS for details",
+                source="panel.settings",
+                route=["terminal", "user"],
+            )
+    elif isinstance(widget, Gtk.CheckButton):
+        # use varga
+        active = widget.get_active()
+        manager.app.chart_settings["use varga"] = active
+    # setting = manager.app.chart_settings["cycle members"]
+    manager.signal._emit("cycle_settings_changed", None)
+    # debug info
+    msg = ""
+    if members is not None:
+        msg += f"members : {members}\n"
+    msg += f"use varga : {manager.app.chart_settings['use varga']}\n"
     manager.notify.debug(
-        (
-            f"text : {text}\nmembers : {members}\nsetting : {setting}\n"
-            f"valobjs : {valid_objects}"
-        ),
+        msg,
         source="panel.settings",
         route=["terminal"],
     )
