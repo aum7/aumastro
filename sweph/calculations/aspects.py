@@ -144,7 +144,7 @@ def calculate_aspects(event: str):
         obj_names, aspect_matrix, speeds = aspects_matrix(objs_map, pos_map, orb)
     aspects_data = {
         "obj names": obj_names,
-        "aspects": aspect_matrix,  # type:ignore
+        "aspects": aspect_matrix,
         "speeds": speeds,
     }
 

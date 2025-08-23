@@ -511,7 +511,7 @@ event 1 & 2 can have different objects"""
     chk_use_varga_aspect.set_tooltip_text(data_use_varga_aspect[1])
     chk_use_varga_aspect.connect(
         "toggled",
-        lambda chk, k="use varga aspec", m=manager: chart_settings_toggled(chk, k, m),
+        lambda chk, k="use varga aspect", m=manager: chart_settings_toggled(chk, k, m),
     )
     manager.app.checkbox_chart_settings["use varga aspect"] = chk_use_varga_aspect
     manager.app.chart_settings["use varga aspect"] = data_use_varga_aspect[0]
