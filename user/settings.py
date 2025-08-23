@@ -243,10 +243,15 @@ CHART_SETTINGS = {
         ),
         "transit": (False, "show transit for event 2"),
     },
-    # --- use varga positions for phases table
-    "use varga": (
-        False,
-        "use varga positions for cyclic index table calculations\nsort of 'harmonic' cyclic index",
+    # --- use varga positions for cycle wave
+    "use varga cycle": (
+        True,
+        "use varga positions for cycle index & wave calculation\nsort of 'harmonic' cycle index / wave",
+    ),
+    # --- use varga positions for aspects
+    "use varga aspect": (
+        True,
+        "use varga positions for aspects matrix calculation\nsort of 'harmonic' aspects",
     ),
     # --- invert cycle plotting, ie cycle rising might indicate price falling
     "invert cycle": (
@@ -255,7 +260,7 @@ CHART_SETTINGS = {
     ),
     # --- use custom planet list for cyclic index
     "cycle members": (
-        ["pl ne ur sa ju"],
+        ["pl ne ur sa ju ma su ve me mo"],
         # ["ne ur sa ve"],
         # ["sa ju ma"],
         "select objects for custom cyclic index"
@@ -414,7 +419,7 @@ FILES = {
     ),
     # --- path to data folder & file ; data to be plotted on graph
     "data\t\t": (
-        "user/data/gold/gold_d.csv",
+        "user/data/gold/gold_h.csv",
         "path to data folder & file name : data for plotting on graph",
     ),
     # --- construct your own 'filename' format: allowed fields

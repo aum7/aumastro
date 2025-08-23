@@ -492,16 +492,32 @@ event 1 & 2 can have different objects"""
 
     lbx_chart_setts_btm.append(row_cycle_members)
     # checkbox to use varga for cycle data
-    row_use_varga = Gtk.ListBoxRow()
-    data_use_varga = CHART_SETTINGS["use varga"]
-    chk_use_varga = Gtk.CheckButton(label="use varga")
-    chk_use_varga.set_active(data_use_varga[0])
-    chk_use_varga.set_tooltip_text(data_use_varga[1])
-    chk_use_varga.connect("toggled", cycle_settings_changed, manager)
-    manager.app.checkbox_chart_settings["use varga"] = chk_use_varga
-    manager.app.chart_settings["use varga"] = data_use_varga[0]
-    row_use_varga.set_child(chk_use_varga)
-    lbx_chart_setts_btm.append(row_use_varga)
+    row_use_varga_cycle = Gtk.ListBoxRow()
+    data_use_varga_cycle = CHART_SETTINGS["use varga cycle"]
+    chk_use_varga_cycle = Gtk.CheckButton(label="use varga cycle")
+    chk_use_varga_cycle.set_active(data_use_varga_cycle[0])
+    chk_use_varga_cycle.set_tooltip_text(data_use_varga_cycle[1])
+    chk_use_varga_cycle.connect("toggled", cycle_settings_changed, manager)
+    manager.app.checkbox_chart_settings["use varga cycle"] = chk_use_varga_cycle
+    manager.app.chart_settings["use varga cycle"] = data_use_varga_cycle[0]
+    row_use_varga_cycle.set_child(chk_use_varga_cycle)
+
+    lbx_chart_setts_btm.append(row_use_varga_cycle)
+    # checkbox to use varga for aspects
+    row_use_varga_aspect = Gtk.ListBoxRow()
+    data_use_varga_aspect = CHART_SETTINGS["use varga aspect"]
+    chk_use_varga_aspect = Gtk.CheckButton(label="use varga aspect")
+    chk_use_varga_aspect.set_active(data_use_varga_aspect[0])
+    chk_use_varga_aspect.set_tooltip_text(data_use_varga_aspect[1])
+    chk_use_varga_aspect.connect(
+        "toggled",
+        lambda chk, k="use varga aspec", m=manager: chart_settings_toggled(chk, k, m),
+    )
+    manager.app.checkbox_chart_settings["use varga aspect"] = chk_use_varga_aspect
+    manager.app.chart_settings["use varga aspect"] = data_use_varga_aspect[0]
+    row_use_varga_aspect.set_child(chk_use_varga_aspect)
+
+    lbx_chart_setts_btm.append(row_use_varga_aspect)
     # fixed stars --------------------------------------
     row = Gtk.ListBoxRow()
     box_fixed_stars = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=7)
@@ -1020,6 +1036,7 @@ def chart_settings_toggled(button, setting, manager):
     active = button.get_active()
     if setting == "naksatras ring":
         msg += f"settings is naks - {setting}"
+        # hotkey toggles checkbox
         update_chart_setting_checkbox(manager, setting, active)
     manager.app.chart_settings[setting] = active
     manager.signal._emit("settings_changed", None)
@@ -1133,7 +1150,7 @@ def cycle_settings_changed(widget, manager):
     manager.notify.debug(
         msg,
         source="panel.settings",
-        route=["terminal"],
+        route=[""],
     )
 
 

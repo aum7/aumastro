@@ -44,6 +44,36 @@ def total_cycle(ordered, pos_map):
     return total_idx
 
 
+def store_cycle(data):
+    # save cycle data for jforex plot
+    members = data["members"]
+    division = data["division"]
+    use_varga = data["use varga"]
+    dataframe = data["dataframe"]
+    df = dataframe.copy()
+    df["datetime"] = pd.to_datetime(df["datetime"])
+    # filename from members
+    members_str = "_".join(members)
+    if use_varga:
+        filename = f"wave_{members_str}_v{division}.csv"
+    else:
+        filename = f"wave_{members_str}_v1.csv"
+    out_path = Path("user/data/wave") / filename
+    df.to_csv(out_path, index=False, date_format="%Y-%m-%d %H:%M:%S")
+    return out_path
+
+
+def future_cycle(price_df, days=30, freq="D"):
+    # extend cycle wave into the future
+    last_dt = price_df.index[-1]
+    future_idx = pd.date_range(
+        start=last_dt + pd.DateOffset(days=1),
+        end=last_dt + pd.DateOffset(days=days),
+        freq=freq,
+    )
+    return price_df.reindex(price_df.index.union(future_idx))
+
+
 def calculate_cycle(event: str):
     """calculate cycle wave for plot"""
     app = Gtk.Application.get_default()
@@ -74,6 +104,8 @@ def calculate_cycle(event: str):
     price_df = pd.read_csv(file_name)
     price_df["datetime"] = pd.to_datetime(price_df["datetime"])
     price_df = price_df.set_index("datetime")
+    # extend datetime range into the future
+    price_df = future_cycle(price_df)
     cycle_vals = []
     pos_map = {}
     for dt in price_df.index:
@@ -107,25 +139,6 @@ def calculate_cycle(event: str):
         route=[""],
     )
     return cycle_data
-
-
-def store_cycle(data):
-    # save cycle data for jforex plot
-    members = data["members"]
-    division = data["division"]
-    use_varga = data["use varga"]
-    dataframe = data["dataframe"]
-    df = dataframe.copy()
-    df["datetime"] = pd.to_datetime(df["datetime"])
-    # filename from members
-    members_str = "_".join(members)
-    if use_varga:
-        filename = f"wave_{members_str}_v{division}.csv"
-    else:
-        filename = f"wave_{members_str}_v1.csv"
-    out_path = Path("user/data/wave") / filename
-    df.to_csv(out_path, index=False, date_format="%Y-%m-%d %H:%M:%S")
-    return out_path
 
 
 def connect_signals_cycle(signal_manager):

@@ -111,8 +111,8 @@ class Tables(Gtk.Notebook):
         # build header string with house column added
         header = (
             f" positions{self.vic_spc}{self.h_sym * 47}\n"
-            f" obj {self.v_sym}        sign{self.vic_spc}{self.v_sym} "
-            f"  nak {self.v_sym}       varga : nak{self.vic_spc}{self.v_sym} "
+            f" obj {self.v_sym}        sign : nak{self.vic_spc}{self.v_sym}"
+            f"       varga : nak{self.vic_spc}{self.v_sym} "
             f"       lat {self.v_sym}         lon "
             f"{self.v_sym} hs\n"
         )
@@ -131,13 +131,13 @@ class Tables(Gtk.Notebook):
             # calculate house if cusps are available
             house = self.which_house(lon, tuple(cusps)) if cusps else ""
             nak = obj.get("naksatra", "")
+            lon_var = obj.get("varga", 0)
             var_nak = obj.get("varga naksatra", "")
             ln_pos = (
                 f" {obj.get('name', '')}{retro} {self.v_sym} "
-                f"{decsigndms(lon):10} {self.v_sym} "
-                f"{nak[0]:02}-{nak[2]} {self.v_sym} "
+                f"{decsigndms(lon):10} {nak[0]:02}-{nak[2]} {self.v_sym} "
                 # f"{nak[0]:02}-{nak[2]}-{nak[1]:5} {self.v_sym} "
-                f"{decsigndms(obj.get('varga', '')):10} {var_nak[0]:02}-{var_nak[2]} {self.v_sym} "
+                f"{decsigndms(lon_var):10} {var_nak[0]:02}-{var_nak[2]} {self.v_sym} "
                 f"{obj.get('lat', 0):10.6f} {self.v_sym} "
                 f"{lon:11.6f} {self.v_sym} {house}\n"
             )

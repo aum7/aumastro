@@ -105,6 +105,8 @@ def calculate_aspects(event: str):
     # print flags
     print_am = False
     do_filter = False
+    use_varga_aspect = app.chart_settings.get("use varga aspect")
+    pos = {}
     # event 1 data is mandatory
     if not app.e1_sweph.get("jd_ut"):
         notify.error(
@@ -122,8 +124,9 @@ def calculate_aspects(event: str):
         pos = getattr(app, "e1_positions", None)
     elif event == "e2":
         pos = getattr(app, "e2_positions", None)
-
     draw_order = ["mo", "me", "ve", "su", "ma", "ju", "sa", "ur", "ne", "pl", "ra"]
+    pos_map = {}
+    objs_map = []
     if pos:
         # get objects positions by name
         pos_map = {v["name"]: v for k, v in pos.items() if isinstance(k, int)}
@@ -131,10 +134,17 @@ def calculate_aspects(event: str):
     msg = f"objsmap : {objs_map} | posmap : {pos_map}"
     # msg += f"posmap : {pos_map}"
     orb = 1.5
-    obj_names, aspect_matrix, speeds = aspects_matrix(objs_map, pos_map, orb)
+    if use_varga_aspect:
+        varga_map = {}
+        for k, v in pos_map.items():
+            varga_map[k] = v.copy()
+            varga_map[k]["lon"] = v.get("varga", v["lon"])
+        obj_names, aspect_matrix, speeds = aspects_matrix(objs_map, varga_map, orb)
+    else:
+        obj_names, aspect_matrix, speeds = aspects_matrix(objs_map, pos_map, orb)
     aspects_data = {
         "obj names": obj_names,
-        "aspects": aspect_matrix,
+        "aspects": aspect_matrix,  # type:ignore
         "speeds": speeds,
     }
 
@@ -160,3 +170,4 @@ def calculate_aspects(event: str):
 def connect_signals_aspects(signal_manager):
     """update aspects when positions change"""
     signal_manager._connect("positions_changed", calculate_aspects)
+    signal_manager._connect("settings_changed", calculate_aspects)

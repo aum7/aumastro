@@ -185,6 +185,7 @@ class DataGraph(Gtk.Box):
             # align cycle with visible datetime range
             if not dataframe.empty:
                 start_dt = df.index.min()
+                start_dt = df.index.min()
                 end_dt = df.index.max()
                 cycle_visible = dataframe[
                     (dataframe["datetime"] >= start_dt)

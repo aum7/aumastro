@@ -1,5 +1,5 @@
 # ui/mainpanes/chart/astrochart.py
-# ruff: noqa: E402
+# ruff: noqa: E402, F821
 import gi
 
 gi.require_version("Gtk", "4.0")
@@ -81,6 +81,7 @@ class AstroChart(Gtk.Box):
 
     def houses_changed(self, event):
         if event == "e1":
+            cusps, ascmc = (), ()
             try:
                 houses = getattr(self.app, "e1_houses", None)
                 if houses:
@@ -91,6 +92,7 @@ class AstroChart(Gtk.Box):
                     source="astrochart",
                     route=["terminal"],
                 )
+            # if cusps and ascmc:
             self.cusps = cusps
             self.ascmc = ascmc
         # print(f"astrochart : cusps : {self.cusps} | ascmc : {self.ascmc}")
@@ -209,13 +211,13 @@ class AstroChart(Gtk.Box):
         msg += f"outerrings : {outer_rings}\n"
         # factor per ring : e2 first : in below order : circle outer diameter
         outer_portion = {
-            "transit": 0.07,
-            "varga": 0.07,
-            "lunar return": 0.07,
-            "solar return": 0.07,
-            "p3 progress": 0.07,
-            "p2 progress": 0.07,
-            "p1 progress": 0.07,
+            "transit": 0.09,
+            "varga": 0.09,
+            "lunar return": 0.09,
+            "solar return": 0.09,
+            "p3 progress": 0.09,
+            "p2 progress": 0.09,
+            "p1 progress": 0.09,
             "harmonic": 0.06,
             "naksatras": 0.05,
         }
@@ -257,12 +259,13 @@ class AstroChart(Gtk.Box):
             ring_transit.draw(cr)
         # --- varga
         if "varga" in outer_rings:
+            varga_data = None
             try:
                 division = int(self.chart_settings.get("harmonic ring", "").strip())
                 varga_data = calculate_varga("e2", division)
             except Exception:
                 division = None
-            if varga_data:
+            if varga_data is not None:
                 ring_varga = Varga(
                     radius=radius_dict.get("varga", max_radius),
                     cx=cx,
@@ -332,6 +335,7 @@ class AstroChart(Gtk.Box):
             ring_p1.draw(cr)
         # --- optional rings : harmonic
         if "harmonic" in outer_rings:
+            varga_data = None
             try:
                 division = int(self.chart_settings.get("harmonic ring", "").strip())
                 varga_data = calculate_varga("e1", division)
