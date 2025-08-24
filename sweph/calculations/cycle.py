@@ -1,16 +1,12 @@
-# sweph/calculations/aspects.py
+# sweph/calculations/cycle.py
 # ruff: noqa: E402, E701, F821
-import swisseph as swe
-import pandas as pd
 import gi
 
 gi.require_version("Gtk", "4.0")
 from gi.repository import Gtk  # type: ignore
-from pathlib import Path
-from ui.helpers import _object_name_to_code as objcode
-from sweph.calculations.varga import get_varga_lon
 
-MEMBERS = [
+# fixed slowest->fastest order by synodic period todo ra yes no ???
+SLOW_ORDER = [
     "pl",
     "ne",
     "ur",
@@ -36,60 +32,37 @@ def total_cycle(ordered, pos_map):
             lon_slow = pos_map[slow]["lon"]
             lon_fast = pos_map[fast]["lon"]
             angle = abs((lon_fast - lon_slow) % 360)
-            # doolaard implies shortest angle
+            # doolaard example implies shortest angle
             shortest = min(angle, 360 - angle)
             angles.append(shortest)
             pairs.append((f"{slow}-{fast}", shortest))
-    total_idx = sum(angles)
-    return total_idx
-
-
-def store_cycle(data):
-    # save cycle data for jforex plot
-    members = data["members"]
-    division = data["division"]
-    use_varga = data["use varga"]
-    dataframe = data["dataframe"]
-    df = dataframe.copy()
-    df["datetime"] = pd.to_datetime(df["datetime"])
-    # filename from members
-    members_str = "_".join(members)
-    if use_varga:
-        filename = f"wave_{members_str}_v{division}.csv"
-    else:
-        filename = f"wave_{members_str}_v1.csv"
-    out_path = Path("user/data/wave") / filename
-    df.to_csv(out_path, index=False, date_format="%Y-%m-%d %H:%M:%S")
-    return out_path
-
-
-def future_cycle(price_df, days=30, freq="D"):
-    # extend cycle wave into the future
-    last_dt = price_df.index[-1]
-    future_idx = pd.date_range(
-        start=last_dt + pd.DateOffset(days=1),
-        end=last_dt + pd.DateOffset(days=days),
-        freq=freq,
-    )
-    return price_df.reindex(price_df.index.union(future_idx))
+        total_idx = sum(angles)
+        total_norm = total_idx % 360
+    return {
+        "members": ordered,
+        "angles": angles,
+        "pairs": pairs,
+        "pairs num": len(pairs),
+        "result": (total_idx, total_norm),  # type:ignore
+    }
 
 
 def calculate_cycle(event: str):
-    """calculate cycle wave for plot"""
+    # calculate compound & custom cycle table for event
     app = Gtk.Application.get_default()
     notify = app.notify_manager
-    msg = "cycle wave :\n"
-    app_sett = getattr(app, "chart_settings", None)
-    if not app_sett:
+    if event not in ("e1", "e2"):
+        return
+    pos = getattr(app, f"{event}_positions", None)
+    if not pos:
         notify.error(
-            "missing application settings : exiting ...",
-            source="cycle",
+            f"missing positions for {event} : exiting ...",
+            source="cyclicindex",
             route=["terminal"],
         )
         return
     division = int(app.chart_settings.get("harmonic ring", "1").strip())
-    use_varga = app.chart_settings.get("use varga", False)
-    file_name = app.files.get("data")
+    use_varga_cycle = app.chart_settings.get("use varga cycle", False)
     cycle_members = app.chart_settings.get("cycle members")
     if isinstance(cycle_members, list):
         members_str = " ".join(cycle_members)
@@ -97,50 +70,38 @@ def calculate_cycle(event: str):
         members_str = cycle_members
     else:
         members_str = "sa ju"  # fallback
-    members_list = members_str.replace(",", " ").split()  # type:ignore
-    members = [m.strip() for m in members_list if m.strip()]
-    # print(f"members : {members}")
-    # get file to be plotted on graph
-    price_df = pd.read_csv(file_name)
-    price_df["datetime"] = pd.to_datetime(price_df["datetime"])
-    price_df = price_df.set_index("datetime")
-    # extend datetime range into the future
-    price_df = future_cycle(price_df)
-    cycle_vals = []
-    pos_map = {}
-    for dt in price_df.index:
-        jd = swe.julday(dt.year, dt.month, dt.day, dt.hour)
-        for name in members:
-            code, name = objcode(name, app.chart_settings.get("mean node"))
-            result = swe.calc_ut(jd, code, app.sweph_flag)
-            # allow for varga positions
-            lon = result[0][0]
-            if lon and use_varga:
-                lon = get_varga_lon(lon, division)
-            pos_map[name] = {"lon": lon}
-        members_ordered = [n for n in MEMBERS if n in pos_map]
-        # if set(members).issubset(pos_map):
-        cycle = total_cycle(members_ordered, pos_map)
-        cycle_vals.append(cycle)
-    cycle_df = pd.DataFrame({"datetime": price_df.index, "cycle": cycle_vals})
-    # print(f"cycledf : {cycle_df}")
+    members = [m.strip() for m in members_str.replace(",", " ").split() if m.strip()]  # type:ignore
+    if use_varga_cycle and division > 1:
+        pos_map = {
+            v["name"]: {"name": v["name"], "lon": v["varga"]}
+            for k, v in pos.items()
+            if isinstance(k, int)
+        }
+    else:
+        pos_map = {v["name"]: v for k, v in pos.items() if isinstance(k, int)}
+    # filter slow order by available names
+    members_ordered = [n for n in SLOW_ORDER if n in members]
+    custom_wave = total_cycle(members_ordered, pos_map)
     cycle_data = {
-        "members": members,
-        "division": division,
-        "use varga": use_varga,
-        "dataframe": cycle_df,
+        "custom wave": custom_wave,
     }
-    store_cycle(cycle_data)
-    msg += f"cycledata :\n{cycle_data}\n"
+    # debug print
+    msg = f"\n--- {event} cyclic index ---\n"
+    # add custom cyclic index
+    if custom_wave and members:
+        total_idx, total_norm = custom_wave.get("result", (None, None))
+        custom_phase = "+" if total_norm is not None and total_norm <= 180 else "-"
+        members_str = " ".join(custom_wave.get("members", []))
+        msg += f"customwave ({members_str}) : {total_norm:.2f} {custom_phase} ({total_idx:.2f})\n"
     app.signal_manager._emit("cycle_changed", event, cycle_data)
     notify.debug(
         msg,
         source="cycle",
         route=[""],
     )
-    return cycle_data
 
 
 def connect_signals_cycle(signal_manager):
-    """update cycle wave when positions change"""
+    """update cyclic index when positions change"""
+    signal_manager._connect("positions_changed", calculate_cycle)
     signal_manager._connect("cycle_settings_changed", calculate_cycle)

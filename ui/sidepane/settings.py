@@ -1139,14 +1139,15 @@ def cycle_settings_changed(widget, manager):
     elif isinstance(widget, Gtk.CheckButton):
         # use varga
         active = widget.get_active()
-        manager.app.chart_settings["use varga"] = active
+        manager.app.chart_settings["use varga cycle"] = active
     # setting = manager.app.chart_settings["cycle members"]
-    manager.signal._emit("cycle_settings_changed", None)
+    manager.signal._emit("cycle_changed", "e1")
+    # manager.signal._emit("cycle_settings_changed", "e1")
     # debug info
     msg = ""
     if members is not None:
         msg += f"members : {members}\n"
-    msg += f"use varga : {manager.app.chart_settings['use varga']}\n"
+    msg += f"use varga cycle : {manager.app.chart_settings['use varga cycle']}\n"
     manager.notify.debug(
         msg,
         source="panel.settings",

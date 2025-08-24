@@ -45,7 +45,8 @@ class Tables(Gtk.Notebook):
         signal._connect("positions_changed", self.positions_changed)
         signal._connect("houses_changed", self.houses_changed)
         signal._connect("aspects_changed", self.aspects_changed)
-        signal._connect("cycles_changed", self.cycles_changed)
+        signal._connect("cycle_changed", self.cycle_changed)
+        # signal._connect("cycle_settings_changed", self.cycle_settings_changed)
         # vimsottari dasa widget
         signal._connect("vimsottari_changed", self.vimsottari_changed)
         # p2 table
@@ -77,6 +78,55 @@ class Tables(Gtk.Notebook):
 
     def update_event_data(self, event: str):
         # calculations of table content by event
+        cycle = self.update_cycle(event)
+        aspects = self.update_aspects(event)
+        pos = self.update_positions(event)
+        content = ""
+        if aspects:
+            content += aspects
+        if pos:
+            content += pos
+        if cycle:
+            content += cycle
+        # update page widget if exists, else create one
+        if event in self.page_widgets:
+            scroll = self.page_widgets[event]
+            text_view = scroll.get_child()
+            buffer = text_view.get_buffer()
+            buffer.set_text(content)
+        else:
+            self.event_data_widget(event, content)
+
+    def positions_changed(self, event: str):
+        # update event with positions data
+        if event not in self.events_data:
+            self.events_data[event] = {"positions": None}
+        if event == "e1":
+            self.events_data[event]["positions"] = (
+                self.app.e1_positions if hasattr(self.app, "e1_positions") else None
+            )
+        elif event == "e2":
+            self.events_data[event]["positions"] = (
+                self.app.e2_positions if hasattr(self.app, "e2_positions") else None
+            )
+        self.update_event_data(event)
+
+    def houses_changed(self, event: str):
+        # store houses data and update if positions already exist
+        if event not in self.events_data:
+            self.events_data[event] = {"houses": None}
+        if event == "e1":
+            self.events_data[event]["houses"] = (
+                self.app.e1_houses if hasattr(self.app, "e1_houses") else None
+            )
+        elif event == "e2":
+            self.events_data[event]["houses"] = (
+                self.app.e2_houses if hasattr(self.app, "e2_houses") else None
+            )
+        self.update_event_data(event)
+
+    def update_positions(self, event: str):
+        # called by update_event_data()
         if (
             event not in self.events_data
             or "positions" not in self.events_data[event]
@@ -90,24 +140,18 @@ class Tables(Gtk.Notebook):
                 route=[""],
             )
             return
+        # get positions
         pos = self.events_data[event].get("positions")
         pos_map = {k: v for k, v in pos.items() if isinstance(k, int)}
-        # print(f"tables posmap : {pos_map}")
         # get houses data if available
         houses = self.events_data[event].get("houses")
-        cycles = self.update_cycles(event)
-        aspects = self.update_aspects(event)
-        content = ""
-        if aspects:
-            content += aspects
-        if houses:
-            cusps, ascmc = houses
-        else:
-            cusps = ()
+        # if houses:
+        cusps, ascmc = houses if houses else ((), None)
         if ascmc:  # type:ignore
             self.ascendant = ascmc[0]
             self.midheaven = ascmc[1]
             self.armc = ascmc[2]
+        text = ""
         # build header string with house column added
         header = (
             f" positions{self.vic_spc}{self.h_sym * 47}\n"
@@ -116,7 +160,7 @@ class Tables(Gtk.Notebook):
             f"       lat {self.v_sym}         lon "
             f"{self.v_sym} hs\n"
         )
-        content += header
+        text += header
         separ = f"{self.h_sym * 55}\n"
         # loop through positions and calculate houses if possible
         for key, obj in pos_map.items():
@@ -131,17 +175,16 @@ class Tables(Gtk.Notebook):
             # calculate house if cusps are available
             house = self.which_house(lon, tuple(cusps)) if cusps else ""
             nak = obj.get("naksatra", "")
-            lon_var = obj.get("varga", 0)
+            var_lon = obj.get("varga", 0)
             var_nak = obj.get("varga naksatra", "")
             ln_pos = (
                 f" {obj.get('name', '')}{retro} {self.v_sym} "
                 f"{decsigndms(lon):10} {nak[0]:02}-{nak[2]} {self.v_sym} "
-                # f"{nak[0]:02}-{nak[2]}-{nak[1]:5} {self.v_sym} "
-                f"{decsigndms(lon_var):10} {var_nak[0]:02}-{var_nak[2]} {self.v_sym} "
+                f"{decsigndms(var_lon):10} {var_nak[0]:02}-{var_nak[2]} {self.v_sym} "
                 f"{obj.get('lat', 0):10.6f} {self.v_sym} "
                 f"{lon:11.6f} {self.v_sym} {house}\n"
             )
-            content += ln_pos
+            text += ln_pos
         # houses
         if cusps:
             if hasattr(self.app, "selected_house_sys_str"):
@@ -189,45 +232,8 @@ class Tables(Gtk.Notebook):
                     f" {weekday} : {hora_glyph}\n"  # type:ignore
                 )
             ln_csps += separ
-            content += ln_csps
-        if cycles:
-            content += cycles
-        # update page widget if exists, else create one
-        if event in self.page_widgets:
-            scroll = self.page_widgets[event]
-            text_view = scroll.get_child()
-            buffer = text_view.get_buffer()
-            buffer.set_text(content)
-        else:
-            self.event_data_widget(event, content)
-
-    def positions_changed(self, event: str):
-        # update event with positions data
-        if event not in self.events_data:
-            self.events_data[event] = {"positions": None}
-        if event == "e1":
-            self.events_data[event]["positions"] = (
-                self.app.e1_positions if hasattr(self.app, "e1_positions") else None
-            )
-        elif event == "e2":
-            self.events_data[event]["positions"] = (
-                self.app.e2_positions if hasattr(self.app, "e2_positions") else None
-            )
-        self.update_event_data(event)
-
-    def houses_changed(self, event: str):
-        # store houses data and update if positions already exist
-        if event not in self.events_data:
-            self.events_data[event] = {"houses": None}
-        if event == "e1":
-            self.events_data[event]["houses"] = (
-                self.app.e1_houses if hasattr(self.app, "e1_houses") else None
-            )
-        elif event == "e2":
-            self.events_data[event]["houses"] = (
-                self.app.e2_houses if hasattr(self.app, "e2_houses") else None
-            )
-        self.update_event_data(event)
+            text += ln_csps
+        return text
 
     def aspects_changed(self, event, aspects):
         # todo only 1 set of aspects : event 1
@@ -250,12 +256,18 @@ class Tables(Gtk.Notebook):
             )
             return
         aspects = self.events_data[event].get("aspects")
+        use_varga_aspect = self.app.chart_settings.get("use varga aspect", False)
+        division = self.app.chart_settings.get("harmonic ring", "1").strip()
         obj_names = aspects["obj names"]
         speeds = aspects["speeds"]
         name2idx = {n: i for i, n in enumerate(aspects["obj names"])}
         matrix = aspects["aspects"]
         # title line
-        text = f" aspects {self.h_sym * 56}\n"
+        text = (
+            f" aspects [v{division}] {self.h_sym * 51}\n"
+            if use_varga_aspect
+            else f" aspects [v1] {self.h_sym * 51}\n"
+        )
         # header row
         text += f"  > {self.v_sym}"
         for name in obj_names:
@@ -301,18 +313,18 @@ class Tables(Gtk.Notebook):
         )
         return text
 
-    def cycles_changed(self, event, data):
+    def cycle_changed(self, event, data):
         if event not in self.events_data:
             self.event_data[event] = {}
-        self.events_data[event]["cycles"] = data
+        self.events_data[event]["cycle"] = data
         self.update_event_data(event)
 
-    def update_cycles(self, event):
+    def update_cycle(self, event):
         # called by update_event_data()
         if (
             event not in self.events_data
-            or "cycles" not in self.events_data[event]
-            or not self.events_data[event]["cycles"]
+            or "cycle" not in self.events_data[event]
+            or not self.events_data[event]["cycle"]
         ):
             self.notify.error(
                 f"missing data for {event}",
@@ -320,9 +332,15 @@ class Tables(Gtk.Notebook):
                 route=["terminal"],
             )
             return
-        cycles = self.events_data[event]["cycles"]
+        cycles = self.events_data[event]["cycle"]
         custom_wave = cycles.get("custom wave", {})
-        text = " settings > chart settings > use varga for harmonic cyclic index & select cycle\n members for custom cyclic index\n"
+        use_varga_cycle = self.app.chart_settings.get("use varga cycle", False)
+        division = self.app.chart_settings.get("harmonic ring", "1").strip()
+        varga_str = f"v{division}" if use_varga_cycle else "v1"
+        text = (
+            " settings > chart settings > use varga cycle for harmonic cycle wave\n"
+            " & select cycle members for custom cyclic index\n"
+        )
         h_line = f"{self.h_sym * 59}\n"
         # show custom cyclic index
         if custom_wave:
@@ -330,17 +348,21 @@ class Tables(Gtk.Notebook):
             phase = "+" if total_norm <= 180 else "-"
         text += (
             f" {event} cycle index for {' '.join(custom_wave['members'])} | "
-            f"[pairs : {custom_wave['pairs num']}] | "
+            f"pairs : {custom_wave['pairs num']} | [{varga_str}] "
             f"({total_idx:.2f}) {total_norm:.2f} {phase}"  # type:ignore
             f"{self.vic_spc}\n"
         )
         text += f"{h_line}"
         self.notify.debug(
-            f"updatecycles :\n{text}",
+            f"updatecycle :\n{text}",
             source="tables",
-            route=[""],
+            route=["terminal"],
         )
         return text
+
+    def cycle_settings_changed(self, event, data=None):
+        # update table on cycle settings : use varga cycle toggle
+        self.update_event_data(event)
 
     def vimsottari_changed(self, event, vimsottari):
         # receives table as plain text

@@ -15,7 +15,7 @@ gi.require_version("Gtk", "4.0")
 from gi.repository import Gtk  # type: ignore
 from matplotlib.patches import Rectangle
 from matplotlib.lines import Line2D
-from sweph.calculations.cycle import calculate_cycle
+from sweph.calculations.wave import calculate_wave
 
 
 class DataGraph(Gtk.Box):
@@ -50,12 +50,12 @@ class DataGraph(Gtk.Box):
         self.canvas.mpl_connect("key_release_event", self.on_key_release)
         # init / create cycle wave
         self.cycle_calculated = False
-        self.app.signal_manager._connect("cycle_changed", self.on_cycle_changed)
+        self.app.signal_manager._connect("wave_changed", self.on_wave_changed)
         self.cycle_wave = None
 
-    def on_cycle_changed(self, event, cycle_data):
-        """called when cycle is recalculated, ie on settings change"""
-        self.cycle_wave = cycle_data
+    def on_wave_changed(self, event, wave_data):
+        """called when wave is recalculated, ie on settings change"""
+        self.cycle_wave = wave_data
         # print(f"datagraph : cyclechanged :\n{cycle_data}")
         # re-plot overlay
         if self.plot_range[0] is not None and self.plot_range[1] is not None:
@@ -266,7 +266,7 @@ class DataGraph(Gtk.Box):
 
     def on_click(self, event):
         if not self.cycle_calculated:
-            self.cycle_wave = calculate_cycle("e1")
+            self.cycle_wave = calculate_wave("e1")
             # print(f"datagraph : cyclewave :\n{self.cycle_wave}")
             # self.plot_data()
             self.cycle_calculated = True

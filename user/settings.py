@@ -176,7 +176,7 @@ CHART_SETTINGS = {
     # --- rotate whole chart so ascendant is fixed at left (east)
     # else aries (mesha) 0° is fixed at left
     "fixed asc": (
-        True,  # todo
+        False,
         "rotate chart so ascendant is fixed at left (east)\nelse aries 0° is fixed at left (default)",
     ),
     # --- use mean node else true node
