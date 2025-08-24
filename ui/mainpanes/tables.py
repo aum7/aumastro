@@ -46,7 +46,7 @@ class Tables(Gtk.Notebook):
         signal._connect("houses_changed", self.houses_changed)
         signal._connect("aspects_changed", self.aspects_changed)
         signal._connect("cycle_changed", self.cycle_changed)
-        # signal._connect("cycle_settings_changed", self.cycle_settings_changed)
+        signal._connect("cycle_settings_changed", self.cycle_settings_changed)
         # vimsottari dasa widget
         signal._connect("vimsottari_changed", self.vimsottari_changed)
         # p2 table
@@ -78,14 +78,14 @@ class Tables(Gtk.Notebook):
 
     def update_event_data(self, event: str):
         # calculations of table content by event
-        cycle = self.update_cycle(event)
-        aspects = self.update_aspects(event)
         pos = self.update_positions(event)
+        aspects = self.update_aspects(event)
+        cycle = self.update_cycle(event)
         content = ""
-        if aspects:
-            content += aspects
         if pos:
             content += pos
+        if aspects:
+            content += aspects
         if cycle:
             content += cycle
         # update page widget if exists, else create one
@@ -332,8 +332,8 @@ class Tables(Gtk.Notebook):
                 route=["terminal"],
             )
             return
-        cycles = self.events_data[event]["cycle"]
-        custom_wave = cycles.get("custom wave", {})
+        cycle = self.events_data[event]["cycle"]
+        custom_wave = cycle.get("custom wave", {})
         use_varga_cycle = self.app.chart_settings.get("use varga cycle", False)
         division = self.app.chart_settings.get("harmonic ring", "1").strip()
         varga_str = f"v{division}" if use_varga_cycle else "v1"
@@ -356,11 +356,11 @@ class Tables(Gtk.Notebook):
         self.notify.debug(
             f"updatecycle :\n{text}",
             source="tables",
-            route=["terminal"],
+            route=[""],
         )
         return text
 
-    def cycle_settings_changed(self, event, data=None):
+    def cycle_settings_changed(self, event):
         # update table on cycle settings : use varga cycle toggle
         self.update_event_data(event)
 

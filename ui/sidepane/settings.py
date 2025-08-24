@@ -1141,8 +1141,10 @@ def cycle_settings_changed(widget, manager):
         active = widget.get_active()
         manager.app.chart_settings["use varga cycle"] = active
     # setting = manager.app.chart_settings["cycle members"]
-    manager.signal._emit("cycle_changed", "e1")
+    # manager.signal._emit("cycle_changed", "e1", None)
     # manager.signal._emit("cycle_settings_changed", "e1")
+    for event in ("e1", "e2"):
+        manager.signal._emit("cycle_settings_changed", event)
     # debug info
     msg = ""
     if members is not None:

@@ -63,15 +63,15 @@ def store_wave(data):
     return out_path
 
 
-def future_wave(price_df, days=30, freq="D"):
-    # extend cycle wave into the future
-    last_dt = price_df.index[-1]
-    future_idx = pd.date_range(
-        start=last_dt + pd.DateOffset(days=1),
-        end=last_dt + pd.DateOffset(days=days),
-        freq=freq,
-    )
-    return price_df.reindex(price_df.index.union(future_idx))
+# def future_wave(price_df, days=30, freq="D"):
+#     # extend cycle wave into the future : needed for jforex plot only
+#     last_dt = price_df.index[-1]
+#     future_idx = pd.date_range(
+#         start=last_dt + pd.DateOffset(days=1),
+#         end=last_dt + pd.DateOffset(days=days),
+#         freq=freq,
+#     )
+#     return price_df.reindex(price_df.index.union(future_idx))
 
 
 def calculate_wave(event: str):
@@ -105,7 +105,7 @@ def calculate_wave(event: str):
     price_df["datetime"] = pd.to_datetime(price_df["datetime"])
     price_df = price_df.set_index("datetime")
     # extend datetime range into the future
-    price_df = future_wave(price_df)
+    # price_df = future_wave(price_df)
     wave_vals = []
     pos_map = {}
     for dt in price_df.index:
@@ -144,3 +144,4 @@ def calculate_wave(event: str):
 def connect_signals_wave(signal_manager):
     """update cycle wave when positions change"""
     signal_manager._connect("cycle_settings_changed", calculate_wave)
+    # signal_manager._connect("cycle_changed", calculate_wave)
