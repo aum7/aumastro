@@ -278,7 +278,14 @@ CHART_SETTINGS = {
     # for additional info see user/fixedstars.txt
     "fixed stars": (
         "custom",
-        "draw fixed stars inside signs circle\navailable categories :\n\tcustom | naksatras [28] | behenian [15]\n\trobson [117] | alphabetical [521]",
+        (
+            "draw fixed stars inside signs circle"
+            "\navailable categories :"
+            "\n\tcustom | naksatras [28] | behenian [15]"
+            "\n\trobson [117] | alphabetical [521]"
+            "\nset empty to draw no stars"
+            "\nmodify user/fixedstars.py > add / remove from custom"
+        ),
     ),
     # --- event data to be presented in chart info
     # construct your own 'chart info' format
@@ -419,7 +426,7 @@ FILES = {
     ),
     # --- path to data folder & file ; data to be plotted on graph
     "data\t\t": (
-        "user/data/gold/gold_h.csv",
+        "user/data/gold/gold_h_test.csv",
         "path to data folder & file name : data for plotting on graph",
     ),
     # --- construct your own 'filename' format: allowed fields
@@ -433,5 +440,23 @@ FILES = {
         "\nseparate fields with '_' underscore ; for short time format "
         "(no seconds) use {time_short}"
         "\nexample : {name}_{date}_{time_short}",
+    ),
+}
+SEARCH = {  # timerange can be omitted, range derived from datagraph data
+    "timerange": (
+        ("2001-12-21", "2002-03-19"),
+        "start & end of search range [YYYY-MM-DD]",
+    ),
+    "rules": (
+        "mo me asc in ari",
+        """enter time range (YYYY-mm-dd) & rules (formula) for search
+example :
+    2012 12 21 - 2013 1 7 [top line, can be omitted]
+    ve 144 su, mo 0 decl
+separate rules with ',' (comma) or '   ' (triple [space]) or newline
+[tab / shift-tab] = focus next / previous field 
+[enter] = new line
+[ctrl-enter] = run search
+v : varga""",
     ),
 }

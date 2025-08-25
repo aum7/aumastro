@@ -1,5 +1,4 @@
 # ui/sidepane/settings.py
-
 # ruff: noqa: E402
 import swisseph as swe
 import gi

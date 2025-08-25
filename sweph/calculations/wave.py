@@ -136,7 +136,7 @@ def calculate_wave(event: str):
     notify.debug(
         msg,
         source="wave",
-        route=["terminal"],
+        route=[""],
     )
     return wave_data
 

@@ -11,7 +11,7 @@ from ui.collapsepanel import CollapsePanel
 from ui.helpers import _buttons_from_dict, _update_main_title
 from sweph.swetime import custom_iso_to_jd, jd_to_custom_iso
 from .events import setup_event
-from .tools import setup_tools
+from .search import setup_search
 from .settings import setup_settings
 
 
@@ -19,12 +19,6 @@ class SidepaneManager:
     """mixin class for managing the side pane"""
 
     _update_main_title: Callable
-
-    TOOLS_BUTTONS: Dict[str, str] = {
-        "settings": "settings",
-        "file_save": "save file",
-        "file_load": "load file",
-    }
 
     CHANGE_TIME_BUTTONS: Dict[str, str] = {
         "arrow_l": "move time backward (hk : arrow left)",
@@ -76,16 +70,16 @@ class SidepaneManager:
             self.clp_event_one.add_title_css_class("label-event-selected")
         else:
             self.clp_event_two.add_title_css_class("label-event-selected")
-        # tools ie save & load file etc
-        self.clp_tools = setup_tools(self)
         # settings ie objects to calculate & flags to use etc
         self.clp_settings = setup_settings(self)
+        # search module
+        self.clp_search = setup_search(self)
         # append to box
         box_sidepane.append(self.clp_change_time)
         box_sidepane.append(self.clp_event_one)
         box_sidepane.append(self.clp_event_two)
-        box_sidepane.append(self.clp_tools)
         box_sidepane.append(self.clp_settings)
+        box_sidepane.append(self.clp_search)
         # main container scrolled window for collapse panels
         scw_sidepane = Gtk.ScrolledWindow()
         scw_sidepane.set_size_request(-1, -1)
@@ -149,8 +143,6 @@ or ie panes have been manually resized (click any text to focus sidepane)"""
         value = self.time_periods_list[selected]
         key = next(k for k, v in self.CHANGE_TIME_PERIODS.items() if v == value)
         self.CHANGE_TIME_SELECTED = float(key)
-        # update main window title
-        # self.update_main_title(value)
 
     def change_time_period(self, direction=1):
         """change time period ; direction -1 / 1 for previous / next"""
@@ -183,13 +175,16 @@ or ie panes have been manually resized (click any text to focus sidepane)"""
     def change_event_time(self, change_delta):
         """adjust selected event time by julian day delta"""
         # get active entry based on selected event
+        entry = None
         if self.app.selected_event == "e1" and self.app.EVENT_ONE:
             entry = self.app.EVENT_ONE.date_time
         elif self.app.selected_event == "e2" and self.app.EVENT_TWO:
             entry = self.app.EVENT_TWO.date_time
         # get datetime string ! datetime is naive here !
-        datetime_name = entry.get_name()
-        current_text = entry.get_text()
+        current_text = ""
+        if entry:
+            datetime_name = entry.get_name()
+            current_text = entry.get_text()
         jd = None
         if not current_text:
             # missing date-time : fabricate utc now
@@ -207,14 +202,14 @@ or ie panes have been manually resized (click any text to focus sidepane)"""
             # back to string in custom iso format
             dt_str = jd_to_custom_iso(jd)
             # present string back to user
-            entry.set_text(dt_str)
+            entry.set_text(dt_str)  # type:ignore
             self.notify.info(
-                f"{datetime_name} set to now utc\n\t{dt_str}",
+                f"{datetime_name} set to now utc\n\t{dt_str}",  # type:ignore
                 source="sidepane",
                 route=["terminal"],
             )
         try:
-            current_text = entry.get_text()
+            current_text = entry.get_text()  # type:ignore
             # convert to verified (side-effect) julian day, keep negative year
             _, jd, _ = custom_iso_to_jd(
                 self,
@@ -229,13 +224,13 @@ or ie panes have been manually resized (click any text to focus sidepane)"""
             # back to custom iso format for string
             new_text = jd_to_custom_iso(jd_new)
             # present string back to user
-            entry.set_text(new_text)
+            entry.set_text(new_text)  # type:ignore
             # self.notify.debug(
             #     f"\n\tchange time new : {new_text}",
             #     source="sidepane",
             #     route=["terminal"],
             # )
-            if datetime_name == "datetime one":
+            if datetime_name == "datetime one":  # type:ignore
                 # self.app.EVENT_ONE.is_hotkey_arrow = True
                 self.app.EVENT_ONE.on_datetime_change(entry)
             else:
@@ -248,7 +243,7 @@ or ie panes have been manually resized (click any text to focus sidepane)"""
             _update_main_title(self, change_time_period)
         except Exception as e:
             self.notify.error(
-                f"\n\t{datetime_name}\n\terror\n\t{e}\n",
+                f"\n\t{datetime_name}\n\terror\n\t{e}\n",  # type:ignore
                 source="sidepane",
                 route=["terminal"],
             )
@@ -269,14 +264,14 @@ or ie panes have been manually resized (click any text to focus sidepane)"""
     def obc_default(self, widget, data):
         self.notify.debug(f"{data} clicked", source="sidepane", route=["terminal"])
 
-    def obc_settings(self, widget, data):
-        self.notify.debug(f"{data} clicked", source="sidepane", route=["terminal"])
+    # def obc_settings(self, widget, data):
+    #     self.notify.debug(f"{data} clicked", source="sidepane", route=["terminal"])
 
-    def obc_file_save(self, widget, data):
-        self.notify.debug(f"{data} clicked", source="sidepane", route=["terminal"])
+    # def obc_file_save(self, widget, data):
+    #     self.notify.debug(f"{data} clicked", source="sidepane", route=["terminal"])
 
-    def obc_file_load(self, widget, data):
-        self.notify.debug(f"{data} clicked", source="sidepane", route=["terminal"])
+    # def obc_file_load(self, widget, data):
+    #     self.notify.debug(f"{data} clicked", source="sidepane", route=["terminal"])
 
     # change time handlers
     def obc_arrow_l(

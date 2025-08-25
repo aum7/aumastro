@@ -119,3 +119,11 @@ textview text {
   font-size: 18px;
   color: black;
 }
+
+/* search editor */
+#search {
+  border: 2px solid darkslategray;
+  color: gray;
+  font-family: "VictorMonoLightAstro", "ui/font/victor", monospace;
+  font-size: 16px;
+}

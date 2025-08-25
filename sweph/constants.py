@@ -1,4 +1,18 @@
 # sweph/constants.py
+SIGNS = {  # lord, element (fire earth water air), mode (movable fixed dual)
+    "ari": ("ma", "fir", "mov"),  # 01 f m
+    "tau": ("ve", "ear", "fix"),  # 02 e f
+    "gem": ("me", "air", "dua"),  # 03 a d
+    "can": ("mo", "wat", "mov"),  # 04 w m
+    "leo": ("su", "fir", "fix"),  # 05 f f
+    "vir": ("me", "ear", "dua"),  # 06 e d
+    "lib": ("ve", "air", "mov"),  # 07 a m
+    "sco": ("ma", "wat", "fix"),  # 08 w f
+    "sag": ("ju", "fir", "dua"),  # 09 f d
+    "cap": ("sa", "ear", "mov"),  # 10 e m
+    "aqu": ("sa", "air", "fix"),  # 11 a f
+    "pis": ("ju", "wat", "dua"),  # 12 w d
+}
 TERMS = {  # egyptian terms table: starting degree : ruler
     0: "ju",
     6: "ve",
@@ -121,3 +135,17 @@ MANSIONS28 = {  # 12-51-25
     27: ("me", "peih"),  #  04-17-09 - 17-08-34 pis
     28: ("ju", "goei"),  #  17-08-34 - 30-00-00 pis
 }
+TOKENS = (
+    "in",
+    "max",
+    "min",
+    "decl",
+    "zero",
+    "ingr",
+    "speed",
+    "next",
+    "prev",
+    "asc",
+    "mc",
+    "varg",
+)
