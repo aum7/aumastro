@@ -1,5 +1,6 @@
 # ui/search.py
 # ruff: noqa: E402
+import re
 import pandas as pd
 import gi
 
@@ -7,18 +8,19 @@ gi.require_version("Gtk", "4.0")
 from gi.repository import Gtk, Gdk  # type: ignore
 from ui.collapsepanel import CollapsePanel
 from sweph.searchmanager import SearchManager
-from user.settings import SEARCH, OBJECTS
-from sweph.constants import TOKENS, SIGNS, NAKSATRAS27, MANSIONS28
+from user.settings import SEARCH, TOKEN_CATEGORIES
 
 
 def setup_search(manager) -> CollapsePanel:
     # separate search panel
     manager.search = SearchManager()
+    notify = manager.app.notify_manager
     use_28 = manager.app.chart_settings.get("28 naksatras", False)
     clp_search = CollapsePanel(title="search", expanded=True)
     clp_search.set_margin_end(manager.margin_end)
 
     box_search = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
+    # search textview
     textview = Gtk.TextView()
     textview.set_name("search")
     textview.set_wrap_mode(Gtk.WrapMode.WORD_CHAR)
@@ -33,7 +35,7 @@ def setup_search(manager) -> CollapsePanel:
     textview.set_top_margin(padding)
     textview.set_bottom_margin(padding)
     buffer = textview.get_buffer()
-    timerange, _ = SEARCH.get("timerange", ("", ""))
+    timerange = SEARCH.get("search timerange", "")
     rules, tooltip = SEARCH.get("rules", ("", ""))
     clp_search.set_title_tooltip(tooltip)
     # prepare string
@@ -55,7 +57,8 @@ def setup_search(manager) -> CollapsePanel:
                 start, end = buf.get_bounds()
                 # start & end range, include hidden chars
                 query = buf.get_text(start, end, True)
-                ok, result = validate_input(query, use_28)  # type:ignore
+                # validate search input : minimal validation
+                ok, result = validate_input(query, use_28, notify)  # type:ignore
                 if not ok:
                     manager.notify.error(
                         f"invalid input :\n{result}",
@@ -64,7 +67,7 @@ def setup_search(manager) -> CollapsePanel:
                     )
                     return True
                 # result : timerange, rules
-                run_search(manager, result)
+                manager.search.run(result)
                 return True
             else:
                 buf = view.get_buffer()
@@ -79,21 +82,27 @@ def setup_search(manager) -> CollapsePanel:
     return clp_search
 
 
-def validate_input(query: str, use_28=False):
+def validate_input(query: str, use_28=False, notify=None):
     errors = []
-    rules = None
+    parsed_rules = []
     timerange = None
-    _OBJECTS = {obj[0] for obj in OBJECTS.values()}
-    _SIGNS = set(SIGNS.keys())
-    _NAKS = {v[1] for v in (MANSIONS28 if use_28 else NAKSATRAS27).values()}
-    _TOKENS = set(TOKENS)
-    lines = query.strip().split("\n")
-    # lines = [ln.strip() for ln in query.strip().split("\n") if ln.strip()]
+    _OBJECTS = set(TOKEN_CATEGORIES["object"])
+    _OPERATOR = set(TOKEN_CATEGORIES.get("operator", []))
+    _PLACES = set(TOKEN_CATEGORIES["place"])
+    _SIGNS = set(TOKEN_CATEGORIES["sign"].keys())
+    _ELEMENTS = set(TOKEN_CATEGORIES.get("element", []))
+    _MODES = set(TOKEN_CATEGORIES.get("mode", []))
+    # allow also varga / division, house & naksatra search
+    TOKEN_DYNAMIC = {
+        "varga": re.compile(r"^v\d+$"),
+        "house": re.compile(r"^hs\d+$"),
+        "nak": re.compile(r"^nk\d+$"),
+    }
+    lines = [ln.strip() for ln in query.strip().split("\n") if ln.strip()]
     if not lines:
         return False, "empty query"
     # check if 1st line is datetime range
     first_line = lines[0].lower()
-    # date_time_line = lines[0].lower()
     try:
         if " - " in first_line:
             start_str, end_str = map(str.strip, first_line.split(" - "))
@@ -106,104 +115,78 @@ def validate_input(query: str, use_28=False):
         if start > end:
             start, end = end, start
         timerange = (start, end)
-        if len(lines) > 1:
-            # rules_line = lines[1].strip().lower()
-            rules = [
-                rule.strip().lower() for rule in lines[1].split(",") if rule.strip()
-            ]
+        rule_lines = lines[1:]
     except Exception:
-        rules = [rule.strip().lower() for rule in first_line.split(",") if rule.strip()]
-        # start = end = None
-        if len(lines) > 1:
-            pass
-    if not rules:
-        print("search : no rules received ; exiting ...")
-        return
-    for rule in rules:
-        for token in rule.split():
-            if (
-                token not in _OBJECTS
-                and token not in _SIGNS
-                and token not in _NAKS
-                and token not in _TOKENS
-            ):
-                if token.isdigit():
-                    value = int(token)
-                    if not (0 <= value <= 360):
-                        errors.append(f"invalid degree : {token}")
-                else:
-                    errors.append(f"unknown token : {token}")
+        rule_lines = lines
+    # parse rules to categories for search calculations
+    for ln in rule_lines:
+        for rule in ln.split(","):
+            rule = rule.strip().lower()
+            if not rule:
+                continue
+            # rules.append(rule)
+            tokens_parsed = []
+            main_place = None
+            for token in rule.split():
+                ttype = None
+                tvalue = token
+                # allow abbreviated tokens : decl > declination
+                if token not in _OPERATOR:
+                    match_op = [op for op in _OPERATOR if op.startswith(token)]
+                    if match_op:
+                        ttype = "operator"
+                        tvalue = match_op[0]
+                if ttype is None:
+                    if token in _OBJECTS:
+                        ttype = "object"
+                    elif token in _PLACES:
+                        ttype = "place"
+                        main_place = token
+                    elif token in _SIGNS:
+                        ttype = "sign"
+                    elif token in _OPERATOR:
+                        ttype = "operator"
+                    elif token in _ELEMENTS:
+                        ttype = "element"
+                    elif token in _MODES:
+                        ttype = "mode"
+                    elif token.isdigit():
+                        ttype = "degree"
+                        tvalue = int(token)
+                        if not (0 <= tvalue <= 360):
+                            errors.append(f"invalid degree : {token} (valid : 0-360)")
+                    elif any(rx.match(token) for rx in TOKEN_DYNAMIC.values()):
+                        if token.startswith("v"):
+                            ttype = "varga"
+                            tvalue = int(token[1:])
+                            if not (2 <= tvalue <= 60):
+                                errors.append(
+                                    f"invalid varga / division : {token} (valid : 2-60)"
+                                )
+                        elif token.startswith("hs"):
+                            ttype = "house"
+                            tvalue = int(token[2:])
+                            if not (1 <= tvalue <= 12):
+                                errors.append(f"invalid house : {token} (valid : 1-12)")
+                        elif token.startswith("nk"):
+                            ttype = "naksatra"
+                            tvalue = int(token[2:])
+                            max_nak = 28 if use_28 else 27
+                            if not (1 <= tvalue <= max_nak):
+                                errors.append(
+                                    f"invalid naksatra : {token} (valid : 1-{max_nak})"
+                                )
+                    else:
+                        errors.append(f"unknown token : {token}")
+                tokens_parsed.append((ttype, tvalue))
+            parsed_rules.append({
+                "rule": rule,
+                "tokens": tokens_parsed,
+                "place": main_place,
+            })
     if errors:
-        return False, {"errors": errors}  # \n".join(errors)
-    return True, {"timerange": timerange, "rules": rules}
-
-
-def run_search(manager, query):
-    notify = manager.notify
-    notify.info(
-        "running ...",
-        source="search",
-        route=["terminal", "user"],
-    )
-    # print(f"query : {query}")
-    search = manager.search
-    rules = query.get("rules", [])
-    timerange = query.get("timerange")
-    mo_in_ju_nak_v = search.naksatra_lord(rules, timerange=timerange)
-    notify.debug(
-        f"rules : {mo_in_ju_nak_v}",
-        source="search",
-        route=["terminal"],
-    )
-    # second line might be timerange
-    # try:
-    #     t_range_line = lines[1]
-    #     if " - " in t_range_line:
-    #         start_str, end_str = map(str.strip, t_range_line.split(" - "))
-    #     elif "   " in t_range_line:
-    #         start_str, end_str = map(str.strip, t_range_line.split("  "))
-    #     else:
-    #         start_str = end_str = t_range_line
-    #     start = pd.to_datetime(start_str, errors="raise")
-    #     end = pd.to_datetime(end_str, errors="raise")
-    #     if start > end:
-    #         start, end = end, start
-    #     timerange = (start, end)
-    # except Exception:
-    #     errors.append("invalid timerange format")
-    # if rules is not None:
-    #     tokens = None
-    #     # naks_names = {v[1] for v in (MANSIONS28 if use_28 else NAKSATRAS27).values()}
-    #     for rule in rules:
-    #         tokens = rule.split()
-    #         if not tokens:
-    #             errors.append("1st line empty")
-    #             continue
-    #         obj_token = tokens[0]
-    #         if obj_token not in VALID_OBJECTS:
-    #             errors.append(f"invalid objects : {obj_token}")
-    #             continue
-    #         if len(tokens) > 1:
-    #             deg_token = tokens[1]
-    #             if deg_token.isdigit():
-    #                 degree = int(deg_token)
-    #                 if degree < 0 or degree > 360:
-    #                     errors.append(f"degree out of 0-360 range : {degree}")
-    #             else:
-    #                 # maybe rasi / naksatra
-    #                 zod_token = deg_token
-    #                 if (
-    #                     zod_token not in SIGNS
-    #                     and zod_token not in naks_names
-    #                     and zod_token not in TOKENS
-    #                 ):
-    #                     errors.append(f"invalid zodiac location : {zod_token}")
-    #         # optional zodiac location token
-    #         if len(tokens) > 2:
-    #             zod_token = tokens[2]
-    #             if (
-    #                 zod_token not in SIGNS
-    #                 and zod_token not in naks_names
-    #                 and zod_token not in TOKENS
-    #             ):
-    #                 errors.append(f"invalid zodiac location : {zod_token}")
+        return False, {"errors": errors}
+    return True, {
+        "search timerange": timerange,
+        "parsed rules": parsed_rules,
+    }

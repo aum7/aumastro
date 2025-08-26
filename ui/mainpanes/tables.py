@@ -327,9 +327,9 @@ class Tables(Gtk.Notebook):
             or not self.events_data[event]["cycle"]
         ):
             self.notify.error(
-                f"missing data for {event}",
+                f"missing data for {event} :  exiting ...",
                 source="tables",
-                route=["terminal"],
+                route=[""],  # todo terminal
             )
             return
         cycle = self.events_data[event]["cycle"]

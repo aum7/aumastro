@@ -443,20 +443,74 @@ FILES = {
     ),
 }
 SEARCH = {  # timerange can be omitted, range derived from datagraph data
-    "timerange": (
-        ("2001-12-21", "2002-03-19"),
-        "start & end of search range [YYYY-MM-DD]",
-    ),
+    "search timerange": ("2012-1-21", "2012-09-19"),
     "rules": (
-        "mo me asc in ari",
+        "mo in v9 ju nk",
         """enter time range (YYYY-mm-dd) & rules (formula) for search
 example :
-    2012 12 21 - 2013 1 7 [top line, can be omitted]
-    ve 144 su, mo 0 decl
-separate rules with ',' (comma) or '   ' (triple [space]) or newline
+    2012 12 21 - 2013 1 7 [enter time range as top line *]
+    ve 144 su   [list of rules, newline separated]
+    mo min max 0 decl
+separate time range with ' - ' or '   ' (triple space)
+separate rules by new line [enter]
 [tab / shift-tab] = focus next / previous field 
 [enter] = new line
-[ctrl-enter] = run search
-v : varga""",
+[ctrl-enter] = run search | execute command
+v : varga 2-60
+hs : house 1-12
+* : search time range can be omitted, will be derived from data file
+    if lots of data > slower calculations
+    use search time range when testing rules""",
     ),
+}
+TOKEN_CATEGORIES = {
+    "object": [
+        "mo",
+        "ma",
+        "me",
+        "ju",
+        "ve",
+        "sa",
+        "su",
+        "ur",
+        "ne",
+        "pl",
+        "ra",
+        "asc",
+        "mc",
+    ],
+    "operator": [
+        "in",
+        "ingress",
+        "aspect",
+        "at",
+        "declination",
+        "rasc",
+        "speed",
+        "min",
+        "max",
+    ],
+    "place": (
+        "sign",
+        "nak",
+        "nk",
+        "naksatra",
+        "term",  # terms / bounds
+    ),
+    "sign": {
+        "ari": {"lord": "ma", "element": "fire", "mode": "movable"},  # 01 f m
+        "tau": {"lord": "ve", "element": "earth", "mode": "fixed"},  # 02 e f
+        "gem": {"lord": "me", "element": "air", "mode": "dual"},  # 03 a d
+        "can": {"lord": "mo", "element": "water", "mode": "movable"},  # 04 w m
+        "leo": {"lord": "su", "element": "fire", "mode": "fixed"},  # 05 f f
+        "vir": {"lord": "me", "element": "earth", "mode": "dual"},  # 06 e d
+        "lib": {"lord": "ve", "element": "air", "mode": "movable"},  # 07 a m
+        "sco": {"lord": "ma", "element": "water", "mode": "fixed"},  # 08 w f
+        "sag": {"lord": "ju", "element": "fire", "mode": "dual"},  # 09 f d
+        "cap": {"lord": "sa", "element": "earth", "mode": "movable"},  # 10 e m
+        "aqu": {"lord": "sa", "element": "air", "mode": "fixed"},  # 11 a f
+        "pis": {"lord": "ju", "element": "water", "mode": "dual"},  # 12 w d
+    },
+    "element": {"fire", "earth", "air", "water"},
+    "mode": {"movable", "fixed", "dual"},
 }

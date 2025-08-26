@@ -122,8 +122,13 @@ textview text {
 
 /* search editor */
 #search {
-  border: 2px solid darkslategray;
+  border: 1px solid gray;
   color: gray;
   font-family: "VictorMonoLightAstro", "ui/font/victor", monospace;
   font-size: 16px;
+}
+
+#search:focus {
+  color: white;
+  border-color: lime;
 }
