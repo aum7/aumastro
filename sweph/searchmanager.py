@@ -12,7 +12,6 @@ from gi.repository import Gtk  # type: ignore
 from pathlib import Path
 from ui.helpers import _object_name_to_code as objcode
 from sweph.calculations.varga import get_varga_lon as vargalon
-# from sweph.constants import NAKSATRAS27, MANSIONS28
 
 
 class SearchManager:
@@ -210,7 +209,6 @@ class SearchManager:
         use_28: bool = False,
         varga: int = 1,
     ) -> list[tuple[str, float, float]]:
-        # ) -> Dict[str, List[Tuple[float, float, str]]]:
         seq_27 = ["ke", "ve", "su", "mo", "ma", "ra", "ju", "sa", "me"]
         seq_28 = ["ve", "sa", "su", "mo", "ma", "me", "ju"]
         naks_num = 28 if use_28 else 27

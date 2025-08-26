@@ -489,6 +489,10 @@ TOKEN_CATEGORIES = {
         "speed",
         "min",
         "max",
+        "near",
+        "conjunct",
+        "hora",
+        "hr",
     ],
     "place": (
         "sign",

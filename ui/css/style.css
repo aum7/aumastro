@@ -132,3 +132,20 @@ textview text {
   color: white;
   border-color: lime;
 }
+
+#search.filter {
+  color: white;
+  border-color: lime;
+}
+
+#tokens {
+  border: 1px solid gray;
+  color: gray;
+  font-family: "VictorMonoLightAstro", "ui/font/victor", monospace;
+  font-size: 16px;
+}
+
+#tokens.filter {
+  border-color: dodgerblue;
+  color: dodgerblue;
+}
