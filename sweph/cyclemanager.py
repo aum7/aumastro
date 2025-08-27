@@ -1,4 +1,4 @@
-# sweph/searchmanager.py
+# sweph/cyclemanager.py
 # ruff: noqa: E402
 import os
 import swisseph as swe
@@ -7,21 +7,19 @@ import gi
 
 gi.require_version("Gtk", "4.0")
 from gi.repository import Gtk  # type: ignore
-
-# from typing import Dict, Tuple, List
 from pathlib import Path
 from ui.helpers import _object_name_to_code as objcode
 from sweph.calculations.varga import get_varga_lon as vargalon
 
 
-class SearchManager:
+class CycleManager:
     def __init__(self):
         self.app = Gtk.Application.get_default()
         self.notify = self.app.notify_manager
 
     def file_properties(self, path):
         filename = Path(path).name.lower()
-        # print(f"searchmanager : filename : {filename}")
+        # print(f"cyclemanager : filename : {filename}")
         timeframe = ""
         if "_10m" in filename:
             timeframe = "10m"
@@ -48,7 +46,7 @@ class SearchManager:
         # data file : user/data/ folder
         file_props = self.file_properties(self.app.files.get("data"))
         # store results to
-        save_dir = "user/data/search"
+        save_dir = "user/data/wave"
         os.makedirs(save_dir, exist_ok=True)
         # filename = file_props.get("filename")
         file_dataframe = file_props.get("dataframe")
@@ -56,31 +54,31 @@ class SearchManager:
         file_start = file_props.get("start")
         file_end = file_props.get("end")
         # convert rule to filename for storing
-        search_timerange = query.get("search timerange")
-        start, end = search_timerange if search_timerange else (file_start, file_end)
-        # clip to make sure search time range fits into file time range
+        cycle_timerange = query.get("cycle timerange")
+        start, end = cycle_timerange if cycle_timerange else (file_start, file_end)
+        # clip to make sure cycle time range fits into file time range
         if start and end and file_start and file_end:
             start = max(start, file_start)
             end = min(end, file_end)
             if start > end:
                 self.notify.warning(
-                    f"search time range {start} - {end} is outside file time range "
-                    f"{file_start} - {file_end} : no search possible : exiting ...",
-                    source="searchmanager",
+                    f"cycle time range {start} - {end} is outside file time range "
+                    f"{file_start} - {file_end} : no cycle possible : exiting ...",
+                    source="cyclemanager",
                     route=["terminal", "user"],
                 )
                 return
         parsed_rules = query.get("parsed rules", [])
-        # filter dataframe to search range if search time frame was provided
-        search_datarange = None
+        # filter dataframe to cycle range if cycle time frame was provided
+        cycle_datarange = None
         if file_dataframe is not None and not file_dataframe.empty:
-            search_datarange = file_dataframe[
+            cycle_datarange = file_dataframe[
                 (file_dataframe.iloc[:, 0] >= start)
                 & (file_dataframe.iloc[:, 0] <= end)
             ].copy()
         self.notify.info(
-            f"running search from {start} to {end}",
-            source="searchmanager",
+            f"running cycle from {start} to {end}",
+            source="cyclemanager",
             route=[""],
         )
         self.notify.debug(
@@ -88,10 +86,10 @@ class SearchManager:
             # f"filename : {filename}\n"
             # f"filedataframe : {file_dataframe}\n"
             # f"start-end : {start} - {end}\n"
-            # f"searchdatarange : {search_datarange}\n"
-            # f"search timerange : {search_timerange}\n"
+            # f"cycledatarange : {cycle_datarange}\n"
+            # f"cycle timerange : {cycle_timerange}\n"
             f"parsedrules : {parsed_rules}\n",
-            source="searchmanager",
+            source="cyclemanager",
             route=[""],
         )
         for parsed in parsed_rules:
@@ -100,23 +98,23 @@ class SearchManager:
             main_place = parsed["place"]
             # data gathered : calculations by rules
             if main_place in ("nak", "nk", "naksatra"):
-                result = self.naksatra_lord(tokens, search_datarange)
+                result = self.naksatra_lord(tokens, cycle_datarange)
             else:
-                result = self.generic_rule(tokens, search_datarange)
-            # create filename for search results
+                result = self.generic_rule(tokens, cycle_datarange)
+            # create filename for cycle results
             rule_name = rule_str.replace(" ", "_").replace("/", "_").lower()
             rule_filename = f"{rule_name}_{file_timeframe}.csv"
             # store result
             if result is not None:
                 result.to_csv(os.path.join(save_dir, rule_filename), index=False)
             self.notify.info(
-                f"search result saved : {rule_filename}",
-                source="searchmanager",
+                f"cycle result saved : {rule_filename}",
+                source="cyclemanager",
                 route=["terminal", "user"],
             )
 
     def generic_rule(self, *args):
-        print(f"searchmanager : generic rule called : {args}")
+        print(f"cyclemanager : generic rule called : {args}")
 
     def naksatra_lord(self, tokens, datarange):
         use_28 = self.app.chart_settings.get("28 naksatras", False)
@@ -131,7 +129,7 @@ class SearchManager:
         for_who = next(
             (tvalue for ttype, tvalue in tokens if ttype == "object" and tvalue != who)
         )
-        # calculate search
+        # calculate cycle
         code = None
         if who is not None:
             code, _ = objcode(who, use_mean_node)
@@ -175,7 +173,7 @@ class SearchManager:
             })
         # test print
         # if v9_map is not None:
-        #     print("searchmanager : v9map")
+        #     print("cyclemanager : v9map")
         #     for lord, start, end in v9_map:
         #         print(f"{lord}: {start:.3f} - {end:.3f}")
         if for_who:
@@ -183,11 +181,11 @@ class SearchManager:
         else:
             hits_filter = hits
         # if hits_filter is not None:
-        #     print("searchmanager : hitsfilter")
+        #     print("cyclemanager : hitsfilter")
         # for hit in hits_filter:
         #     print(f"hit [filter] : {hit}")
 
-        search_result = pd.DataFrame(hits_filter)
+        cycle_result = pd.DataFrame(hits_filter)
         self.notify.debug(
             # f"\nwho : {who} | whereplace : {where_place} | "
             # f"varga : {varga} | forwho : {for_who}\n"
@@ -195,11 +193,11 @@ class SearchManager:
             # f"dt : {dt}\n"
             # f"whopos : {who_pos} | whovargapos : {who_varga_pos}\n",
             # f"v9map :\n{v9_map}",
-            f"searchresult : {search_result}",
-            source="searchmanager",
+            f"cycleresult : {cycle_result}",
+            source="cyclemanager",
             route=[""],
         )
-        return search_result
+        return cycle_result
 
     def terms(self, *args):
         pass

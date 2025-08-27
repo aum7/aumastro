@@ -1,5 +1,7 @@
 # ui/mainpanes/datagraph.py
 # ruff: noqa: E402
+import os
+import glob
 import pandas as pd
 import numpy as np
 import matplotlib
@@ -71,6 +73,110 @@ class DataGraph(Gtk.Box):
             index_col="datetime",
         )
         self.full_df = df
+
+    def load_last_search(self):
+        data_path = os.path.expanduser("user/data/search/")
+        files = glob.glob(os.path.join(data_path, "*.csv"))
+        if not files:
+            return None
+        last_result = max(files, key=os.path.getctime)
+        df = pd.read_csv(
+            last_result,
+            parse_dates=["datetime"],
+            index_col="datetime",
+        )
+        return df
+
+    def draw_marker(
+        self,
+        dt,  # datetime for x axis
+        shape="dot",  # line, dot, arrow, triangle, diamond, text
+        text=None,  # optional text label or text-only marker
+        color="white",
+        text_vert=True,  # text orientation : vertical vs default horizontal
+        linestyle="-",
+        size=9,
+    ):
+        if self.df is None or self.ax is None:
+            return
+        marker_map = {
+            "arrow_up": "▲",  # U+25B2
+            "arrow_down": "▼",  # U+25BC
+            "triangle_up": "▴",  # U+25B4
+            "triangle_down": "▾",  # U+25BE
+            "diamond": "◆",  # U+25C6
+            "circle": "●",  # U+25CF
+            "square": "■",  # U+25A0
+        }
+        # find nearest x index
+        x_vals = np.arange(len(self.df))
+        ix = self.df.index.get_indexer([pd.to_datetime(dt)], method="nearest")
+        x = float(x_vals[ix])
+        ymin, ymax = self.ax.get_ylim()
+        if shape == "line":
+            self.ax.axvline(x, color=color, lw=1.0, ls=linestyle, alpha=0.8)
+            if text:
+                self.ax.text(
+                    x,
+                    ymax,
+                    text,
+                    color=color,
+                    rotation=90 if text_vert else 0,
+                    va="bottom",
+                    ha="center",
+                )
+        elif shape in marker_map:
+            y = (ymin + ymax) / 2
+            self.ax.text(
+                x,
+                y,
+                marker_map[shape],
+                fontsize=size,
+                color=color,
+                fontname="Victor Mono",
+                ha="center",
+                va="center",
+            )
+            if text:
+                self.ax.text(
+                    x,
+                    y + 0.02 * (ymax - ymin),
+                    text,
+                    color=color,
+                    va="bottom",
+                    ha="center",
+                )
+        elif shape == "text":
+            if text is None:
+                return
+            y = (ymin + ymax) / 2
+            self.ax.text(
+                x,
+                y,
+                text,
+                color=color,
+                rotation=90 if text_vert else 0,
+                va="bottom",
+                ha="center",
+            )
+
+    def plot_search_result(self):
+        df_search = self.load_last_search()
+        # print(f"datagraph : plot : dfsearch : {type(df_search)}")
+        if df_search is None or df_search.empty:
+            return
+        for dt, row in df_search.iterrows():
+            lords = row["hit lords"]
+            label = lords[0] if isinstance(lords, list) and lords else None
+            # draw vertical line with text
+            self.draw_marker(
+                dt,
+                shape="line",
+                text=label,
+                color="green",
+                text_vert=True,
+                linestyle="--",
+            )
 
     def init_cursor(self):
         """info cursor is created after every plot as ax is cleared"""
@@ -147,6 +253,7 @@ class DataGraph(Gtk.Box):
         x = np.arange(len(ohlc))
         bars_shown = (self.plot_range[1] or 0) - (self.plot_range[0] or 0)
         width = max(0.7, 0.8 * (len(ohlc) / bars_shown)) if bars_shown > 0 else 0.7
+        # plot candles
         self.candles = []
         for i in range(len(ohlc)):
             op, hi, lo, cl = ohlc[i]
@@ -176,7 +283,7 @@ class DataGraph(Gtk.Box):
         highs = df["high"].max() if not df.empty else 1
         # fill canvas vertically
         self.ax.set_ylim(lows - (highs - lows) * 0.03, highs + (highs - lows) * 0.03)
-        # overlay cycle wave
+        # plot overlay cycle wave
         if hasattr(self, "cycle_wave") and self.cycle_wave:
             dataframe = self.cycle_wave["dataframe"].copy()
             # ensure datetime column is actual datetime
@@ -220,6 +327,7 @@ class DataGraph(Gtk.Box):
                         alpha=0.3,
                     )
         self.init_cursor()
+        self.plot_search_result()
         self.canvas.draw()
 
     def on_mouse_move(self, event):

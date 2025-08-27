@@ -13,6 +13,7 @@ from sweph.swetime import custom_iso_to_jd, jd_to_custom_iso
 from .events import setup_event
 from .search import setup_search
 from .settings import setup_settings
+from .cycle import setup_cycle
 
 
 class SidepaneManager:
@@ -74,12 +75,17 @@ class SidepaneManager:
         self.clp_settings = setup_settings(self)
         # search module
         self.clp_search = setup_search(self)
+        # cycle wave module
+        self.clp_cycle = setup_cycle(self)
         # append to box
         box_sidepane.append(self.clp_change_time)
         box_sidepane.append(self.clp_event_one)
         box_sidepane.append(self.clp_event_two)
         box_sidepane.append(self.clp_settings)
+        # search astro events
         box_sidepane.append(self.clp_search)
+        # cycle wave calculations
+        box_sidepane.append(self.clp_cycle)
         # main container scrolled window for collapse panels
         scw_sidepane = Gtk.ScrolledWindow()
         scw_sidepane.set_size_request(-1, -1)

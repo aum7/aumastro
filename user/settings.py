@@ -448,7 +448,7 @@ SEARCH = {  # timerange can be omitted, range derived from datagraph data
         "mo in v9 ju nk",
         """enter time range (YYYY-mm-dd) & rules (formula) for search
 example :
-    2012 12 21 - 2013 1 7 [enter time range as top line *]
+    2012 12 21 - 2013 1 7 [enter search range as top line *]
     ve 144 su   [list of rules, newline separated]
     mo min max 0 decl
 separate time range with ' - ' or '   ' (triple space)
@@ -456,11 +456,16 @@ separate rules by new line [enter]
 [tab / shift-tab] = focus next / previous field 
 [enter] = new line
 [ctrl-enter] = run search | execute command
+
 v : varga 2-60
 hs : house 1-12
-* : search time range can be omitted, will be derived from data file
+nk : naksatra 1-27 / mansion 1-28
+
+* : can be omitted, search range will be derived from data file
     if lots of data > slower calculations
-    use search time range when testing rules""",
+    use search time range when testing rules
+
+search results are saved to 'user/data/search/' folder""",
     ),
 }
 TOKEN_CATEGORIES = {

@@ -476,32 +476,6 @@ event 1 & 2 can have different objects"""
     manager.app.chart_settings["transit"] = data_tran[0]
     row_var_tran.set_child(box_var_tran)
     lbx_chart_setts_btm.append(row_var_tran)
-    # row for selected members for custom cycle data
-    row_cycle_members = Gtk.ListBoxRow()
-    box_cycle_members = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=7)
-    lbl_cycle_members = Gtk.Label(label="cycle members")
-    box_cycle_members.append(lbl_cycle_members)
-    ent_cycle_members = Gtk.Entry()
-    ent_cycle_members.set_text(", ".join(CHART_SETTINGS["cycle members"][0]))
-    ent_cycle_members.set_tooltip_text(CHART_SETTINGS["cycle members"][1])
-    ent_cycle_members.connect("activate", cycle_settings_changed, manager)
-    box_cycle_members.append(ent_cycle_members)
-    app.chart_settings["cycle members"] = CHART_SETTINGS["cycle members"][0]
-    row_cycle_members.set_child(box_cycle_members)
-
-    lbx_chart_setts_btm.append(row_cycle_members)
-    # checkbox to use varga for cycle data
-    row_use_varga_cycle = Gtk.ListBoxRow()
-    data_use_varga_cycle = CHART_SETTINGS["use varga cycle"]
-    chk_use_varga_cycle = Gtk.CheckButton(label="use varga cycle")
-    chk_use_varga_cycle.set_active(data_use_varga_cycle[0])
-    chk_use_varga_cycle.set_tooltip_text(data_use_varga_cycle[1])
-    chk_use_varga_cycle.connect("toggled", cycle_settings_changed, manager)
-    manager.app.checkbox_chart_settings["use varga cycle"] = chk_use_varga_cycle
-    manager.app.chart_settings["use varga cycle"] = data_use_varga_cycle[0]
-    row_use_varga_cycle.set_child(chk_use_varga_cycle)
-
-    lbx_chart_setts_btm.append(row_use_varga_cycle)
     # checkbox to use varga for aspects
     row_use_varga_aspect = Gtk.ListBoxRow()
     data_use_varga_aspect = CHART_SETTINGS["use varga aspect"]
@@ -1112,50 +1086,6 @@ def harmonic_ring(entry, manager):
     )
 
 
-def cycle_settings_changed(widget, manager):
-    """update cycle-related settings : cycle members & use varga"""
-    members = None
-    if isinstance(widget, Gtk.Entry):
-        # cycle members
-        text = widget.get_text().replace(",", " ")
-        members = [m.strip() for m in text.split() if m.strip()]
-        valid_objects = set()
-        for obj in OBJECTS.values():
-            valid_objects.add(obj[0])
-        if all(member in valid_objects for member in members):
-            widget.remove_css_class("entry-warning")
-            manager.app.chart_settings["cycle members"] = " ".join(members)
-            widget.set_text(manager.app.chart_settings["cycle members"])
-        else:
-            widget.set_text(manager.app.chart_settings["cycle members"])
-            manager.notify.warning(
-                "allowed are 2-character short english names only"
-                "\nie su (sun) | me (mercury) etc"
-                "\nsee user/settings.py > OBJECTS for details",
-                source="panel.settings",
-                route=["terminal", "user"],
-            )
-    elif isinstance(widget, Gtk.CheckButton):
-        # use varga
-        active = widget.get_active()
-        manager.app.chart_settings["use varga cycle"] = active
-    # setting = manager.app.chart_settings["cycle members"]
-    # manager.signal._emit("cycle_changed", "e1", None)
-    # manager.signal._emit("cycle_settings_changed", "e1")
-    for event in ("e1", "e2"):
-        manager.signal._emit("cycle_settings_changed", event)
-    # debug info
-    msg = ""
-    if members is not None:
-        msg += f"members : {members}\n"
-    msg += f"use varga cycle : {manager.app.chart_settings['use varga cycle']}\n"
-    manager.notify.debug(
-        msg,
-        source="panel.settings",
-        route=[""],
-    )
-
-
 def fixed_stars(entry, manager):
     """chart settings panel : draw fixed stars in signs circle"""
     text = entry.get_text().strip()
@@ -1438,9 +1368,10 @@ def set_ayanamsa(manager):
 def files_changed(entry, key, manager):
     """file paths & names are customizable"""
     value = entry.get_text().strip()
-    if manager.app.files[key] == value:
+    key_ = key.replace("\t", "")
+    if manager.app.files[key_] == value:
         return
-    manager.app.files[key] = value
+    manager.app.files[key_] = value
     # emit signal
     manager.signal._emit("settings_changed", None)
     manager.notify.debug(

@@ -149,3 +149,16 @@ textview text {
   border-color: dodgerblue;
   color: dodgerblue;
 }
+
+/* cycle editor */
+#cycle {
+  border: 1px solid gray;
+  color: gray;
+  font-family: "VictorMonoLightAstro", "ui/font/victor", monospace;
+  font-size: 16px;
+}
+
+#cycle:focus {
+  color: white;
+  border-color: dodgerblue;
+}
