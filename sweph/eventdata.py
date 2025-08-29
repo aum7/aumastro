@@ -320,10 +320,10 @@ class EventData:
             if hasattr(mainwindow, "city_one"):
                 city = mainwindow.city_one.get_text()
             if hasattr(mainwindow, "event_location"):
-                iso3 = mainwindow.event_location.country_map.get(country, "")
-            self.app.e1_chart["country"] = country
-            self.app.e1_chart["city"] = city
-            self.app.e1_chart["iso3"] = iso3
+                iso3 = mainwindow.event_location.country_map.get(country, "")  # type:ignore
+            self.app.e1_chart["country"] = country  # type:ignore
+            self.app.e1_chart["city"] = city  # type:ignore
+            self.app.e1_chart["iso3"] = iso3  # type:ignore
             self.app.e1_chart["location"] = location_formatted
             self.app.e1_chart["lat"] = lat_str
             self.app.e1_chart["lon"] = lon_str
@@ -339,10 +339,10 @@ class EventData:
             if hasattr(mainwindow, "city_two"):
                 city = mainwindow.city_two.get_text()
             if hasattr(mainwindow, "event_location"):
-                iso3 = mainwindow.event_location.country_map.get(country, "")
-            self.app.e2_chart["country"] = country
-            self.app.e2_chart["city"] = city
-            self.app.e2_chart["iso3"] = iso3
+                iso3 = mainwindow.event_location.country_map.get(country, "")  # type:ignore
+            self.app.e2_chart["country"] = country  # type:ignore
+            self.app.e2_chart["city"] = city  # type:ignore
+            self.app.e2_chart["iso3"] = iso3  # type:ignore
             self.app.e2_chart["location"] = location_formatted
             self.app.e2_chart["lat"] = lat_str
             self.app.e2_chart["lon"] = lon_str

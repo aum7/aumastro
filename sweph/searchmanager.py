@@ -97,22 +97,39 @@ class SearchManager:
         for parsed in parsed_rules:
             rule_str = parsed["rule"]
             tokens = parsed["tokens"]
+            # detect clear command
+            is_clear = any(
+                ttype == "command" and tvalue.lower() == "clear"
+                for ttype, tvalue in tokens
+            )
+            if is_clear:
+                self.app.signal_manager._emit("clear_search_plots")
+                self.notify.info(
+                    "clearing search plots",
+                    source="searchmanager",
+                    route=["terminal", "user"],
+                )
+                # do not create or save any csv
+                return
             main_place = parsed["place"]
             # data gathered : calculations by rules
             if main_place in ("nak", "nk", "naksatra"):
                 result = self.naksatra_lord(tokens, search_datarange)
+            elif "decl" in rule_str.lower():
+                result = self.declination(tokens, search_datarange)
             else:
                 result = self.generic_rule(tokens, search_datarange)
             # create filename for search results
             rule_name = rule_str.replace(" ", "_").replace("/", "_").lower()
             rule_filename = f"{rule_name}_{file_timeframe}.csv"
             # store result
-            if result is not None:
+            if result is not None and not result.empty:
                 result.to_csv(os.path.join(save_dir, rule_filename), index=False)
             self.notify.info(
                 f"search result saved : {rule_filename}",
                 source="searchmanager",
                 route=["terminal", "user"],
+                timeout=4,
             )
 
     def generic_rule(self, *args):
@@ -123,7 +140,6 @@ class SearchManager:
         use_mean_node = self.app.chart_settings.get("mean node", False)
         hits = []
         who = next((tvalue for ttype, tvalue in tokens if ttype == "object"), None)
-        # print(f"who type : {type(who)}")
         # where_place = next(
         #     (tvalue for ttype, tvalue in tokens if ttype == "place"), None
         # )
@@ -182,11 +198,6 @@ class SearchManager:
             hits_filter = [hit for hit in hits if for_who in hit["hit lords"]]
         else:
             hits_filter = hits
-        # if hits_filter is not None:
-        #     print("searchmanager : hitsfilter")
-        # for hit in hits_filter:
-        #     print(f"hit [filter] : {hit}")
-
         search_result = pd.DataFrame(hits_filter)
         self.notify.debug(
             # f"\nwho : {who} | whereplace : {where_place} | "
@@ -203,6 +214,57 @@ class SearchManager:
 
     def terms(self, *args):
         pass
+
+    def declination(self, tokens, datarange):
+        # find object declination 0, local max & min, & big standstills
+        hits = []
+        who = next((tvalue for ttype, tvalue in tokens if ttype == "object"), None)
+        if who is None:
+            return pd.DataFrame()
+        code, _ = objcode(who, self.app.chart_settings.get("mean node", False))
+        if code is None:
+            return pd.DataFrame()
+        values = []
+        prev_decl = None
+        for _, row in datarange.iterrows():
+            dt = row.iloc[0]
+            jd = swe.julday(
+                dt.year, dt.month, dt.day, dt.hour + dt.minute / 60 + dt.second / 3600
+            )
+            result, _ = swe.calc_ut(jd, code, self.app.sweph_flag | swe.FLG_EQUATORIAL)
+            decl = result[1]
+            values.append((dt, decl))
+            # check 0-crossing
+            if prev_decl is not None and prev_decl * decl < 0:
+                hits.append({
+                    "datetime": dt,
+                    "who": who,
+                    "decl": decl,
+                    "event": "zero",
+                })
+            prev_decl = decl
+        # detect local extrema
+        for i in range(1, len(values) - 1):
+            _, v0 = values[i - 1]
+            d1, v1 = values[i]
+            _, v2 = values[i + 1]
+            if v0 < v1 > v2:
+                event = "max_stand" if abs(v1) > 27 else "max"
+                hits.append({
+                    "datetime": d1,
+                    "who": who,
+                    "decl": v1,
+                    "event": event,
+                })
+            if v0 > v1 < v2:
+                event = "min_stand" if abs(v1) > 27 else "min"
+                hits.append({
+                    "datetime": d1,
+                    "who": who,
+                    "decl": v1,
+                    "event": event,
+                })
+        return pd.DataFrame(hits)
 
     def map_varga_naks(
         self,

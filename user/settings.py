@@ -243,31 +243,10 @@ CHART_SETTINGS = {
         ),
         "transit": (False, "show transit for event 2"),
     },
-    # --- use varga positions for cycle wave
-    "use varga cycle": (
-        True,
-        "use varga positions for cycle index & wave calculation\nsort of 'harmonic' cycle index / wave",
-    ),
     # --- use varga positions for aspects
     "use varga aspect": (
         True,
         "use varga positions for aspects matrix calculation\nsort of 'harmonic' aspects",
-    ),
-    # --- invert cycle plotting, ie cycle rising might indicate price falling
-    "invert cycle": (
-        False,
-        "invert cycle plotting (ie up > down & vice versa)",
-    ),
-    # --- use custom planet list for cyclic index
-    "cycle members": (
-        ["pl ne ur sa ju ma su ve me mo"],
-        # ["ne ur sa ve"],
-        # ["sa ju ma"],
-        "select objects for custom cyclic index"
-        "\nshort english names only (mo : moon | ne : neptune etc)"
-        "\nuse [space] for separator"
-        "\nmin 2 objects are required for a cycle"
-        "\nsee user/settings.py > OBJECTS for available values",
     ),
     # --- draw fixed stars
     # in user/fixedstars.py are categories of stars :
@@ -405,35 +384,35 @@ FILES = {
     # --- path to ephemerides folder, with min semo_18.se1 & sepl_18.se1 files, or
     # a complete ephe folder https://github.com/aloistr/swisseph/tree/master/ephe
     # todo separate path for linux & mswindows : do we need to ?
-    "ephe path\t": (
+    "ephe path": (
         "sweph/ephe/",
         "path to ephemeride folder, with min semo_18.se1 & sepl_18.se1 files, "
         "or a complete ephe folder https://github.com/aloistr/swisseph/tree/master/ephe ",
     ),
     # --- fonts for glyphs = astro_font & for ie tables = mono_font
-    "astro font\t": (
+    "astro font": (
         "ui/fonts/osla/opensanslightastro.ttf",
         "font with glyphs for astro chart etc",
     ),
-    "mono font\t": (
+    "mono font": (
         "ui/fonts/victor/victormonolightastro.ttf",
         "mono-spaced font for pretty tables etc",
     ),
     # --- path to events / birth charts database folder; inside go saved charts
-    "events db\t": (
+    "events db": (
         "user/eventsdb/",
         "path to event / birth charts database folder ; inside go saved charts",
     ),
     # --- path to data folder & file ; data to be plotted on graph
-    "data\t\t": (
-        "user/data/gold/gold_h_test.csv",
+    "data": (
+        "user/data/gold/gold_d_utc.csv",
         "path to data folder & file name : data for plotting on graph",
     ),
     # --- construct your own 'filename' format: allowed fields
     # 1: event {name} | 2: event {date} | 3: {time}
     # separate fields with '_' underscore ; for short time format (no seconds)
     # use {time_short} ; see default value as example
-    "filename\t": (
+    "filename": (
         r"{name}_{date}_{time_short}",
         "construct your own 'filename' format: allowed fields"
         "\n\t1: event {name} | 2: event {date} | 3: {time}"
@@ -442,33 +421,9 @@ FILES = {
         "\nexample : {name}_{date}_{time_short}",
     ),
 }
-SEARCH = {  # timerange can be omitted, range derived from datagraph data
-    "search timerange": ("2012-1-21", "2012-09-19"),
-    "rules": (
-        "mo in v9 ju nk",
-        """enter time range (YYYY-mm-dd) & rules (formula) for search
-example :
-    2012 12 21 - 2013 1 7 [enter search range as top line *]
-    ve 144 su   [list of rules, newline separated]
-    mo min max 0 decl
-separate time range with ' - ' or '   ' (triple space)
-separate rules by new line [enter]
-[tab / shift-tab] = focus next / previous field 
-[enter] = new line
-[ctrl-enter] = run search | execute command
-
-v : varga 2-60
-hs : house 1-12
-nk : naksatra 1-27 / mansion 1-28
-
-* : can be omitted, search range will be derived from data file
-    if lots of data > slower calculations
-    use search time range when testing rules
-
-search results are saved to 'user/data/search/' folder""",
-    ),
-}
+# --- search & cycle panels
 TOKEN_CATEGORIES = {
+    "command": ["clear"],
     "object": [
         "mo",
         "ma",
@@ -523,3 +478,64 @@ TOKEN_CATEGORIES = {
     "element": {"fire", "earth", "air", "water"},
     "mode": {"movable", "fixed", "dual"},
 }
+SEARCH = {  # timerange can be omitted, range derived from datagraph data
+    "search timerange": ("2024-1-1", "2025-08-19"),
+    "rules": (
+        "mo in v9 ju nk",
+        """enter time range (YYYY-mm-dd) & rules (formula) for search
+example :
+    2012 12 21 - 2013 1 7 [enter search range as top line *]
+    ve 144 su   [list of rules, newline separated]
+    mo min max 0 decl
+
+v : varga 2-60
+hs : house 1-12
+nk : naksatra 1-27 / mansion 1-28
+
+* : can be omitted, search range will be derived from data file
+    if lots of data > slower calculations
+    use search time range when testing rules
+
+search results are saved to 'user/data/search/' folder""",
+    ),
+}
+CYCLE = {  # timerange can be omitted, range derived from datagraph data
+    "cycle timerange": ("2024-1-21", "2025-08-19"),
+    "rules": (
+        "pl ne ur sa ju ma su ve me mo",
+        """enter time range (YYYY-mm-dd) & rules (members) for cycle
+example :
+    2012 12 21 - 2013 1 7 [enter cycle range as top line *]
+    pl ne ur sa ju v9   [list of members & rules, newline separated]
+    mo decl
+
+v : varga 2-60
+
+* : can be omitted, cycle range will be derived from data file
+    if lots of data > slower calculations
+    use cycle time range when testing waves / rules
+
+cycle results are saved to 'user/data/wave/' folder""",
+    ),
+}
+# # --- use varga positions for cycle wave
+# "use varga cycle": (
+#     True,
+#     "use varga positions for cycle index & wave calculation\nsort of 'harmonic' cycle index / wave",
+# ),
+# # --- invert cycle plotting, ie cycle rising might indicate price falling
+# "invert cycle": (
+#     False,
+#     "invert cycle plotting (ie up > down & vice versa)",
+# ),
+# # --- use custom planet list for cyclic index
+# "cycle members": (
+#     [],
+#     # ["ne ur sa ve"],
+#     # ["sa ju ma"],
+#     "select objects for custom cyclic index"
+#     "\nshort english names only (mo : moon | ne : neptune etc)"
+#     "\nuse [space] for separator"
+#     "\nmin 2 objects are required for a cycle"
+#     "\nsee user/settings.py > OBJECTS for available values",
+# ),

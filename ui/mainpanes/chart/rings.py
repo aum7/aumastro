@@ -829,7 +829,7 @@ class P1Progress(ObjectRingBase):
         self.mid_ring = (radius_dict["p1 progress"] + next_val) / 2
 
     def marker_color(self, name):
-        return (0, 0.309, 0.721, 1)
+        return (0, 0.3, 0.721, 1)
 
     def draw(self, cr):
         cr.arc(self.cx, self.cy, self.radius, 0, 2 * pi)
@@ -877,11 +877,11 @@ class P2Progress(ObjectRingBase):
         # print(f"rings : p2retro : {self.retro}")
 
     def marker_color(self, name):
-        return (0, 0.659, 0.921, 0.5)
+        return (0, 0.3, 0.721, 0.5)
 
     def draw(self, cr):
         cr.arc(self.cx, self.cy, self.radius, 0, 2 * pi)
-        cr.set_source_rgba(0.0353, 0.0863, 0.1490, 1)
+        cr.set_source_rgba(0.0353, 0.0863, 0.1804, 1)
         cr.fill_preserve()
         cr.set_source_rgba(0.5, 0.5, 0.5, 0.5)
         cr.set_line_width(1)
@@ -925,7 +925,7 @@ class P3Progress(ObjectRingBase):
         # print(f"rings : p3retro : {self.retro}")
 
     def marker_color(self, name):
-        return (0, 0.659, 0.921, 0.5)
+        return (0, 0.3, 0.721, 0.5)
 
     def draw(self, cr):
         cr.arc(self.cx, self.cy, self.radius, 0, 2 * pi)

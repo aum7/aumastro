@@ -17,7 +17,7 @@ gi.require_version("Gtk", "4.0")
 from gi.repository import Gtk  # type: ignore
 from matplotlib.patches import Rectangle
 from matplotlib.lines import Line2D
-from sweph.calculations.wave import calculate_wave
+# from sweph.calculations.wave import calculate_wave
 
 
 class DataGraph(Gtk.Box):
@@ -41,7 +41,6 @@ class DataGraph(Gtk.Box):
         self.max_bars = 600
         self.min_bars = 100
         self.data_load()
-        self.plot_last_n(200)
         # mouse events
         self.canvas.mpl_connect("motion_notify_event", self.on_mouse_move)
         self.canvas.mpl_connect("scroll_event", self.on_scroll)
@@ -51,9 +50,26 @@ class DataGraph(Gtk.Box):
         self.canvas.mpl_connect("key_press_event", self.on_key_press)
         self.canvas.mpl_connect("key_release_event", self.on_key_release)
         # init / create cycle wave
-        self.cycle_calculated = False
-        self.app.signal_manager._connect("wave_changed", self.on_wave_changed)
+        # self.cycle_calculated = False # todo move to on_enter_key
+        self.search_markers = []
         self.cycle_wave = None
+        self.app.signal_manager._connect("wave_changed", self.on_wave_changed)
+        self.app.signal_manager._connect("clear_search_plots", self.clear_search_plots)
+        self.plot_last_n(200)
+        self.search_cleared = False
+
+    def clear_search_plots(self, *args):
+        # remove all previously plotted search markers
+        if hasattr(self, "search_markers") and self.search_markers:
+            for marker in self.search_markers:
+                try:
+                    if hasattr(marker, "remove"):
+                        marker.remove()
+                except Exception:
+                    pass
+            self.search_markers = []
+            self.search_cleared = True
+            self.canvas.draw_idle()
 
     def on_wave_changed(self, event, wave_data):
         """called when wave is recalculated, ie on settings change"""
@@ -94,9 +110,10 @@ class DataGraph(Gtk.Box):
         text=None,  # optional text label or text-only marker
         color="white",
         text_vert=True,  # text orientation : vertical vs default horizontal
-        linestyle="-",
         size=9,
+        linestyle="-",
     ):
+        # draw marker (line, dot, symbol, text) and track it for clearing
         if self.df is None or self.ax is None:
             return
         marker_map = {
@@ -113,21 +130,23 @@ class DataGraph(Gtk.Box):
         ix = self.df.index.get_indexer([pd.to_datetime(dt)], method="nearest")
         x = float(x_vals[ix])
         ymin, ymax = self.ax.get_ylim()
+        artist = None
         if shape == "line":
-            self.ax.axvline(x, color=color, lw=1.0, ls=linestyle, alpha=0.8)
+            artist = self.ax.axvline(x, color=color, lw=1.0, ls=linestyle, alpha=0.8)
             if text:
-                self.ax.text(
+                t = self.ax.text(
                     x,
                     ymax,
                     text,
                     color=color,
                     rotation=90 if text_vert else 0,
                     va="bottom",
-                    ha="center",
+                    ha="left" if text_vert else "center",
                 )
+                self.search_markers.append(t)
         elif shape in marker_map:
             y = (ymin + ymax) / 2
-            self.ax.text(
+            t = self.ax.text(
                 x,
                 y,
                 marker_map[shape],
@@ -137,8 +156,9 @@ class DataGraph(Gtk.Box):
                 ha="center",
                 va="center",
             )
+            self.search_markers.append(t)
             if text:
-                self.ax.text(
+                t2 = self.ax.text(
                     x,
                     y + 0.02 * (ymax - ymin),
                     text,
@@ -146,11 +166,12 @@ class DataGraph(Gtk.Box):
                     va="bottom",
                     ha="center",
                 )
+                self.search_markers.append(t2)
         elif shape == "text":
             if text is None:
                 return
             y = (ymin + ymax) / 2
-            self.ax.text(
+            t = self.ax.text(
                 x,
                 y,
                 text,
@@ -159,24 +180,48 @@ class DataGraph(Gtk.Box):
                 va="bottom",
                 ha="center",
             )
+            self.search_markers.append(t)
+        if artist is not None:
+            self.search_markers.append(artist)
+        self.canvas.draw_idle()
 
     def plot_search_result(self):
+        if getattr(self, "search_cleared", False):
+            return
+        # plot search data from user/search/*.csv
         df_search = self.load_last_search()
         # print(f"datagraph : plot : dfsearch : {type(df_search)}")
         if df_search is None or df_search.empty:
             return
+        ymin, ymax = self.ax.get_ylim()
         for dt, row in df_search.iterrows():
-            lords = row["hit lords"]
-            label = lords[0] if isinstance(lords, list) and lords else None
-            # draw vertical line with text
-            self.draw_marker(
-                dt,
-                shape="line",
-                text=label,
-                color="green",
-                text_vert=True,
-                linestyle="--",
-            )
+            # dt = row.get("datetime")
+            if "hit lords" in row:
+                lords = row["hit lords"]
+                label = lords[0] if isinstance(lords, list) and lords else None
+                # draw vertical line with text
+                self.draw_marker(
+                    dt,
+                    shape="line",
+                    text=label,
+                    color="green",
+                    text_vert=True,
+                    linestyle="--",
+                )
+            elif "decl" in row:
+                who = row.get("who")
+                decl = row.get("decl")
+                event = row.get("event")
+                # normalize decl to plot range (scale)
+                y = decl
+                label = f"{who} {event}"
+                self.draw_marker(
+                    dt,
+                    shape="text",
+                    text=label,
+                    color="orange",
+                    text_vert=True,
+                )
 
     def init_cursor(self):
         """info cursor is created after every plot as ax is cleared"""
@@ -373,11 +418,11 @@ class DataGraph(Gtk.Box):
             self.shift_held = False
 
     def on_click(self, event):
-        if not self.cycle_calculated:
-            self.cycle_wave = calculate_wave("e1")
-            # print(f"datagraph : cyclewave :\n{self.cycle_wave}")
-            # self.plot_data()
-            self.cycle_calculated = True
+        # if not self.cycle_calculated:
+        #     self.cycle_wave = calculate_wave("e1")
+        # print(f"datagraph : cyclewave :\n{self.cycle_wave}")
+        # self.plot_data()
+        # self.cycle_calculated = True
         if event.button == 1 and event.inaxes:
             ix = int(round(event.xdata))
             num = len(self.df)
@@ -400,7 +445,8 @@ class DataGraph(Gtk.Box):
                 # normal click
                 if self.df is not None and 0 <= ix < len(self.df):
                     dt = self.df.index[ix]
-                    self.app.signal_manager._emit("datetime_captured", ("e2", dt))
+                    selected_e = self.app.selected_event
+                    self.app.signal_manager._emit("datetime_captured", (selected_e, dt))
                     # print(f"datagraph : datetime : {dt}")
 
     def jump_bars(self, bars):

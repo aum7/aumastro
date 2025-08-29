@@ -1,15 +1,16 @@
 # sweph/cyclemanager.py
 # ruff: noqa: E402
 import os
-import swisseph as swe
+
+# import swisseph as swe
 import pandas as pd
 import gi
 
 gi.require_version("Gtk", "4.0")
 from gi.repository import Gtk  # type: ignore
 from pathlib import Path
-from ui.helpers import _object_name_to_code as objcode
-from sweph.calculations.varga import get_varga_lon as vargalon
+# from ui.helpers import _object_name_to_code as objcode
+# from sweph.calculations.varga import get_varga_lon as vargalon
 
 
 class CycleManager:
@@ -95,12 +96,12 @@ class CycleManager:
         for parsed in parsed_rules:
             rule_str = parsed["rule"]
             tokens = parsed["tokens"]
-            main_place = parsed["place"]
+            # main_place = parsed["place"]
             # data gathered : calculations by rules
-            if main_place in ("nak", "nk", "naksatra"):
-                result = self.naksatra_lord(tokens, cycle_datarange)
-            else:
-                result = self.generic_rule(tokens, cycle_datarange)
+            # if main_place in ("nak", "nk", "naksatra"):
+            #     result = self.naksatra_lord(tokens, cycle_datarange)
+            # else:
+            result = self.generic_rule(tokens, cycle_datarange)
             # create filename for cycle results
             rule_name = rule_str.replace(" ", "_").replace("/", "_").lower()
             rule_filename = f"{rule_name}_{file_timeframe}.csv"
@@ -115,92 +116,6 @@ class CycleManager:
 
     def generic_rule(self, *args):
         print(f"cyclemanager : generic rule called : {args}")
-
-    def naksatra_lord(self, tokens, datarange):
-        use_28 = self.app.chart_settings.get("28 naksatras", False)
-        use_mean_node = self.app.chart_settings.get("mean node", False)
-        hits = []
-        who = next((tvalue for ttype, tvalue in tokens if ttype == "object"), None)
-        # print(f"who type : {type(who)}")
-        # where_place = next(
-        #     (tvalue for ttype, tvalue in tokens if ttype == "place"), None
-        # )
-        varga = next((tvalue for ttype, tvalue in tokens if ttype == "varga"), None)
-        for_who = next(
-            (tvalue for ttype, tvalue in tokens if ttype == "object" and tvalue != who)
-        )
-        # calculate cycle
-        code = None
-        if who is not None:
-            code, _ = objcode(who, use_mean_node)
-            # todo need below ???
-            if code is None:
-                return pd.DataFrame()
-        # get list of forwho naksatras in varga universe
-        v9_map = self.map_varga_naks(
-            use_28=use_28,
-            varga=varga if varga else 1,
-        )
-        dt, jd = None, None
-        who_pos, who_varga_pos = None, None
-        for idx, row in datarange.iterrows():
-            dt = row.iloc[0]  # pandas.timestamp
-            # get jd
-            jd = swe.julday(
-                dt.year, dt.month, dt.day, dt.hour + dt.minute / 60 + dt.second / 3600
-            )
-            # get object longitude
-            if code is not None:
-                result, _ = swe.calc_ut(jd, code, self.app.sweph_flag)
-                who_pos = result[0]  # longitude
-            # convert to varga longitude
-            who_varga_pos = vargalon(who_pos) if who_pos is not None else None
-            # mooncross for found positions
-            hit_lords = []
-            if who_varga_pos is not None:
-                pos = who_varga_pos % 360.0
-                for lord, start, end in v9_map:
-                    if start <= pos < end:
-                        hit_lords.append(lord)
-                        break
-            # store result
-            hits.append({
-                "datetime": dt,
-                "who": who,
-                "pos": who_pos,
-                "varga pos": who_varga_pos,
-                "hit lords": hit_lords,
-            })
-        # test print
-        # if v9_map is not None:
-        #     print("cyclemanager : v9map")
-        #     for lord, start, end in v9_map:
-        #         print(f"{lord}: {start:.3f} - {end:.3f}")
-        if for_who:
-            hits_filter = [hit for hit in hits if for_who in hit["hit lords"]]
-        else:
-            hits_filter = hits
-        # if hits_filter is not None:
-        #     print("cyclemanager : hitsfilter")
-        # for hit in hits_filter:
-        #     print(f"hit [filter] : {hit}")
-
-        cycle_result = pd.DataFrame(hits_filter)
-        self.notify.debug(
-            # f"\nwho : {who} | whereplace : {where_place} | "
-            # f"varga : {varga} | forwho : {for_who}\n"
-            # f"jd : {jd}\n"
-            # f"dt : {dt}\n"
-            # f"whopos : {who_pos} | whovargapos : {who_varga_pos}\n",
-            # f"v9map :\n{v9_map}",
-            f"cycleresult : {cycle_result}",
-            source="cyclemanager",
-            route=[""],
-        )
-        return cycle_result
-
-    def terms(self, *args):
-        pass
 
     def map_varga_naks(
         self,

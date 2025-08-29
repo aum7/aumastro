@@ -38,8 +38,9 @@ def on_filter_changed(entry, buf_tokens, all_tokens):
 
 
 def collect_tokens(use_28=False):
+    _COMMANDS = set(TOKEN_CATEGORIES["command"])
     _OBJECTS = set(TOKEN_CATEGORIES["object"])
-    _OPERATOR = set(TOKEN_CATEGORIES.get("operator", []))
+    _OPERATORS = set(TOKEN_CATEGORIES.get("operator", []))
     _PLACES = set(TOKEN_CATEGORIES["place"])
     _SIGNS = set(TOKEN_CATEGORIES["sign"].keys())
     _ELEMENTS = set(TOKEN_CATEGORIES.get("element", []))
@@ -51,8 +52,9 @@ def collect_tokens(use_28=False):
         "nak": re.compile(r"^nk\d+$"),
     }
     return {
+        "commands": sorted(_COMMANDS),
         "objects": sorted(_OBJECTS),
-        "operators": sorted(_OPERATOR),
+        "operators": sorted(_OPERATORS),
         "places": sorted(_PLACES),
         "signs": sorted(_SIGNS),
         "elements": sorted(_ELEMENTS),
@@ -91,8 +93,9 @@ def validate_input(query: str, use_28=False, notify=None):
     timerange = None
     # collect all tokens
     tokens_ = collect_tokens(use_28)
+    _COMMANDS = set(tokens_["commands"])
     _OBJECTS = set(tokens_["objects"])
-    _OPERATOR = set(tokens_["operators"])
+    _OPERATORS = set(tokens_["operators"])
     _PLACES = set(tokens_["places"])
     _SIGNS = set(tokens_["signs"])
     _ELEMENTS = set(tokens_["elements"])
@@ -132,20 +135,22 @@ def validate_input(query: str, use_28=False, notify=None):
                 ttype = None
                 tvalue = token
                 # allow abbreviated tokens : decl > declination
-                if token not in _OPERATOR:
-                    match_op = [op for op in _OPERATOR if op.startswith(token)]
+                if token not in _OPERATORS:
+                    match_op = [op for op in _OPERATORS if op.startswith(token)]
                     if match_op:
                         ttype = "operator"
                         tvalue = match_op[0]
                 if ttype is None:
-                    if token in _OBJECTS:
+                    if token in _COMMANDS:
+                        ttype = "command"
+                    elif token in _OBJECTS:
                         ttype = "object"
                     elif token in _PLACES:
                         ttype = "place"
                         main_place = token
                     elif token in _SIGNS:
                         ttype = "sign"
-                    elif token in _OPERATOR:
+                    elif token in _OPERATORS:
                         ttype = "operator"
                     elif token in _ELEMENTS:
                         ttype = "element"
@@ -209,6 +214,7 @@ def setup_search(manager) -> CollapsePanel:
     box_tokens = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=7)
     ent_filter = Gtk.Entry()
     ent_filter.set_placeholder_text("filter tokens ...")
+    ent_filter.set_tooltip_text("below text box shows matches to filter text")
     ent_filter.set_margin_bottom(pad_y)
     ent_filter.set_margin_top(pad_y)
 
@@ -258,7 +264,14 @@ def setup_search(manager) -> CollapsePanel:
     textview.set_right_margin(pad_x)
     textview.set_top_margin(pad_y)
     textview.set_bottom_margin(pad_y)
-
+    textview.set_tooltip_text(
+        """separate time range with ' - ' or '   ' (triple space)
+separate rules by new line [enter]
+type 'clear' & execute it to clear all search plots from datagraph
+[tab / shift-tab] = focus next / previous field 
+[enter] = new line
+[ctrl-enter] = run search | execute command"""
+    )
     buffer = textview.get_buffer()
     timerange = SEARCH.get("search timerange", "")
     rules, tooltip = SEARCH.get("rules", ("", ""))

@@ -792,30 +792,30 @@ more info in user/settings.py > SWE_FLAG"""
         expanded=False,
     )
     subpnl_files.set_title_tooltip("no validation here, dont do stupid things")
-    # main box for files panels
-    box_files = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
-    box_files.set_margin_start(manager.margin_end)
-    box_files.set_margin_end(manager.margin_end)
-    app.files = {k.replace("\t", ""): v[0] for k, v in FILES.items()}
-    # print(f"panel.settings : app.files : {app.files}")
-    for key, value in FILES.items():
+    # main grid for files panels : alignment
+    grid_files = Gtk.Grid(column_spacing=12, row_spacing=4)
+    grid_files.set_margin_start(manager.margin_end)
+    grid_files.set_margin_end(manager.margin_end)
+
+    app.files = {k: v[0] for k, v in FILES.items()}
+
+    for row_idx, (key, value) in enumerate(FILES.items()):
         tooltip = value[1]
-        box_key = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=0)
-        box_key.set_tooltip_text(tooltip)
         lbl_key = Gtk.Label(label=key)
         lbl_key.set_halign(Gtk.Align.START)
+        lbl_key.set_valign(Gtk.Align.CENTER)
+        lbl_key.set_tooltip_text(tooltip)
+
         ent_key = Gtk.Entry()
-        ent_key.set_max_width_chars(40)
+        ent_key.set_max_width_chars(33)
         ent_key.set_text(value[0])
-        # ent_key.set_hexpand(True)
+        ent_key.set_tooltip_text(tooltip)
         ent_key.connect(
             "activate", lambda entry, k=key, m=manager: files_changed(entry, k, m)
         )
-        box_key.append(lbl_key)
-        box_key.append(ent_key)
-        box_files.append(box_key)
-    subpnl_files.add_widget(box_files)
-    # add sub-panels/selected
+        grid_files.attach(lbl_key, 0, row_idx, 1, 1)  # col 0 = labels
+        grid_files.attach(ent_key, 1, row_idx, 1, 1)
+    subpnl_files.add_widget(grid_files)
 
     box_settings.append(subpnl_objects)
     box_settings.append(subpnl_housesys)
@@ -1368,10 +1368,10 @@ def set_ayanamsa(manager):
 def files_changed(entry, key, manager):
     """file paths & names are customizable"""
     value = entry.get_text().strip()
-    key_ = key.replace("\t", "")
-    if manager.app.files[key_] == value:
+    # key_ = key.replace("\t", "")
+    if manager.app.files[key] == value:
         return
-    manager.app.files[key_] = value
+    manager.app.files[key] = value
     # emit signal
     manager.signal._emit("settings_changed", None)
     manager.notify.debug(

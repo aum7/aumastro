@@ -2,13 +2,13 @@
 # calculate cycles & plot to datachart
 # ruff: noqa: E402
 # import re
-# import pandas as pd
+import pandas as pd
 import gi
 
 gi.require_version("Gtk", "4.0")
 from gi.repository import Gtk, Gdk  # type: ignore
 from ui.collapsepanel import CollapsePanel
-from user.settings import CHART_SETTINGS, OBJECTS
+from user.settings import OBJECTS, CYCLE
 from sweph.cyclemanager import CycleManager
 
 
@@ -59,40 +59,13 @@ def cycle_settings_changed(widget, manager):
 def setup_cycle(manager) -> CollapsePanel:
     # separate search panel
     manager.cycle = CycleManager()
-    # notify = manager.app.notify_manager
-    # use_28 = manager.app.chart_settings.get("28 naksatras", False)
     pad_x = 7
     pad_y = 0
-    clp_cycle = CollapsePanel(title="cycle", expanded=False)
+    clp_cycle = CollapsePanel(title="cycle wave", expanded=False)
     clp_cycle.set_margin_end(manager.margin_end)
 
     box_cycle = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
     box_cycle.set_margin_start(14)
-    # --- cycle fields - members & varga cycle checkbox
-    row_cycle_members = Gtk.ListBoxRow()
-    box_cycle_members = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=7)
-    lbl_cycle_members = Gtk.Label(label="cycle members")
-    box_cycle_members.append(lbl_cycle_members)
-    ent_cycle_members = Gtk.Entry()
-    ent_cycle_members.set_text(", ".join(CHART_SETTINGS["cycle members"][0]))
-    ent_cycle_members.set_tooltip_text(CHART_SETTINGS["cycle members"][1])
-    ent_cycle_members.connect("activate", cycle_settings_changed, manager)
-    box_cycle_members.append(ent_cycle_members)
-    manager.app.chart_settings["cycle members"] = CHART_SETTINGS["cycle members"][0]
-    row_cycle_members.set_child(box_cycle_members)
-    # checkbox to use varga for cycle data
-    row_use_varga_cycle = Gtk.ListBoxRow()
-    data_use_varga_cycle = CHART_SETTINGS["use varga cycle"]
-    chk_use_varga_cycle = Gtk.CheckButton(label="use varga cycle")
-    chk_use_varga_cycle.set_active(data_use_varga_cycle[0])
-    chk_use_varga_cycle.set_tooltip_text(data_use_varga_cycle[1])
-    chk_use_varga_cycle.connect("toggled", cycle_settings_changed, manager)
-    manager.app.checkbox_chart_settings["use varga cycle"] = chk_use_varga_cycle
-    manager.app.chart_settings["use varga cycle"] = data_use_varga_cycle[0]
-    row_use_varga_cycle.set_child(chk_use_varga_cycle)
-
-    box_cycle.append(row_cycle_members)
-    box_cycle.append(row_use_varga_cycle)
     # --- token viewer with filter
     box_tokens = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=7)
     ent_filter = Gtk.Entry()
@@ -126,8 +99,8 @@ def setup_cycle(manager) -> CollapsePanel:
     buf_tokens = txv_tokens.get_buffer()
     text = []
     text.append("examples :")
-    text.append("mo in ju v9 nak")
-    text.append("mo min max 0 decl")
+    text.append("mo me ve su v9")
+    text.append("mo decl")
     text.append("----------------------")
     # for k, vals in show_tokens.items():
     # if isinstance(vals, dict):
@@ -146,18 +119,25 @@ def setup_cycle(manager) -> CollapsePanel:
     textview.set_right_margin(pad_x)
     textview.set_top_margin(pad_y)
     textview.set_bottom_margin(pad_y)
-
-    # buffer = textview.get_buffer()
-    # timerange = SEARCH.get("search timerange", "")
-    # rules, tooltip = SEARCH.get("rules", ("", ""))
-    # clp_cycle.set_title_tooltip(tooltip)
+    textview.set_tooltip_text(
+        """separate time range with ' - ' or '   ' (triple space)
+separate rules by new line [enter]
+type 'clear' & execute it to clear all cycles from datagraph
+[tab / shift-tab] = focus next / previous field
+[enter] = new line
+[ctrl-enter] = run cycle | execute command"""
+    )
+    buffer = textview.get_buffer()
+    timerange = CYCLE.get("cycle timerange", "")
+    rules, tooltip = CYCLE.get("rules", ("", ""))
+    clp_cycle.set_title_tooltip(tooltip)
     # prepare string
-    # start_str, end_str = timerange
-    # start_fmt = pd.to_datetime(start_str).strftime("%Y-%m-%d")
-    # end_fmt = pd.to_datetime(end_str).strftime("%Y-%m-%d")
-    # timerange_text = f"{start_fmt} - {end_fmt}"
-    # text = f"{timerange_text}\n{rules}"
-    # buffer.set_text(text)
+    start_str, end_str = timerange
+    start_fmt = pd.to_datetime(start_str).strftime("%Y-%m-%d")
+    end_fmt = pd.to_datetime(end_str).strftime("%Y-%m-%d")
+    timerange_text = f"{start_fmt} - {end_fmt}"
+    text = f"{timerange_text}\n{rules}"
+    buffer.set_text(text)
 
     def on_key(controller, keyval, keycode, state, view=textview):
         ctrl = state & Gtk.accelerator_get_default_mod_mask()
@@ -188,25 +168,9 @@ def setup_cycle(manager) -> CollapsePanel:
     key_controller = Gtk.EventControllerKey()
     key_controller.connect("key-pressed", on_key)
     textview.add_controller(key_controller)
-    # textview.connect("notify::has-focus", on_focus_changed, txv_tokens)
 
     focus_controller = Gtk.EventControllerFocus()
-    # focus_controller.connect(
-    #     "enter", on_entry_focus_in, ent_filter, txv_tokens, textview
-    # )
-    # focus_controller.connect(
-    #     "leave", on_entry_focus_out, ent_filter, txv_tokens, textview
-    # )
     ent_filter.add_controller(focus_controller)
-    # ent_filter.connect(
-    #     "changed",
-    #     lambda ent: filter_token_view(
-    #         ent.get_text(),
-    #         buf_tokens,
-    #         show_tokens,
-    #         pinned_examples=["mo in ju v9 nak", "mo min max 0 decl"],
-    #     ),
-    # )
     box_cycle.append(box_tokens)
     box_cycle.append(textview)
     clp_cycle.add_widget(box_cycle)
