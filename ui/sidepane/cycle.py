@@ -1,5 +1,5 @@
-# ui/cycle.py
-# calculate cycles & plot to datachart
+# ui/sidepane/cycle.py
+# calculate cycle wave  & plot to datachart
 # ruff: noqa: E402
 # import re
 import pandas as pd
@@ -12,48 +12,48 @@ from user.settings import OBJECTS, CYCLE
 from sweph.cyclemanager import CycleManager
 
 
-def cycle_settings_changed(widget, manager):
-    """update cycle-related settings : cycle members & use varga"""
-    members = None
-    if isinstance(widget, Gtk.Entry):
-        # cycle members
-        text = widget.get_text().replace(",", " ")
-        members = [m.strip() for m in text.split() if m.strip()]
-        valid_objects = set()
-        for obj in OBJECTS.values():
-            valid_objects.add(obj[0])
-        if all(member in valid_objects for member in members):
-            widget.remove_css_class("entry-warning")
-            manager.app.chart_settings["cycle members"] = " ".join(members)
-            widget.set_text(manager.app.chart_settings["cycle members"])
-        else:
-            widget.set_text(manager.app.chart_settings["cycle members"])
-            manager.notify.warning(
-                "allowed are 2-character short english names only"
-                "\nie su (sun) | me (mercury) etc"
-                "\nsee user/settings.py > OBJECTS for details",
-                source="panel.settings",
-                route=["terminal", "user"],
-            )
-    elif isinstance(widget, Gtk.CheckButton):
-        # use varga
-        active = widget.get_active()
-        manager.app.chart_settings["use varga cycle"] = active
-    # setting = manager.app.chart_settings["cycle members"]
-    # manager.signal._emit("cycle_changed", "e1", None)
-    # manager.signal._emit("cycle_settings_changed", "e1")
-    for event in ("e1", "e2"):
-        manager.signal._emit("cycle_settings_changed", event)
-    # debug info
-    msg = ""
-    if members is not None:
-        msg += f"members : {members}\n"
-    msg += f"use varga cycle : {manager.app.chart_settings['use varga cycle']}\n"
-    manager.notify.debug(
-        msg,
-        source="panel.settings",
-        route=[""],
-    )
+# def cycle_settings_changed(widget, manager):
+#     """update cycle-related settings : cycle members & use varga"""
+#     members = None
+#     if isinstance(widget, Gtk.Entry):
+#         # cycle members
+#         text = widget.get_text().replace(",", " ")
+#         members = [m.strip() for m in text.split() if m.strip()]
+#         valid_objects = set()
+#         for obj in OBJECTS.values():
+#             valid_objects.add(obj[0])
+#         if all(member in valid_objects for member in members):
+#             widget.remove_css_class("entry-warning")
+#             manager.app.chart_settings["cycle members"] = " ".join(members)
+#             widget.set_text(manager.app.chart_settings["cycle members"])
+#         else:
+#             widget.set_text(manager.app.chart_settings["cycle members"])
+#             manager.notify.warning(
+#                 "allowed are 2-character short english names only"
+#                 "\nie su (sun) | me (mercury) etc"
+#                 "\nsee user/settings.py > OBJECTS for details",
+#                 source="panel.settings",
+#                 route=["terminal", "user"],
+#             )
+#     elif isinstance(widget, Gtk.CheckButton):
+#         # use varga
+#         active = widget.get_active()
+#         manager.app.chart_settings["use varga cycle"] = active
+#     # setting = manager.app.chart_settings["cycle members"]
+#     # manager.signal._emit("cycle_changed", "e1", None)
+#     # manager.signal._emit("cycle_settings_changed", "e1")
+#     for event in ("e1", "e2"):
+#         manager.signal._emit("cycle_settings_changed", event)
+#     # debug info
+#     msg = ""
+#     if members is not None:
+#         msg += f"members : {members}\n"
+#     msg += f"use varga cycle : {manager.app.chart_settings['use varga cycle']}\n"
+#     manager.notify.debug(
+#         msg,
+#         source="panel.settings",
+#         route=[""],
+#     )
 
 
 def setup_cycle(manager) -> CollapsePanel:
@@ -61,7 +61,7 @@ def setup_cycle(manager) -> CollapsePanel:
     manager.cycle = CycleManager()
     pad_x = 7
     pad_y = 0
-    clp_cycle = CollapsePanel(title="cycle wave", expanded=False)
+    clp_cycle = CollapsePanel(title="cycle wave", expanded=True)
     clp_cycle.set_margin_end(manager.margin_end)
 
     box_cycle = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
@@ -102,13 +102,9 @@ def setup_cycle(manager) -> CollapsePanel:
     text.append("mo me ve su v9")
     text.append("mo decl")
     text.append("----------------------")
-    # for k, vals in show_tokens.items():
-    # if isinstance(vals, dict):
-    #     text.append(f"{k} : " + ", ".join(vals.keys()))
-    # else:
-    #     text.append(f"{k} : " + ", ".join(vals))
+
     buf_tokens.set_text("\n".join(text))
-    # --- search textview
+    # --- cycle textview
     textview = Gtk.TextView()
     textview.set_name("cycle")
     textview.set_wrap_mode(Gtk.WrapMode.WORD_CHAR)
@@ -144,20 +140,22 @@ type 'clear' & execute it to clear all cycles from datagraph
         if keyval == Gdk.KEY_Return:
             if ctrl:  #  ctrl-enter > run search
                 buf = view.get_buffer()
-                # start, end = buf.get_bounds()
+                # start_iter=buf.get_get_start_iter()
+                # end_iter = buf. get_end_iter()
+                start, end = buf.get_bounds()
                 # start & end range, include hidden chars
-                # query = buf.get_text(start, end, True)
+                query = buf.get_text(start, end, True)
                 # validate search input : minimal validation
-                # ok, result = validate_input(query, use_28, notify)  # type:ignore
-                # if not ok:
-                # manager.notify.error(
-                # f"invalid input :\n{result}",
-                #     source="search",
-                #     route=["terminal", "user"],
-                # )
-                # return True
+                ok, result = validate_input(query, notify)  # type:ignore
+                if not ok:
+                    manager.notify.error(
+                        f"invalid input :\n{result}",
+                        source="search",
+                        route=["terminal", "user"],
+                    )
+                    return True
                 # serve to searchmanager
-                # manager.search.run(result)
+                manager.search.run(result)
                 return True
             else:
                 buf = view.get_buffer()
@@ -178,21 +176,21 @@ type 'clear' & execute it to clear all cycles from datagraph
     return clp_cycle
 
 
-# def on_focus_changed(widget, pspec, tokens):
-#     if widget.has_focus():
-#         tokens.add_css_class("filter")
-#     else:
-#         tokens.remove_css_class("filter")
+def on_focus_changed(widget, pspec, tokens):
+    if widget.has_focus():
+        tokens.add_css_class("filter")
+    else:
+        tokens.remove_css_class("filter")
 
 
-# def on_entry_focus_in(controller, entry, tokens, search_view):
-#     tokens.add_css_class("filter")
-#     search_view.add_css_class("filter")
+def on_entry_focus_in(controller, entry, tokens, search_view):
+    tokens.add_css_class("filter")
+    search_view.add_css_class("filter")
 
 
-# def on_entry_focus_out(controller, entry, tokens, search_view):
-#     tokens.remove_css_class("filter")
-#     search_view.remove_css_class("filter")
+def on_entry_focus_out(controller, entry, tokens, search_view):
+    tokens.remove_css_class("filter")
+    search_view.remove_css_class("filter")
 
 
 # def on_filter_changed(entry, buf_tokens, all_tokens):
@@ -252,14 +250,16 @@ type 'clear' & execute it to clear all cycles from datagraph
 #     buf_tokens.set_text("\n".join(text_lines))
 
 
-# def validate_input(query: str, use_28=False, notify=None):
-#     errors = []
-#     parsed_rules = []
-#     timerange = None
-#     # collect all tokens
-#     tokens_ = collect_tokens(use_28)
-#     _OBJECTS = set(tokens_["objects"])
-#     _OPERATOR = set(tokens_["operators"])
+def validate_input(query: str, notify=None):
+    errors = []
+    parsed_rules = []
+    timerange = None
+    # collect all tokens
+    tokens_ = collect_tokens(use_28)
+    _OBJECTS = set(tokens_["objects"])
+    _OPERATOR = set(tokens_["operators"])
+
+
 #     _PLACES = set(tokens_["places"])
 #     _SIGNS = set(tokens_["signs"])
 #     _ELEMENTS = set(tokens_["elements"])

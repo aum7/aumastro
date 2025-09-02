@@ -51,9 +51,10 @@ class DataGraph(Gtk.Box):
         self.canvas.mpl_connect("key_release_event", self.on_key_release)
         # init / create cycle wave
         # self.cycle_calculated = False # todo move to on_enter_key
-        self.search_markers = []
         self.cycle_wave = None
         self.app.signal_manager._connect("wave_changed", self.on_wave_changed)
+        # init search result plot
+        self.search_markers = []
         self.app.signal_manager._connect("clear_search_plots", self.clear_search_plots)
         self.app.signal_manager._connect("plot_search_result", self.plot_search_result)
         self.plot_last_n(200)

@@ -1,4 +1,4 @@
-# sweph/searchmanager.py
+# ui/sidepane/searchmanager.py
 # ruff: noqa: E402
 import os
 import swisseph as swe
@@ -22,15 +22,13 @@ class SearchManager:
     def file_properties(self, path):
         filename = Path(path).name.lower()
         # print(f"searchmanager : filename : {filename}")
-        timeframe = ""
+        timeframe = "h"
         if "_10m" in filename:
             timeframe = "10m"
         elif "_h" in filename:
             timeframe = "h"
         elif "_d" in filename:
             timeframe = "d"
-        # else:
-        #     timeframe = ""
         dataframe = pd.read_csv(path, parse_dates=[0])
         dataframe_col = dataframe.columns[0]
         dataframe.sort_values(by=str(dataframe_col), inplace=True)

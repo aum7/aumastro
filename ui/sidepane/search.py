@@ -7,7 +7,7 @@ import gi
 gi.require_version("Gtk", "4.0")
 from gi.repository import Gtk, Gdk  # type: ignore
 from ui.collapsepanel import CollapsePanel
-from sweph.searchmanager import SearchManager
+from ui.sidepane.searchmanager import SearchManager
 from user.settings import SEARCH, TOKEN_CATEGORIES
 
 
@@ -205,7 +205,7 @@ def setup_search(manager) -> CollapsePanel:
     use_28 = manager.app.chart_settings.get("28 naksatras", False)
     pad_x = 7
     pad_y = 0
-    clp_search = CollapsePanel(title="search", expanded=True)
+    clp_search = CollapsePanel(title="search", expanded=False)
     clp_search.set_margin_end(manager.margin_end)
 
     box_search = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)

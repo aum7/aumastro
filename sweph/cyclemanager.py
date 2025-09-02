@@ -1,8 +1,7 @@
 # sweph/cyclemanager.py
 # ruff: noqa: E402
-import os
-
 # import swisseph as swe
+import os
 import pandas as pd
 import gi
 
