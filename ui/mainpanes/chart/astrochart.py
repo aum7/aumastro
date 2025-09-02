@@ -211,13 +211,13 @@ class AstroChart(Gtk.Box):
         msg += f"outerrings : {outer_rings}\n"
         # factor per ring : e2 first : in below order : circle outer diameter
         outer_portion = {
-            "transit": 0.09,
-            "varga": 0.09,
-            "lunar return": 0.09,
-            "solar return": 0.09,
-            "p3 progress": 0.09,
-            "p2 progress": 0.09,
-            "p1 progress": 0.09,
+            "transit": 0.08,
+            "varga": 0.08,
+            "lunar return": 0.08,
+            "solar return": 0.08,
+            "p3 progress": 0.08,
+            "p2 progress": 0.08,
+            "p1 progress": 0.08,
             "harmonic": 0.06,
             "naksatras": 0.05,
         }

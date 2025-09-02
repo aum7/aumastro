@@ -55,6 +55,7 @@ class DataGraph(Gtk.Box):
         self.cycle_wave = None
         self.app.signal_manager._connect("wave_changed", self.on_wave_changed)
         self.app.signal_manager._connect("clear_search_plots", self.clear_search_plots)
+        self.app.signal_manager._connect("plot_search_result", self.plot_search_result)
         self.plot_last_n(200)
         self.search_cleared = False
 
@@ -186,16 +187,13 @@ class DataGraph(Gtk.Box):
         self.canvas.draw_idle()
 
     def plot_search_result(self):
-        if getattr(self, "search_cleared", False):
-            return
+        self.search_cleared = False
         # plot search data from user/search/*.csv
         df_search = self.load_last_search()
         # print(f"datagraph : plot : dfsearch : {type(df_search)}")
         if df_search is None or df_search.empty:
             return
-        ymin, ymax = self.ax.get_ylim()
         for dt, row in df_search.iterrows():
-            # dt = row.get("datetime")
             if "hit lords" in row:
                 lords = row["hit lords"]
                 label = lords[0] if isinstance(lords, list) and lords else None
@@ -210,10 +208,10 @@ class DataGraph(Gtk.Box):
                 )
             elif "decl" in row:
                 who = row.get("who")
-                decl = row.get("decl")
+                # decl = row.get("decl")
                 event = row.get("event")
                 # normalize decl to plot range (scale)
-                y = decl
+                # y = decl
                 label = f"{who} {event}"
                 self.draw_marker(
                     dt,
@@ -222,6 +220,7 @@ class DataGraph(Gtk.Box):
                     color="orange",
                     text_vert=True,
                 )
+        self.canvas.draw()
 
     def init_cursor(self):
         """info cursor is created after every plot as ax is cleared"""
@@ -372,7 +371,7 @@ class DataGraph(Gtk.Box):
                         alpha=0.3,
                     )
         self.init_cursor()
-        self.plot_search_result()
+        # self.plot_search_result()
         self.canvas.draw()
 
     def on_mouse_move(self, event):
@@ -418,11 +417,6 @@ class DataGraph(Gtk.Box):
             self.shift_held = False
 
     def on_click(self, event):
-        # if not self.cycle_calculated:
-        #     self.cycle_wave = calculate_wave("e1")
-        # print(f"datagraph : cyclewave :\n{self.cycle_wave}")
-        # self.plot_data()
-        # self.cycle_calculated = True
         if event.button == 1 and event.inaxes:
             ix = int(round(event.xdata))
             num = len(self.df)

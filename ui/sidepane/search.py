@@ -28,13 +28,13 @@ def on_entry_focus_out(controller, entry, tokens, search_view):
     search_view.remove_css_class("filter")
 
 
-def on_filter_changed(entry, buf_tokens, all_tokens):
-    text = entry.get_text().lower().strip()
-    filtered_lines = []
-    for line in all_tokens:
-        if text == "" or text in line.lower():
-            filtered_lines.append(line)
-    buf_tokens.set_text("\n".join(filtered_lines))
+# def on_filter_changed(entry, buf_tokens, all_tokens):
+#     text = entry.get_text().lower().strip()
+#     filtered_lines = []
+#     for line in all_tokens:
+#         if text == "" or text in line.lower():
+#             filtered_lines.append(line)
+#     buf_tokens.set_text("\n".join(filtered_lines))
 
 
 def collect_tokens(use_28=False):

@@ -876,7 +876,7 @@ class P2Progress(ObjectRingBase):
         self.retro = retro
         # print(f"rings : p2retro : {self.retro}")
 
-    def marker_color(self, name):
+    def marker_color(self, name):  # type:ignore
         return (0, 0.3, 0.721, 0.5)
 
     def draw(self, cr):
@@ -924,7 +924,7 @@ class P3Progress(ObjectRingBase):
         self.retro = retro
         # print(f"rings : p3retro : {self.retro}")
 
-    def marker_color(self, name):
+    def marker_color(self, name):  # type:ignore
         return (0, 0.3, 0.721, 0.5)
 
     def draw(self, cr):
@@ -968,7 +968,7 @@ class SolarReturn(ObjectRingBase):
         )
         self.mid_ring = (radius_dict["solar return"] + next_val) / 2
 
-    def marker_color(self, name):
+    def marker_color(self, name):  # type:ignore
         return (0.6686, 0.6569, 0.5392, 1)
 
     def draw(self, cr):
@@ -1025,7 +1025,7 @@ class LunarReturn(ObjectRingBase):
         )
         self.mid_ring = (radius_dict["lunar return"] + next_val) / 2
 
-    def marker_color(self, name):
+    def marker_color(self, name):  # type:ignore
         return (0.549, 0.568, 0, 1)
 
     def draw(self, cr):
@@ -1079,7 +1079,7 @@ class Varga(ObjectRingBase):
         # todo inject retro into ring
         # self.retro = retro
 
-    def marker_color(self, name):
+    def marker_color(self, name):  # type:ignore
         return (0, 1, 0, 0.5)
 
     def draw(self, cr):
@@ -1125,7 +1125,7 @@ class Transit(ObjectRingBase):
         # todo inject retro into ring
         self.retro = retro
 
-    def marker_color(self, name):
+    def marker_color(self, name):  # type:ignore
         return (0, 1, 0, 0.5)
 
     def draw(self, cr):

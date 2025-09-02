@@ -45,8 +45,8 @@ class Tables(Gtk.Notebook):
         signal._connect("positions_changed", self.positions_changed)
         signal._connect("houses_changed", self.houses_changed)
         signal._connect("aspects_changed", self.aspects_changed)
-        signal._connect("cycle_changed", self.cycle_changed)
-        signal._connect("cycle_settings_changed", self.cycle_settings_changed)
+        # signal._connect("cycle_changed", self.cycle_changed)
+        # signal._connect("cycle_settings_changed", self.cycle_settings_changed)
         # vimsottari dasa widget
         signal._connect("vimsottari_changed", self.vimsottari_changed)
         # p2 table
@@ -80,14 +80,14 @@ class Tables(Gtk.Notebook):
         # calculations of table content by event
         pos = self.update_positions(event)
         aspects = self.update_aspects(event)
-        cycle = self.update_cycle(event)
+        # cycle = self.update_cycle(event)
         content = ""
         if pos:
             content += pos
         if aspects:
             content += aspects
-        if cycle:
-            content += cycle
+        # if cycle:
+        #     content += cycle
         # update page widget if exists, else create one
         if event in self.page_widgets:
             scroll = self.page_widgets[event]
@@ -313,56 +313,56 @@ class Tables(Gtk.Notebook):
         )
         return text
 
-    def cycle_changed(self, event, data):
-        if event not in self.events_data:
-            self.event_data[event] = {}
-        self.events_data[event]["cycle"] = data
-        self.update_event_data(event)
+    # def cycle_changed(self, event, data):
+    #     if event not in self.events_data:
+    #         self.event_data[event] = {}
+    #     self.events_data[event]["cycle"] = data
+    #     self.update_event_data(event)
 
-    def update_cycle(self, event):
-        # called by update_event_data()
-        if (
-            event not in self.events_data
-            or "cycle" not in self.events_data[event]
-            or not self.events_data[event]["cycle"]
-        ):
-            self.notify.error(
-                f"missing data for {event} :  exiting ...",
-                source="tables",
-                route=[""],  # todo terminal
-            )
-            return
-        cycle = self.events_data[event]["cycle"]
-        custom_wave = cycle.get("custom wave", {})
-        use_varga_cycle = self.app.chart_settings.get("use varga cycle", False)
-        division = self.app.chart_settings.get("harmonic ring", "1").strip()
-        varga_str = f"v{division}" if use_varga_cycle else "v1"
-        text = (
-            " settings > chart settings > use varga cycle for harmonic cycle wave\n"
-            " & select cycle members for custom cyclic index\n"
-        )
-        h_line = f"{self.h_sym * 59}\n"
-        # show custom cyclic index
-        if custom_wave:
-            total_idx, total_norm = custom_wave["result"]
-            phase = "+" if total_norm <= 180 else "-"
-        text += (
-            f" {event} cycle index for {' '.join(custom_wave['members'])} | "
-            f"pairs : {custom_wave['pairs num']} | [{varga_str}] "
-            f"({total_idx:.2f}) {total_norm:.2f} {phase}"  # type:ignore
-            f"{self.vic_spc}\n"
-        )
-        text += f"{h_line}"
-        self.notify.debug(
-            f"updatecycle :\n{text}",
-            source="tables",
-            route=[""],
-        )
-        return text
+    # def update_cycle(self, event):
+    #     # called by update_event_data()
+    #     if (
+    #         event not in self.events_data
+    #         or "cycle" not in self.events_data[event]
+    #         or not self.events_data[event]["cycle"]
+    #     ):
+    #         self.notify.error(
+    #             f"missing data for {event} :  exiting ...",
+    #             source="tables",
+    #             route=[""],  # todo terminal
+    #         )
+    #         return
+    #     cycle = self.events_data[event]["cycle"]
+    #     custom_wave = cycle.get("custom wave", {})
+    #     use_varga_cycle = self.app.chart_settings.get("use varga cycle", False)
+    #     division = self.app.chart_settings.get("harmonic ring", "1").strip()
+    #     varga_str = f"v{division}" if use_varga_cycle else "v1"
+    #     text = (
+    #         " sidepane > cycle wave > use varga cycle for harmonic cycle wave\n"
+    #         " & select cycle members for custom cyclic index\n"
+    #     )
+    #     h_line = f"{self.h_sym * 59}\n"
+    #     # show custom cyclic index
+    #     if custom_wave:
+    #         total_idx, total_norm = custom_wave["result"]
+    #         phase = "+" if total_norm <= 180 else "-"
+    #     text += (
+    #         f" {event} cycle index for {' '.join(custom_wave['members'])} | "
+    #         f"pairs : {custom_wave['pairs num']} | [{varga_str}] "
+    #         f"({total_idx:.2f}) {total_norm:.2f} {phase}"  # type:ignore
+    #         f"{self.vic_spc}\n"
+    #     )
+    #     text += f"{h_line}"
+    #     self.notify.debug(
+    #         f"updatecycle :\n{text}",
+    #         source="tables",
+    #         route=[""],
+    #     )
+    #     return text
 
-    def cycle_settings_changed(self, event):
-        # update table on cycle settings : use varga cycle toggle
-        self.update_event_data(event)
+    # def cycle_settings_changed(self, event):
+    #     # update table on cycle settings : use varga cycle toggle
+    #     self.update_event_data(event)
 
     def vimsottari_changed(self, event, vimsottari):
         # receives table as plain text

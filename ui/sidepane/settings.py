@@ -163,7 +163,7 @@ event 1 & 2 can have different objects"""
     subsubpnl_prenatal = CollapsePanel(
         title="prenatal",
         indent=21,
-        expanded=True,  # False todo
+        expanded=False,  # False todo
     )
     subsubpnl_prenatal.set_title_tooltip(
         """prenatal lunation & eclipse

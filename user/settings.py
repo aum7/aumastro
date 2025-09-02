@@ -43,7 +43,7 @@ LOTS = {  # 7 hermetic lots : many different definitions for lots exist
     # LEGAL AFFAIRS   9th house cusp + 3rd house cusp - Venus :
     # "affairs+": {"day": "9th + 3rd - ve"},
     "fortuna": {
-        "enable": True,
+        "enable": False,
         "day": "asc + (mo - su)",
         "tooltip": "body",
     },
@@ -58,7 +58,7 @@ LOTS = {  # 7 hermetic lots : many different definitions for lots exist
         "tooltip": "fortuna - me\nconstraints, war, enmity",
     },
     "eros": {
-        "enable": True,
+        "enable": False,
         "day": "ve - (asc + (su - mo))",
         "tooltip": "ve - spirit\napetite, desire",
     },

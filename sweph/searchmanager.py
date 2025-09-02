@@ -125,6 +125,8 @@ class SearchManager:
             # store result
             if result is not None and not result.empty:
                 result.to_csv(os.path.join(save_dir, rule_filename), index=False)
+                # trigger search results plot
+                self.app.signal_manager._emit("plot_search_result")
             self.notify.info(
                 f"search result saved : {rule_filename}",
                 source="searchmanager",
