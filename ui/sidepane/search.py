@@ -8,7 +8,7 @@ gi.require_version("Gtk", "4.0")
 from gi.repository import Gtk, Gdk  # type: ignore
 from ui.collapsepanel import CollapsePanel
 from ui.sidepane.searchmanager import SearchManager
-from user.settings import SEARCH, TOKEN_CATEGORIES
+from user.settings import SEARCH, SEARCH_TOKENS
 
 
 def on_focus_changed(widget, pspec, tokens):
@@ -28,25 +28,16 @@ def on_entry_focus_out(controller, entry, tokens, search_view):
     search_view.remove_css_class("filter")
 
 
-# def on_filter_changed(entry, buf_tokens, all_tokens):
-#     text = entry.get_text().lower().strip()
-#     filtered_lines = []
-#     for line in all_tokens:
-#         if text == "" or text in line.lower():
-#             filtered_lines.append(line)
-#     buf_tokens.set_text("\n".join(filtered_lines))
-
-
 def collect_tokens(use_28=False):
-    _COMMANDS = set(TOKEN_CATEGORIES["command"])
-    _OBJECTS = set(TOKEN_CATEGORIES["object"])
-    _OPERATORS = set(TOKEN_CATEGORIES.get("operator", []))
-    _PLACES = set(TOKEN_CATEGORIES["place"])
-    _SIGNS = set(TOKEN_CATEGORIES["sign"].keys())
-    _ELEMENTS = set(TOKEN_CATEGORIES.get("element", []))
-    _MODES = set(TOKEN_CATEGORIES.get("mode", []))
+    _COMMANDS = set(SEARCH_TOKENS["command"])
+    _OBJECTS = set(SEARCH_TOKENS["object"])
+    _OPERATORS = set(SEARCH_TOKENS.get("operator", []))
+    _PLACES = set(SEARCH_TOKENS["place"])
+    _SIGNS = set(SEARCH_TOKENS["sign"].keys())
+    _ELEMENTS = set(SEARCH_TOKENS.get("element", []))
+    _MODES = set(SEARCH_TOKENS.get("mode", []))
     # allow also varga / division, house & naksatra search
-    TOKEN_DYNAMIC = {
+    DYNAMIC_TOKENS = {
         "varga": re.compile(r"^v\d+$"),
         "house": re.compile(r"^hs\d+$"),
         "nak": re.compile(r"^nk\d+$"),
@@ -59,7 +50,7 @@ def collect_tokens(use_28=False):
         "signs": sorted(_SIGNS),
         "elements": sorted(_ELEMENTS),
         "modes": sorted(_MODES),
-        "dynamic": TOKEN_DYNAMIC,
+        "dynamic": DYNAMIC_TOKENS,
     }
 
 
@@ -100,7 +91,7 @@ def validate_input(query: str, use_28=False, notify=None):
     _SIGNS = set(tokens_["signs"])
     _ELEMENTS = set(tokens_["elements"])
     _MODES = set(tokens_["modes"])
-    TOKEN_DYNAMIC = tokens_["dynamic"]
+    DYNAMIC_TOKENS = tokens_["dynamic"]
     # get query text into lines
     lines = [ln.strip() for ln in query.strip().split("\n") if ln.strip()]
     if not lines:
@@ -161,7 +152,7 @@ def validate_input(query: str, use_28=False, notify=None):
                         tvalue = int(token)
                         if not (0 <= tvalue <= 360):
                             errors.append(f"invalid degree : {token} (valid : 0-360)")
-                    elif any(rx.match(token) for rx in TOKEN_DYNAMIC.values()):
+                    elif any(rx.match(token) for rx in DYNAMIC_TOKENS.values()):
                         if token.startswith("v"):
                             ttype = "varga"
                             tvalue = int(token[1:])
@@ -229,7 +220,7 @@ def setup_search(manager) -> CollapsePanel:
     txv_tokens.set_wrap_mode(Gtk.WrapMode.WORD)
     txv_tokens.set_editable(False)
     txv_tokens.set_cursor_visible(False)
-    # move to the right
+    # move
     txv_tokens.set_margin_bottom(5)
     # text offset from border
     txv_tokens.set_left_margin(pad_x)
@@ -245,7 +236,7 @@ def setup_search(manager) -> CollapsePanel:
     text = []
     text.append("examples :")
     text.append("mo in ju v9 nak")
-    text.append("mo min max 0 decl")
+    text.append("ve 144 su")
     text.append("----------------------")
     for k, vals in show_tokens.items():
         if isinstance(vals, dict):

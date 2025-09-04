@@ -17,7 +17,6 @@ gi.require_version("Gtk", "4.0")
 from gi.repository import Gtk  # type: ignore
 from matplotlib.patches import Rectangle
 from matplotlib.lines import Line2D
-# from sweph.calculations.wave import calculate_wave
 
 
 class DataGraph(Gtk.Box):
@@ -52,7 +51,7 @@ class DataGraph(Gtk.Box):
         # init / create cycle wave
         # self.cycle_calculated = False # todo move to on_enter_key
         self.cycle_wave = None
-        self.app.signal_manager._connect("wave_changed", self.on_wave_changed)
+        self.app.signal_manager._connect("plot_wave", self.on_plot_wave)
         # init search result plot
         self.search_markers = []
         self.app.signal_manager._connect("clear_search_plots", self.clear_search_plots)
@@ -73,10 +72,10 @@ class DataGraph(Gtk.Box):
             self.search_cleared = True
             self.canvas.draw_idle()
 
-    def on_wave_changed(self, event, wave_data):
+    def on_plot_wave(self, event, wave_data):
         """called when wave is recalculated, ie on settings change"""
         self.cycle_wave = wave_data
-        # print(f"datagraph : cyclechanged :\n{cycle_data}")
+        print(f"datagraph : plotwave :\n{wave_data}")
         # re-plot overlay
         if self.plot_range[0] is not None and self.plot_range[1] is not None:
             self.plot_data(self.plot_range[0], self.plot_range[1])

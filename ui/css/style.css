@@ -120,24 +120,28 @@ textview text {
   color: black;
 }
 
-/* search editor */
-#search {
+/* search panel */
+#search,
+#cycle {
   border: 1px solid gray;
   color: gray;
   font-family: "VictorMonoLightAstro", "ui/font/victor", monospace;
   font-size: 16px;
 }
 
-#search:focus {
+#search:focus,
+#cycle:focus {
   color: white;
   border-color: lime;
 }
 
-#search.filter {
+#search.filter,
+#cycle.filter {
   color: white;
   border-color: lime;
 }
 
+/* search & cycle panel : valid tokens lists */
 #tokens {
   border: 1px solid gray;
   color: gray;
@@ -148,17 +152,4 @@ textview text {
 #tokens.filter {
   border-color: dodgerblue;
   color: dodgerblue;
-}
-
-/* cycle editor */
-#cycle {
-  border: 1px solid gray;
-  color: gray;
-  font-family: "VictorMonoLightAstro", "ui/font/victor", monospace;
-  font-size: 16px;
-}
-
-#cycle:focus {
-  color: white;
-  border-color: dodgerblue;
 }

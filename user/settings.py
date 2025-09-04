@@ -421,8 +421,8 @@ FILES = {
         "\nexample : {name}_{date}_{time_short}",
     ),
 }
-# --- search & cycle panels
-TOKEN_CATEGORIES = {
+# --- search panel
+SEARCH_TOKENS = {
     "command": ["clear"],
     "object": [
         "mo",
@@ -456,9 +456,9 @@ TOKEN_CATEGORIES = {
     ],
     "place": (
         "sign",
-        "nak",
-        "nk",
         "naksatra",
+        "nk",
+        # "nak",
         "term",  # terms / bounds
     ),
     "sign": {
@@ -486,7 +486,7 @@ SEARCH = {  # timerange can be omitted, range derived from datagraph data
 example :
     2012 12 21 - 2013 1 7 [enter search range as top line *]
     ve 144 su   [list of rules, newline separated]
-    mo min max 0 decl
+    mo in v9 ju nk
 
 v : varga 2-60
 hs : house 1-12
@@ -499,6 +499,26 @@ nk : naksatra 1-27 / mansion 1-28
 search results are saved to 'user/data/search/' folder""",
     ),
 }
+# --- search panel
+CYCLE_TOKENS = {
+    "command": ["clear"],
+    "object": [
+        "mo",
+        "ma",
+        "me",
+        "ju",
+        "ve",
+        "sa",
+        "su",
+        "ur",
+        "ne",
+        "pl",
+        "ra",
+    ],
+    "operator": [
+        "declination",
+    ],
+}
 CYCLE = {  # timerange can be omitted, range derived from datagraph data
     "cycle timerange": ("2024-1-21", "2025-08-19"),
     "rules": (
@@ -506,8 +526,8 @@ CYCLE = {  # timerange can be omitted, range derived from datagraph data
         """enter time range (YYYY-mm-dd) & rules (members) for cycle
 example :
     2012 12 21 - 2013 1 7 [enter cycle range as top line *]
-    pl ne ur sa ju v9   [list of members & rules, newline separated]
-    mo decl
+    mo decl  [list of members & rules, newline separated]
+    pl ne ur sa ju v9
 
 v : varga 2-60
 
@@ -518,24 +538,3 @@ v : varga 2-60
 cycle results are saved to 'user/data/wave/' folder""",
     ),
 }
-# # --- use varga positions for cycle wave
-# "use varga cycle": (
-#     True,
-#     "use varga positions for cycle index & wave calculation\nsort of 'harmonic' cycle index / wave",
-# ),
-# # --- invert cycle plotting, ie cycle rising might indicate price falling
-# "invert cycle": (
-#     False,
-#     "invert cycle plotting (ie up > down & vice versa)",
-# ),
-# # --- use custom planet list for cyclic index
-# "cycle members": (
-#     [],
-#     # ["ne ur sa ve"],
-#     # ["sa ju ma"],
-#     "select objects for custom cyclic index"
-#     "\nshort english names only (mo : moon | ne : neptune etc)"
-#     "\nuse [space] for separator"
-#     "\nmin 2 objects are required for a cycle"
-#     "\nsee user/settings.py > OBJECTS for available values",
-# ),

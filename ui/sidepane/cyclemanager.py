@@ -132,7 +132,98 @@ class CycleManager:
     def ordered_members(self, members):
         # filter by canonical order
         MEMBERS = set(members)
-        return [member for member in MEMBERS_ORDER if members in MEMBERS]
+        return [member for member in MEMBERS_ORDER if member in MEMBERS]
+
+    def run(self, query: str):
+        # data file : user/data/ folder
+        file_props = self.file_properties(self.app.files.get("data"))
+        # store results to
+        save_dir = "user/data/wave"
+        os.makedirs(save_dir, exist_ok=True)
+        file_dataframe = file_props["dataframe"].copy()
+        file_dataframe.rename(
+            columns={file_dataframe.columns[0]: "datetime"}, inplace=True
+        )
+        file_dataframe["datetime"] = pd.to_datetime(file_dataframe["datetime"])
+        file_dataframe.set_index("datetime", inplace=True)
+        parsed = self.parse_query(query)
+        start, end = parsed.get("cycle timerange", "")
+        # clip to make sure cycle time range fits into file time range
+        if start and end:
+            start = max(pd.to_datetime(start), pd.to_datetime(file_props["start"]))
+            end = min(pd.to_datetime(end), pd.to_datetime(file_props["end"]))
+            if start > end:
+                self.notify.warning(
+                    f"cycle time range {start} - {end} is outside file time range "
+                    f": no cycle possible : exiting ...",
+                    source="cyclemanager",
+                    route=["terminal", "user"],
+                )
+                return
+        dataframe_range = (
+            file_dataframe.loc[start:end] if start and end else file_dataframe
+        )
+        # filter dataframe to cycle range if cycle time frame was provided
+        if dataframe_range.empty:
+            self.notify.warning(
+                "missing data for selected range",
+                source="cyclemanager",
+                route=["terminal", "user"],
+            )
+            return
+        file_timeframe = file_props.get("timeframe")
+        results = []
+        for par in parsed.get("parsed rules", []):
+            rule_str = par["rule"]
+            tokens = par["tokens"]  # ["objects"]
+            members = tokens.get("objects", [])
+            varga = tokens.get("varga", 1)
+            # dispatch by rule / tokens
+            if "decl" in rule_str:
+                result_df = self.declination_wave(tokens, dataframe_range)
+            else:
+                result_df = self.compute_wave(dataframe_range, members, varga)
+            if result_df is None or result_df.empty:
+                self.notify.warning(
+                    f"rule '{rule_str}' has no data",
+                    source="cyclemanager",
+                    route=["terminal", "user"],
+                )
+                continue
+            # filename
+            rule_name = rule_str.replace(" ", "_").replace("/", "_")
+            rule_filename = f"{rule_name}_{file_timeframe}.csv"
+            out_path = os.path.join(save_dir, rule_filename)
+            result_df.to_csv(
+                out_path,
+                index=False,
+                date_format="%Y-%m-%d %H:%M:%S",
+            )
+            results.append({
+                "rule": rule_str,
+                "members": members,
+                "varga": varga,
+                # "path": str(out_path),
+                "dataframe": result_df,
+            })
+            self.notify.info(
+                f"wave saved : {rule_filename}",
+                source="cyclemanager",
+                route=["terminal", "user"],
+            )
+        # emit one signal per run : payload keeps list if multiple rules
+        cycles = {"range": (start, end), "results": results}
+        self.app.signal_manager._emit("plot_wave", "cycle", cycles)
+        return cycles
+
+    # rule definitions
+    def generic_rule(self, tokens, datarange):
+        self.notify.debug(
+            f"generic rule called : {tokens}",
+            source="cyclemanager",
+            route=["terminal"],
+        )
+        return pd.DataFrame()
 
     def compute_wave(self, df_time_indexed: pd.DataFrame, members, varga: int):
         if len(members) < 2:
@@ -154,134 +245,11 @@ class CycleManager:
             out_vals.append(self.total_wave(ordered, pos_map))
         return pd.DataFrame({"datetime": df_time_indexed.index, "cycle": out_vals})
 
-    def run(self, query: str):
-        # data file : user/data/ folder
-        file_props = self.file_properties(self.app.files.get("data"))
-        # store results to
-        save_dir = "user/data/wave"
-        os.makedirs(save_dir, exist_ok=True)
-        file_dataframe = file_props["dataframe"].copy()
-        file_dataframe.rename(
-            columns={file_dataframe.columns[0]: "datetime"}, inplace=True
+    def declination_wave(self, tokens, datarange):
+        self.notify.debug(
+            f"declination rule called : {tokens}",
+            source="cyclemanager",
+            route=["terminal"],
         )
-        file_dataframe["datetime"] = pd.to_datetime(file_dataframe["datetime"])
-        file_dataframe.set_index("datetime", inplace=True)
-        # file_start = file_props.get("start")
-        # file_end = file_props.get("end")
-        # convert rule to filename for storing
-        # cycle_timerange = query.get("cycle timerange")
-        parsed = self.parse_query(query)
-        # start, end = cycle_timerange if cycle_timerange else (file_start, file_end)
-        start, end = parsed.get("cycle timerange") or (
-            file_props["start"],
-            file_props["end"],
-        )
-        # clip to make sure cycle time range fits into file time range
-        if start and end:
-            start = max(pd.to_datetime(start), pd.to_datetime(file_props["start"]))
-            end = min(pd.to_datetime(end), pd.to_datetime(file_props["end"]))
-            if start > end:
-                self.notify.warning(
-                    f"cycle time range {start} - {end} is outside file time range "
-                    f": no cycle possible : exiting ...",
-                    source="cyclemanager",
-                    route=["terminal", "user"],
-                )
-                return
-        # parsed_rules = query.get("parsed rules", [])
-        dataframe_range = (
-            file_dataframe.loc[start:end] if start and end else file_dataframe
-        )
-        # filter dataframe to cycle range if cycle time frame was provided
-        if dataframe_range.empty:
-            self.notify.warning(
-                "missing data for selected range",
-                source="cyclemanager",
-                route=["terminal", "user"],
-            )
-            return
-        file_timeframe = file_props.get("timeframe")
-        results = []
-        for pr in parsed.get("parsed rules", []):
-            rule = pr["rule"]
-            members = pr["tokens"]["objects"]
-            varga = int(pr["tokens"]["varga"])
-            if len(members) < 2:
-                self.notify.warning(
-                    f"rule '{rule}' : minimum 2 members needed",
-                    source="cyclemanager",
-                    route=["terminal", "user"],
-                )
-                continue
-            wave_dataframe = self.compute_wave(dataframe_range, members, varga)
-            # filename
-            rule_name = rule.replace(" ", "_").replace("/", "_")
-            rule_filename = f"{rule_name}_{file_timeframe}.csv"
-            out_path = os.path.join(save_dir, rule_filename)
-            wave_dataframe.to_csv(
-                out_path,
-                index=False,
-                date_format="%Y-%m-%d %H:%M:%S",
-            )
-            results.append({
-                "rule": rule,
-                "members": members,
-                "varga": varga,
-                # "path": str(out_path),
-                "dataframe": wave_dataframe,
-            })
-            self.notify.info(
-                f"wave saved : {rule_filename}",
-                source="cyclemanager",
-                route=["terminal", "user"],
-            )
-        # emit one signal per run : payload keeps list if multiple rules
-        payload = {"range": (start, end), "results": results}
-        self.app.signal_manager._emit("wave_changed", "cycle", payload)
-        return payload
-
-        # cycle_datarange = None
-        # if file_dataframe is not None and not file_dataframe.empty:
-        #     cycle_datarange = file_dataframe[
-        #         (file_dataframe.iloc[:, 0] >= start)
-        #         & (file_dataframe.iloc[:, 0] <= end)
-        #     ].copy()
-        # self.notify.info(
-        #     f"running cycle from {start} to {end}",
-        #     source="cyclemanager",
-        #     route=[""],
-        # )
-        # self.notify.debug(
-        #     # f"run : query : {query}\n"
-        #     # f"filename : {filename}\n"
-        #     # f"filedataframe : {file_dataframe}\n"
-        #     # f"start-end : {start} - {end}\n"
-        #     # f"cycledatarange : {cycle_datarange}\n"
-        #     # f"cycle timerange : {cycle_timerange}\n"
-        #     f"parsedrules : {parsed_rules}\n",
-        #     source="cyclemanager",
-        #     route=[""],
-        # )
-        # for parsed in parsed_rules:
-        #     rule_str = parsed["rule"]
-        #     tokens = parsed["tokens"]
-        #     # main_place = parsed["place"]
-        #     # data gathered : calculations by rules
-        #     # if main_place in ("nak", "nk", "naksatra"):
-        #     #     result = self.naksatra_lord(tokens, cycle_datarange)
-        #     # else:
-        #     result = self.generic_rule(tokens, cycle_datarange)
-        #     # create filename for cycle results
-        #     rule_name = rule_str.replace(" ", "_").replace("/", "_").lower()
-        #     rule_filename = f"{rule_name}_{file_timeframe}.csv"
-        #     # store result
-        #     if result is not None:
-        #         result.to_csv(os.path.join(save_dir, rule_filename), index=False)
-        #     self.notify.info(
-        #         f"cycle result saved : {rule_filename}",
-        #         source="cyclemanager",
-        #         route=["terminal", "user"],
-        #     )
-
-    def generic_rule(self, *args):
-        print(f"cyclemanager : generic rule called : {args}")
+        # todo
+        return pd.DataFrame()
