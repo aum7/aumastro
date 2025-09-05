@@ -264,7 +264,7 @@ class Tables(Gtk.Notebook):
         matrix = aspects["aspects"]
         # title line
         text = (
-            f" aspects [v{division}] {self.h_sym * 51}\n"
+            f" aspects{self.vic_spc}[v{division}]{self.vic_spc}{self.h_sym * 52}\n"
             if use_varga_aspect
             else f" aspects [v1] {self.h_sym * 51}\n"
         )

@@ -232,13 +232,13 @@ CHART_SETTINGS = {
             "show secondary progression (p2) for event 2",
         ),
         "p3 progress": (
-            True,
+            False,
             "show tertiary progression (p3) for event 2\ncalculations as per richard houck",
         ),
         "solar return": (False, "show solar return for event 2"),
         "lunar return": (False, "show lunar return for event 2"),
         "varga": (
-            True,
+            False,
             "show (simple) varga ring for event 2\nset varga in above harmonic ring",
         ),
         "transit": (False, "show transit for event 2"),

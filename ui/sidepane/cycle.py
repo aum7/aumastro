@@ -151,7 +151,7 @@ def setup_cycle(manager) -> CollapsePanel:
     notify = manager.app.notify_manager
     pad_x = 7
     pad_y = 0
-    clp_cycle = CollapsePanel(title="cycle wave", expanded=True)
+    clp_cycle = CollapsePanel(title="cycle wave", expanded=False)
     clp_cycle.set_margin_end(manager.margin_end)
 
     box_cycle = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
