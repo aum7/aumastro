@@ -329,7 +329,7 @@ class DataGraph(Gtk.Box):
         self.ax.set_ylim(lows - (highs - lows) * 0.03, highs + (highs - lows) * 0.03)
         # plot overlay cycle wave
         if hasattr(self, "cycle_wave") and self.cycle_wave:
-            dataframe = self.cycle_wave["dataframe"].copy()
+            dataframe = self.cycle_wave["results"][0]["dataframe"].copy()
             # ensure datetime column is actual datetime
             dataframe["datetime"] = pd.to_datetime(dataframe["datetime"])
             # print(f"dataframe :\n{dataframe}")
@@ -395,7 +395,7 @@ class DataGraph(Gtk.Box):
             info = f"{dt_str}\nh={hi:.2f}\no={op:.2f}\nc={cl:.2f}\nl={lo:.2f}"
             # add cycle index value
             if hasattr(self, "cycle_wave") and self.cycle_wave:
-                dataframe = self.cycle_wave["dataframe"].copy()
+                dataframe = self.cycle_wave["results"][0]["dataframe"].copy()
                 # ensure datetime column
                 dataframe["datetime"] = pd.to_datetime(dataframe["datetime"])
                 dt_hover = self.df.index[ix]

@@ -152,6 +152,10 @@ class MainWindow(
         self.hotkeys.register_hotkey(
             "8", lambda: self.toggle_chart_setting("naksatras ring")
         )
+        # toggle rasi / varga aspects table
+        self.hotkeys.register_hotkey(
+            "shift+v", lambda: self.toggle_chart_setting("use varga aspect")
+        )
 
     def toggle_chart_setting(self, setting):
         """hotkey callback to toggle chart setting"""
@@ -186,7 +190,8 @@ class MainWindow(
             "\n\nhotkeys (hk)"
             "\nh : show help (this message)"
             "\ns : toggle side pane"
-            "\ne : toggle selected event for change time"
+            "\ne : toggle selected event"
+            "\n\t(ie for change time / time now & datagraph click (set datetime))"
             "\narrow keys : up/down = change period | left/right = change time"
             "\n\tfor selected event"
             "\nn : set time now for selected event location"
@@ -194,10 +199,10 @@ class MainWindow(
             "\ntab/shift+tab : navigate between widgets in side pane"
             "\nspace/enter : activate button / dropdown when focused"
             "\nshift+1/2/3/4 : show single / double / triple / all panes"
-            "\n\nnote : if entry / text field is focused, hotkeys will not work"
             "\na : toggle zodiac rotation (ascendant vs ari 0° at left)"
             "\ng : toggle glyphs visibility"
-            "\nr-t-z-u-i-o-p : toggle event 2 rings : varga-transit-lun-sol return-p3-p1-naksatras"
+            "\n1/2/3/4/5/6/7/8 : toggle transit/varga/lunar/solar return/p3/p2/p1/naksatras ring"
+            "\nshift+v : toggle 'use varga aspect' for aspects table"
             "\n\nnote : if entry / text field is focused, hotkeys will not work"
             "\n\t(text field will 'consume' key press)",
             source="help",

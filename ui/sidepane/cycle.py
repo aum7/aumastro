@@ -140,7 +140,7 @@ def validate_input(query: str, notify=None):
     if errors:
         return False, {"errors": errors}
     return True, {
-        "search timerange": timerange,
+        "cycle timerange": timerange,
         "parsed rules": parsed_rules,
     }
 

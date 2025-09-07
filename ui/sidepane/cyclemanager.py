@@ -57,52 +57,52 @@ class CycleManager:
             "end": end,
         }
 
-    def parse_query(self, text: str):
-        lines = [ln.strip().lower() for ln in text.splitlines() if ln.strip()]
-        timerange = None
-        rules = []
-        if not lines:
-            return {"cycle timerange": None, "parsed rules": []}
-        # try 1st line as timerange
-        first = lines[0]
-        rest = lines[1:]
-        try:
-            if " - " in first:
-                a, b = map(str.strip, first.split(" - "))
-            elif "   " in first:
-                a, b = map(str.strip, first.split("   "))
-            else:
-                a = b = first
-            start = pd.to_datetime(a, errors="raise")
-            end = pd.to_datetime(b, errors="raise")
-            if start > end:
-                start, end = end, start
-            timerange = (start, end)
-            rule_lines = rest
-        except Exception:
-            rule_lines = lines
+    # def parse_query(self, query):
+    #     lines = [ln.strip().lower() for ln in query.splitlines() if ln.strip()]
+    #     timerange = None
+    #     rules = []
+    #     if not lines:
+    #         return {"cycle timerange": None, "parsed rules": []}
+    #     # try 1st line as timerange
+    #     first = lines[0]
+    #     rest = lines[1:]
+    #     try:
+    #         if " - " in first:
+    #             a, b = map(str.strip, first.split(" - "))
+    #         elif "   " in first:
+    #             a, b = map(str.strip, first.split("   "))
+    #         else:
+    #             a = b = first
+    #         start = pd.to_datetime(a, errors="raise")
+    #         end = pd.to_datetime(b, errors="raise")
+    #         if start > end:
+    #             start, end = end, start
+    #         timerange = (start, end)
+    #         rule_lines = rest
+    #     except Exception:
+    #         rule_lines = lines
 
-        for ln in rule_lines:
-            for rule in [rl.strip() for rl in ln.split(",") if rl.strip()]:
-                tokens = rule.split()
-                varga = 1
-                objs = []
-                for tok in tokens:
-                    if tok.startswith("v"):
-                        try:
-                            varga = int(tok[1:])
-                        except Exception:
-                            varga = 1
-                    else:
-                        objs.append(tok)
-                # de-dup, keep order
-                seen = set()
-                objs = [obj for obj in objs if not (obj in seen or seen.add(obj))]
-                rules.append({
-                    "rule": rule,
-                    "tokens": {"objects": objs, "varga": varga},
-                })
-        return {"cycle timerange": timerange, "parsed rules": rules}
+    #     for ln in rule_lines:
+    #         for rule in [rl.strip() for rl in ln.split(",") if rl.strip()]:
+    #             tokens = rule.split()
+    #             varga = 1
+    #             objs = []
+    #             for tok in tokens:
+    #                 if tok.startswith("v"):
+    #                     try:
+    #                         varga = int(tok[1:])
+    #                     except Exception:
+    #                         varga = 1
+    #                 else:
+    #                     objs.append(tok)
+    #             # de-dup, keep order
+    #             seen = set()
+    #             objs = [obj for obj in objs if not (obj in seen or seen.add(obj))]
+    #             rules.append({
+    #                 "rule": rule,
+    #                 "tokens": {"objects": objs, "varga": varga},
+    #             })
+    #     return {"cycle timerange": timerange, "parsed rules": rules}
 
     def total_wave(self, ordered, pos_map):
         angles = []
@@ -134,7 +134,8 @@ class CycleManager:
         MEMBERS = set(members)
         return [member for member in MEMBERS_ORDER if member in MEMBERS]
 
-    def run(self, query: str):
+    def run(self, query):
+        print(f"cyclemanager : query : {query}")
         # data file : user/data/ folder
         file_props = self.file_properties(self.app.files.get("data"))
         # store results to
@@ -146,8 +147,12 @@ class CycleManager:
         )
         file_dataframe["datetime"] = pd.to_datetime(file_dataframe["datetime"])
         file_dataframe.set_index("datetime", inplace=True)
-        parsed = self.parse_query(query)
-        start, end = parsed.get("cycle timerange", "")
+        cycle_timerange = query.get("cycle timerange")
+        if cycle_timerange is None:
+            start, end = None, None
+        else:
+            start, end = cycle_timerange
+        print(f"cyclemanager : start end : {start} - {end}")
         # clip to make sure cycle time range fits into file time range
         if start and end:
             start = max(pd.to_datetime(start), pd.to_datetime(file_props["start"]))
@@ -173,11 +178,12 @@ class CycleManager:
             return
         file_timeframe = file_props.get("timeframe")
         results = []
-        for par in parsed.get("parsed rules", []):
+        for par in query.get("parsed rules", []):
             rule_str = par["rule"]
-            tokens = par["tokens"]  # ["objects"]
-            members = tokens.get("objects", [])
-            varga = tokens.get("varga", 1)
+            tokens = par["tokens"]
+            # get members & optional varga
+            members = [val for tok, val in tokens if tok == "object"]
+            varga = next((var for tok, var in tokens if tok == "varga"), 1)
             # dispatch by rule / tokens
             if "decl" in rule_str:
                 result_df = self.declination_wave(tokens, dataframe_range)
@@ -212,9 +218,9 @@ class CycleManager:
                 route=["terminal", "user"],
             )
         # emit one signal per run : payload keeps list if multiple rules
-        cycles = {"range": (start, end), "results": results}
-        self.app.signal_manager._emit("plot_wave", "cycle", cycles)
-        return cycles
+        cycle = {"range": (start, end), "results": results}
+        self.app.signal_manager._emit("plot_wave", "cycle", cycle)
+        return cycle
 
     # rule definitions
     def generic_rule(self, tokens, datarange):

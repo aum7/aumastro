@@ -266,7 +266,7 @@ class Tables(Gtk.Notebook):
         text = (
             f" aspects{self.vic_spc}[v{division}]{self.vic_spc}{self.h_sym * 52}\n"
             if use_varga_aspect
-            else f" aspects [v1] {self.h_sym * 51}\n"
+            else f" aspects{self.vic_spc}[v1]{self.vic_spc}{self.h_sym * 52}\n"
         )
         # header row
         text += f"  > {self.v_sym}"
@@ -678,85 +678,3 @@ class Tables(Gtk.Notebook):
                 if lon >= c0 or lon < c1:
                     return f"{h0:2d}"
         return ""
-
-
-# def update_cycles(self, event):
-#     # called by update_event_data()
-#     if (
-#         event not in self.events_data
-#         or "cycles" not in self.events_data[event]
-#         or not self.events_data[event]["cycles"]
-#     ):
-#         self.notify.error(
-#             f"missing data for {event}",
-#             source="tables",
-#             route=["terminal"],
-#         )
-#         return
-#     cycles = self.events_data[event]["cycles"]
-#     # obj_names = cycles["obj names"]
-#     # matrix = cycles["matrix"]
-#     custom_wave = cycles.get("custom wave", {})
-#     # keep moon row, but skip last empty (moon) col
-#     # row_names = obj_names
-#     # col_names = obj_names[:-1]
-#     # matrix = [row[:-1] for row in matrix]
-#     # name2idx_row = {n: i for i, n in enumerate(row_names)}
-#     # name2idx_col = {n: i for i, n in enumerate(col_names)}
-#     # headecolr
-#     text = " settings > chart settings > use varga for harmonic cyclic index\n & select cycle members for custom cyclic index\n"
-#     text += f" {event} cyclic index{self.vic_spc}{self.h_sym * 42}\n"
-#     # text += f" > {self.v_sym}"
-#     # for name in col_names:
-#     #     text += f" {name:>2}    {self.v_sym}"
-#     # text += "\n"
-#     h_line = f"{self.h_sym * 53}\n"
-#     # for row_name in row_names:
-#     #     i = name2idx_row[row_name]
-#     #     text += f" {row_name:>2}{self.v_sym}"
-#     #     for col_name in col_names:
-#     #         j = name2idx_col[col_name]
-#     #         cell = matrix[i][j]
-#     #         if cell is None or cell.get("type") == "skip":
-#     #             text += f"   -   {self.v_sym}"
-#     #         elif i == j:
-#     #             text += f" ***** {self.v_sym}"
-#     #         else:
-#     #             com = cell.get("compound")
-#     #             if com is not None:
-#     #                 sum = f"{com[0]:5.1f}"
-#     #                 phase = com[1]
-#     #             text += f"{sum} {phase}{self.v_sym}"
-#     #     text += "\n"
-#     # # compute per-column totals by scanning matrix for 'total' fields
-#     # col_totals = [None] * len(col_names)
-#     # for j in range(len(col_names)):
-#     #     for i in range(len(row_names)):
-#     #         cell = matrix[i][j]
-#     #         if cell and cell.get("total") is not None:
-#     #             col_totals[j] = cell.get("total")
-#     # # append bottom totals line (total_wave per column)
-#     # text += f" tt{self.v_sym}"
-#     # for j in range(len(col_names)):
-#     #     val = col_totals[j]
-#     #     if val is not None:
-#     #         text += f"{val:6.1f}{self.v_sym}"
-#     #     else:
-#     #         text += f"   -   {self.v_sym}"
-#     # text += "\n"
-#     # show custom cyclic index
-#     if custom_wave:
-#         total_idx, total_norm = custom_wave["result"]
-#         phase = "+" if total_norm <= 180 else "-"
-#         text += (
-#             f" custom wave : members : {' '.join(custom_wave['members'])} | "
-#             f"total pairs : {custom_wave['pairs num']} "
-#             f"| ({total_idx:.2f}) {total_norm:.2f} {phase}\n"
-#         )
-#     text += f" {h_line}"
-#     self.notify.debug(
-#         f"updatecycles :\n{text}",
-#         source="tables",
-#         route=[""],
-#     )
-#     return text
