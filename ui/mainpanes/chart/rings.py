@@ -225,23 +225,21 @@ class Info(RingBase):
         fmt_extra = self.chart_settings.get(
             "chart info string extra",
             "{hsys} | {zod}\n{aynm}",
-            # "chart info string extra", "{hsys} | {zod}\n{aynm} | {ayvl}"
         )
         # convert raw newline into actual newline
         fmt_basic = fmt_basic.replace(r"\n", "\n")
+        # make a copy of data so we dont mutate hora / glyph
+        data = dict(self.event_data)
         if "hora" in fmt_basic:
             # print("rings : hora found in info string ")
-            hora_lord = self.event_data["hora"]
-            self.event_data["hora"] = get_glyph(hora_lord, False)
+            data["hora"] = get_glyph(data["hora"], False)
         fmt_extra = fmt_extra.replace(r"\n", "\n")
         try:
             info_text = (
-                fmt_basic.format(**self.event_data)
-                + "\n"
-                + fmt_extra.format(**self.extra_info)
+                fmt_basic.format(**data) + "\n" + fmt_extra.format(**self.extra_info)
             )
             self.notify.debug(
-                f"circleinfo : infotext : {info_text}",
+                f"circleinfo : infotext :\n{info_text}",
                 source="rings",
                 route=[""],
             )

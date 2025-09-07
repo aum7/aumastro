@@ -268,12 +268,8 @@ CHART_SETTINGS = {
     ),
     # --- event data to be presented in chart info
     # construct your own 'chart info' format
-    # allowed fields: 1: event {name} | 2: weekday {wday} | 3: event {date} |
-    # 4: {time} | 5: {city} | 6: {country} | 7: {lat}itude |
-    # 8: {lon}gitude ; for short time format (no seconds) use {time_short}
     "chart info string": (
         r"{name}\n{date}\n{wday} {time_short} {hora}\n{city} @ {iso3}\n{lat}\n{lon}",
-        # r"{name}\n{date}\n{wday} {time_short}\n{city} @ {country}\n{lat}\n{lon}",
         r"""construct your own 'chart info' format : allowed fields :
     1: event {name} | 2: {datetime} | 3: {date} | 4: {time}
     5: {time_short} no seconds | 6: {hora} | 7: {wday} weekday
@@ -288,7 +284,6 @@ example : {name}\n{date}\n{wday} {time_short}\n{city} @ {country}\n{lat}\n{lon}"
     # 2: {zod}iac | 3: ayanamsa name {aynm} | 4: ayanamsa value {ayvl}
     "chart info string extra": (
         r"{hsys} | {zod}\n{aynm}",
-        # r"{hsys} | {zod}\n{aynm} | {ayvl}",
         r"""additional 'chart info' format : allowed fields :
     1: {hsys} house system
     2: {zod}iac

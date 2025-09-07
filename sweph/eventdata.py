@@ -670,7 +670,7 @@ class EventData:
             f"\n\tsweph 2\t{json.dumps(self.app.e2_sweph, sort_keys=True, indent=6, ensure_ascii=False)}"
             "\n--------------------------",
             source="eventdata",
-            route=["none"],
+            route=[""],
         )
         # detect event & emit signal
         if datetime_name == "datetime one":
@@ -684,5 +684,6 @@ class EventData:
             source="eventdata",
             route=["none"],
         )
-        _update_main_title(self)
+        change_time = getattr(self.app, "selected_change_time_str", "1 D")
+        _update_main_title(self, change_time)
         return

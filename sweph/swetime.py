@@ -161,9 +161,9 @@ def jd_to_custom_iso(jd, calendar=b"g"):
     m = int((h_ - h) * 60)
     s = int(round((((h_ - h) * 60) - m) * 60))
     # todo : leave this : date_conversion might return erroneous datetime
-    # if s >= 60:
-    #     s = 0
-    #     m += 1
+    if s >= 60:
+        s = 0
+        m += 1
     return f"{Y}-{M:02d}-{D:02d} {h:02d}:{m:02d}:{s:02d}"
 
 

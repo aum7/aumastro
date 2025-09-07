@@ -16,10 +16,10 @@ from ui.notifymanager import NotifyManager
 from ui.signalmanager import SignalManager
 
 
-class AstrogtApp(Gtk.Application):
+class AumastroApp(Gtk.Application):
     def __init__(self):
         super().__init__(
-            application_id="aum.astrogt.app",
+            application_id="aum.aumastro.app",
         )
         # initialize attributes first
         self.selected_event = "e1"
@@ -65,5 +65,5 @@ class AstrogtApp(Gtk.Application):
 
 
 if __name__ == "__main__":
-    app = AstrogtApp()
+    app = AumastroApp()
     app.run(None)

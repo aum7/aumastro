@@ -65,7 +65,8 @@ def _event_selection(manager, gesture, n_press, x, y, event_name):
             other_clp = manager.clp_event_one
         other_clp.remove_title_css_class("label-event-selected")  # type:ignore
         clp.add_title_css_class("label-event-selected")  # type:ignore
-        _update_main_title(manager)
+        change_time = getattr(manager.app, "selected_change_time_str", "1 D")
+        _update_main_title(manager, change_time)
         manager.notify.debug(
             f"{manager.app.selected_event} selected",
             source="helpers",
@@ -87,7 +88,7 @@ def _update_main_title(manager, change_time=None):
         dt = manager.app.e1_chart.get("datetime")
     elif event == "e2":
         dt = manager.app.e2_chart.get("datetime")
-    title = "astrogt"
+    title = "aumastro"
     if event and dt:
         title += f" | {event} : {dt}"
     elif event:

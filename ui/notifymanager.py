@@ -71,7 +71,7 @@ class NotifyLogger:
         self.logger.setLevel(logging.DEBUG)
         # default log file in home directory
         if log_file is None:
-            log_dir = Path.home() / ".astrogt" / "logs"
+            log_dir = Path.home() / ".aumastro" / "logs"
             log_dir.mkdir(parents=True, exist_ok=True)
             log_file = str(log_dir / "notifications.log")
         # setup file handler

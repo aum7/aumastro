@@ -68,7 +68,7 @@ delete datetime 2 = clear event 2 data"""
     ddn_country.set_name("country one" if event_name == "e1" else "country two")
     ddn_country.set_tooltip_text(
         """select country for location
-in astrogt/user/ folder there is file named
+in aumastro/user/ folder there is file named
 countries.txt
 open it with text editor & un-comment any country of interest (delete '# ' & save file)
 comment (add '# ' & save file) uninterested country"""

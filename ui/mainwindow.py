@@ -46,7 +46,7 @@ class MainWindow(
         self.headerbar.set_show_title_buttons(True)
         self.set_titlebar(self.headerbar)
         # widget for text align left
-        self.title_label = Gtk.Label(label="astrogt")
+        self.title_label = Gtk.Label(label="aumastro")
         self.headerbar.set_title_widget(self.title_label)
         self.set_default_size(800, 600)
         # setup ui : side pane

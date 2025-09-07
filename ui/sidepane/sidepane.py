@@ -175,6 +175,8 @@ or ie panes have been manually resized (click any text to focus sidepane)"""
             # )
             key = next(k for k, v in self.CHANGE_TIME_PERIODS.items() if v == new_value)
             self.CHANGE_TIME_SELECTED = float(key)
+            # store selected change time period for main title update
+            self.app.selected_change_time_str = new_value
             # update main window title
             _update_main_title(self, new_value)
 
@@ -270,15 +272,6 @@ or ie panes have been manually resized (click any text to focus sidepane)"""
     def obc_default(self, widget, data):
         self.notify.debug(f"{data} clicked", source="sidepane", route=["terminal"])
 
-    # def obc_settings(self, widget, data):
-    #     self.notify.debug(f"{data} clicked", source="sidepane", route=["terminal"])
-
-    # def obc_file_save(self, widget, data):
-    #     self.notify.debug(f"{data} clicked", source="sidepane", route=["terminal"])
-
-    # def obc_file_load(self, widget, data):
-    #     self.notify.debug(f"{data} clicked", source="sidepane", route=["terminal"])
-
     # change time handlers
     def obc_arrow_l(
         self, widget: Optional[Gtk.Widget] = None, data: Optional[str] = None
@@ -310,3 +303,12 @@ or ie panes have been manually resized (click any text to focus sidepane)"""
     ):
         """select next time period"""
         self.change_time_period(direction=1)
+
+    # def obc_settings(self, widget, data):
+    #     self.notify.debug(f"{data} clicked", source="sidepane", route=["terminal"])
+
+    # def obc_file_save(self, widget, data):
+    #     self.notify.debug(f"{data} clicked", source="sidepane", route=["terminal"])
+
+    # def obc_file_load(self, widget, data):
+    #     self.notify.debug(f"{data} clicked", source="sidepane", route=["terminal"])

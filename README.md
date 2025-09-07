@@ -4,7 +4,7 @@ made using gtk4 & python
 
 uses swisseph via pyswisseph lib
 
-![current development stage](https://github.com/aum7/astrogt/blob/master/ui/imgs/250626astrogt.png)
+![current development stage](https://github.com/aum7/aumastro/blob/master/ui/imgs/250626aumastro.png)
 
 ## License
 
