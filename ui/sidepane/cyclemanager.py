@@ -135,7 +135,7 @@ class CycleManager:
         return [member for member in MEMBERS_ORDER if member in MEMBERS]
 
     def run(self, query):
-        print(f"cyclemanager : query : {query}")
+        # print(f"cyclemanager : query : {query}")
         # data file : user/data/ folder
         file_props = self.file_properties(self.app.files.get("data"))
         # store results to
@@ -152,7 +152,7 @@ class CycleManager:
             start, end = None, None
         else:
             start, end = cycle_timerange
-        print(f"cyclemanager : start end : {start} - {end}")
+        # print(f"cyclemanager : start end : {start} - {end}")
         # clip to make sure cycle time range fits into file time range
         if start and end:
             start = max(pd.to_datetime(start), pd.to_datetime(file_props["start"]))

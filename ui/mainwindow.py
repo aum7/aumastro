@@ -158,7 +158,7 @@ class MainWindow(
         )
 
     def toggle_chart_setting(self, setting):
-        """hotkey callback to toggle chart setting"""
+        # hotkey callback to toggle chart setting & checkbox
         current_val = self.app.chart_settings.get(setting, False)
         new_val = not current_val
         self.app.chart_settings[setting] = new_val
@@ -201,7 +201,7 @@ class MainWindow(
             "\nshift+1/2/3/4 : show single / double / triple / all panes"
             "\na : toggle zodiac rotation (ascendant vs ari 0° at left)"
             "\ng : toggle glyphs visibility"
-            "\n1/2/3/4/5/6/7/8 : toggle transit/varga/lunar/solar return/p3/p2/p1/naksatras ring"
+            "\n1-8 : toggle transit-varga-lunar-solar return-p3-p2-p1-naksatras ring"
             "\nshift+v : toggle 'use varga aspect' for aspects table"
             "\n\nnote : if entry / text field is focused, hotkeys will not work"
             "\n\t(text field will 'consume' key press)",

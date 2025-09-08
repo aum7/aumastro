@@ -75,7 +75,7 @@ class DataGraph(Gtk.Box):
     def on_plot_wave(self, event, wave_data):
         """called when wave is recalculated, ie on settings change"""
         self.cycle_wave = wave_data
-        print(f"datagraph : plotwave :\n{wave_data}")
+        # print(f"datagraph : plotwave :\n{wave_data}")
         # re-plot overlay
         if self.plot_range[0] is not None and self.plot_range[1] is not None:
             self.plot_data(self.plot_range[0], self.plot_range[1])
