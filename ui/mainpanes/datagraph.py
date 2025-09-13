@@ -51,7 +51,8 @@ class DataGraph(Gtk.Box):
         # init / create cycle wave
         # self.cycle_calculated = False # todo move to on_enter_key
         self.cycle_wave = None
-        self.app.signal_manager._connect("plot_wave", self.on_plot_wave)
+        self.app.signal_manager._connect("clear_wave_plots", self.on_clear_wave_plots)
+        self.app.signal_manager._connect("plot_wave_result", self.on_plot_wave_result)
         # init search result plot
         self.search_markers = []
         self.app.signal_manager._connect("clear_search_plots", self.clear_search_plots)
@@ -59,20 +60,20 @@ class DataGraph(Gtk.Box):
         self.plot_last_n(200)
         self.search_cleared = False
 
-    def clear_search_plots(self, *args):
-        # remove all previously plotted search markers
-        if hasattr(self, "search_markers") and self.search_markers:
-            for marker in self.search_markers:
+    def on_clear_wave_plots(self, *args):
+        # remove plotted wave lines
+        if hasattr(self, "wave_lines") and self.wave_lines:
+            for line in self.wave_lines:
                 try:
-                    if hasattr(marker, "remove"):
-                        marker.remove()
+                    if hasattr(line, "remove"):
+                        line.remove()
                 except Exception:
                     pass
-            self.search_markers = []
-            self.search_cleared = True
+            self.wave_lines = []
             self.canvas.draw_idle()
+        self.cycle_wave = None
 
-    def on_plot_wave(self, event, wave_data):
+    def on_plot_wave_result(self, event, wave_data):
         """called when wave is recalculated, ie on settings change"""
         self.cycle_wave = wave_data
         # print(f"datagraph : plotwave :\n{wave_data}")
@@ -185,6 +186,19 @@ class DataGraph(Gtk.Box):
         if artist is not None:
             self.search_markers.append(artist)
         self.canvas.draw_idle()
+
+    def clear_search_plots(self, *args):
+        # remove all previously plotted search markers
+        if hasattr(self, "search_markers") and self.search_markers:
+            for marker in self.search_markers:
+                try:
+                    if hasattr(marker, "remove"):
+                        marker.remove()
+                except Exception:
+                    pass
+            self.search_markers = []
+            self.search_cleared = True
+            self.canvas.draw_idle()
 
     def plot_search_result(self):
         self.search_cleared = False
@@ -363,13 +377,14 @@ class DataGraph(Gtk.Box):
                         + (1 - 2 * margin) * (y_vals - ymin)
                     )
                     # plot
-                    self.ax.plot(
+                    (line,) = self.ax.plot(
                         x_vals,
                         y_vals,
                         color="grey",
                         lw=0.7,
                         alpha=0.3,
                     )
+                    self.wave_lines = [line]
         self.init_cursor()
         # self.plot_search_result()
         self.canvas.draw()

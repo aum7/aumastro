@@ -400,7 +400,7 @@ FILES = {
     ),
     # --- path to data folder & file ; data to be plotted on graph
     "data": (
-        "user/data/gold/gold_d_utc.csv",
+        "user/data/gold/gold_h_utc.csv",
         "path to data folder & file name : data for plotting on graph",
     ),
     # --- construct your own 'filename' format: allowed fields
@@ -494,7 +494,7 @@ nk : naksatra 1-27 / mansion 1-28
 search results are saved to 'user/data/search/' folder""",
     ),
 }
-# --- search panel
+# --- cycle wave panel
 CYCLE_TOKENS = {
     "command": ["clear"],
     "object": [

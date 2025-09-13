@@ -1,4 +1,4 @@
-# ui/search.py
+# ui/sidepane/search.py
 # ruff: noqa: E402
 import re
 import pandas as pd

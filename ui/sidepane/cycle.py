@@ -102,41 +102,47 @@ def validate_input(query: str, notify=None):
         rule_lines = lines
     # parse rules to categories for search calculations
     for ln in rule_lines:
-        for rule in ln.split(","):
-            rule = rule.strip().lower()
-            if not rule:
-                continue
-            # rules.append(rule)
-            tokens_parsed = []
-            for token in rule.split():
-                ttype = None
-                tvalue = token
-                # allow abbreviated tokens : decl > declination
-                if token not in _OPERATORS:
-                    match_op = [op for op in _OPERATORS if op.startswith(token)]
-                    if match_op:
-                        ttype = "operator"
-                        tvalue = match_op[0]
-                if ttype is None:
-                    if token in _COMMANDS:
-                        ttype = "command"
-                    if token in _OBJECTS:
-                        ttype = "object"
-                    elif any(rx.match(token) for rx in DYNAMIC_TOKENS.values()):
-                        if token.startswith("v"):
-                            ttype = "varga"
-                            tvalue = int(token[1:])
-                            if not (2 <= tvalue <= 60):
-                                errors.append(
-                                    f"invalid varga / division : {token} (valid : 2-60)"
-                                )
-                    else:
-                        errors.append(f"unknown token : {token}")
-                tokens_parsed.append((ttype, tvalue))
+        # for rule in ln.split(","):
+        rule = ln.strip().lower()
+        if not rule:
+            continue
+        # command-only rules : clear
+        if rule in _COMMANDS:
             parsed_rules.append({
                 "rule": rule,
-                "tokens": tokens_parsed,
+                "tokens": [("command", rule)],
             })
+            continue
+        tokens_parsed = []
+        for token in rule.split():
+            ttype = None
+            tvalue = token
+            # allow abbreviated tokens : decl > declination
+            if token not in _OPERATORS:
+                match_op = [op for op in _OPERATORS if op.startswith(token)]
+                if match_op:
+                    ttype = "operator"
+                    tvalue = match_op[0]
+            if ttype is None:
+                if token in _COMMANDS:
+                    ttype = "command"
+                if token in _OBJECTS:
+                    ttype = "object"
+                elif any(rx.match(token) for rx in DYNAMIC_TOKENS.values()):
+                    if token.startswith("v"):
+                        ttype = "varga"
+                        tvalue = int(token[1:])
+                        if not (2 <= tvalue <= 60):
+                            errors.append(
+                                f"invalid varga / division : {token} (valid : 2-60)"
+                            )
+                else:
+                    errors.append(f"unknown token : {token}")
+            tokens_parsed.append((ttype, tvalue))
+        parsed_rules.append({
+            "rule": rule,
+            "tokens": tokens_parsed,
+        })
     if errors:
         return False, {"errors": errors}
     return True, {

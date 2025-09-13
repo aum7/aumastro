@@ -181,6 +181,18 @@ class CycleManager:
         for par in query.get("parsed rules", []):
             rule_str = par["rule"]
             tokens = par["tokens"]
+            # detect clear command
+            is_clear = any(
+                ttype == "command" and tvalue.lower() == "clear"
+                for ttype, tvalue in tokens
+            )
+            if is_clear:
+                self.app.signal_manager._emit("clear_wave_plots")
+                self.notify.info(
+                    "clearing wave plots",
+                    source="cyclemanager",
+                    route=["terminal", "user"],
+                )
             # get members & optional varga
             members = [val for tok, val in tokens if tok == "object"]
             varga = next((var for tok, var in tokens if tok == "varga"), 1)
@@ -219,7 +231,7 @@ class CycleManager:
             )
         # emit one signal per run : payload keeps list if multiple rules
         cycle = {"range": (start, end), "results": results}
-        self.app.signal_manager._emit("plot_wave", "cycle", cycle)
+        self.app.signal_manager._emit("plot_wave_result", "cycle", cycle)
         return cycle
 
     # rule definitions
