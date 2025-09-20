@@ -49,16 +49,53 @@ class DataGraph(Gtk.Box):
         self.canvas.mpl_connect("key_press_event", self.on_key_press)
         self.canvas.mpl_connect("key_release_event", self.on_key_release)
         # init / create cycle wave
-        # self.cycle_calculated = False # todo move to on_enter_key
         self.cycle_wave = None
-        self.app.signal_manager._connect("clear_wave_plots", self.on_clear_wave_plots)
-        self.app.signal_manager._connect("plot_wave_result", self.on_plot_wave_result)
+        signal = self.app.signal_manager
+        # subscribe to event / dt change : update datagraph info_cursor
+        signal._connect("event_changed", self.on_event_changed)
+        signal._connect("clear_wave_plots", self.on_clear_wave_plots)
+        signal._connect("plot_wave_result", self.on_plot_wave_result)
         # init search result plot
         self.search_markers = []
-        self.app.signal_manager._connect("clear_search_plots", self.clear_search_plots)
-        self.app.signal_manager._connect("plot_search_result", self.plot_search_result)
+        signal._connect("clear_search_plots", self.clear_search_plots)
+        signal._connect("plot_search_result", self.plot_search_result)
         self.plot_last_n(200)
         self.search_cleared = False
+
+    def on_event_changed(self, event_id):
+        # could use sweph.datetime
+        # only update if df exists & matches event
+        if self.df is None:
+            return
+        if event_id != self.app.selected_event:
+            return
+        # grab datetime from eventdata
+        event = getattr(self.app, f"{event_id}_event", None)
+        if not event or not getattr(event, "date_time", None):
+            return
+        try:
+            dt = event.date_time.get_text()
+            # parse to datetime if needed
+            from pandas import to_datetime
+
+            dt = to_datetime(dt)
+        except Exception:
+            return
+        # suspend mouse-follow for one step ???
+        self.cursor_follow_mouse = False
+        self.move_cursor(dt)
+        self.cursor_follow_mouse = True
+
+    def move_cursor(self, dt):
+        if self.df is None or self.info_cursor is None:
+            return
+        try:
+            x = self.df.index.get_loc(dt, method="nearest")
+            xval = self.df.index[x]
+            self.info_cursor.set_xdata([xval, xval])
+            self.cursor_text.set_text(str(xval))
+        except Exception:
+            pass
 
     def on_clear_wave_plots(self, *args):
         # remove plotted wave lines
@@ -262,6 +299,7 @@ class DataGraph(Gtk.Box):
                 pad=2,
             ),
         )
+        self.cursor_follow_mouse = True
 
     def plot_last_n(self, n):
         """initial number of bars to plot"""
@@ -391,6 +429,8 @@ class DataGraph(Gtk.Box):
 
     def on_mouse_move(self, event):
         """show bar info on mouse-over"""
+        if not getattr(self, "cursor_follow_mouse", True):
+            return
         if not event.inaxes:
             self.info_cursor.set_visible(False)
             self.cursor_text.set_visible(False)

@@ -198,7 +198,7 @@ only use [space] as separator
         if default:
             ent_event_name.set_text(default)
     ent_event_name.set_tooltip_text(
-        """will be used for filename when saving
+        """will be used for filename when saving [todo]
     recommended fit : max 14 characters
     max 30 characters
 

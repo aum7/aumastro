@@ -304,9 +304,6 @@ or ie panes have been manually resized (click any text to focus sidepane)"""
         """select next time period"""
         self.change_time_period(direction=1)
 
-    # def obc_settings(self, widget, data):
-    #     self.notify.debug(f"{data} clicked", source="sidepane", route=["terminal"])
-
     # def obc_file_save(self, widget, data):
     #     self.notify.debug(f"{data} clicked", source="sidepane", route=["terminal"])
 

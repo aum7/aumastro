@@ -1,6 +1,6 @@
 # sweph/eventdata.py
 # ruff: noqa: E402
-# import re
+import pandas as pd
 import gi
 
 gi.require_version("Gtk", "4.0")
@@ -87,6 +87,11 @@ class EventData:
         if self.date_time is not None:
             self.date_time.set_text(dt)
             self.on_datetime_change(self.date_time)
+        # also sync datagraph cursor / v_line
+        if hasattr(self.app, "datagraph") and self.app.datagraph:
+            dtgrph = self.app.datagraph
+            dtgrph.cursor_follow_mouse = False
+            dtgrph.move_cursor(pd.to_datetime(dt))
 
     def on_location_change(self, entry):
         """process location data (as string)
