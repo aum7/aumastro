@@ -11,8 +11,8 @@ from ui.collapsepanel import CollapsePanel
 from ui.helpers import _buttons_from_dict, _update_main_title
 from sweph.swetime import custom_iso_to_jd, jd_to_custom_iso
 from .events import setup_event
-from .search import setup_search
 from .settings import setup_settings
+from .search import setup_search
 from .cycle import setup_cycle
 
 

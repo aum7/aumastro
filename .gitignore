@@ -2,3 +2,6 @@ __pycache__
 sweph/ephe/
 user/data/_archive/
 user/data/wave/
+ui/imgs/icons/hicolor/scalable/x_glyph_signs
+ui/imgs/icons/hicolor/scalable/x_stack
+ui/imgs/icons/hicolor/scalable/x_tools

@@ -517,7 +517,7 @@ CYCLE_TOKENS = {
 CYCLE = {  # timerange can be omitted, range derived from datagraph data
     "cycle timerange": ("2024-1-21", "2025-08-19"),
     "rules": (
-        "pl ne ur sa ju ma su ve me mo",
+        "sa ju v9",
         """enter time range (YYYY-mm-dd) & rules (members) for cycle
 example :
     2012 12 21 - 2013 1 7 [enter cycle range as top line *]

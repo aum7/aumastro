@@ -239,15 +239,40 @@ event 1 & 2 can have different objects"""
     box_chart_settings = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5)
     box_chart_settings.set_margin_start(manager.margin_end)
     box_chart_settings.set_margin_end(manager.margin_end)
+    app.chart_settings = {}
+    app.checkbox_chart_settings = {}
+    # label for dataflow / pane focus
+    lbl_settings_dataflow = Gtk.Label(label="data flow / pane focus")
+    lbl_settings_dataflow.set_halign(Gtk.Align.START)
+    box_chart_settings.append(lbl_settings_dataflow)
+    # pane focus checkbox
+    row = Gtk.ListBoxRow()
+    setting_dataflow = "focus datagraph"
+    default_dataflow = False
+    manager.chk_dataflow = Gtk.CheckButton(label=setting_dataflow)
+    manager.chk_dataflow.set_active(default_dataflow)
+    manager.chk_dataflow.connect(
+        "toggled",
+        lambda btn, s=setting_dataflow, m=manager: chart_settings_toggled(btn, s, m),
+    )
+    row.set_tooltip_text(
+        "if enabled, focus datagraph (ie shift-click), else astrochart (default, ie arrow keys)"
+    )
+    row.set_child(manager.chk_dataflow)
+    manager.lbx_chart_setts_pane = Gtk.ListBox()
+    manager.lbx_chart_setts_pane.set_selection_mode(Gtk.SelectionMode.NONE)
+    # box_chart_settings.append(row)
+    manager.lbx_chart_setts_pane.append(row)
+    box_chart_settings.append(manager.lbx_chart_setts_pane)
+    app.checkbox_chart_settings[setting_dataflow] = manager.chk_dataflow
+    app.chart_settings[setting_dataflow] = default_dataflow
+    # listbox with rows for calculations settings
+    manager.lbx_chart_setts_top = Gtk.ListBox()
+    manager.lbx_chart_setts_top.set_selection_mode(Gtk.SelectionMode.NONE)
     # label for calculations settings
     lbl_settings_calc = Gtk.Label(label="calculations")
     lbl_settings_calc.set_halign(Gtk.Align.START)
     box_chart_settings.append(lbl_settings_calc)
-    # listbox with rows for calculations settings
-    manager.lbx_chart_setts_top = Gtk.ListBox()
-    manager.lbx_chart_setts_top.set_selection_mode(Gtk.SelectionMode.NONE)
-    app.chart_settings = {}
-    app.checkbox_chart_settings = {}
     # calculations checkboxes
     for setting in [
         "mean node",
