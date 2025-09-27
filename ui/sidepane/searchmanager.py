@@ -3,6 +3,7 @@
 import os
 import swisseph as swe
 import pandas as pd
+import json
 import gi
 
 gi.require_version("Gtk", "4.0")
@@ -12,6 +13,9 @@ from gi.repository import Gtk  # type: ignore
 from pathlib import Path
 from ui.helpers import _object_name_to_code as objcode
 from sweph.calculations.varga import get_varga_lon as vargalon
+from datetime import date, timedelta, datetime, timezone
+from zoneinfo import ZoneInfo
+from sweph.swetime import jd_to_custom_iso as jdtoiso
 
 
 class SearchManager:
@@ -109,6 +113,29 @@ class SearchManager:
                 )
                 # do not create or save any csv
                 return
+            # detect sunrise operator
+            is_sunrise = any(
+                ttype == "operator" and tvalue.lower() == "sunrise"
+                for ttype, tvalue in tokens
+            )
+            if is_sunrise:
+                if not search_timerange:
+                    today = date.today()
+                    year_start = date(today.year, 1, 1)
+                    start = year_start
+                    end = date(year_start.year, 1, 1) + timedelta(days=365 * 2)
+                else:
+                    start, end = search_timerange
+                rows = self.sunriseset(start, end)
+                if rows:
+                    self.sunrise_json(rows, start, end, outdir=save_dir)
+                    self.notify.info(
+                        f"sunrise result saved to {save_dir} .json file",
+                        source="searchmanager",
+                        route=["terminal", "user"],
+                        timeout=6,
+                    )
+                continue
             main_place = parsed["place"]
             # data gathered : calculations by rules
             if main_place in ("nak", "nk", "naksatra"):
@@ -131,6 +158,33 @@ class SearchManager:
                 route=["terminal", "user"],
                 timeout=4,
             )
+
+    def sunrise_json(self, rows, start, end, outdir="sunrise"):
+        chart = getattr(self.app, "e1_chart", None)
+        if chart is None:
+            self.notify.error(
+                "missing e1 chart data : exiting ...",
+                source="searchmanager",
+                route=["terminal", "user"],
+            )
+            return
+        country = chart.get("country", "/")
+        city = chart.get("city", "/")
+        location = chart.get("location", "/")
+        data = {
+            "country": country,
+            "city": city,
+            "location": location,
+            "generated": date.today().isoformat(),
+            "data": rows,
+        }
+        start_date = start.strftime("%Y_%m_%d")
+        end_date = end.strftime("%Y_%m_%d")
+
+        Path(outdir).mkdir(parents=True, exist_ok=True)
+        filename = f"{str(country).lower()}_{city.lower()}_{start_date}_{end_date}.json"
+        with open(Path(outdir) / filename, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
 
     def generic_rule(self, *args):
         print(f"searchmanager : generic rule called : {args}")
@@ -212,9 +266,6 @@ class SearchManager:
         )
         return search_result
 
-    def terms(self, *args):
-        pass
-
     def declination(self, tokens, datarange):
         # find object declination 0, local max & min, & big standstills
         hits = []
@@ -285,3 +336,88 @@ class SearchManager:
             end = start + slice_size
             slots.append((lord, start, end))
         return slots
+
+    # def jd_to_local_time(self, jd, lat, lon, tz_name=None):
+    #     # from utc result to event datetime : timezone
+    #     utc_dt = datetime.strptime(jd_to_custom_iso(jd), "%Y-%m-%d %H:%M:%S")
+    #     if tz_name is None:
+    #         tzf = TimezoneFinder()
+    #         zt_name = tzf.timezone_at(lat=lat, lng=lon)
+    #     if tz_name:
+    #         local_dt = utc_dt.replace(tzinfo=datetime.timezone.utc).astimezone(
+    #             ZoneInfo(zt_name)
+    #         )
+    #     else:
+    #         local_dt = utc_dt
+    #     return local_dt
+
+    def sunriseset(self, start, end):
+        app = self.app
+        sweph_flag = getattr(app, "sweph_flag", 0)
+
+        # need location : event 1
+        sweph = getattr(app, "e1_sweph", None)
+        chart = getattr(app, "e1_chart", None)
+        if not sweph or not chart:
+            self.notify.error(
+                "missing e1 data : exiting ...",
+                source="searchmanager",
+                route=["terminal", "user"],
+            )
+            return []
+        lon = sweph.get("lon")
+        lat = sweph.get("lat")
+        alt = sweph.get("alt")
+        tz_name = chart.get("timezone")
+        weekdays = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
+        jd_start = swe.julday(start.year, start.month, start.day, 0.0)
+        jd_end = swe.julday(end.year, end.month, end.day, 0.0)
+        rows = []
+        jd = jd_start
+        while jd <= jd_end:
+            _, data_rise = swe.rise_trans(
+                jd,
+                swe.SUN,
+                swe.CALC_RISE,
+                (lon, lat, alt),
+                atpress=0.0,
+                attemp=0.0,
+                flags=sweph_flag,
+            )
+            srise = data_rise[0]
+
+            _, data_set = swe.rise_trans(
+                jd,
+                swe.SUN,
+                swe.CALC_SET,
+                (lon, lat, alt),
+                atpress=0.0,
+                attemp=0.0,
+                flags=sweph_flag,
+            )
+            sset = data_set[0]
+            # to utc
+            dt_rise_utc = datetime.strptime(
+                jdtoiso(srise), "%Y-%m-%d %H:%M:%S"
+            ).replace(tzinfo=timezone.utc)
+            dt_set_utc = datetime.strptime(jdtoiso(sset), "%Y-%m-%d %H:%M:%S").replace(
+                tzinfo=timezone.utc
+            )
+            # to local time
+            if tz_name:
+                dt_rise_event = dt_rise_utc.astimezone(ZoneInfo(tz_name))
+                dt_set_event = dt_set_utc.astimezone(ZoneInfo(tz_name))
+            else:
+                dt_rise_event = dt_rise_utc
+                dt_set_event = dt_set_utc
+            rows.append({
+                "date": dt_rise_event.strftime("%Y-%m-%d"),
+                "sunrise": dt_rise_event.strftime("%H:%M:%S"),
+                "sunset": dt_set_event.strftime("%H:%M:%S"),
+                "weekday": weekdays[dt_rise_event.weekday()],
+            })
+            jd += 1.0
+        return rows
+
+    def terms(self, *args):
+        pass

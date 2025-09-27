@@ -128,12 +128,13 @@ def calculate_hora(event: str):
     notify = app.notify_manager
     msg = f"event {event}\n"
     flag = app.sweph_flag
+    sweph = None
     # gather data
     if event == "e1":
         sweph = getattr(app, "e1_sweph", None)
     elif event == "e2":
         sweph = getattr(app, "e2_sweph", None)
-    if sweph:
+    if sweph is not None:
         jd_ut = sweph.get("jd_ut")
         lon = sweph.get("lon")
         lat = sweph.get("lat")

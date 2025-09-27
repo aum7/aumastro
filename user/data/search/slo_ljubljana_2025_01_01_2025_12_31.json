@@ -1,0 +1,2198 @@
+{
+  "country": "Slo",
+  "city": "Ljubljana",
+  "location": "46 03 03 n 014 30 18 e 0294 m",
+  "generated": "2025-09-27",
+  "data": [
+    {
+      "date": "2025-01-01",
+      "sunrise": "07:43:59",
+      "sunset": "16:27:28",
+      "weekday": "wed"
+    },
+    {
+      "date": "2025-01-02",
+      "sunrise": "07:43:58",
+      "sunset": "16:28:26",
+      "weekday": "thu"
+    },
+    {
+      "date": "2025-01-03",
+      "sunrise": "07:43:55",
+      "sunset": "16:29:25",
+      "weekday": "fri"
+    },
+    {
+      "date": "2025-01-04",
+      "sunrise": "07:43:50",
+      "sunset": "16:30:26",
+      "weekday": "sat"
+    },
+    {
+      "date": "2025-01-05",
+      "sunrise": "07:43:41",
+      "sunset": "16:31:29",
+      "weekday": "sun"
+    },
+    {
+      "date": "2025-01-06",
+      "sunrise": "07:43:30",
+      "sunset": "16:32:34",
+      "weekday": "mon"
+    },
+    {
+      "date": "2025-01-07",
+      "sunrise": "07:43:16",
+      "sunset": "16:33:40",
+      "weekday": "tue"
+    },
+    {
+      "date": "2025-01-08",
+      "sunrise": "07:43:00",
+      "sunset": "16:34:48",
+      "weekday": "wed"
+    },
+    {
+      "date": "2025-01-09",
+      "sunrise": "07:42:40",
+      "sunset": "16:35:58",
+      "weekday": "thu"
+    },
+    {
+      "date": "2025-01-10",
+      "sunrise": "07:42:19",
+      "sunset": "16:37:09",
+      "weekday": "fri"
+    },
+    {
+      "date": "2025-01-11",
+      "sunrise": "07:41:54",
+      "sunset": "16:38:22",
+      "weekday": "sat"
+    },
+    {
+      "date": "2025-01-12",
+      "sunrise": "07:41:27",
+      "sunset": "16:39:36",
+      "weekday": "sun"
+    },
+    {
+      "date": "2025-01-13",
+      "sunrise": "07:40:57",
+      "sunset": "16:40:51",
+      "weekday": "mon"
+    },
+    {
+      "date": "2025-01-14",
+      "sunrise": "07:40:25",
+      "sunset": "16:42:08",
+      "weekday": "tue"
+    },
+    {
+      "date": "2025-01-15",
+      "sunrise": "07:39:50",
+      "sunset": "16:43:25",
+      "weekday": "wed"
+    },
+    {
+      "date": "2025-01-16",
+      "sunrise": "07:39:13",
+      "sunset": "16:44:44",
+      "weekday": "thu"
+    },
+    {
+      "date": "2025-01-17",
+      "sunrise": "07:38:33",
+      "sunset": "16:46:04",
+      "weekday": "fri"
+    },
+    {
+      "date": "2025-01-18",
+      "sunrise": "07:37:51",
+      "sunset": "16:47:25",
+      "weekday": "sat"
+    },
+    {
+      "date": "2025-01-19",
+      "sunrise": "07:37:07",
+      "sunset": "16:48:47",
+      "weekday": "sun"
+    },
+    {
+      "date": "2025-01-20",
+      "sunrise": "07:36:20",
+      "sunset": "16:50:10",
+      "weekday": "mon"
+    },
+    {
+      "date": "2025-01-21",
+      "sunrise": "07:35:31",
+      "sunset": "16:51:33",
+      "weekday": "tue"
+    },
+    {
+      "date": "2025-01-22",
+      "sunrise": "07:34:39",
+      "sunset": "16:52:58",
+      "weekday": "wed"
+    },
+    {
+      "date": "2025-01-23",
+      "sunrise": "07:33:46",
+      "sunset": "16:54:23",
+      "weekday": "thu"
+    },
+    {
+      "date": "2025-01-24",
+      "sunrise": "07:32:50",
+      "sunset": "16:55:49",
+      "weekday": "fri"
+    },
+    {
+      "date": "2025-01-25",
+      "sunrise": "07:31:52",
+      "sunset": "16:57:15",
+      "weekday": "sat"
+    },
+    {
+      "date": "2025-01-26",
+      "sunrise": "07:30:51",
+      "sunset": "16:58:42",
+      "weekday": "sun"
+    },
+    {
+      "date": "2025-01-27",
+      "sunrise": "07:29:49",
+      "sunset": "17:00:10",
+      "weekday": "mon"
+    },
+    {
+      "date": "2025-01-28",
+      "sunrise": "07:28:45",
+      "sunset": "17:01:37",
+      "weekday": "tue"
+    },
+    {
+      "date": "2025-01-29",
+      "sunrise": "07:27:39",
+      "sunset": "17:03:06",
+      "weekday": "wed"
+    },
+    {
+      "date": "2025-01-30",
+      "sunrise": "07:26:30",
+      "sunset": "17:04:34",
+      "weekday": "thu"
+    },
+    {
+      "date": "2025-01-31",
+      "sunrise": "07:25:20",
+      "sunset": "17:06:03",
+      "weekday": "fri"
+    },
+    {
+      "date": "2025-02-01",
+      "sunrise": "07:24:08",
+      "sunset": "17:07:32",
+      "weekday": "sat"
+    },
+    {
+      "date": "2025-02-02",
+      "sunrise": "07:22:54",
+      "sunset": "17:09:01",
+      "weekday": "sun"
+    },
+    {
+      "date": "2025-02-03",
+      "sunrise": "07:21:38",
+      "sunset": "17:10:30",
+      "weekday": "mon"
+    },
+    {
+      "date": "2025-02-04",
+      "sunrise": "07:20:21",
+      "sunset": "17:12:00",
+      "weekday": "tue"
+    },
+    {
+      "date": "2025-02-05",
+      "sunrise": "07:19:02",
+      "sunset": "17:13:29",
+      "weekday": "wed"
+    },
+    {
+      "date": "2025-02-06",
+      "sunrise": "07:17:41",
+      "sunset": "17:14:59",
+      "weekday": "thu"
+    },
+    {
+      "date": "2025-02-07",
+      "sunrise": "07:16:18",
+      "sunset": "17:16:28",
+      "weekday": "fri"
+    },
+    {
+      "date": "2025-02-08",
+      "sunrise": "07:14:54",
+      "sunset": "17:17:58",
+      "weekday": "sat"
+    },
+    {
+      "date": "2025-02-09",
+      "sunrise": "07:13:28",
+      "sunset": "17:19:27",
+      "weekday": "sun"
+    },
+    {
+      "date": "2025-02-10",
+      "sunrise": "07:12:01",
+      "sunset": "17:20:56",
+      "weekday": "mon"
+    },
+    {
+      "date": "2025-02-11",
+      "sunrise": "07:10:33",
+      "sunset": "17:22:25",
+      "weekday": "tue"
+    },
+    {
+      "date": "2025-02-12",
+      "sunrise": "07:09:03",
+      "sunset": "17:23:55",
+      "weekday": "wed"
+    },
+    {
+      "date": "2025-02-13",
+      "sunrise": "07:07:31",
+      "sunset": "17:25:23",
+      "weekday": "thu"
+    },
+    {
+      "date": "2025-02-14",
+      "sunrise": "07:05:58",
+      "sunset": "17:26:52",
+      "weekday": "fri"
+    },
+    {
+      "date": "2025-02-15",
+      "sunrise": "07:04:24",
+      "sunset": "17:28:21",
+      "weekday": "sat"
+    },
+    {
+      "date": "2025-02-16",
+      "sunrise": "07:02:49",
+      "sunset": "17:29:49",
+      "weekday": "sun"
+    },
+    {
+      "date": "2025-02-17",
+      "sunrise": "07:01:13",
+      "sunset": "17:31:17",
+      "weekday": "mon"
+    },
+    {
+      "date": "2025-02-18",
+      "sunrise": "06:59:35",
+      "sunset": "17:32:45",
+      "weekday": "tue"
+    },
+    {
+      "date": "2025-02-19",
+      "sunrise": "06:57:56",
+      "sunset": "17:34:13",
+      "weekday": "wed"
+    },
+    {
+      "date": "2025-02-20",
+      "sunrise": "06:56:17",
+      "sunset": "17:35:41",
+      "weekday": "thu"
+    },
+    {
+      "date": "2025-02-21",
+      "sunrise": "06:54:36",
+      "sunset": "17:37:08",
+      "weekday": "fri"
+    },
+    {
+      "date": "2025-02-22",
+      "sunrise": "06:52:54",
+      "sunset": "17:38:35",
+      "weekday": "sat"
+    },
+    {
+      "date": "2025-02-23",
+      "sunrise": "06:51:11",
+      "sunset": "17:40:02",
+      "weekday": "sun"
+    },
+    {
+      "date": "2025-02-24",
+      "sunrise": "06:49:27",
+      "sunset": "17:41:28",
+      "weekday": "mon"
+    },
+    {
+      "date": "2025-02-25",
+      "sunrise": "06:47:43",
+      "sunset": "17:42:55",
+      "weekday": "tue"
+    },
+    {
+      "date": "2025-02-26",
+      "sunrise": "06:45:57",
+      "sunset": "17:44:21",
+      "weekday": "wed"
+    },
+    {
+      "date": "2025-02-27",
+      "sunrise": "06:44:11",
+      "sunset": "17:45:47",
+      "weekday": "thu"
+    },
+    {
+      "date": "2025-02-28",
+      "sunrise": "06:42:24",
+      "sunset": "17:47:12",
+      "weekday": "fri"
+    },
+    {
+      "date": "2025-03-01",
+      "sunrise": "06:40:36",
+      "sunset": "17:48:37",
+      "weekday": "sat"
+    },
+    {
+      "date": "2025-03-02",
+      "sunrise": "06:38:47",
+      "sunset": "17:50:02",
+      "weekday": "sun"
+    },
+    {
+      "date": "2025-03-03",
+      "sunrise": "06:36:58",
+      "sunset": "17:51:27",
+      "weekday": "mon"
+    },
+    {
+      "date": "2025-03-04",
+      "sunrise": "06:35:08",
+      "sunset": "17:52:51",
+      "weekday": "tue"
+    },
+    {
+      "date": "2025-03-05",
+      "sunrise": "06:33:17",
+      "sunset": "17:54:15",
+      "weekday": "wed"
+    },
+    {
+      "date": "2025-03-06",
+      "sunrise": "06:31:26",
+      "sunset": "17:55:39",
+      "weekday": "thu"
+    },
+    {
+      "date": "2025-03-07",
+      "sunrise": "06:29:34",
+      "sunset": "17:57:03",
+      "weekday": "fri"
+    },
+    {
+      "date": "2025-03-08",
+      "sunrise": "06:27:42",
+      "sunset": "17:58:26",
+      "weekday": "sat"
+    },
+    {
+      "date": "2025-03-09",
+      "sunrise": "06:25:49",
+      "sunset": "17:59:49",
+      "weekday": "sun"
+    },
+    {
+      "date": "2025-03-10",
+      "sunrise": "06:23:56",
+      "sunset": "18:01:11",
+      "weekday": "mon"
+    },
+    {
+      "date": "2025-03-11",
+      "sunrise": "06:22:02",
+      "sunset": "18:02:34",
+      "weekday": "tue"
+    },
+    {
+      "date": "2025-03-12",
+      "sunrise": "06:20:08",
+      "sunset": "18:03:56",
+      "weekday": "wed"
+    },
+    {
+      "date": "2025-03-13",
+      "sunrise": "06:18:14",
+      "sunset": "18:05:18",
+      "weekday": "thu"
+    },
+    {
+      "date": "2025-03-14",
+      "sunrise": "06:16:19",
+      "sunset": "18:06:39",
+      "weekday": "fri"
+    },
+    {
+      "date": "2025-03-15",
+      "sunrise": "06:14:24",
+      "sunset": "18:08:01",
+      "weekday": "sat"
+    },
+    {
+      "date": "2025-03-16",
+      "sunrise": "06:12:29",
+      "sunset": "18:09:22",
+      "weekday": "sun"
+    },
+    {
+      "date": "2025-03-17",
+      "sunrise": "06:10:34",
+      "sunset": "18:10:43",
+      "weekday": "mon"
+    },
+    {
+      "date": "2025-03-18",
+      "sunrise": "06:08:38",
+      "sunset": "18:12:04",
+      "weekday": "tue"
+    },
+    {
+      "date": "2025-03-19",
+      "sunrise": "06:06:42",
+      "sunset": "18:13:25",
+      "weekday": "wed"
+    },
+    {
+      "date": "2025-03-20",
+      "sunrise": "06:04:46",
+      "sunset": "18:14:46",
+      "weekday": "thu"
+    },
+    {
+      "date": "2025-03-21",
+      "sunrise": "06:02:50",
+      "sunset": "18:16:06",
+      "weekday": "fri"
+    },
+    {
+      "date": "2025-03-22",
+      "sunrise": "06:00:54",
+      "sunset": "18:17:27",
+      "weekday": "sat"
+    },
+    {
+      "date": "2025-03-23",
+      "sunrise": "05:58:58",
+      "sunset": "18:18:47",
+      "weekday": "sun"
+    },
+    {
+      "date": "2025-03-24",
+      "sunrise": "05:57:02",
+      "sunset": "18:20:07",
+      "weekday": "mon"
+    },
+    {
+      "date": "2025-03-25",
+      "sunrise": "05:55:06",
+      "sunset": "18:21:28",
+      "weekday": "tue"
+    },
+    {
+      "date": "2025-03-26",
+      "sunrise": "05:53:10",
+      "sunset": "18:22:48",
+      "weekday": "wed"
+    },
+    {
+      "date": "2025-03-27",
+      "sunrise": "05:51:14",
+      "sunset": "18:24:08",
+      "weekday": "thu"
+    },
+    {
+      "date": "2025-03-28",
+      "sunrise": "05:49:18",
+      "sunset": "18:25:28",
+      "weekday": "fri"
+    },
+    {
+      "date": "2025-03-29",
+      "sunrise": "05:47:22",
+      "sunset": "18:26:48",
+      "weekday": "sat"
+    },
+    {
+      "date": "2025-03-30",
+      "sunrise": "06:45:27",
+      "sunset": "19:28:07",
+      "weekday": "sun"
+    },
+    {
+      "date": "2025-03-31",
+      "sunrise": "06:43:31",
+      "sunset": "19:29:27",
+      "weekday": "mon"
+    },
+    {
+      "date": "2025-04-01",
+      "sunrise": "06:41:36",
+      "sunset": "19:30:47",
+      "weekday": "tue"
+    },
+    {
+      "date": "2025-04-02",
+      "sunrise": "06:39:41",
+      "sunset": "19:32:07",
+      "weekday": "wed"
+    },
+    {
+      "date": "2025-04-03",
+      "sunrise": "06:37:47",
+      "sunset": "19:33:26",
+      "weekday": "thu"
+    },
+    {
+      "date": "2025-04-04",
+      "sunrise": "06:35:53",
+      "sunset": "19:34:46",
+      "weekday": "fri"
+    },
+    {
+      "date": "2025-04-05",
+      "sunrise": "06:33:59",
+      "sunset": "19:36:05",
+      "weekday": "sat"
+    },
+    {
+      "date": "2025-04-06",
+      "sunrise": "06:32:05",
+      "sunset": "19:37:25",
+      "weekday": "sun"
+    },
+    {
+      "date": "2025-04-07",
+      "sunrise": "06:30:12",
+      "sunset": "19:38:44",
+      "weekday": "mon"
+    },
+    {
+      "date": "2025-04-08",
+      "sunrise": "06:28:20",
+      "sunset": "19:40:03",
+      "weekday": "tue"
+    },
+    {
+      "date": "2025-04-09",
+      "sunrise": "06:26:28",
+      "sunset": "19:41:23",
+      "weekday": "wed"
+    },
+    {
+      "date": "2025-04-10",
+      "sunrise": "06:24:36",
+      "sunset": "19:42:42",
+      "weekday": "thu"
+    },
+    {
+      "date": "2025-04-11",
+      "sunrise": "06:22:45",
+      "sunset": "19:44:01",
+      "weekday": "fri"
+    },
+    {
+      "date": "2025-04-12",
+      "sunrise": "06:20:55",
+      "sunset": "19:45:21",
+      "weekday": "sat"
+    },
+    {
+      "date": "2025-04-13",
+      "sunrise": "06:19:05",
+      "sunset": "19:46:40",
+      "weekday": "sun"
+    },
+    {
+      "date": "2025-04-14",
+      "sunrise": "06:17:16",
+      "sunset": "19:47:59",
+      "weekday": "mon"
+    },
+    {
+      "date": "2025-04-15",
+      "sunrise": "06:15:27",
+      "sunset": "19:49:18",
+      "weekday": "tue"
+    },
+    {
+      "date": "2025-04-16",
+      "sunrise": "06:13:39",
+      "sunset": "19:50:38",
+      "weekday": "wed"
+    },
+    {
+      "date": "2025-04-17",
+      "sunrise": "06:11:52",
+      "sunset": "19:51:57",
+      "weekday": "thu"
+    },
+    {
+      "date": "2025-04-18",
+      "sunrise": "06:10:06",
+      "sunset": "19:53:16",
+      "weekday": "fri"
+    },
+    {
+      "date": "2025-04-19",
+      "sunrise": "06:08:21",
+      "sunset": "19:54:35",
+      "weekday": "sat"
+    },
+    {
+      "date": "2025-04-20",
+      "sunrise": "06:06:36",
+      "sunset": "19:55:55",
+      "weekday": "sun"
+    },
+    {
+      "date": "2025-04-21",
+      "sunrise": "06:04:53",
+      "sunset": "19:57:14",
+      "weekday": "mon"
+    },
+    {
+      "date": "2025-04-22",
+      "sunrise": "06:03:10",
+      "sunset": "19:58:33",
+      "weekday": "tue"
+    },
+    {
+      "date": "2025-04-23",
+      "sunrise": "06:01:28",
+      "sunset": "19:59:52",
+      "weekday": "wed"
+    },
+    {
+      "date": "2025-04-24",
+      "sunrise": "05:59:48",
+      "sunset": "20:01:11",
+      "weekday": "thu"
+    },
+    {
+      "date": "2025-04-25",
+      "sunrise": "05:58:08",
+      "sunset": "20:02:30",
+      "weekday": "fri"
+    },
+    {
+      "date": "2025-04-26",
+      "sunrise": "05:56:29",
+      "sunset": "20:03:49",
+      "weekday": "sat"
+    },
+    {
+      "date": "2025-04-27",
+      "sunrise": "05:54:52",
+      "sunset": "20:05:08",
+      "weekday": "sun"
+    },
+    {
+      "date": "2025-04-28",
+      "sunrise": "05:53:16",
+      "sunset": "20:06:27",
+      "weekday": "mon"
+    },
+    {
+      "date": "2025-04-29",
+      "sunrise": "05:51:41",
+      "sunset": "20:07:45",
+      "weekday": "tue"
+    },
+    {
+      "date": "2025-04-30",
+      "sunrise": "05:50:07",
+      "sunset": "20:09:03",
+      "weekday": "wed"
+    },
+    {
+      "date": "2025-05-01",
+      "sunrise": "05:48:34",
+      "sunset": "20:10:21",
+      "weekday": "thu"
+    },
+    {
+      "date": "2025-05-02",
+      "sunrise": "05:47:03",
+      "sunset": "20:11:39",
+      "weekday": "fri"
+    },
+    {
+      "date": "2025-05-03",
+      "sunrise": "05:45:33",
+      "sunset": "20:12:57",
+      "weekday": "sat"
+    },
+    {
+      "date": "2025-05-04",
+      "sunrise": "05:44:04",
+      "sunset": "20:14:14",
+      "weekday": "sun"
+    },
+    {
+      "date": "2025-05-05",
+      "sunrise": "05:42:37",
+      "sunset": "20:15:31",
+      "weekday": "mon"
+    },
+    {
+      "date": "2025-05-06",
+      "sunrise": "05:41:11",
+      "sunset": "20:16:47",
+      "weekday": "tue"
+    },
+    {
+      "date": "2025-05-07",
+      "sunrise": "05:39:46",
+      "sunset": "20:18:03",
+      "weekday": "wed"
+    },
+    {
+      "date": "2025-05-08",
+      "sunrise": "05:38:23",
+      "sunset": "20:19:19",
+      "weekday": "thu"
+    },
+    {
+      "date": "2025-05-09",
+      "sunrise": "05:37:02",
+      "sunset": "20:20:34",
+      "weekday": "fri"
+    },
+    {
+      "date": "2025-05-10",
+      "sunrise": "05:35:42",
+      "sunset": "20:21:49",
+      "weekday": "sat"
+    },
+    {
+      "date": "2025-05-11",
+      "sunrise": "05:34:24",
+      "sunset": "20:23:03",
+      "weekday": "sun"
+    },
+    {
+      "date": "2025-05-12",
+      "sunrise": "05:33:08",
+      "sunset": "20:24:17",
+      "weekday": "mon"
+    },
+    {
+      "date": "2025-05-13",
+      "sunrise": "05:31:53",
+      "sunset": "20:25:30",
+      "weekday": "tue"
+    },
+    {
+      "date": "2025-05-14",
+      "sunrise": "05:30:40",
+      "sunset": "20:26:42",
+      "weekday": "wed"
+    },
+    {
+      "date": "2025-05-15",
+      "sunrise": "05:29:29",
+      "sunset": "20:27:54",
+      "weekday": "thu"
+    },
+    {
+      "date": "2025-05-16",
+      "sunrise": "05:28:19",
+      "sunset": "20:29:05",
+      "weekday": "fri"
+    },
+    {
+      "date": "2025-05-17",
+      "sunrise": "05:27:12",
+      "sunset": "20:30:15",
+      "weekday": "sat"
+    },
+    {
+      "date": "2025-05-18",
+      "sunrise": "05:26:06",
+      "sunset": "20:31:25",
+      "weekday": "sun"
+    },
+    {
+      "date": "2025-05-19",
+      "sunrise": "05:25:02",
+      "sunset": "20:32:33",
+      "weekday": "mon"
+    },
+    {
+      "date": "2025-05-20",
+      "sunrise": "05:24:00",
+      "sunset": "20:33:41",
+      "weekday": "tue"
+    },
+    {
+      "date": "2025-05-21",
+      "sunrise": "05:23:01",
+      "sunset": "20:34:48",
+      "weekday": "wed"
+    },
+    {
+      "date": "2025-05-22",
+      "sunrise": "05:22:03",
+      "sunset": "20:35:54",
+      "weekday": "thu"
+    },
+    {
+      "date": "2025-05-23",
+      "sunrise": "05:21:07",
+      "sunset": "20:36:59",
+      "weekday": "fri"
+    },
+    {
+      "date": "2025-05-24",
+      "sunrise": "05:20:14",
+      "sunset": "20:38:02",
+      "weekday": "sat"
+    },
+    {
+      "date": "2025-05-25",
+      "sunrise": "05:19:23",
+      "sunset": "20:39:05",
+      "weekday": "sun"
+    },
+    {
+      "date": "2025-05-26",
+      "sunrise": "05:18:33",
+      "sunset": "20:40:06",
+      "weekday": "mon"
+    },
+    {
+      "date": "2025-05-27",
+      "sunrise": "05:17:46",
+      "sunset": "20:41:07",
+      "weekday": "tue"
+    },
+    {
+      "date": "2025-05-28",
+      "sunrise": "05:17:01",
+      "sunset": "20:42:05",
+      "weekday": "wed"
+    },
+    {
+      "date": "2025-05-29",
+      "sunrise": "05:16:19",
+      "sunset": "20:43:03",
+      "weekday": "thu"
+    },
+    {
+      "date": "2025-05-30",
+      "sunrise": "05:15:39",
+      "sunset": "20:43:59",
+      "weekday": "fri"
+    },
+    {
+      "date": "2025-05-31",
+      "sunrise": "05:15:01",
+      "sunset": "20:44:53",
+      "weekday": "sat"
+    },
+    {
+      "date": "2025-06-01",
+      "sunrise": "05:14:25",
+      "sunset": "20:45:46",
+      "weekday": "sun"
+    },
+    {
+      "date": "2025-06-02",
+      "sunrise": "05:13:51",
+      "sunset": "20:46:38",
+      "weekday": "mon"
+    },
+    {
+      "date": "2025-06-03",
+      "sunrise": "05:13:20",
+      "sunset": "20:47:27",
+      "weekday": "tue"
+    },
+    {
+      "date": "2025-06-04",
+      "sunrise": "05:12:52",
+      "sunset": "20:48:15",
+      "weekday": "wed"
+    },
+    {
+      "date": "2025-06-05",
+      "sunrise": "05:12:25",
+      "sunset": "20:49:02",
+      "weekday": "thu"
+    },
+    {
+      "date": "2025-06-06",
+      "sunrise": "05:12:01",
+      "sunset": "20:49:46",
+      "weekday": "fri"
+    },
+    {
+      "date": "2025-06-07",
+      "sunrise": "05:11:40",
+      "sunset": "20:50:29",
+      "weekday": "sat"
+    },
+    {
+      "date": "2025-06-08",
+      "sunrise": "05:11:20",
+      "sunset": "20:51:09",
+      "weekday": "sun"
+    },
+    {
+      "date": "2025-06-09",
+      "sunrise": "05:11:04",
+      "sunset": "20:51:48",
+      "weekday": "mon"
+    },
+    {
+      "date": "2025-06-10",
+      "sunrise": "05:10:49",
+      "sunset": "20:52:25",
+      "weekday": "tue"
+    },
+    {
+      "date": "2025-06-11",
+      "sunrise": "05:10:37",
+      "sunset": "20:53:00",
+      "weekday": "wed"
+    },
+    {
+      "date": "2025-06-12",
+      "sunrise": "05:10:28",
+      "sunset": "20:53:32",
+      "weekday": "thu"
+    },
+    {
+      "date": "2025-06-13",
+      "sunrise": "05:10:21",
+      "sunset": "20:54:03",
+      "weekday": "fri"
+    },
+    {
+      "date": "2025-06-14",
+      "sunrise": "05:10:16",
+      "sunset": "20:54:32",
+      "weekday": "sat"
+    },
+    {
+      "date": "2025-06-15",
+      "sunrise": "05:10:13",
+      "sunset": "20:54:58",
+      "weekday": "sun"
+    },
+    {
+      "date": "2025-06-16",
+      "sunrise": "05:10:14",
+      "sunset": "20:55:22",
+      "weekday": "mon"
+    },
+    {
+      "date": "2025-06-17",
+      "sunrise": "05:10:16",
+      "sunset": "20:55:44",
+      "weekday": "tue"
+    },
+    {
+      "date": "2025-06-18",
+      "sunrise": "05:10:21",
+      "sunset": "20:56:04",
+      "weekday": "wed"
+    },
+    {
+      "date": "2025-06-19",
+      "sunrise": "05:10:28",
+      "sunset": "20:56:21",
+      "weekday": "thu"
+    },
+    {
+      "date": "2025-06-20",
+      "sunrise": "05:10:38",
+      "sunset": "20:56:36",
+      "weekday": "fri"
+    },
+    {
+      "date": "2025-06-21",
+      "sunrise": "05:10:50",
+      "sunset": "20:56:49",
+      "weekday": "sat"
+    },
+    {
+      "date": "2025-06-22",
+      "sunrise": "05:11:04",
+      "sunset": "20:56:59",
+      "weekday": "sun"
+    },
+    {
+      "date": "2025-06-23",
+      "sunrise": "05:11:21",
+      "sunset": "20:57:07",
+      "weekday": "mon"
+    },
+    {
+      "date": "2025-06-24",
+      "sunrise": "05:11:40",
+      "sunset": "20:57:13",
+      "weekday": "tue"
+    },
+    {
+      "date": "2025-06-25",
+      "sunrise": "05:12:01",
+      "sunset": "20:57:16",
+      "weekday": "wed"
+    },
+    {
+      "date": "2025-06-26",
+      "sunrise": "05:12:24",
+      "sunset": "20:57:17",
+      "weekday": "thu"
+    },
+    {
+      "date": "2025-06-27",
+      "sunrise": "05:12:50",
+      "sunset": "20:57:15",
+      "weekday": "fri"
+    },
+    {
+      "date": "2025-06-28",
+      "sunrise": "05:13:18",
+      "sunset": "20:57:10",
+      "weekday": "sat"
+    },
+    {
+      "date": "2025-06-29",
+      "sunrise": "05:13:47",
+      "sunset": "20:57:04",
+      "weekday": "sun"
+    },
+    {
+      "date": "2025-06-30",
+      "sunrise": "05:14:19",
+      "sunset": "20:56:54",
+      "weekday": "mon"
+    },
+    {
+      "date": "2025-07-01",
+      "sunrise": "05:14:53",
+      "sunset": "20:56:43",
+      "weekday": "tue"
+    },
+    {
+      "date": "2025-07-02",
+      "sunrise": "05:15:28",
+      "sunset": "20:56:29",
+      "weekday": "wed"
+    },
+    {
+      "date": "2025-07-03",
+      "sunrise": "05:16:06",
+      "sunset": "20:56:12",
+      "weekday": "thu"
+    },
+    {
+      "date": "2025-07-04",
+      "sunrise": "05:16:45",
+      "sunset": "20:55:53",
+      "weekday": "fri"
+    },
+    {
+      "date": "2025-07-05",
+      "sunrise": "05:17:26",
+      "sunset": "20:55:31",
+      "weekday": "sat"
+    },
+    {
+      "date": "2025-07-06",
+      "sunrise": "05:18:09",
+      "sunset": "20:55:07",
+      "weekday": "sun"
+    },
+    {
+      "date": "2025-07-07",
+      "sunrise": "05:18:53",
+      "sunset": "20:54:40",
+      "weekday": "mon"
+    },
+    {
+      "date": "2025-07-08",
+      "sunrise": "05:19:39",
+      "sunset": "20:54:11",
+      "weekday": "tue"
+    },
+    {
+      "date": "2025-07-09",
+      "sunrise": "05:20:27",
+      "sunset": "20:53:40",
+      "weekday": "wed"
+    },
+    {
+      "date": "2025-07-10",
+      "sunrise": "05:21:17",
+      "sunset": "20:53:06",
+      "weekday": "thu"
+    },
+    {
+      "date": "2025-07-11",
+      "sunrise": "05:22:07",
+      "sunset": "20:52:30",
+      "weekday": "fri"
+    },
+    {
+      "date": "2025-07-12",
+      "sunrise": "05:23:00",
+      "sunset": "20:51:52",
+      "weekday": "sat"
+    },
+    {
+      "date": "2025-07-13",
+      "sunrise": "05:23:53",
+      "sunset": "20:51:11",
+      "weekday": "sun"
+    },
+    {
+      "date": "2025-07-14",
+      "sunrise": "05:24:48",
+      "sunset": "20:50:28",
+      "weekday": "mon"
+    },
+    {
+      "date": "2025-07-15",
+      "sunrise": "05:25:45",
+      "sunset": "20:49:43",
+      "weekday": "tue"
+    },
+    {
+      "date": "2025-07-16",
+      "sunrise": "05:26:43",
+      "sunset": "20:48:55",
+      "weekday": "wed"
+    },
+    {
+      "date": "2025-07-17",
+      "sunrise": "05:27:41",
+      "sunset": "20:48:06",
+      "weekday": "thu"
+    },
+    {
+      "date": "2025-07-18",
+      "sunrise": "05:28:41",
+      "sunset": "20:47:14",
+      "weekday": "fri"
+    },
+    {
+      "date": "2025-07-19",
+      "sunrise": "05:29:43",
+      "sunset": "20:46:20",
+      "weekday": "sat"
+    },
+    {
+      "date": "2025-07-20",
+      "sunrise": "05:30:45",
+      "sunset": "20:45:24",
+      "weekday": "sun"
+    },
+    {
+      "date": "2025-07-21",
+      "sunrise": "05:31:48",
+      "sunset": "20:44:26",
+      "weekday": "mon"
+    },
+    {
+      "date": "2025-07-22",
+      "sunrise": "05:32:52",
+      "sunset": "20:43:25",
+      "weekday": "tue"
+    },
+    {
+      "date": "2025-07-23",
+      "sunrise": "05:33:57",
+      "sunset": "20:42:23",
+      "weekday": "wed"
+    },
+    {
+      "date": "2025-07-24",
+      "sunrise": "05:35:03",
+      "sunset": "20:41:19",
+      "weekday": "thu"
+    },
+    {
+      "date": "2025-07-25",
+      "sunrise": "05:36:10",
+      "sunset": "20:40:13",
+      "weekday": "fri"
+    },
+    {
+      "date": "2025-07-26",
+      "sunrise": "05:37:18",
+      "sunset": "20:39:05",
+      "weekday": "sat"
+    },
+    {
+      "date": "2025-07-27",
+      "sunrise": "05:38:26",
+      "sunset": "20:37:55",
+      "weekday": "sun"
+    },
+    {
+      "date": "2025-07-28",
+      "sunrise": "05:39:35",
+      "sunset": "20:36:43",
+      "weekday": "mon"
+    },
+    {
+      "date": "2025-07-29",
+      "sunrise": "05:40:44",
+      "sunset": "20:35:29",
+      "weekday": "tue"
+    },
+    {
+      "date": "2025-07-30",
+      "sunrise": "05:41:54",
+      "sunset": "20:34:14",
+      "weekday": "wed"
+    },
+    {
+      "date": "2025-07-31",
+      "sunrise": "05:43:05",
+      "sunset": "20:32:57",
+      "weekday": "thu"
+    },
+    {
+      "date": "2025-08-01",
+      "sunrise": "05:44:16",
+      "sunset": "20:31:38",
+      "weekday": "fri"
+    },
+    {
+      "date": "2025-08-02",
+      "sunrise": "05:45:27",
+      "sunset": "20:30:18",
+      "weekday": "sat"
+    },
+    {
+      "date": "2025-08-03",
+      "sunrise": "05:46:39",
+      "sunset": "20:28:56",
+      "weekday": "sun"
+    },
+    {
+      "date": "2025-08-04",
+      "sunrise": "05:47:52",
+      "sunset": "20:27:32",
+      "weekday": "mon"
+    },
+    {
+      "date": "2025-08-05",
+      "sunrise": "05:49:04",
+      "sunset": "20:26:07",
+      "weekday": "tue"
+    },
+    {
+      "date": "2025-08-06",
+      "sunrise": "05:50:17",
+      "sunset": "20:24:40",
+      "weekday": "wed"
+    },
+    {
+      "date": "2025-08-07",
+      "sunrise": "05:51:30",
+      "sunset": "20:23:12",
+      "weekday": "thu"
+    },
+    {
+      "date": "2025-08-08",
+      "sunrise": "05:52:44",
+      "sunset": "20:21:42",
+      "weekday": "fri"
+    },
+    {
+      "date": "2025-08-09",
+      "sunrise": "05:53:57",
+      "sunset": "20:20:11",
+      "weekday": "sat"
+    },
+    {
+      "date": "2025-08-10",
+      "sunrise": "05:55:11",
+      "sunset": "20:18:39",
+      "weekday": "sun"
+    },
+    {
+      "date": "2025-08-11",
+      "sunrise": "05:56:25",
+      "sunset": "20:17:05",
+      "weekday": "mon"
+    },
+    {
+      "date": "2025-08-12",
+      "sunrise": "05:57:39",
+      "sunset": "20:15:30",
+      "weekday": "tue"
+    },
+    {
+      "date": "2025-08-13",
+      "sunrise": "05:58:54",
+      "sunset": "20:13:54",
+      "weekday": "wed"
+    },
+    {
+      "date": "2025-08-14",
+      "sunrise": "06:00:08",
+      "sunset": "20:12:17",
+      "weekday": "thu"
+    },
+    {
+      "date": "2025-08-15",
+      "sunrise": "06:01:23",
+      "sunset": "20:10:38",
+      "weekday": "fri"
+    },
+    {
+      "date": "2025-08-16",
+      "sunrise": "06:02:38",
+      "sunset": "20:08:59",
+      "weekday": "sat"
+    },
+    {
+      "date": "2025-08-17",
+      "sunrise": "06:03:53",
+      "sunset": "20:07:18",
+      "weekday": "sun"
+    },
+    {
+      "date": "2025-08-18",
+      "sunrise": "06:05:08",
+      "sunset": "20:05:36",
+      "weekday": "mon"
+    },
+    {
+      "date": "2025-08-19",
+      "sunrise": "06:06:23",
+      "sunset": "20:03:54",
+      "weekday": "tue"
+    },
+    {
+      "date": "2025-08-20",
+      "sunrise": "06:07:38",
+      "sunset": "20:02:10",
+      "weekday": "wed"
+    },
+    {
+      "date": "2025-08-21",
+      "sunrise": "06:08:53",
+      "sunset": "20:00:25",
+      "weekday": "thu"
+    },
+    {
+      "date": "2025-08-22",
+      "sunrise": "06:10:08",
+      "sunset": "19:58:40",
+      "weekday": "fri"
+    },
+    {
+      "date": "2025-08-23",
+      "sunrise": "06:11:23",
+      "sunset": "19:56:53",
+      "weekday": "sat"
+    },
+    {
+      "date": "2025-08-24",
+      "sunrise": "06:12:38",
+      "sunset": "19:55:06",
+      "weekday": "sun"
+    },
+    {
+      "date": "2025-08-25",
+      "sunrise": "06:13:54",
+      "sunset": "19:53:18",
+      "weekday": "mon"
+    },
+    {
+      "date": "2025-08-26",
+      "sunrise": "06:15:09",
+      "sunset": "19:51:29",
+      "weekday": "tue"
+    },
+    {
+      "date": "2025-08-27",
+      "sunrise": "06:16:24",
+      "sunset": "19:49:40",
+      "weekday": "wed"
+    },
+    {
+      "date": "2025-08-28",
+      "sunrise": "06:17:39",
+      "sunset": "19:47:49",
+      "weekday": "thu"
+    },
+    {
+      "date": "2025-08-29",
+      "sunrise": "06:18:54",
+      "sunset": "19:45:58",
+      "weekday": "fri"
+    },
+    {
+      "date": "2025-08-30",
+      "sunrise": "06:20:09",
+      "sunset": "19:44:07",
+      "weekday": "sat"
+    },
+    {
+      "date": "2025-08-31",
+      "sunrise": "06:21:24",
+      "sunset": "19:42:14",
+      "weekday": "sun"
+    },
+    {
+      "date": "2025-09-01",
+      "sunrise": "06:22:39",
+      "sunset": "19:40:22",
+      "weekday": "mon"
+    },
+    {
+      "date": "2025-09-02",
+      "sunrise": "06:23:54",
+      "sunset": "19:38:28",
+      "weekday": "tue"
+    },
+    {
+      "date": "2025-09-03",
+      "sunrise": "06:25:08",
+      "sunset": "19:36:34",
+      "weekday": "wed"
+    },
+    {
+      "date": "2025-09-04",
+      "sunrise": "06:26:23",
+      "sunset": "19:34:40",
+      "weekday": "thu"
+    },
+    {
+      "date": "2025-09-05",
+      "sunrise": "06:27:38",
+      "sunset": "19:32:45",
+      "weekday": "fri"
+    },
+    {
+      "date": "2025-09-06",
+      "sunrise": "06:28:53",
+      "sunset": "19:30:50",
+      "weekday": "sat"
+    },
+    {
+      "date": "2025-09-07",
+      "sunrise": "06:30:07",
+      "sunset": "19:28:54",
+      "weekday": "sun"
+    },
+    {
+      "date": "2025-09-08",
+      "sunrise": "06:31:22",
+      "sunset": "19:26:58",
+      "weekday": "mon"
+    },
+    {
+      "date": "2025-09-09",
+      "sunrise": "06:32:37",
+      "sunset": "19:25:01",
+      "weekday": "tue"
+    },
+    {
+      "date": "2025-09-10",
+      "sunrise": "06:33:51",
+      "sunset": "19:23:05",
+      "weekday": "wed"
+    },
+    {
+      "date": "2025-09-11",
+      "sunrise": "06:35:06",
+      "sunset": "19:21:08",
+      "weekday": "thu"
+    },
+    {
+      "date": "2025-09-12",
+      "sunrise": "06:36:21",
+      "sunset": "19:19:11",
+      "weekday": "fri"
+    },
+    {
+      "date": "2025-09-13",
+      "sunrise": "06:37:36",
+      "sunset": "19:17:13",
+      "weekday": "sat"
+    },
+    {
+      "date": "2025-09-14",
+      "sunrise": "06:38:51",
+      "sunset": "19:15:16",
+      "weekday": "sun"
+    },
+    {
+      "date": "2025-09-15",
+      "sunrise": "06:40:06",
+      "sunset": "19:13:18",
+      "weekday": "mon"
+    },
+    {
+      "date": "2025-09-16",
+      "sunrise": "06:41:21",
+      "sunset": "19:11:20",
+      "weekday": "tue"
+    },
+    {
+      "date": "2025-09-17",
+      "sunrise": "06:42:36",
+      "sunset": "19:09:22",
+      "weekday": "wed"
+    },
+    {
+      "date": "2025-09-18",
+      "sunrise": "06:43:51",
+      "sunset": "19:07:24",
+      "weekday": "thu"
+    },
+    {
+      "date": "2025-09-19",
+      "sunrise": "06:45:07",
+      "sunset": "19:05:27",
+      "weekday": "fri"
+    },
+    {
+      "date": "2025-09-20",
+      "sunrise": "06:46:22",
+      "sunset": "19:03:29",
+      "weekday": "sat"
+    },
+    {
+      "date": "2025-09-21",
+      "sunrise": "06:47:38",
+      "sunset": "19:01:31",
+      "weekday": "sun"
+    },
+    {
+      "date": "2025-09-22",
+      "sunrise": "06:48:54",
+      "sunset": "18:59:33",
+      "weekday": "mon"
+    },
+    {
+      "date": "2025-09-23",
+      "sunrise": "06:50:10",
+      "sunset": "18:57:35",
+      "weekday": "tue"
+    },
+    {
+      "date": "2025-09-24",
+      "sunrise": "06:51:26",
+      "sunset": "18:55:37",
+      "weekday": "wed"
+    },
+    {
+      "date": "2025-09-25",
+      "sunrise": "06:52:42",
+      "sunset": "18:53:40",
+      "weekday": "thu"
+    },
+    {
+      "date": "2025-09-26",
+      "sunrise": "06:53:59",
+      "sunset": "18:51:43",
+      "weekday": "fri"
+    },
+    {
+      "date": "2025-09-27",
+      "sunrise": "06:55:15",
+      "sunset": "18:49:46",
+      "weekday": "sat"
+    },
+    {
+      "date": "2025-09-28",
+      "sunrise": "06:56:32",
+      "sunset": "18:47:49",
+      "weekday": "sun"
+    },
+    {
+      "date": "2025-09-29",
+      "sunrise": "06:57:49",
+      "sunset": "18:45:52",
+      "weekday": "mon"
+    },
+    {
+      "date": "2025-09-30",
+      "sunrise": "06:59:06",
+      "sunset": "18:43:56",
+      "weekday": "tue"
+    },
+    {
+      "date": "2025-10-01",
+      "sunrise": "07:00:23",
+      "sunset": "18:42:00",
+      "weekday": "wed"
+    },
+    {
+      "date": "2025-10-02",
+      "sunrise": "07:01:41",
+      "sunset": "18:40:04",
+      "weekday": "thu"
+    },
+    {
+      "date": "2025-10-03",
+      "sunrise": "07:02:59",
+      "sunset": "18:38:09",
+      "weekday": "fri"
+    },
+    {
+      "date": "2025-10-04",
+      "sunrise": "07:04:17",
+      "sunset": "18:36:14",
+      "weekday": "sat"
+    },
+    {
+      "date": "2025-10-05",
+      "sunrise": "07:05:35",
+      "sunset": "18:34:20",
+      "weekday": "sun"
+    },
+    {
+      "date": "2025-10-06",
+      "sunrise": "07:06:53",
+      "sunset": "18:32:26",
+      "weekday": "mon"
+    },
+    {
+      "date": "2025-10-07",
+      "sunrise": "07:08:12",
+      "sunset": "18:30:33",
+      "weekday": "tue"
+    },
+    {
+      "date": "2025-10-08",
+      "sunrise": "07:09:31",
+      "sunset": "18:28:40",
+      "weekday": "wed"
+    },
+    {
+      "date": "2025-10-09",
+      "sunrise": "07:10:50",
+      "sunset": "18:26:48",
+      "weekday": "thu"
+    },
+    {
+      "date": "2025-10-10",
+      "sunrise": "07:12:10",
+      "sunset": "18:24:56",
+      "weekday": "fri"
+    },
+    {
+      "date": "2025-10-11",
+      "sunrise": "07:13:30",
+      "sunset": "18:23:05",
+      "weekday": "sat"
+    },
+    {
+      "date": "2025-10-12",
+      "sunrise": "07:14:50",
+      "sunset": "18:21:15",
+      "weekday": "sun"
+    },
+    {
+      "date": "2025-10-13",
+      "sunrise": "07:16:11",
+      "sunset": "18:19:26",
+      "weekday": "mon"
+    },
+    {
+      "date": "2025-10-14",
+      "sunrise": "07:17:32",
+      "sunset": "18:17:37",
+      "weekday": "tue"
+    },
+    {
+      "date": "2025-10-15",
+      "sunrise": "07:18:53",
+      "sunset": "18:15:49",
+      "weekday": "wed"
+    },
+    {
+      "date": "2025-10-16",
+      "sunrise": "07:20:14",
+      "sunset": "18:14:02",
+      "weekday": "thu"
+    },
+    {
+      "date": "2025-10-17",
+      "sunrise": "07:21:36",
+      "sunset": "18:12:16",
+      "weekday": "fri"
+    },
+    {
+      "date": "2025-10-18",
+      "sunrise": "07:22:58",
+      "sunset": "18:10:31",
+      "weekday": "sat"
+    },
+    {
+      "date": "2025-10-19",
+      "sunrise": "07:24:21",
+      "sunset": "18:08:47",
+      "weekday": "sun"
+    },
+    {
+      "date": "2025-10-20",
+      "sunrise": "07:25:44",
+      "sunset": "18:07:03",
+      "weekday": "mon"
+    },
+    {
+      "date": "2025-10-21",
+      "sunrise": "07:27:07",
+      "sunset": "18:05:21",
+      "weekday": "tue"
+    },
+    {
+      "date": "2025-10-22",
+      "sunrise": "07:28:30",
+      "sunset": "18:03:40",
+      "weekday": "wed"
+    },
+    {
+      "date": "2025-10-23",
+      "sunrise": "07:29:54",
+      "sunset": "18:02:00",
+      "weekday": "thu"
+    },
+    {
+      "date": "2025-10-24",
+      "sunrise": "07:31:18",
+      "sunset": "18:00:21",
+      "weekday": "fri"
+    },
+    {
+      "date": "2025-10-25",
+      "sunrise": "07:32:42",
+      "sunset": "17:58:43",
+      "weekday": "sat"
+    },
+    {
+      "date": "2025-10-26",
+      "sunrise": "06:34:07",
+      "sunset": "16:57:06",
+      "weekday": "sun"
+    },
+    {
+      "date": "2025-10-27",
+      "sunrise": "06:35:31",
+      "sunset": "16:55:31",
+      "weekday": "mon"
+    },
+    {
+      "date": "2025-10-28",
+      "sunrise": "06:36:56",
+      "sunset": "16:53:57",
+      "weekday": "tue"
+    },
+    {
+      "date": "2025-10-29",
+      "sunrise": "06:38:21",
+      "sunset": "16:52:24",
+      "weekday": "wed"
+    },
+    {
+      "date": "2025-10-30",
+      "sunrise": "06:39:46",
+      "sunset": "16:50:53",
+      "weekday": "thu"
+    },
+    {
+      "date": "2025-10-31",
+      "sunrise": "06:41:12",
+      "sunset": "16:49:23",
+      "weekday": "fri"
+    },
+    {
+      "date": "2025-11-01",
+      "sunrise": "06:42:37",
+      "sunset": "16:47:54",
+      "weekday": "sat"
+    },
+    {
+      "date": "2025-11-02",
+      "sunrise": "06:44:03",
+      "sunset": "16:46:27",
+      "weekday": "sun"
+    },
+    {
+      "date": "2025-11-03",
+      "sunrise": "06:45:28",
+      "sunset": "16:45:02",
+      "weekday": "mon"
+    },
+    {
+      "date": "2025-11-04",
+      "sunrise": "06:46:54",
+      "sunset": "16:43:38",
+      "weekday": "tue"
+    },
+    {
+      "date": "2025-11-05",
+      "sunrise": "06:48:20",
+      "sunset": "16:42:15",
+      "weekday": "wed"
+    },
+    {
+      "date": "2025-11-06",
+      "sunrise": "06:49:45",
+      "sunset": "16:40:55",
+      "weekday": "thu"
+    },
+    {
+      "date": "2025-11-07",
+      "sunrise": "06:51:11",
+      "sunset": "16:39:36",
+      "weekday": "fri"
+    },
+    {
+      "date": "2025-11-08",
+      "sunrise": "06:52:37",
+      "sunset": "16:38:18",
+      "weekday": "sat"
+    },
+    {
+      "date": "2025-11-09",
+      "sunrise": "06:54:02",
+      "sunset": "16:37:03",
+      "weekday": "sun"
+    },
+    {
+      "date": "2025-11-10",
+      "sunrise": "06:55:28",
+      "sunset": "16:35:49",
+      "weekday": "mon"
+    },
+    {
+      "date": "2025-11-11",
+      "sunrise": "06:56:53",
+      "sunset": "16:34:38",
+      "weekday": "tue"
+    },
+    {
+      "date": "2025-11-12",
+      "sunrise": "06:58:18",
+      "sunset": "16:33:28",
+      "weekday": "wed"
+    },
+    {
+      "date": "2025-11-13",
+      "sunrise": "06:59:43",
+      "sunset": "16:32:20",
+      "weekday": "thu"
+    },
+    {
+      "date": "2025-11-14",
+      "sunrise": "07:01:08",
+      "sunset": "16:31:14",
+      "weekday": "fri"
+    },
+    {
+      "date": "2025-11-15",
+      "sunrise": "07:02:32",
+      "sunset": "16:30:10",
+      "weekday": "sat"
+    },
+    {
+      "date": "2025-11-16",
+      "sunrise": "07:03:56",
+      "sunset": "16:29:09",
+      "weekday": "sun"
+    },
+    {
+      "date": "2025-11-17",
+      "sunrise": "07:05:19",
+      "sunset": "16:28:09",
+      "weekday": "mon"
+    },
+    {
+      "date": "2025-11-18",
+      "sunrise": "07:06:42",
+      "sunset": "16:27:12",
+      "weekday": "tue"
+    },
+    {
+      "date": "2025-11-19",
+      "sunrise": "07:08:05",
+      "sunset": "16:26:17",
+      "weekday": "wed"
+    },
+    {
+      "date": "2025-11-20",
+      "sunrise": "07:09:27",
+      "sunset": "16:25:24",
+      "weekday": "thu"
+    },
+    {
+      "date": "2025-11-21",
+      "sunrise": "07:10:48",
+      "sunset": "16:24:34",
+      "weekday": "fri"
+    },
+    {
+      "date": "2025-11-22",
+      "sunrise": "07:12:08",
+      "sunset": "16:23:46",
+      "weekday": "sat"
+    },
+    {
+      "date": "2025-11-23",
+      "sunrise": "07:13:28",
+      "sunset": "16:23:00",
+      "weekday": "sun"
+    },
+    {
+      "date": "2025-11-24",
+      "sunrise": "07:14:47",
+      "sunset": "16:22:16",
+      "weekday": "mon"
+    },
+    {
+      "date": "2025-11-25",
+      "sunrise": "07:16:05",
+      "sunset": "16:21:35",
+      "weekday": "tue"
+    },
+    {
+      "date": "2025-11-26",
+      "sunrise": "07:17:22",
+      "sunset": "16:20:57",
+      "weekday": "wed"
+    },
+    {
+      "date": "2025-11-27",
+      "sunrise": "07:18:38",
+      "sunset": "16:20:21",
+      "weekday": "thu"
+    },
+    {
+      "date": "2025-11-28",
+      "sunrise": "07:19:52",
+      "sunset": "16:19:47",
+      "weekday": "fri"
+    },
+    {
+      "date": "2025-11-29",
+      "sunrise": "07:21:06",
+      "sunset": "16:19:17",
+      "weekday": "sat"
+    },
+    {
+      "date": "2025-11-30",
+      "sunrise": "07:22:18",
+      "sunset": "16:18:48",
+      "weekday": "sun"
+    },
+    {
+      "date": "2025-12-01",
+      "sunrise": "07:23:29",
+      "sunset": "16:18:22",
+      "weekday": "mon"
+    },
+    {
+      "date": "2025-12-02",
+      "sunrise": "07:24:39",
+      "sunset": "16:17:59",
+      "weekday": "tue"
+    },
+    {
+      "date": "2025-12-03",
+      "sunrise": "07:25:47",
+      "sunset": "16:17:39",
+      "weekday": "wed"
+    },
+    {
+      "date": "2025-12-04",
+      "sunrise": "07:26:53",
+      "sunset": "16:17:21",
+      "weekday": "thu"
+    },
+    {
+      "date": "2025-12-05",
+      "sunrise": "07:27:58",
+      "sunset": "16:17:06",
+      "weekday": "fri"
+    },
+    {
+      "date": "2025-12-06",
+      "sunrise": "07:29:02",
+      "sunset": "16:16:54",
+      "weekday": "sat"
+    },
+    {
+      "date": "2025-12-07",
+      "sunrise": "07:30:04",
+      "sunset": "16:16:44",
+      "weekday": "sun"
+    },
+    {
+      "date": "2025-12-08",
+      "sunrise": "07:31:04",
+      "sunset": "16:16:37",
+      "weekday": "mon"
+    },
+    {
+      "date": "2025-12-09",
+      "sunrise": "07:32:02",
+      "sunset": "16:16:33",
+      "weekday": "tue"
+    },
+    {
+      "date": "2025-12-10",
+      "sunrise": "07:32:58",
+      "sunset": "16:16:32",
+      "weekday": "wed"
+    },
+    {
+      "date": "2025-12-11",
+      "sunrise": "07:33:52",
+      "sunset": "16:16:33",
+      "weekday": "thu"
+    },
+    {
+      "date": "2025-12-12",
+      "sunrise": "07:34:45",
+      "sunset": "16:16:38",
+      "weekday": "fri"
+    },
+    {
+      "date": "2025-12-13",
+      "sunrise": "07:35:35",
+      "sunset": "16:16:45",
+      "weekday": "sat"
+    },
+    {
+      "date": "2025-12-14",
+      "sunrise": "07:36:23",
+      "sunset": "16:16:55",
+      "weekday": "sun"
+    },
+    {
+      "date": "2025-12-15",
+      "sunrise": "07:37:10",
+      "sunset": "16:17:07",
+      "weekday": "mon"
+    },
+    {
+      "date": "2025-12-16",
+      "sunrise": "07:37:53",
+      "sunset": "16:17:22",
+      "weekday": "tue"
+    },
+    {
+      "date": "2025-12-17",
+      "sunrise": "07:38:35",
+      "sunset": "16:17:40",
+      "weekday": "wed"
+    },
+    {
+      "date": "2025-12-18",
+      "sunrise": "07:39:14",
+      "sunset": "16:18:01",
+      "weekday": "thu"
+    },
+    {
+      "date": "2025-12-19",
+      "sunrise": "07:39:51",
+      "sunset": "16:18:25",
+      "weekday": "fri"
+    },
+    {
+      "date": "2025-12-20",
+      "sunrise": "07:40:26",
+      "sunset": "16:18:51",
+      "weekday": "sat"
+    },
+    {
+      "date": "2025-12-21",
+      "sunrise": "07:40:58",
+      "sunset": "16:19:19",
+      "weekday": "sun"
+    },
+    {
+      "date": "2025-12-22",
+      "sunrise": "07:41:27",
+      "sunset": "16:19:50",
+      "weekday": "mon"
+    },
+    {
+      "date": "2025-12-23",
+      "sunrise": "07:41:54",
+      "sunset": "16:20:24",
+      "weekday": "tue"
+    },
+    {
+      "date": "2025-12-24",
+      "sunrise": "07:42:19",
+      "sunset": "16:21:01",
+      "weekday": "wed"
+    },
+    {
+      "date": "2025-12-25",
+      "sunrise": "07:42:40",
+      "sunset": "16:21:39",
+      "weekday": "thu"
+    },
+    {
+      "date": "2025-12-26",
+      "sunrise": "07:43:00",
+      "sunset": "16:22:20",
+      "weekday": "fri"
+    },
+    {
+      "date": "2025-12-27",
+      "sunrise": "07:43:16",
+      "sunset": "16:23:04",
+      "weekday": "sat"
+    },
+    {
+      "date": "2025-12-28",
+      "sunrise": "07:43:30",
+      "sunset": "16:23:50",
+      "weekday": "sun"
+    },
+    {
+      "date": "2025-12-29",
+      "sunrise": "07:43:41",
+      "sunset": "16:24:38",
+      "weekday": "mon"
+    },
+    {
+      "date": "2025-12-30",
+      "sunrise": "07:43:49",
+      "sunset": "16:25:28",
+      "weekday": "tue"
+    },
+    {
+      "date": "2025-12-31",
+      "sunrise": "07:43:55",
+      "sunset": "16:26:20",
+      "weekday": "wed"
+    }
+  ]
+}

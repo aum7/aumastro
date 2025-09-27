@@ -31,6 +31,10 @@ class DataGraph(Gtk.Box):
         self.figure, self.ax = plt.subplots()
         self.canvas = FigureCanvas(self.figure)
         self.append(self.canvas)
+        # prevent focus & keyboard kidnapping
+        key_controller=Gtk.EventControllerKey()
+        key_controller.connect("key-pressed", self.on_canvas_key)
+        self.canvas.add_controller(key_controller)
         # global datetime attribute to move astro chart
         self.app.selected_dt = None
         # load & plot data
@@ -58,7 +62,12 @@ class DataGraph(Gtk.Box):
         self.app.signal_manager._connect("plot_search_result", self.plot_search_result)
         self.plot_last_n(200)
         self.search_cleared = False
-
+    def on_canvas_key(self, controller, keyval, keycode, state):
+        # release focus
+        win = self.app.get_active_window()
+        if win:
+            win.grab_focus()
+        return False
     def clear_search_plots(self, *args):
         # remove all previously plotted search markers
         if hasattr(self, "search_markers") and self.search_markers:
