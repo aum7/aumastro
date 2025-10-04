@@ -61,17 +61,17 @@ class SearchManager:
         search_timerange = query.get("search timerange")
         start, end = search_timerange if search_timerange else (file_start, file_end)
         # clip to make sure search time range fits into file time range
-        if start and end and file_start and file_end:
-            start = max(start, file_start)
-            end = min(end, file_end)
-            if start > end:
-                self.notify.warning(
-                    f"search time range {start} - {end} is outside file time range "
-                    f"{file_start} - {file_end} : no search possible : exiting ...",
-                    source="searchmanager",
-                    route=["terminal", "user"],
-                )
-                return
+        # if start and end and file_start and file_end:
+        #     start = max(start, file_start)
+        #     end = min(end, file_end)
+        #     if start > end:
+        #         self.notify.warning(
+        #             f"search time range {start} - {end} is outside file time range "
+        #             f"{file_start} - {file_end} : no search possible : exiting ...",
+        #             source="searchmanager",
+        #             route=["terminal", "user"],
+        #         )
+        #         return
         parsed_rules = query.get("parsed rules", [])
         # filter dataframe to search range if search time frame was provided
         search_datarange = None
@@ -136,6 +136,20 @@ class SearchManager:
                         timeout=6,
                     )
                 continue
+            # make sure search time range fits into file time range
+            if start and end and file_start and file_end:
+                start = max(start, file_start)
+                end = min(end, file_end)
+                if start > end:
+                    self.notify.warning(
+                        f"search time range {start} - {end}"
+                        "\n  is outside file time range"
+                        f"\nfile {file_start} - {file_end} :"
+                        "\n  no search possible : exiting ...",
+                        source="searchmanager",
+                        route=["terminal", "user"],
+                    )
+                    return
             main_place = parsed["place"]
             # data gathered : calculations by rules
             if main_place in ("nak", "nk", "naksatra"):
@@ -182,7 +196,7 @@ class SearchManager:
         end_date = end.strftime("%Y_%m_%d")
 
         Path(outdir).mkdir(parents=True, exist_ok=True)
-        filename = f"{str(country).lower()}_{city.lower()}_{start_date}_{end_date}.json"
+        filename = f"sunrise_{str(country).lower()}_{city.lower()}_{start_date}_{end_date}.json"
         with open(Path(outdir) / filename, "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, indent=2)
 

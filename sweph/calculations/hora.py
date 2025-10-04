@@ -27,6 +27,8 @@ def get_current_hora(jd_ut, lon, lat, alt, flag):
     # find current hora for given julian day utc
     horas = get_day_horas(jd_ut, lon, lat, alt, flag=flag)
     # print(f"hora : horas : {horas}")
+    if not horas:
+        return None
     for hora in horas:
         if hora.get("start_jd", 0.0) <= jd_ut < hora.get("end_jd", 0.0):
             return hora["lord"]
@@ -34,30 +36,15 @@ def get_current_hora(jd_ut, lon, lat, alt, flag):
 
 
 def get_day_horas(jd_ut, lon, lat, alt, flag=0):
+    notify = Gtk.Application.get_default().notify_manager
     # calculate list of all horas of the day
-    wday = swe.day_of_week(jd_ut)  # monday = 0
-    weekday = WEEKDAY[wday][0]
-    weekday_lord = WEEKDAY[wday][1]
-    # planetary hour sequence starts with weekday lord at sunrise
-    lord_idx = ORDER.index(weekday_lord)
-    # msg += f"weekday : {weekday} | lord : {weekday_lord}\n"
-    # calculate sunrise
-    _, data = swe.rise_trans(
-        jd_ut,
-        swe.SUN,
-        swe.CALC_RISE,
-        (lon, lat, alt),
-        atpress=0.0,
-        attemp=0.0,
-        flags=flag,
-    )
-    srise = data[0]
-    # recalculate for previous day if sunrise is after event datetime
-    if srise > jd_ut:
-        # set previous day as start datetime
-        jd_ut -= 1
+    # take start of jd
+    Y, M, D, _ = swe.revjul(jd_ut)
+    jd_day = swe.julday(Y, M, D, 0.0)
+    try:
+        # calculate sunrise
         _, data = swe.rise_trans(
-            jd_ut,
+            jd_day,
             swe.SUN,
             swe.CALC_RISE,
             (lon, lat, alt),
@@ -66,34 +53,60 @@ def get_day_horas(jd_ut, lon, lat, alt, flag=0):
             flags=flag,
         )
         srise = data[0]
-    # caluculate sunset
-    _, data = swe.rise_trans(
-        jd_ut,
-        swe.SUN,
-        swe.CALC_SET,
-        (lon, lat, alt),
-        atpress=0.0,
-        attemp=0.0,
-        flags=flag,
-    )
-    sset = data[0]
-    # calculate next sunrise (+- 1 minute of current sunrise)
-    _, data = swe.rise_trans(
-        jd_ut + 1,
-        swe.SUN,
-        swe.CALC_RISE,
-        (lon, lat, alt),
-        atpress=0.0,
-        attemp=0.0,
-        flags=flag,
-    )
-    srise_next = data[0]
+        # caluculate sunset
+        _, data = swe.rise_trans(
+            srise,
+            swe.SUN,
+            swe.CALC_SET,
+            (lon, lat, alt),
+            atpress=0.0,
+            attemp=0.0,
+            flags=flag,
+        )
+        sset = data[0]
+        # calculate next sunrise (+- 1 minute of current sunrise)
+        _, data = swe.rise_trans(
+            # search start @ 1 minute after sunset : should cover
+            # great deal of latitudes
+            srise + 0.9,  # (1.0 / 1440),
+            swe.SUN,
+            swe.CALC_RISE,
+            (lon, lat, alt),
+            atpress=0.0,
+            attemp=0.0,
+            flags=flag,
+        )
+        srise_next = data[0]
+    except Exception as e:
+        notify.error(
+            f"sunrise / set failed :\n\terror : {e}\nexiting ...",
+            source="hora",
+            route=["terminal", "user"],
+        )
+        return None
+    # validate
     sunrise = jdtoiso(srise)
     sunset = jdtoiso(sset)
     sunrise_next = jdtoiso(srise_next)
+    if not (srise < sset < srise_next):
+        notify.error(
+            f"invalid hora calculation :\n"
+            f"\tsunrise : {sunrise}\n"
+            f"\tsunset : {sunset}\n"
+            f"\tnext sunrise : {sunrise_next}\n"
+            "exiting ...",
+            source="hora",
+            route=["terminal", "user"],
+        )
+        return None
+    # weekday from sunrise
+    wday = swe.day_of_week(srise)
+    weekday, weekday_lord = WEEKDAY[wday]
+    lord_idx = ORDER.index(weekday_lord)
+    # compute daylight & night length
     day_length = sset - srise
-    day_hour = day_length / 12.0
     night_length = srise_next - sset
+    day_hour = day_length / 12.0
     night_hour = night_length / 12.0
     horas = []
     horas.append({

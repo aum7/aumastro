@@ -9,7 +9,8 @@
 ("GB", "UK", "GBR"),
 ("SI", "Slo", "SVN"),
 ("US", "USA", "USA"),
-("FI", "Finland", "FIN"),
+("MC", "Monaco", "MCO"),
+#("FI", "Finland", "FIN"),
 #("HR", "Cro", "HRV"),
 #("MA", "Morocco", "MAR"),
 #--------------------------------------------

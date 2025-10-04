@@ -8,12 +8,16 @@
 # "datetime": "2025-03-29 10:47:34",  # last solecl
 # "datetime": "2025 8 1 17 1", # trading start
 DEFAULT_E1 = {
+    # "country": "Slo",
+    # "city": "ljubljana",
+    # "location": "46 3 8 N 14 27 9 E 355 m",  # mons casino
+    # "name": "mons",
+    # "datetime": "2025-09-29 11:11:27",
     "country": "UK",
     "city": "london",
     "location": "51 30 54 n 000 05 56 w 10 m",
     "name": "solecl ",  # next solecl
     "datetime": "2006-03-29 11:11:27",
-    # "datetime": "2000 3 21 12 00",
 }
 DEFAULT_E2 = {
     "datetime": "2007-03-09 14:00:00",
@@ -92,9 +96,10 @@ DEFAULT_E2 = {
 # "location": "35 08 58 n 090 02 56 w 0085 m",
 # "name":"lisa presley",
 # "datetime": "1968 2 1 17 1",
-# ---
+# --- ljubljana
 # "country": "Slo",
 # "city": "ljubljana",
+# "location": "46 3 8 N 14 27 9 E", # mons casino
 # "location": "46 03 03 n 014 30 18 e 0294 m",
 # "name": "simon",
 # "datetime": "1975 2 8 14 10",
