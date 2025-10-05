@@ -387,49 +387,67 @@ class SearchManager:
         jd_start = swe.julday(start.year, start.month, start.day, 0.0)
         jd_end = swe.julday(end.year, end.month, end.day, 0.0)
         rows = []
+        srise = None
+        sset = None
+        dt_rise_utc = None
+        dt_set_utc = None
         jd = jd_start
         while jd <= jd_end:
-            _, data_rise = swe.rise_trans(
-                jd,
-                swe.SUN,
-                swe.CALC_RISE,
-                (lon, lat, alt),
-                atpress=0.0,
-                attemp=0.0,
-                flags=sweph_flag,
-            )
-            srise = data_rise[0]
+            try:
+                ret_rise, data_rise = swe.rise_trans(
+                    jd,
+                    swe.SUN,
+                    swe.CALC_RISE,
+                    (lon, lat, alt),
+                    atpress=0.0,
+                    attemp=0.0,
+                    flags=sweph_flag,
+                )
 
-            _, data_set = swe.rise_trans(
-                jd,
-                swe.SUN,
-                swe.CALC_SET,
-                (lon, lat, alt),
-                atpress=0.0,
-                attemp=0.0,
-                flags=sweph_flag,
-            )
-            sset = data_set[0]
-            # to utc
-            dt_rise_utc = datetime.strptime(
-                jdtoiso(srise), "%Y-%m-%d %H:%M:%S"
-            ).replace(tzinfo=timezone.utc)
-            dt_set_utc = datetime.strptime(jdtoiso(sset), "%Y-%m-%d %H:%M:%S").replace(
-                tzinfo=timezone.utc
-            )
+                ret_set, data_set = swe.rise_trans(
+                    jd,
+                    swe.SUN,
+                    swe.CALC_SET,
+                    (lon, lat, alt),
+                    atpress=0.0,
+                    attemp=0.0,
+                    flags=sweph_flag,
+                )
+                if ret_rise < 0 or ret_set < 0:
+                    self.notify.error(
+                        f"sunrise / set calculation failed at lat {lat} & lon {lon}",
+                        source="searchmanager",
+                        route=["terminal", "user"],
+                    )
+                srise = data_rise[0]
+                sset = data_set[0]
+            except Exception as e:
+                self.notify.error(
+                    f"sunrise / set calculation failed\nerror : {e}",
+                    source="searchmanager",
+                    route=["terminal", "user"],
+                )
+                # to utc
+                dt_rise_utc = datetime.strptime(
+                    jdtoiso(srise), "%Y-%m-%d %H:%M:%S"
+                ).replace(tzinfo=timezone.utc)
+                dt_set_utc = datetime.strptime(
+                    jdtoiso(sset), "%Y-%m-%d %H:%M:%S"
+                ).replace(tzinfo=timezone.utc)
             # to local time
-            if tz_name:
+            if tz_name and dt_rise_utc and dt_set_utc:
                 dt_rise_event = dt_rise_utc.astimezone(ZoneInfo(tz_name))
                 dt_set_event = dt_set_utc.astimezone(ZoneInfo(tz_name))
             else:
                 dt_rise_event = dt_rise_utc
                 dt_set_event = dt_set_utc
-            rows.append({
-                "date": dt_rise_event.strftime("%Y-%m-%d"),
-                "sunrise": dt_rise_event.strftime("%H:%M:%S"),
-                "sunset": dt_set_event.strftime("%H:%M:%S"),
-                "weekday": weekdays[dt_rise_event.weekday()],
-            })
+            if dt_rise_event and dt_set_event:
+                rows.append({
+                    "date": dt_rise_event.strftime("%Y-%m-%d"),
+                    "sunrise": dt_rise_event.strftime("%H:%M:%S"),
+                    "sunset": dt_set_event.strftime("%H:%M:%S"),
+                    "weekday": weekdays[dt_rise_event.weekday()],
+                })
             jd += 1.0
         return rows
 

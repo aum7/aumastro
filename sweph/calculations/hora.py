@@ -64,11 +64,10 @@ def get_day_horas(jd_ut, lon, lat, alt, flag=0):
             flags=flag,
         )
         sset = data[0]
-        # calculate next sunrise (+- 1 minute of current sunrise)
         _, data = swe.rise_trans(
-            # search start @ 1 minute after sunset : should cover
-            # great deal of latitudes
-            srise + 0.9,  # (1.0 / 1440),
+            # start next sunrise search 21.6 hours after calculated sunrise,
+            # in case day is getting longer : sunrise is +- 1 minute before
+            srise + 0.9,
             swe.SUN,
             swe.CALC_RISE,
             (lon, lat, alt),
