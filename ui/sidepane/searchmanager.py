@@ -451,5 +451,68 @@ class SearchManager:
             jd += 1.0
         return rows
 
+    def aspect(
+        self,
+        degree: int,
+        from_obj: str,
+        to_obj: list,
+        varga: int = 1,
+        start=None,
+        end=None,
+        # step_days=1,
+        # df=None,
+        outdir="user/data/search",
+    ):
+        if start is None or end is None:
+            self.notify.warning(
+                "missing data range",
+                source="searchmanager",
+                route=["terminal", "user"],
+            )
+            return None
+        # prepare dataframe
+        dt = start
+        results = []
+        while dt <= end:
+            jd = swe.julday(dt.year, dt.month, dt.day, 0.0)
+            pos_map = {}
+            # calculate object positions
+            objects = [from_obj] + to_obj
+            for obj in objects:
+                obj_id = getattr(swe, obj.lower())
+                lon = swe.calc_ut(jd, obj_id)[0]
+                # get varga if aplicable
+                if varga != 1:
+                    lon = vargalon(lon, varga)
+                pos_map[obj] = lon
+            # check exact aspect
+            for tp in to_obj:
+                diff = (pos_map[tp] - pos_map[from_obj]) % 360
+                if int(diff) == degree:
+                    results.append({
+                        "datetime": dt,
+                        "from_obj": from_obj,
+                        "aspect": degree,
+                        "to_obj": tp,
+                    })
+        if results:
+            df = pd.DataFrame(results)
+            os.makedirs(outdir, exist_ok=True)
+            filename = f"aspect_{from_obj}_{degree}_v{varga}.csv"
+            df.to_csv(os.path.join(outdir, filename), index=False)
+            self.app.signal_manager._emit("plot_search_result")
+            self.notify.info(
+                "plot aspect signal emitted",
+                source="searchmanager",
+                route=["terminal"],
+            )
+            return df
+        self.notify.info(
+            "no aspect found",
+            source="searchmanager",
+            route=["terminal"],
+        )
+        return None
+
     def terms(self, *args):
         pass
