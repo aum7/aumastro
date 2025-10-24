@@ -220,6 +220,7 @@ class Info(RingBase):
         # event 1 default chart info string (format)
         fmt_basic = self.chart_settings.get(
             "chart info string",
+            # fallback
             "{name}\n{date}\n{wday} {time_short}\n{city} @ {country}\n{lat}\n{lon}",
         )
         fmt_extra = self.chart_settings.get(

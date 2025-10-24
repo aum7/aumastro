@@ -81,7 +81,7 @@ class EventData:
             self.notify.debug(
                 f"dtcaptured : selfid {self.id} differs from data id {id} : exiting",
                 source="eventdata",
-                route=["none"],
+                route=[""],
             )
             return
         if self.date_time is not None:

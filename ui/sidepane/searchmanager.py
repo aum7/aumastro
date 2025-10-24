@@ -351,24 +351,9 @@ class SearchManager:
             slots.append((lord, start, end))
         return slots
 
-    # def jd_to_local_time(self, jd, lat, lon, tz_name=None):
-    #     # from utc result to event datetime : timezone
-    #     utc_dt = datetime.strptime(jd_to_custom_iso(jd), "%Y-%m-%d %H:%M:%S")
-    #     if tz_name is None:
-    #         tzf = TimezoneFinder()
-    #         zt_name = tzf.timezone_at(lat=lat, lng=lon)
-    #     if tz_name:
-    #         local_dt = utc_dt.replace(tzinfo=datetime.timezone.utc).astimezone(
-    #             ZoneInfo(zt_name)
-    #         )
-    #     else:
-    #         local_dt = utc_dt
-    #     return local_dt
-
     def sunriseset(self, start, end):
         app = self.app
         sweph_flag = getattr(app, "sweph_flag", 0)
-
         # need location : event 1
         sweph = getattr(app, "e1_sweph", None)
         chart = getattr(app, "e1_chart", None)
@@ -385,6 +370,7 @@ class SearchManager:
         tz_name = chart.get("timezone")
         weekdays = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
         jd_start = swe.julday(start.year, start.month, start.day, 0.0)
+        print(f"searchmanager : jdstart : {jdtoiso(jd_start)}")
         jd_end = swe.julday(end.year, end.month, end.day, 0.0)
         rows = []
         srise = None

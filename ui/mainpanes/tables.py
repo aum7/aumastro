@@ -45,14 +45,14 @@ class Tables(Gtk.Notebook):
         signal._connect("positions_changed", self.positions_changed)
         signal._connect("houses_changed", self.houses_changed)
         signal._connect("aspects_changed", self.aspects_changed)
-        # signal._connect("cycle_changed", self.cycle_changed)
-        # signal._connect("cycle_settings_changed", self.cycle_settings_changed)
         # vimsottari dasa widget
         signal._connect("vimsottari_changed", self.vimsottari_changed)
         # p2 table
         signal._connect("p2_changed", self.p2_changed)
         # p3 table
         signal._connect("p3_changed", self.p3_changed)
+        # daily horas
+        signal._connect("horas_changed", self.horas_changed)
 
     def event_data_widget(self, event: str, content: str):
         # create a scrollable text view for an event
@@ -86,8 +86,8 @@ class Tables(Gtk.Notebook):
             content += pos
         if aspects:
             content += aspects
-        # if cycle:
-        #     content += cycle
+        # if horas:
+        # pass
         # update page widget if exists, else create one
         if event in self.page_widgets:
             scroll = self.page_widgets[event]
@@ -206,18 +206,25 @@ class Tables(Gtk.Notebook):
             raH, raM, raS = decra(self.armc)
             horas_data = calculate_hora(event)
             if horas_data:
+                horas = horas_data["horas"]
                 curr_hora = horas_data["current_hora"]
                 hora_glyph = get_glyph(curr_hora, False)
-                weekday = horas_data["horas"][0]["weekday"]
+                weekday = horas[0]["weekday"]
+                sunrise = horas[0]["sunrise"]
+                sunset = horas[0]["sunset"]
+                sunrise_next = horas[0]["sunrise_next"]
+                # weekday = horas_data["horas"][0]["weekday"]
             if hsys_char in ["E", "D", "W"]:
                 # print(f"selected_hsys : {self.app.selected_house_sys_str}")
-                # if selected in ["eqa", "eqm", "whs"]:
+                # if selected in ["eqasc", "eqmc", "wholehs"]:
                 ln_csps += (
                     f" cross points {self.h_sym * 3}\n"
                     f" {self.asc} :  {decsigndms(self.ascendant)}\n"
                     f" {self.mc} :  {decsigndms(self.midheaven)}\n"
                     f" ra : {int(raH):02d}h{int(raM):02d}m{int(raS):02d}s\n"
                     f" {weekday} : {hora_glyph}\n"  # type:ignore
+                    f" sunrise : {sunrise} | sunset {sunset} | "  # type:ignore
+                    f"next sunrise {sunrise_next}\n"  # type:ignore
                 )
             else:
                 ln_csps += f" houses {self.h_sym * 7}\n"
@@ -313,57 +320,6 @@ class Tables(Gtk.Notebook):
         )
         return text
 
-    # def cycle_changed(self, event, data):
-    #     if event not in self.events_data:
-    #         self.event_data[event] = {}
-    #     self.events_data[event]["cycle"] = data
-    #     self.update_event_data(event)
-
-    # def update_cycle(self, event):
-    #     # called by update_event_data()
-    #     if (
-    #         event not in self.events_data
-    #         or "cycle" not in self.events_data[event]
-    #         or not self.events_data[event]["cycle"]
-    #     ):
-    #         self.notify.error(
-    #             f"missing data for {event} :  exiting ...",
-    #             source="tables",
-    #             route=[""],  # todo terminal
-    #         )
-    #         return
-    #     cycle = self.events_data[event]["cycle"]
-    #     custom_wave = cycle.get("custom wave", {})
-    #     use_varga_cycle = self.app.chart_settings.get("use varga cycle", False)
-    #     division = self.app.chart_settings.get("harmonic ring", "1").strip()
-    #     varga_str = f"v{division}" if use_varga_cycle else "v1"
-    #     text = (
-    #         " sidepane > cycle wave > use varga cycle for harmonic cycle wave\n"
-    #         " & select cycle members for custom cyclic index\n"
-    #     )
-    #     h_line = f"{self.h_sym * 59}\n"
-    #     # show custom cyclic index
-    #     if custom_wave:
-    #         total_idx, total_norm = custom_wave["result"]
-    #         phase = "+" if total_norm <= 180 else "-"
-    #     text += (
-    #         f" {event} cycle index for {' '.join(custom_wave['members'])} | "
-    #         f"pairs : {custom_wave['pairs num']} | [{varga_str}] "
-    #         f"({total_idx:.2f}) {total_norm:.2f} {phase}"  # type:ignore
-    #         f"{self.vic_spc}\n"
-    #     )
-    #     text += f"{h_line}"
-    #     self.notify.debug(
-    #         f"updatecycle :\n{text}",
-    #         source="tables",
-    #         route=[""],
-    #     )
-    #     return text
-
-    # def cycle_settings_changed(self, event):
-    #     # update table on cycle settings : use varga cycle toggle
-    #     self.update_event_data(event)
-
     def vimsottari_changed(self, event, vimsottari):
         # receives table as plain text
         if event not in self.events_data:
@@ -372,6 +328,66 @@ class Tables(Gtk.Notebook):
         self.current_event = event
         # print(f"vmst chg : {str(self.events_data[event].get('vimsottari'))[:800]}")
         self.update_vimsottari("vimsottari", vimsottari)
+
+    def vimsottari_widget(self, event: str, content: str):
+        # create a scrollable text view for an event
+        scroll = Gtk.ScrolledWindow()
+        scroll.set_name(f"vimso_scroll_{event}")
+        scroll.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
+        scroll.set_hexpand(False)
+        scroll.set_vexpand(True)
+        text_view = Gtk.TextView()
+        text_view.set_margin_top(self.margin)
+        text_view.set_margin_bottom(self.margin)
+        text_view.set_margin_start(self.margin)
+        text_view.set_margin_end(self.margin)
+        # text_view.set_wrap_mode(Gtk.WrapMode.CHAR)
+        text_view.set_editable(False)
+        text_view.set_cursor_visible(False)
+        text_view.add_css_class("table-text")
+        buffer = text_view.get_buffer()
+        buffer.set_text(content)
+        scroll.set_child(text_view)
+        self.insert_page(scroll, Gtk.Label.new(event), -1)
+        self.page_widgets[event] = scroll
+        self.set_current_page(self.get_n_pages() - 1)
+
+    def update_vimsottari(self, event: str, content: str):
+        # print(f"upd vmst : {content[:600]}")
+        if event in self.page_widgets:
+            # print("vimsottari_widget : updating table")
+            scroll = self.page_widgets[event]
+            text_view = scroll.get_child()
+            buffer = text_view.get_buffer()
+            buffer.set_text(content)
+        else:
+            # print("vimsottari_widget : creating new page")
+            self.vimsottari_widget(event, content)
+
+    # def toggle_vimso(self, gesture=None, n_press=0, x=0, y=0):
+    def toggle_vimso(self):
+        # cycle toggle level: 1->2->3->4->5->1
+        event = "e1"  # self.current_event
+        # print(f"toggle_vimso  {event} called")
+        if self.app.current_lvl == 1:
+            self.app.current_lvl = 2
+        elif self.app.current_lvl == 2:
+            self.app.current_lvl = 3
+        elif self.app.current_lvl == 3:
+            self.app.current_lvl = 4
+        elif self.app.current_lvl == 4:
+            self.app.current_lvl = 5
+        else:
+            self.app.current_lvl = 1
+        # print(f"current_lvl : {self.app.current_lvl}")
+        # update vimsottari for new level
+        if event and event in self.events_data:
+            # emit signal to force recalculation
+            self.app.signal_manager._emit(
+                "luminaries_changed",
+                event,
+                # "luminaries_changed", "vimsottari", self.app.last_luminaries
+            )
 
     def p2_changed(self, event):
         self.p2_pos = getattr(self.app, "p2_pos", None)
@@ -467,7 +483,7 @@ class Tables(Gtk.Notebook):
     def p2_widget(self, event: str, content: str):
         # create a scrollable text view for tertiary progression
         scroll = Gtk.ScrolledWindow()
-        scroll.set_name(f"data_scroll_{event}")
+        scroll.set_name(f"p2_scroll_{event}")
         scroll.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
         scroll.set_hexpand(False)
         scroll.set_vexpand(True)
@@ -582,7 +598,7 @@ class Tables(Gtk.Notebook):
     def p3_widget(self, event: str, content: str):
         # create a scrollable text view for tertiary progression
         scroll = Gtk.ScrolledWindow()
-        scroll.set_name(f"data_scroll_{event}")
+        scroll.set_name(f"p3_scroll_{event}")
         scroll.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
         scroll.set_hexpand(False)
         scroll.set_vexpand(True)
@@ -602,66 +618,6 @@ class Tables(Gtk.Notebook):
         self.page_widgets[event] = scroll
         self.set_current_page(self.get_n_pages() - 1)
 
-    def vimsottari_widget(self, event: str, content: str):
-        # create a scrollable text view for an event
-        scroll = Gtk.ScrolledWindow()
-        scroll.set_name(f"vimso_scroll_{event}")
-        scroll.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
-        scroll.set_hexpand(False)
-        scroll.set_vexpand(True)
-        text_view = Gtk.TextView()
-        text_view.set_margin_top(self.margin)
-        text_view.set_margin_bottom(self.margin)
-        text_view.set_margin_start(self.margin)
-        text_view.set_margin_end(self.margin)
-        # text_view.set_wrap_mode(Gtk.WrapMode.CHAR)
-        text_view.set_editable(False)
-        text_view.set_cursor_visible(False)
-        text_view.add_css_class("table-text")
-        buffer = text_view.get_buffer()
-        buffer.set_text(content)
-        scroll.set_child(text_view)
-        self.insert_page(scroll, Gtk.Label.new(event), -1)
-        self.page_widgets[event] = scroll
-        self.set_current_page(self.get_n_pages() - 1)
-
-    def update_vimsottari(self, event: str, content: str):
-        # print(f"upd vmst : {content[:600]}")
-        if event in self.page_widgets:
-            # print("vimsottari_widget : updating table")
-            scroll = self.page_widgets[event]
-            text_view = scroll.get_child()
-            buffer = text_view.get_buffer()
-            buffer.set_text(content)
-        else:
-            # print("vimsottari_widget : creating new page")
-            self.vimsottari_widget(event, content)
-
-    # def toggle_vimso(self, gesture=None, n_press=0, x=0, y=0):
-    def toggle_vimso(self):
-        # cycle toggle level: 1->2->3->4->5->1
-        event = "e1"  # self.current_event
-        # print(f"toggle_vimso  {event} called")
-        if self.app.current_lvl == 1:
-            self.app.current_lvl = 2
-        elif self.app.current_lvl == 2:
-            self.app.current_lvl = 3
-        elif self.app.current_lvl == 3:
-            self.app.current_lvl = 4
-        elif self.app.current_lvl == 4:
-            self.app.current_lvl = 5
-        else:
-            self.app.current_lvl = 1
-        # print(f"current_lvl : {self.app.current_lvl}")
-        # update vimsottari for new level
-        if event and event in self.events_data:
-            # emit signal to force recalculation
-            self.app.signal_manager._emit(
-                "luminaries_changed",
-                event,
-                # "luminaries_changed", "vimsottari", self.app.last_luminaries
-            )
-
     def which_house(self, lon: float, cusps: Tuple[float, ...]) -> str:
         # determine which house a celestial longitude falls in
         if not cusps:
@@ -678,3 +634,61 @@ class Tables(Gtk.Notebook):
                 if lon >= c0 or lon < c1:
                     return f"{h0:2d}"
         return ""
+
+    def horas_changed(self, event: str, horas: list):
+        if not horas:
+            self.notify.error(
+                "missing horas : exiting ...",
+                source="tabels",
+                route=["terminal"],
+            )
+            return
+        separ = f"{self.h_sym * 24}\n"
+        content = " horas SHOULD BE local time\n"
+        weekday = horas[0]["weekday"]
+        sunrise = horas[0]["sunrise"]
+        sunset = horas[0]["sunset"]
+        sunrise_next = horas[0]["sunrise_next"]
+        start_hora = horas[1]["lord"]
+        content += (
+            f" {weekday} | {start_hora} vara\n sunrise {sunrise}\n sunset {sunset}\n"
+            f" next sunrise {sunrise_next}\n"
+        )
+        for hora in horas[1:]:
+            lord = hora["lord"]
+            glyph = get_glyph(lord, False)
+            content += (
+                f" {hora['hour']:2d} - {hora['start']} - {hora['end']} {lord} {glyph}\n"
+            )
+        content += separ
+
+        page = f"{event} horas"
+        if page in self.page_widgets:
+            scroll = self.page_widgets[page]
+            text_view = scroll.get_child()
+            buffer = text_view.get_buffer()
+            buffer.set_text(content)
+        else:
+            self.horas_widget(page, content)
+
+    def horas_widget(self, event: str, content: str):
+        # create a scrollable text view for an event
+        scroll = Gtk.ScrolledWindow()
+        scroll.set_name(f"horas_scroll_{event}")
+        scroll.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
+        scroll.set_hexpand(False)
+        scroll.set_vexpand(True)
+        text_view = Gtk.TextView()
+        text_view.set_margin_top(self.margin)
+        text_view.set_margin_bottom(self.margin)
+        text_view.set_margin_start(self.margin)
+        text_view.set_margin_end(self.margin)
+        text_view.set_editable(False)
+        text_view.set_cursor_visible(False)
+        text_view.add_css_class("table-text")
+        buffer = text_view.get_buffer()
+        buffer.set_text(content)
+        scroll.set_child(text_view)
+        # add page with event label as tab title
+        self.append_page(scroll, Gtk.Label.new(event))
+        self.page_widgets[event] = scroll
