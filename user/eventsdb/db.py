@@ -16,7 +16,7 @@ DEFAULT_E1 = {
     "country": "UK",
     "city": "london",
     "location": "51 30 54 n 000 05 56 w 10 m",
-    "name": "solecl ",  # next solecl
+    "name": "lse",  # next solecl
     "datetime": "2006-03-29 11:11:27",
 }
 DEFAULT_E2 = {

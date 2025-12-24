@@ -6,10 +6,14 @@
 # if renamed > best make copy of whole line & move up
 
 #--- copies of original lines > renamed -----
-("GB", "UK", "GBR"),
 ("SI", "Slo", "SVN"),
+("JP", "Japan", "JPN"),
+("CN", "China", "CHN"),
+("IN", "India", "IND"),
+("GB", "UK", "GBR"),
 ("US", "USA", "USA"),
-("MC", "Monaco", "MCO"),
+("AU", "Australia", "AUS"),
+#("MC", "Monaco", "MCO"),
 #("FI", "Finland", "FIN"),
 #("HR", "Cro", "HRV"),
 #("MA", "Morocco", "MAR"),

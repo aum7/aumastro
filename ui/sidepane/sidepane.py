@@ -66,7 +66,7 @@ class SidepaneManager:
         self.clp_change_time = self.setup_change_time()
         # 2 events
         self.clp_event_one = setup_event(self, "e1", True)  # todo
-        self.clp_event_two = setup_event(self, "e2", True)
+        self.clp_event_two = setup_event(self, "e2", False)
         if self.app.selected_event == "e1":
             self.clp_event_one.add_title_css_class("label-event-selected")
         else:

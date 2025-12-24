@@ -60,7 +60,7 @@ class DataGraph(Gtk.Box):
         self.search_markers = []
         self.app.signal_manager._connect("clear_search_plots", self.clear_search_plots)
         self.app.signal_manager._connect("plot_search_result", self.plot_search_result)
-        self.plot_last_n(200)
+        self.plot_last_n(400)
         self.search_cleared = False
 
     def on_canvas_key(self, controller, keyval, keycode, state):

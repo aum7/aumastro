@@ -643,7 +643,7 @@ class Tables(Gtk.Notebook):
                 route=["terminal"],
             )
             return
-        separ = f"{self.h_sym * 24}\n"
+        separ = f"{self.h_sym * 21}\n"
         content = " horas SHOULD BE local time\n"
         weekday = horas[0]["weekday"]
         sunrise = horas[0]["sunrise"]
@@ -658,7 +658,8 @@ class Tables(Gtk.Notebook):
             lord = hora["lord"]
             glyph = get_glyph(lord, False)
             content += (
-                f" {hora['hour']:2d} - {hora['start']} - {hora['end']} {lord} {glyph}\n"
+                f" {hora['hour']:2d} - {hora['start'][11:]} "
+                f"- {hora['end'][11:]} {lord} {glyph}\n"
             )
         content += separ
 

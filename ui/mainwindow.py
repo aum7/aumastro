@@ -27,6 +27,9 @@ from sweph.calculations.returnlunar import connect_signals_lunarreturn
 from sweph.calculations.transit import connect_signals_transit
 from sweph.calculations.varga import connect_signals_varga
 
+# 1-time printscreen sequence generation
+from .data_printscreen import DataPrintscreen
+
 
 class MainWindow(
     Gtk.ApplicationWindow,
@@ -78,6 +81,8 @@ class MainWindow(
         self.tables2 = Tables()
         self.datagraph = DataGraph()
         self.init_panes()
+        # printscreen sequence script
+        self.gold_seq = DataPrintscreen(self.app)
         # initialize panes layout todo ko
         self.connect("realize", lambda w: self.panes_double())
 
@@ -156,6 +161,12 @@ class MainWindow(
         self.hotkeys.register_hotkey(
             "shift+v", lambda: self.toggle_chart_setting("use varga aspect")
         )
+        self.hotkeys.register_hotkey("shift+g", self.on_gold_seq)
+
+    def on_gold_seq(self):
+        # run printscreen for data sequence in datagraph
+        if hasattr(self, "gold_seq"):
+            self.gold_seq.run_seq()
 
     def toggle_chart_setting(self, setting):
         # hotkey callback to toggle chart setting & checkbox
@@ -250,7 +261,7 @@ class MainWindow(
             and hasattr(self, "pnd_top_h")
             and hasattr(self, "pnd_btm_h")
         ):
-            self.pnd_main_v.set_position(int(self.pnd_main_v.get_height() * 0.4))
+            self.pnd_main_v.set_position(int(self.pnd_main_v.get_height() * 0.3))
             # self.pnd_main_v.set_position(self.pnd_main_v.get_height() // 2)
             self.pnd_top_h.set_position(0)
             self.pnd_btm_h.set_position(self.pnd_btm_h.get_width() // 2)
