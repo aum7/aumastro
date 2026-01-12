@@ -3,7 +3,7 @@ import pandas as pd
 from pathlib import Path
 
 def clean_gold_csv():
-    csv_path = Path("/home/mua/dev/venaumastro/aumastro/user/data/gold/gold_h_utc.csv")
+    csv_path = Path("/home/mua/dev/venaumastro/aumastro/user/data/gold/gold_d_utc.csv")
     backup_path = csv_path.with_suffix(".csv. backup")
     
     # backup original

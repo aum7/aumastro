@@ -400,7 +400,7 @@ FILES = {
     ),
     # --- path to data folder & file ; data to be plotted on graph
     "data": (
-        "user/data/gold/gold_h_utc.csv",
+        "user/data/gold/gold_d.csv",
         "path to data folder & file name : data for plotting on graph",
     ),
     # --- construct your own 'filename' format: allowed fields

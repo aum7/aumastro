@@ -188,7 +188,6 @@ class MainWindow(
             "manual\n"
             "\nhover mouse over buttons & text = show tooltips"
             "\nhover mouse over notification message = do not hide message"
-            "\nright-click = context menu : change pane content & access settings etc"
             "\nesc : discard notification message"
             "\n\nrecommended workflow :"
             "\nenter event 1 data = calculate event / birth chart"
@@ -213,7 +212,7 @@ class MainWindow(
             "\na : toggle zodiac rotation (ascendant vs ari 0° at left)"
             "\ng : toggle glyphs visibility"
             "\n1-8 : toggle transit-varga-lunar-solar return-p3-p2-p1-naksatras ring"
-            "\nshift+v : toggle 'use varga aspect' for aspects table"
+            "\nshift+v : toggle varga aspects table"
             "\n\nnote : if entry / text field is focused, hotkeys will not work"
             "\n\t(text field will 'consume' key press)",
             source="help",

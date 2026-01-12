@@ -16,15 +16,15 @@ class DataPrintscreen:
     def __init__(self, app):
         self.app = app
         self.notify = self.app.notify_manager
-        self.output_dir = Path.home() / "Documents/goldseq"
+        self.output_dir = Path.home() / "Documents/goldseqd"
         self.output_dir.mkdir(parents=True, exist_ok=True)
         self.running = False
         self.current_idx = 0
         self.gold_df = None
         self.total = 0
         # filter ouptut sequence
-        self.seq_start = "2004-01-01 00:00:00"
-        self.seq_end = "2013-01-01 00:00:00"
+        self.seq_start = "1999-01-01 00:00:00"
+        self.seq_end = "2026-01-01 00:00:00"
         self.capture_delay = 100
         self.skip_flush_redraw = True
         self.gnome_timeout = 2
@@ -60,7 +60,7 @@ class DataPrintscreen:
             return
         # load data
         try:
-            gold_path = Path("user/data/gold/gold_h_utc.csv")
+            gold_path = Path("user/data/gold/gold_d.csv")
             if not gold_path.exists():
                 self.notify.error(
                     f"datagraph data not found : {gold_path}",
@@ -224,7 +224,7 @@ class DataPrintscreen:
         except Exception:
             return
         # calculate range to center cursor
-        visible_bars = 400  # todo adjust
+        visible_bars = 800  # todo adjust
         half = visible_bars // 2
         start = max(0, idx - half)
         end = min(len(dg.full_df), start + visible_bars)

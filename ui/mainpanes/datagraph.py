@@ -41,7 +41,7 @@ class DataGraph(Gtk.Box):
         self.full_df = None
         self.plot_range = [None, None]  # start, end
         self.last_mouse_x = None  # mouse position zoom
-        self.max_bars = 600
+        self.max_bars = 800
         self.min_bars = 100
         self.data_load()
         # mouse events
@@ -60,7 +60,7 @@ class DataGraph(Gtk.Box):
         self.search_markers = []
         self.app.signal_manager._connect("clear_search_plots", self.clear_search_plots)
         self.app.signal_manager._connect("plot_search_result", self.plot_search_result)
-        self.plot_last_n(400)
+        self.plot_last_n(800)
         self.search_cleared = False
 
     def on_canvas_key(self, controller, keyval, keycode, state):
