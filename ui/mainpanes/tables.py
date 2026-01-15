@@ -197,14 +197,14 @@ class Tables(Gtk.Notebook):
         text = ""
         # build header string with house column added
         header = (
-            f" positions{self.vic_spc}{self.h_sym * 47}\n"
+            f" positions{self.vic_spc}{self.h_sym * 48}\n"
             f" obj {self.v_sym}        sign : nak{self.vic_spc}{self.v_sym}"
             f"       varga : nak{self.vic_spc}{self.v_sym} "
             f"  lat {self.v_sym}   lon {self.v_sym} speed : rel "
             f"{self.v_sym} hs\n"
         )
         text += header
-        separ = f"{self.h_sym * 55}\n"
+        separ = f"{self.h_sym * 56}\n"
         # loop through positions and calculate houses if possible
         for key, obj in pos_map.items():
             name = obj.get("name", "")
@@ -263,10 +263,10 @@ class Tables(Gtk.Notebook):
                 # print(f"selected_hsys : {self.app.selected_house_sys_str}")
                 # if selected in ["eqasc", "eqmc", "wholehs"]:
                 ln_csps += (
-                    f" cross points {self.h_sym * 3}\n"
-                    f" {self.asc} :  {decsigndms(self.ascendant)}\n"
-                    f" {self.mc} :  {decsigndms(self.midheaven)}\n"
-                    f" ra : {int(raH):02d}h{int(raM):02d}m{int(raS):02d}s\n"
+                    # f" other {self.h_sym}"
+                    f" {self.asc} :  {decsigndms(self.ascendant)} |"
+                    f" {self.mc} :  {decsigndms(self.midheaven)} |"
+                    f" ra : {int(raH):02d}h{int(raM):02d}m{int(raS):02d}s |"
                     f" {weekday} : {hora_glyph}\n"  # type:ignore
                     f" sunrise : {sunrise[5:]} | set {sunset[5:]} | "  # type:ignore
                     f"next rise {sunrise_next[5:]}\n"  # type:ignore
