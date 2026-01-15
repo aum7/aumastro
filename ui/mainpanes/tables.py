@@ -14,6 +14,22 @@ from sweph.calculations.hora import calculate_hora
 from sweph.swetime import jd_to_custom_iso as jdtoiso
 from ui.fonts.glyphs import get_glyph
 
+# average planet speeds
+AVG_SPEEDS = {
+    0: 0.9856,  # sun
+    1: 13.176,  # moon
+    2: 1.607,  # mercury
+    3: 1.174,  # venus
+    4: 0.524,  # mars
+    5: 0.0831,  # jupiter
+    6: 0.0335,  # saturn
+    7: 0.0117,  # uranus
+    8: 0.0060,  # neptune
+    9: 0.0039,  # pluto
+    10: 0.0529,  # mean node (retrograde)
+    11: 0.0529,  # true node (retrograde)
+}
+
 
 class Tables(Gtk.Notebook):
     def __init__(self):
@@ -125,6 +141,33 @@ class Tables(Gtk.Notebook):
             )
         self.update_event_data(event)
 
+    def which_house(self, lon: float, cusps: Tuple[float, ...]) -> str:
+        # determine which house a celestial longitude falls in
+        if not cusps:
+            return ""
+        cusp_list = [(c, i + 1) for i, c in enumerate(cusps)]
+        n = len(cusp_list)
+        for i in range(n):
+            c0, h0 = cusp_list[i]
+            c1, _ = cusp_list[(i + 1) % n]
+            if c0 <= c1:
+                if c0 <= lon < c1:
+                    return f"{h0:2d}"
+            else:
+                if lon >= c0 or lon < c1:
+                    return f"{h0:2d}"
+        return ""
+
+    def speed_relative(self, body: int, speed: float) -> int:
+        # calculate relative planet speed
+        if body not in AVG_SPEEDS:
+            return 0
+        avg = AVG_SPEEDS[body]
+        if avg == 0:
+            return 0
+        pct = (speed / avg) * 100
+        return int(pct)
+
     def update_positions(self, event: str):
         # called by update_event_data()
         if (
@@ -157,20 +200,22 @@ class Tables(Gtk.Notebook):
             f" positions{self.vic_spc}{self.h_sym * 47}\n"
             f" obj {self.v_sym}        sign : nak{self.vic_spc}{self.v_sym}"
             f"       varga : nak{self.vic_spc}{self.v_sym} "
-            f"       lat {self.v_sym}         lon "
+            f"  lat {self.v_sym}   lon {self.v_sym} speed : rel "
             f"{self.v_sym} hs\n"
         )
         text += header
         separ = f"{self.h_sym * 55}\n"
         # loop through positions and calculate houses if possible
         for key, obj in pos_map.items():
-            # print(f"tables : obj : {obj}")
             name = obj.get("name", "")
             speed = obj.get("lon speed", 0)
+            # relative speed
+            speed_rel = self.speed_relative(key, speed)
+            # print(f"tables : speed : {speed}")
             body = key
             retro = " "
             if name and body:
-                retro = retro_marker(body, speed)  # if name in station_speed else " "
+                retro = retro_marker(body, speed)
             lon = obj.get("lon", 0)
             # calculate house if cusps are available
             house = self.which_house(lon, tuple(cusps)) if cusps else ""
@@ -181,8 +226,8 @@ class Tables(Gtk.Notebook):
                 f" {obj.get('name', '')}{retro} {self.v_sym} "
                 f"{decsigndms(lon):10} {nak[0]:02}-{nak[2]} {self.v_sym} "
                 f"{decsigndms(var_lon):10} {var_nak[0]:02}-{var_nak[2]} {self.v_sym} "
-                f"{obj.get('lat', 0):10.6f} {self.v_sym} "
-                f"{lon:11.6f} {self.v_sym} {house}\n"
+                f"{obj.get('lat', 0):5.2f} {self.v_sym} "
+                f"{lon:5.1f} {self.v_sym} {speed:6.3f} {speed_rel:4.0f} {self.v_sym} {house}\n"
             )
             text += ln_pos
         # houses
@@ -223,8 +268,8 @@ class Tables(Gtk.Notebook):
                     f" {self.mc} :  {decsigndms(self.midheaven)}\n"
                     f" ra : {int(raH):02d}h{int(raM):02d}m{int(raS):02d}s\n"
                     f" {weekday} : {hora_glyph}\n"  # type:ignore
-                    f" sunrise : {sunrise} | sunset {sunset} | "  # type:ignore
-                    f"next sunrise {sunrise_next}\n"  # type:ignore
+                    f" sunrise : {sunrise[5:]} | set {sunset[5:]} | "  # type:ignore
+                    f"next rise {sunrise_next[5:]}\n"  # type:ignore
                 )
             else:
                 ln_csps += f" houses {self.h_sym * 7}\n"
@@ -617,23 +662,6 @@ class Tables(Gtk.Notebook):
         self.append_page(scroll, Gtk.Label.new(event))
         self.page_widgets[event] = scroll
         self.set_current_page(self.get_n_pages() - 1)
-
-    def which_house(self, lon: float, cusps: Tuple[float, ...]) -> str:
-        # determine which house a celestial longitude falls in
-        if not cusps:
-            return ""
-        cusp_list = [(c, i + 1) for i, c in enumerate(cusps)]
-        n = len(cusp_list)
-        for i in range(n):
-            c0, h0 = cusp_list[i]
-            c1, _ = cusp_list[(i + 1) % n]
-            if c0 <= c1:
-                if c0 <= lon < c1:
-                    return f"{h0:2d}"
-            else:
-                if lon >= c0 or lon < c1:
-                    return f"{h0:2d}"
-        return ""
 
     def horas_changed(self, event: str, horas: list):
         if not horas:
