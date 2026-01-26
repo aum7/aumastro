@@ -7,6 +7,9 @@
 # original sweph documentation, ie swephprg.pdf & swisseph.pdf at
 # https://github.com/aloistr/swisseph/tree/master/doc
 # for glyph explanation see ui/fonts/victor/...pdf
+# main application panes orientation : horizontal vs vertical
+# see uisetup.py > setup_paned_widgets
+APP_ORIENTATION = "vertical"
 OBJECTS = {  # one-but-last = color ; last = size scale = drawing order
     0: ("su", "sun", "sy", "surya", (1.0, 0.898, 0.0, 1), 0.82),
     1: ("mo", "moon", "ca", "candra", (0.95, 0.95, 0.95, 1), 0.73),

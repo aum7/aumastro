@@ -5,6 +5,7 @@ import gi
 gi.require_version("Gtk", "4.0")
 from gi.repository import Gtk, Gdk  # type: ignore
 from typing import Callable
+from user.settings import APP_ORIENTATION
 
 
 class UISetup:
@@ -19,7 +20,7 @@ class UISetup:
     rvl_side_pane: Gtk.Revealer
     btn_toggle_pane: Gtk.Button
     setup_side_pane: Callable
-    on_toggle_pane: Callable
+    on_toggle_sidepane: Callable
     on_context_menu: Callable
     # type hints for paned widgets
     pnd_top_h: Gtk.Paned
@@ -96,7 +97,7 @@ class UISetup:
 [shift+triple-click] : triple panes (hk : shift+3)
 [shift+quadruple-click] : all panes (hk : shift+4)"""
         )
-        self.btn_toggle_pane.connect("clicked", self.on_toggle_pane)
+        self.btn_toggle_pane.connect("clicked", self.on_toggle_sidepane)
 
     def setup_menu_overlay(self) -> None:
         self.ovl_menu = Gtk.Overlay()
@@ -113,43 +114,53 @@ class UISetup:
         frame = Gtk.Frame()
         frame.add_css_class("frame")
         frame.set_child(child)
-
         return frame
 
     def setup_paned_widgets(self):
-        # main vertical pane
-        self.pnd_main_v = Gtk.Paned(orientation=Gtk.Orientation.VERTICAL)
-        self.pnd_main_v.set_hexpand(True)
-        self.pnd_main_v.set_vexpand(True)
-        # 2 horizontal paned
-        self.pnd_top_h = Gtk.Paned(orientation=Gtk.Orientation.HORIZONTAL)
-        self.pnd_btm_h = Gtk.Paned(orientation=Gtk.Orientation.HORIZONTAL)
-
+        # get user setup file
+        if APP_ORIENTATION == "vertical":
+            # main vertical pane
+            self.pnd_main = Gtk.Paned(orientation=Gtk.Orientation.VERTICAL)
+            self.pnd_main.set_hexpand(True)
+            self.pnd_main.set_vexpand(True)
+            # 2 horizontal panes
+            self.pnd_top = Gtk.Paned(orientation=Gtk.Orientation.HORIZONTAL)
+            self.pnd_btm = Gtk.Paned(orientation=Gtk.Orientation.HORIZONTAL)
+        else:  # horizontal orientation
+            # main horizontal pane
+            self.pnd_main = Gtk.Paned(orientation=Gtk.Orientation.HORIZONTAL)
+            self.pnd_main.set_hexpand(True)
+            self.pnd_main.set_vexpand(True)
+            # 2 vertical panes
+            self.pnd_top = Gtk.Paned(orientation=Gtk.Orientation.VERTICAL)
+            self.pnd_btm = Gtk.Paned(orientation=Gtk.Orientation.VERTICAL)
+            self.pnd_main.set_hexpand(True)
+            self.pnd_main.set_vexpand(True)
         self.setup_paned_children()
 
     def setup_paned_children(self) -> None:
         """setup the paned widgets' children with proper type handling"""
         # Setup top paned
-        self.pnd_top_h.set_hexpand(True)
-        self.pnd_top_h.set_vexpand(True)
-        self.pnd_top_h.set_start_child(self.frm_top_left)
-        self.pnd_top_h.set_resize_start_child(True)
-        self.pnd_top_h.set_end_child(self.frm_top_right)
-        self.pnd_top_h.set_resize_end_child(True)
+        self.pnd_top.set_hexpand(True)
+        self.pnd_top.set_vexpand(True)
+        self.pnd_top.set_start_child(self.frm_top_left)
+        self.pnd_top.set_resize_start_child(True)
+        self.pnd_top.set_end_child(self.frm_top_right)
+        self.pnd_top.set_resize_end_child(True)
         # setup bottom paned
-        self.pnd_btm_h.set_hexpand(True)
-        self.pnd_btm_h.set_vexpand(True)
-        self.pnd_btm_h.set_start_child(self.frm_bottom_left)
-        self.pnd_btm_h.set_resize_start_child(True)
-        self.pnd_btm_h.set_end_child(self.frm_bottom_right)
-        self.pnd_btm_h.set_resize_end_child(True)
+        self.pnd_btm.set_hexpand(True)
+        self.pnd_btm.set_vexpand(True)
+        self.pnd_btm.set_start_child(self.frm_bottom_left)
+        self.pnd_btm.set_resize_start_child(True)
+        self.pnd_btm.set_end_child(self.frm_bottom_right)
+        self.pnd_btm.set_resize_end_child(True)
         # setup main vertical paned
-        self.pnd_main_v.set_start_child(self.pnd_top_h)
-        self.pnd_main_v.set_resize_start_child(True)
-        self.pnd_main_v.set_end_child(self.pnd_btm_h)
-        self.pnd_main_v.set_resize_end_child(True)
+        self.pnd_main.set_start_child(self.pnd_top)
+        self.pnd_main.set_resize_start_child(True)
+        self.pnd_main.set_end_child(self.pnd_btm)
+        self.pnd_main.set_resize_end_child(True)
         # setup menu overlay
-        self.ovl_menu.set_child(self.pnd_main_v)
+        self.ovl_menu.set_child(self.pnd_main)
         self.ovl_menu.add_overlay(self.btn_toggle_pane)
 
     def setup_grid(self):

@@ -29,6 +29,9 @@ class DataGraph(Gtk.Box):
         self.set_orientation(Gtk.Orientation.VERTICAL)
         # create figure & axes
         self.figure, self.ax = plt.subplots()
+        # transparent background for movie mode
+        # self.figure.patch.set_alpha(0.0)
+        # self.ax.patch.set_alpha(0.0)
         self.canvas = FigureCanvas(self.figure)
         self.append(self.canvas)
         # prevent focus & keyboard kidnapping
@@ -281,8 +284,12 @@ class DataGraph(Gtk.Box):
         self.df = df
         # clear previous axes drawing
         self.ax.clear()
+        # fixed background color
         self.figure.patch.set_facecolor("#181818")
         self.ax.set_facecolor("#181818")
+        # transparent background for movie mode
+        # self.figure.patch.set_alpha(0.0)
+        # self.ax.patch.set_alpha(0.0)
         # remove spines, ticks, labels
         for spine in self.ax.spines.values():
             spine.set_visible(False)

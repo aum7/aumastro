@@ -78,11 +78,16 @@ class MainWindow(
         # 4 main panes
         self.astro_chart = AstroChart()
         self.tables = Tables()
-        self.tables2 = Tables()
         self.datagraph = DataGraph()
+        self.astrodata = AstroChart()  # extra astro chart for data overlay
         self.init_panes()
         # printscreen sequence script
-        self.gold_seq = DataPrintscreen(self.app)
+        self.data_seq = DataPrintscreen(self.app)
+        # movie overlay mode : data graph over astro chart
+        self.movie_overlay = None
+        self.overlay_mode = False
+        self.orig_target = None
+        self.orig_top_right_child = None  # datagraph to be overlaid
         # initialize panes layout todo ko
         self.connect("realize", lambda w: self.panes_double())
 
@@ -91,7 +96,7 @@ class MainWindow(
         self.app.quit()
         return False
 
-    def on_toggle_pane(self, button: Optional[Gtk.Button] = None) -> None:
+    def on_toggle_sidepane(self, button: Optional[Gtk.Button] = None) -> None:
         """toggle sidepane visibility"""
         revealed = self.rvl_side_pane.get_child_revealed()
         if revealed:
@@ -105,11 +110,12 @@ class MainWindow(
         """register additional hotkeys"""
         self.hotkeys.register_hotkey("v", lambda: self.tables.toggle_vimso())
         self.hotkeys.register_hotkey("h", self.show_help)
-        self.hotkeys.register_hotkey("s", self.on_toggle_pane)
+        self.hotkeys.register_hotkey("s", self.on_toggle_sidepane)
         self.hotkeys.register_hotkey("shift+exclam", self.panes_single)
         self.hotkeys.register_hotkey("shift+quotedbl", self.panes_double)
         self.hotkeys.register_hotkey("shift+numbersign", self.panes_triple)
         self.hotkeys.register_hotkey("shift+dollar", self.panes_all)
+        self.hotkeys.register_hotkey("shift+percent", self.panes_movie)
         self.hotkeys.register_hotkey("Up", self.obc_arrow_up)
         self.hotkeys.register_hotkey("Down", self.obc_arrow_dn)
         self.hotkeys.register_hotkey("Left", self.obc_arrow_l)
@@ -161,12 +167,12 @@ class MainWindow(
         self.hotkeys.register_hotkey(
             "shift+v", lambda: self.toggle_chart_setting("use varga aspect")
         )
-        self.hotkeys.register_hotkey("shift+g", self.on_gold_seq)
+        self.hotkeys.register_hotkey("shift+g", self.on_data_seq)
 
-    def on_gold_seq(self):
+    def on_data_seq(self):
         # run printscreen for data sequence in datagraph
-        if hasattr(self, "gold_seq"):
-            self.gold_seq.run_seq()
+        if hasattr(self, "data_seq"):
+            self.data_seq.run_seq()
 
     def toggle_chart_setting(self, setting):
         # hotkey callback to toggle chart setting & checkbox
@@ -182,7 +188,7 @@ class MainWindow(
             route=[""],
         )
 
-    # hotkey action functions
+    # help / manual
     def show_help(self):
         self.notify.debug(
             "manual\n"
@@ -227,53 +233,155 @@ class MainWindow(
             "bottom_right": self.astro_chart,
             "bottom_left": self.tables,
             "top_right": self.datagraph,
-            "top_left": self.tables2,
+            "top_left": self.astrodata,
         }
         for k, v in widgets.items():
             frame = getattr(self, f"frm_{k}", None)
             if frame:
                 frame.set_child(v)
 
+    # todo : adjust panes for horizontal app orientation : currently vertical
+    # orientation is only considered
     # panes show single
     def panes_single(self) -> None:
         """show single pane : bottom left
         shift+single-click / shift+1"""
-        if hasattr(self, "pnd_main_v") and hasattr(self, "pnd_btm_h"):
+        if hasattr(self, "pnd_main") and hasattr(self, "pnd_btm"):
             # separator position in pixels, from top-left | -ve = unset | default 0
-            self.pnd_main_v.set_position(0)
-            self.pnd_btm_h.set_position(0)
+            self.pnd_main.set_position(0)
+            self.pnd_btm.set_position(0)
 
     # panes show 2
     def panes_double(self) -> None:
         """show & center bottom 2 panes (hide top 2)
         shift+double-click / shift+2"""
-        if hasattr(self, "pnd_main_v") and hasattr(self, "pnd_btm_h"):
-            self.pnd_main_v.set_position(0)
-            self.pnd_btm_h.set_position(self.pnd_btm_h.get_width() // 2)
+        if hasattr(self, "pnd_main") and hasattr(self, "pnd_btm"):
+            self.pnd_main.set_position(0)
+            self.pnd_btm.set_position(self.pnd_btm.get_width() // 2)
 
     # panes show 3
     def panes_triple(self) -> None:
         """show & center top single & bottom 2 panes
         shift+triple-click / shift+3"""
         if (
-            hasattr(self, "pnd_main_v")
-            and hasattr(self, "pnd_top_h")
-            and hasattr(self, "pnd_btm_h")
+            hasattr(self, "pnd_main")
+            and hasattr(self, "pnd_top")
+            and hasattr(self, "pnd_btm")
         ):
-            self.pnd_main_v.set_position(int(self.pnd_main_v.get_height() * 0.3))
+            self.pnd_main.set_position(int(self.pnd_main.get_height() * 0.3))
             # self.pnd_main_v.set_position(self.pnd_main_v.get_height() // 2)
-            self.pnd_top_h.set_position(0)
-            self.pnd_btm_h.set_position(self.pnd_btm_h.get_width() // 2)
+            self.pnd_top.set_position(0)
+            self.pnd_btm.set_position(self.pnd_btm.get_width() // 2)
 
     # panes show all 4
     def panes_all(self) -> None:
         """show & center all 4 main panes
         shift+quadruple-click / shift+4"""
         if (
-            hasattr(self, "pnd_main_v")
-            and hasattr(self, "pnd_top_h")
-            and hasattr(self, "pnd_btm_h")
+            hasattr(self, "pnd_main")
+            and hasattr(self, "pnd_top")
+            and hasattr(self, "pnd_btm")
         ):
-            self.pnd_main_v.set_position(self.pnd_main_v.get_height() // 2)
-            self.pnd_top_h.set_position(self.pnd_top_h.get_width() // 2)
-            self.pnd_btm_h.set_position(self.pnd_btm_h.get_width() // 2)
+            self.pnd_main.set_position(self.pnd_main.get_height() // 2)
+            self.pnd_top.set_position(self.pnd_top.get_width() // 2)
+            self.pnd_btm.set_position(self.pnd_btm.get_width() // 2)
+
+    # movie mode pane
+    def panes_movie(self) -> None:
+        """toggle show astro chart overlaid with data graph
+        shift+5"""
+        if (
+            hasattr(self, "pnd_main")
+            and hasattr(self, "pnd_top")
+            and hasattr(self, "pnd_btm")
+        ):
+            # expand top left pane to full screen (minus side pane)
+            self.pnd_main.set_position(self.pnd_main.get_height())
+            self.pnd_top.set_position(self.pnd_top.get_width())
+        # need frames todo below code makes copies of frame widget
+        # we need our custom widgets
+        print("hotkey panes movie pressed")
+        frm_target = getattr(self, "frm_top_left", None)
+        frm_top = getattr(self, "frm_top_right", None)
+        if not frm_top and not frm_target:
+            return
+        # enable overlay : create & re-parent widgets
+        if not self.overlay_mode:
+            # store original children so we can restore later
+            self.orig_target = frm_target.get_child() if frm_target else None
+            print(f"origtarget : {self.orig_target}")
+            self.orig_top_right_child = frm_top.get_child() if frm_top else None
+            print(f"origtoprightchild : {self.orig_top_right_child}")
+            # unparent datagraph from current parent
+            dg_parent = self.datagraph.get_parent()
+            if dg_parent:
+                # only clear parent once
+                dg_parent.set_child(None)
+            # unparent astrodata from its current parent
+            astro_parent = self.astrodata.get_parent()
+            if astro_parent:
+                astro_parent.set_child(None)
+            # create overlay & place astro chart as base
+            overlay = Gtk.Overlay()
+            overlay.set_child(self.astrodata)
+            # add data graph as overlay child & make it transparent
+            overlay.add_overlay(self.datagraph)
+            # set widget opacity
+            self.datagraph.set_opacity(0.3)
+            # put overlay into astro chart
+            frm_target.set_child(overlay) if frm_target else None
+            # target_frame = frm_target
+            # if target_frame:
+            #     target_frame.set_child(overlay)
+            self.movie_overlay = overlay
+            self.overlay_mode = True
+            self.notify.info(
+                "movie mode enabled",
+                source="mainwindow",
+                route=["terminal"],
+            )
+            return
+        # disable overlay & restore original layout
+        if self.overlay_mode and self.movie_overlay:
+            overlay = self.movie_overlay
+            # detach overlay from frame
+            if frm_target and frm_target.get_child() is overlay:
+                frm_target.set_child(None)
+            # remove datagraph from overlay if still parented to it
+            if self.datagraph.get_parent() is overlay:
+                overlay.remove_overlay(self.datagraph)
+            # remove astrodata main child from overlay
+            if overlay.get_child() is self.astrodata:
+                overlay.set_child(None)
+            # restore original frame
+            if frm_top:
+                # ensure no parent on datagraph
+                if self.datagraph.get_parent():
+                    self.datagraph.get_parent().set_child(None)
+                frm_top.set_child(self.datagraph)
+            # restore original target frame
+            if self.orig_target:
+                if self.orig_target is self.astrodata:
+                    if self.astrodata.get_parent():
+                        self.astrodata.get_parent().set_child(None)
+                    frm_target.set_child(self.astrodata) if frm_target else None
+                else:
+                    # put original widget back : unparent 1st
+                    if self.orig_target.get_parent():
+                        self.orig_target.get_parent().set_child(None)
+                    frm_target.set_child(self.orig_target) if frm_target else None
+            else:
+                # nothing to restore
+                frm_target.set_child(None) if frm_target else None
+            self.datagraph.set_opacity(1.0)
+            # clean up
+            self.movie_overlay = None
+            self.overlay_mode = False
+            self.orig_target = None
+            self.orig_top_right_child = None
+            self.notify.info(
+                "movie mode disabled : layout restored",
+                source="mainwindow",
+                route=["terminal"],
+            )
+            # return

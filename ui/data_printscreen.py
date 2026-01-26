@@ -1,4 +1,4 @@
-# ui/data_printscreen.py : printscreen all gold (datagraph) data
+# ui/data_printscreen.py : printscreen all data (datagraph)
 # & save as .png sequence
 # ruff: noqa: E402
 import pandas as pd
@@ -29,8 +29,8 @@ class DataPrintscreen:
         self.skip_flush_redraw = True
         self.gnome_timeout = 2
         # printscreen sequence filter
-        self.test_seq = False
-        self.test_screenshots = 30
+        self.test_seq = True
+        self.test_screenshots = 10
 
     def run_seq(self):
         # hotkey entry point
