@@ -1,10 +1,5 @@
 # sweph/calculations/naksatras.py
 # simplified calculaton format : data stored in positions
-# ruff : noqa : E402
-# import gi
-
-# gi.require_version("Gtk", "4.0")
-# from gi.repository import Gtk  # type: ignore
 from sweph.constants import NAKSATRAS27, MANSIONS28
 
 

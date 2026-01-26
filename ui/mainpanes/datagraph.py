@@ -340,11 +340,40 @@ class DataGraph(Gtk.Box):
             self.ax.add_patch(rect)
             self.ax.add_line(wick)
             self.candles.append((rect, wick, op, hi, lo, cl))
+        # self.ax.set_xlim(-1, len(ohlc))
+        # lows = df["low"].min() if not df.empty else 0
+        # highs = df["high"].max() if not df.empty else 1
+        # # fill canvas vertically
+        # self.ax.set_ylim(lows - (highs - lows) * 0.03, highs + (highs - lows) * 0.03)
+        # horizontal price lines
         self.ax.set_xlim(-1, len(ohlc))
-        lows = df["low"].min() if not df.empty else 0
-        highs = df["high"].max() if not df.empty else 1
+        lows = df["low"].min() if not df.empty else 0.0
+        highs = df["high"].max() if not df.empty else 1.0
         # fill canvas vertically
-        self.ax.set_ylim(lows - (highs - lows) * 0.03, highs + (highs - lows) * 0.03)
+        ymin = lows - (highs - lows) * 0.03
+        ymax = highs + (highs - lows) * 0.03
+        self.ax.set_ylim(ymin, ymax)
+        # draw horizontal price levels every 500 units (white, alpha=0.5)
+        try:
+            step = 500.0
+            first = np.floor(ymin / step) * step
+            last = np.ceil(ymax / step) * step
+            levels = np.arange(first, last + step, step)
+            if levels.size > 0:
+                # draw behind candles (zorder=0), span current x range
+                self.ax.hlines(
+                    levels,
+                    xmin=-1,
+                    xmax=len(ohlc),
+                    colors="white",
+                    alpha=0.3,
+                    linewidth=0.5,
+                    zorder=0,
+                )
+        except Exception:
+            # fail silently if numeric issues occur
+            print("failed setting horizontal price lines")
+            # pass
         # plot overlay cycle wave
         if hasattr(self, "cycle_wave") and self.cycle_wave:
             dataframe = self.cycle_wave["results"][0]["dataframe"].copy()

@@ -1136,6 +1136,8 @@ def chart_info_string(entry, info, manager):
             "{lon}",
             "{timezone}",
             "{offset}",
+            "{nak}",
+            "{nakvar}",
         },
         "chart info string extra": {
             "{hsys}",

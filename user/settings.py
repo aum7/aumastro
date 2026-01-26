@@ -278,7 +278,8 @@ CHART_SETTINGS = {
     5: {time_short} no seconds | 6: {hora} | 7: {wday} weekday
     8: {country} | 9: {iso3} country code | 10: {city}
     11: {location} | 12: {lat}itude | 13: {lon}gitude
-    14: {timezone} | 15: timezone {offset} | chars: @ | - :
+    14: {timezone} | 15: timezone {offset} | 16: moon {nak}satra
+    17: {nakvar} moon varga naksatra | chars: @ | - :
 \n = new line
 example : {name}\n{date}\n{wday} {time_short}\n{city} @ {country}\n{lat}\n{lon}""",
     ),
@@ -293,7 +294,7 @@ example : {name}\n{date}\n{wday} {time_short}\n{city} @ {country}\n{lat}\n{lon}"
     3: {aynm} ayanamsa name
     chars: @ | - :
 \n = new line
-example : {hsys} | {zod}\n{aynm} | {ayvl}""",
+example : {hsys} | {zod}\n{aynm}""",
     ),
 }
 # --- time constants ---

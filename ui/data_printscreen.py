@@ -8,7 +8,10 @@ gi.require_version("Gtk", "4.0")
 from gi.repository import GLib  # type: ignore
 from pathlib import Path
 from datetime import datetime
-# from typing import Optional
+
+EXPORT_FOLDER = "Documents/goldseqd"  # daily data
+START_DATE = "1969-01-01 00:00:00"
+END_DATE = "2026-01-01 00:00:00"
 
 
 class DataPrintscreen:
@@ -16,21 +19,21 @@ class DataPrintscreen:
     def __init__(self, app):
         self.app = app
         self.notify = self.app.notify_manager
-        self.output_dir = Path.home() / "Documents/goldseqd"
+        self.output_dir = Path.home() / EXPORT_FOLDER
         self.output_dir.mkdir(parents=True, exist_ok=True)
         self.running = False
         self.current_idx = 0
         self.gold_df = None
         self.total = 0
         # filter ouptut sequence
-        self.seq_start = "1999-01-01 00:00:00"
-        self.seq_end = "2026-01-01 00:00:00"
+        self.seq_start = START_DATE
+        self.seq_end = END_DATE
         self.capture_delay = 100
         self.skip_flush_redraw = True
         self.gnome_timeout = 2
         # printscreen sequence filter
         self.test_seq = True
-        self.test_screenshots = 10
+        self.test_screenshots = 5
 
     def run_seq(self):
         # hotkey entry point
@@ -209,10 +212,9 @@ class DataPrintscreen:
         return False
 
     def _center_datagraph(self, dt):
-        # center info cursor : find datagraph window
+        # center info cursor : find datagraph window & show info banner
         win = self.app.get_active_window()
         dg = self._find_widget_type(win, type(win.datagraph))
-
         if not dg or dg.full_df is None:
             return
         # get index of target datetime
@@ -238,7 +240,30 @@ class DataPrintscreen:
         center_x = idx - start
         if hasattr(dg, "info_cursor") and center_x >= 0:
             dg.info_cursor.set_xdata([center_x, center_x])
-            dg.canvas.draw_idle()
+        # build info banner
+        try:
+            row = dg.df.iloc[center_x]
+            hi = float(row["high"])
+            op = float(row["open"])
+            cl = float(row["close"])
+            lo = float(row["low"])
+            dt_str = dg.df.index[center_x].strftime("%Y-%m-%d %H:%M")
+            info = f"{dt_str}\nh={hi:.2f}\no={op:.2f}\nc={cl:.2f}\nl={lo:.2f}"
+            # ensure text widget exists & is visible
+            if hasattr(dg, "cursor_text"):
+                dg.cursor_text.set_text(info)
+                dg.cursor_text.set_visible(True)
+        except Exception:
+            print("failed to set info banner")
+        # redraw canvas
+        try:
+            dg.canvas.draw()
+        except Exception:
+            print("using drawidle()")
+            try:
+                dg.canvas.draw_idle()
+            except Exception:
+                print("failed to redraw canvas")
 
     def _screenshot(self, dt):
         # capture window screenshot to png
