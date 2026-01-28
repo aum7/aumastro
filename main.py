@@ -22,7 +22,9 @@ class AumastroApp(Gtk.Application):
             application_id="aum.aumastro.app",
         )
         # initialize attributes first
-        self.selected_event = "e1"
+        self.selected_event: str = "e1"
+        # movie mode flag
+        self.movie_mode: bool = False
         self.EVENT_ONE = None
         self.EVENT_TWO = None
         # managers

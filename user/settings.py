@@ -222,7 +222,7 @@ CHART_SETTINGS = {
     # 1+ simple divisions, similar but NOT all equal to varga
     "harmonic ring": (
         "9",
-        "harmonic ring\nempty : do NOT show | 1 : egypt. terms (bounds)\n1+ : simple harmonic for event 1 *similar* to varga",
+        "harmonic (aka varga) ring\nempty : do NOT show | 1 : egypt. terms (bounds)\n1+ : simple harmonic for event 1 *similar* to varga",
     ),
     # --- event 2 astro chart circles : draw progressions (p1 & p3) | returns | transit
     "event2 rings": {
@@ -249,7 +249,7 @@ CHART_SETTINGS = {
     # --- use varga positions for aspects
     "use varga aspect": (
         True,
-        "use varga positions for aspects matrix calculation\nsort of 'harmonic' aspects",
+        "use varga positions for aspects matrix calculation\nsort of 'harmonic aspects, in tables window\nhk : [shift+v]'",
     ),
     # --- draw fixed stars
     # in user/fixedstars.py are categories of stars :

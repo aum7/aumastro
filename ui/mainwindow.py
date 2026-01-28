@@ -195,12 +195,13 @@ class MainWindow(
             "\nhover mouse over buttons & text = show tooltips"
             "\nhover mouse over notification message = do not hide message"
             "\nesc : discard notification message"
+            "\n\ntop info bar : app name | selected event (e1/e2) date-time | selected change time period (ie 1 Day)"
             "\n\nrecommended workflow :"
             "\nenter event 1 data = calculate event / birth chart"
             "\nif you want transit / progression (aka event 2) :"
             "\n\tenter date-time 2 (app will reuse event 1 location & name)"
             "\n\tenter location 2 for relocation event (transit will be for location 2)"
-            "\n\tenter custom name 2 (ie 'marriage') = save event 2 linked to event 1"
+            # "\n\tenter custom name 2 (ie 'marriage') = save event 2 linked to event 1"
             "\ndelete date-time 2 = erase event 2 data (not interested in transit etc)"
             "\nnote : event name / title will be used for file saving"
             "\n\nhotkeys (hk)"
@@ -209,7 +210,7 @@ class MainWindow(
             "\ne : toggle selected event"
             "\n\t(ie for change time / time now & datagraph click (set datetime))"
             "\narrow keys : up/down = change period | left/right = change time"
-            "\n\tfor selected event"
+            "\n\tback/forward for selected event"
             "\nn : set time now for selected event location"
             "\n\t(your computer > utc > event location time)"
             "\ntab/shift+tab : navigate between widgets in side pane"
@@ -288,7 +289,7 @@ class MainWindow(
 
     # movie mode pane
     def panes_movie(self) -> None:
-        """toggle show astro chart overlaid with data graph
+        """toggle show astro chart overlaid with data graph aka movie mode
         shift+5"""
         if (
             hasattr(self, "pnd_main")
@@ -300,7 +301,8 @@ class MainWindow(
             self.pnd_top.set_position(self.pnd_top.get_width())
         # need frames todo below code makes copies of frame widget
         # we need our custom widgets
-        print("hotkey panes movie pressed")
+        # print("hotkey panes movie pressed")
+        self.app.movie_mode = not self.app.movie_mode
         frm_target = getattr(self, "frm_top_left", None)
         frm_top = getattr(self, "frm_top_right", None)
         if not frm_top and not frm_target:
@@ -309,9 +311,9 @@ class MainWindow(
         if not self.overlay_mode:
             # store original children so we can restore later
             self.orig_target = frm_target.get_child() if frm_target else None
-            print(f"origtarget : {self.orig_target}")
+            # print(f"origtarget : {self.orig_target}")
             self.orig_top_right_child = frm_top.get_child() if frm_top else None
-            print(f"origtoprightchild : {self.orig_top_right_child}")
+            # print(f"origtoprightchild : {self.orig_top_right_child}")
             # unparent datagraph from current parent
             dg_parent = self.datagraph.get_parent()
             if dg_parent:

@@ -65,7 +65,7 @@ class AstroChart(Gtk.Box):
         signal._connect("transit_changed", self.transit_changed)
 
     def event_changed(self, event):
-        # main data - event - changed
+        # main data / event changed : load new data
         if event == "e1":
             self.e1_chart_info = getattr(self.app, "e1_chart", {})
             # print("astrochart : e1 changed")
@@ -400,6 +400,8 @@ class AstroChart(Gtk.Box):
             cr.restore()
         # --- rotate block end
         # draw info ring last > no text rotation
+        # if self.chart_settings.get("mean node", False) and self.app.movie_mode:
+        #     use_mean_node = self.chart_settings["mean node"]
         ring_info = Info(
             self.notify,
             radius=radius_dict.get("info", 0.0),
@@ -407,9 +409,11 @@ class AstroChart(Gtk.Box):
             cy=cy,
             font_size=int(radius_dict.get("info", 0.0) * 0.17),
             chart_settings=self.chart_settings,
-            # radius_dict=radius_dict,
             event_data=self.e1_chart_info,
             extra_info=self.extra_info,
+            use_mean_node=self.chart_settings["mean node"],
+            movie_info=self.positions,
+            movie_mode=getattr(self.app, "movie_mode", False),
             radius_dict=radius_dict,
         )
         ring_info.draw(cr)

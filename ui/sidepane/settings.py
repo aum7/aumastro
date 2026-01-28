@@ -333,7 +333,7 @@ event 1 & 2 can have different objects"""
     lbl_1st_naks = Gtk.Label(label="1st")
     box_naks.append(lbl_1st_naks)
     manager.naks_range = 28 if manager.chk_28_naks.get_active() else 27
-    # 1st naksatra to start at 0 aries
+    # 1st naksatra to start at 0 aries todo implement
     manager.ent_1st_nak = Gtk.Entry()
     manager.ent_1st_nak.set_text(str(CHART_SETTINGS["1st naksatra"][0]))
     manager.ent_1st_nak.set_alignment(0.5)
@@ -413,7 +413,9 @@ event 1 & 2 can have different objects"""
     manager.app.chart_settings["p3 progress"] = p3_data[0]
     # label at end
     lbl_prog = Gtk.Label(label="progressions")
-    box_prog.append(lbl_prog)
+    lbl_prog.set_halign(Gtk.Align.START)
+    # box_prog.append(lbl_prog)
+    lbx_chart_setts_btm.append(lbl_prog)
     row_prog.set_child(box_prog)
     lbx_chart_setts_btm.append(row_prog)
     # returns row
@@ -444,7 +446,9 @@ event 1 & 2 can have different objects"""
     manager.app.checkbox_chart_settings["lunar return"] = chk_lun
     manager.app.chart_settings["lunar return"] = data_lun[0]
     lbl_retu = Gtk.Label(label="returns")
-    box_retu.append(lbl_retu)
+    lbl_retu.set_halign(Gtk.Align.START)
+    # box_retu.append(lbl_retu)
+    lbx_chart_setts_btm.append(lbl_retu)  # todo
     row_retu.set_child(box_retu)
     lbx_chart_setts_btm.append(row_retu)
     # varga & transit row
@@ -463,8 +467,10 @@ event 1 & 2 can have different objects"""
     manager.app.checkbox_chart_settings["varga"] = chk_var
     manager.app.chart_settings["varga"] = data_var[0]
     # checkbox for transit
+    lbl_tran = Gtk.Label(label="transit")
+    lbl_tran.set_halign(Gtk.Align.START)
     data_tran = CHART_SETTINGS["event2 rings"]["transit"]
-    chk_tran = Gtk.CheckButton(label="transit")
+    chk_tran = Gtk.CheckButton(label="rasi (d1)")
     chk_tran.set_active(data_tran[0])
     chk_tran.set_tooltip_text(data_tran[1])
     chk_tran.connect(
@@ -475,6 +481,7 @@ event 1 & 2 can have different objects"""
     manager.app.checkbox_chart_settings["transit"] = chk_tran
     manager.app.chart_settings["transit"] = data_tran[0]
     row_var_tran.set_child(box_var_tran)
+    lbx_chart_setts_btm.append(lbl_tran)
     lbx_chart_setts_btm.append(row_var_tran)
     # checkbox to use varga for aspects
     row_use_varga_aspect = Gtk.ListBoxRow()

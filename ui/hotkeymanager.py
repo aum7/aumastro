@@ -11,6 +11,8 @@ from typing import Dict, Callable
 class HotkeyManager:
     """global hotkeys manager for keyboard + mouse combinations"""
 
+    action_func: Callable
+
     def __init__(self, window: Gtk.Window) -> None:
         self.window = window
         self.hotkey_map: Dict[str, Callable] = {}
@@ -68,7 +70,8 @@ class HotkeyManager:
                 action_func = getattr(self.window, "panes_triple", None)
             elif n_press == 4:
                 action_func = getattr(self.window, "panes_all", None)
-            if callable(action_func):
+            if action_func:  # type: ignore
+                # if callable(action_func):
                 action_func()
                 gesture.set_state(Gtk.EventSequenceState.CLAIMED)
                 return

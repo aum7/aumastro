@@ -7,6 +7,7 @@ import gi
 gi.require_version("Gtk", "4.0")
 from gi.repository import Gtk  # type: ignore
 from math import pi, cos, sin, radians
+from sweph.constants import TERMS
 from ui.fonts.glyphs import (
     SIGNS,
     get_glyph,
@@ -14,8 +15,34 @@ from ui.fonts.glyphs import (
     get_eclipse_glyph,
     get_lunation_glyph,
 )
-from sweph.constants import TERMS
 from ui.mainpanes.chart.astroobject import AstroObject
+from ui.helpers import _object_name_to_code as objcode
+from user.settings import OBJECTS
+
+AVG_SPEEDS = {
+    0: 0.9856,  # sun
+    1: 13.176,  # moon
+    2: 1.607,  # mercury
+    3: 1.174,  # venus
+    4: 0.524,  # mars
+    5: 0.0831,  # jupiter
+    6: 0.0335,  # saturn
+    7: 0.0117,  # uranus
+    8: 0.0060,  # neptune
+    9: 0.0039,  # pluto
+    10: 0.0529,  # mean node (retrograde)
+    11: 0.0529,  # true node (retrograde)
+}
+
+
+def _speed_relative(body: int, speed: float) -> int:
+    # relative planet speed as % of average
+    avg = AVG_SPEEDS.get(body)
+    if not avg:
+        print("no average planet speed in rings.py")
+        return 0
+    pct = (speed / avg) * 100
+    return int(pct)
 
 
 class RingBase:
@@ -194,6 +221,9 @@ class Info(RingBase):
         chart_settings,
         event_data,
         extra_info,
+        use_mean_node,
+        movie_info,
+        movie_mode,
         radius_dict,
     ):
         super().__init__(radius, cx, cy, radius_dict)
@@ -202,11 +232,20 @@ class Info(RingBase):
         self.event_data = event_data or {}
         self.extra_info = extra_info
         self.chart_settings = chart_settings
+        self.movie_info = movie_info
+        self.movie_mode = movie_mode
+        # print(f"rings:info : moviemode={self.movie_mode}")
+        self.use_mean_node = use_mean_node
 
     def draw(self, cr):
         """circle with info text"""
         cr.arc(self.cx, self.cy, self.radius, 0, 2 * pi)
-        cr.set_source_rgba(0.15, 0.15, 0.15, 1)
+        if self.movie_mode:
+            # print("rings:draw : moviemodeon")
+            cr.set_source_rgba(0.05, 0.05, 0.05, 1)
+        else:
+            # default background
+            cr.set_source_rgba(0.15, 0.15, 0.15, 1)
         cr.fill_preserve()
         # circle border
         cr.set_source_rgba(1, 1, 1, 1)
@@ -231,39 +270,119 @@ class Info(RingBase):
         fmt_basic = fmt_basic.replace(r"\n", "\n")
         # make a copy of data so we dont mutate hora / glyph
         data = dict(self.event_data)
-        if "hora" in fmt_basic:
-            # print("rings : hora found in info string ")
-            data["hora"] = get_glyph(data["hora"], False)
-        fmt_extra = fmt_extra.replace(r"\n", "\n")
-        try:
-            info_text = (
-                fmt_basic.format(**data) + "\n" + fmt_extra.format(**self.extra_info)
-            )
-            self.notify.debug(
-                f"circleinfo : infotext :\n{info_text}",
-                source="rings",
-                route=[""],
-            )
-        except Exception as e:
-            # fallback to default info string
-            info_text = f"{self.event_data.get('name', '')}"
-            self.notify.error(
-                f"circleinfo : error :\n\t{e}",
-                source="rings",
-                route=["terminal"],
-            )
-        lines = info_text.split("\n")
-        line_spacing = self.font_size * 1.2
-        total_height = (len(lines) - 1) * self.font_size
-        # calculate start y to roughly center text block
-        y = self.cy - total_height / 2
-        for line in lines:
-            _, _, tw, _, _, _ = cr.text_extents(line)
-            x = self.cx - tw / 2
-            cr.move_to(x, y)
-            cr.show_text(line)
-            cr.new_path()  # clear drawn path
-            y += line_spacing
+        # movie mode info text : naksatra positions & speeds for 7 planets
+        if self.movie_mode and isinstance(self.movie_info, dict):
+            try:
+                # standard order
+                order = (
+                    "su",
+                    "mo",
+                    "me",
+                    "ve",
+                    "ma",
+                    "ju",
+                    "sa",
+                    "ur",
+                    "ne",
+                    "pl",
+                    "ra",
+                )
+                rows = []
+                colors = []
+                speed_str = ""
+                speed_rel = 100
+                for name in order:
+                    code, _ = objcode(name, self.use_mean_node)
+                    data = self.movie_info.get(code)
+                    if not isinstance(data, dict):
+                        continue
+                    # naksatra tuple : index, name, ruler
+                    # nak = data.get("naksatra") or ()  # lol ??? wtf
+                    vnak = data.get("varga naksatra") or ()
+                    try:
+                        idx = int(vnak[0]) if vnak else None
+                        idx_str = f"{idx:02d}"
+                    except Exception:
+                        idx_str = "--"
+                    speed = data.get("lon speed", 0.0)
+                    if code:
+                        speed_rel = _speed_relative(code, speed)  # if code else None
+                    # glyph
+                    glyph = get_glyph(name, False) or name
+                    if speed_rel:
+                        speed_str = f"{speed_rel:+04d}"
+                    rows.append(f"{glyph} {idx_str} {speed_str}")
+                    # text color
+                    default_color = (1.0, 1.0, 1.0, 1.0)  # white
+                    color = default_color
+                    if isinstance(code, int) and code in OBJECTS:
+                        try:
+                            color = OBJECTS[code][4]
+                        except Exception:
+                            print("rings : using default color")
+                            color = default_color
+                    colors.append(color)
+                # draw rows centered in circle
+                if rows:
+                    # slightly smaller font
+                    draw_fs = max(8, int(self.font_size * 0.75))
+                    self.set_custom_font(cr, draw_fs)
+                    line_h = draw_fs * 1.15
+                    total_h = (len(rows) - 1) * line_h if len(rows) > 1 else draw_fs
+                    y = self.cy - total_h / 2
+                    for r, col in zip(rows, colors):
+                        cr.set_source_rgba(*col)
+                        _, _, tw, _, _, _ = cr.text_extents(r)
+                        x = self.cx - tw / 2
+                        cr.move_to(x, y)
+                        cr.show_text(r)
+                        cr.new_path()
+                        y += line_h
+                    # done drawing
+                    return
+            except Exception as e:
+                # falback to regular
+                self.notify.debug(
+                    f"movie info drawing failed\nerror : {e}",
+                    source="rings",
+                    route=["terminal"],
+                )
+        else:
+            if "hora" in fmt_basic:
+                # print("rings : hora found in info string ")
+                data["hora"] = get_glyph(data["hora"], False)
+            fmt_extra = fmt_extra.replace(r"\n", "\n")
+            try:
+                info_text = (
+                    fmt_basic.format(**data)
+                    + "\n"
+                    + fmt_extra.format(**self.extra_info)
+                )
+                self.notify.debug(
+                    f"circleinfo : infotext :\n{info_text}",
+                    source="rings",
+                    route=[""],
+                )
+            except Exception as e:
+                # fallback to default info string
+                info_text = f"{self.event_data.get('name', '')}"
+                self.notify.error(
+                    f"circleinfo : error :\n\t{e}",
+                    source="rings",
+                    route=["terminal"],
+                )
+            lines = info_text.split("\n")
+            line_spacing = self.font_size * 1.2
+            total_height = (len(lines) - 1) * self.font_size
+            # calculate start y to roughly center text block
+            y = self.cy - total_height / 2
+            for line in lines:
+                _, _, tw, _, _, _ = cr.text_extents(line)
+                x = self.cx - tw / 2
+                cr.move_to(x, y)
+                cr.show_text(line)
+                cr.new_path()  # clear drawn path
+                y += line_spacing
 
 
 class Event(RingBase):
