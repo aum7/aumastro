@@ -190,7 +190,7 @@ CHART_SETTINGS = {
     # --- naksatras MEGA-ring ! lol
     "naksatras ring": (
         True,
-        """show naksatras ring
+        """show 27 naksatras ring
 1  asv\t2  bha\t3  krt
 4  roh\t5  mrg\t6  ard
 7  pun\t8  pus\t9  asl

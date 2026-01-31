@@ -1,3 +1,4 @@
+# hotkeymanager.py
 # ruff: noqa: E402
 import inspect
 import gi
@@ -34,6 +35,8 @@ class HotkeyManager:
         key_controller = Gtk.EventControllerKey()
         key_controller.connect("key-pressed", self.on_key_pressed)
         key_controller.connect("key-released", self.on_key_released)
+        # solution for data graph mouse-click capturing focus then hotkeys not working
+        key_controller.set_propagation_phase(Gtk.PropagationPhase.CAPTURE)
         self.window.add_controller(key_controller)
 
     def intercept_button_controller(self, button: Gtk.Button, action_name: str) -> None:

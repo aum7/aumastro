@@ -288,7 +288,9 @@ class Info(RingBase):
                     "ra",
                 )
                 rows = []
+                rows.append(" vnk spid")
                 colors = []
+                colors.append((1.0, 1.0, 1.0, 1.0))
                 speed_str = ""
                 speed_rel = 100
                 for name in order:
@@ -298,9 +300,9 @@ class Info(RingBase):
                         continue
                     # naksatra tuple : index, name, ruler
                     # nak = data.get("naksatra") or ()  # lol ??? wtf
-                    vnak = data.get("varga naksatra") or ()
+                    varga_nak = data.get("varga naksatra") or ()
                     try:
-                        idx = int(vnak[0]) if vnak else None
+                        idx = int(varga_nak[0]) if varga_nak else None
                         idx_str = f"{idx:02d}"
                     except Exception:
                         idx_str = "--"
