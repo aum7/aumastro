@@ -108,9 +108,9 @@ class MainWindow(
 
     def setup_hotkeys(self):
         """register additional hotkeys"""
-        self.hotkeys.register_hotkey("v", lambda: self.tables.toggle_vimso())
-        self.hotkeys.register_hotkey("h", self.show_help)
-        self.hotkeys.register_hotkey("s", self.on_toggle_sidepane)
+        self.hotkeys.register_hotkey("ctrl+v", lambda: self.tables.toggle_vimso())
+        self.hotkeys.register_hotkey("ctrl+h", self.show_help)
+        self.hotkeys.register_hotkey("ctrl+s", self.on_toggle_sidepane)
         self.hotkeys.register_hotkey("shift+exclam", self.panes_single)
         self.hotkeys.register_hotkey("shift+quotedbl", self.panes_double)
         self.hotkeys.register_hotkey("shift+numbersign", self.panes_triple)
@@ -121,10 +121,10 @@ class MainWindow(
         self.hotkeys.register_hotkey("Left", self.obc_arrow_l)
         self.hotkeys.register_hotkey("Right", self.obc_arrow_r)
         # call helper function for time now
-        self.hotkeys.register_hotkey("n", lambda: self.on_time_now())
+        self.hotkeys.register_hotkey("ctrl+n", lambda: self.on_time_now())
         # toggle selected event
         self.hotkeys.register_hotkey(
-            "e",
+            "ctrl+e",
             lambda g, n, x, y: _event_selection(
                 self,
                 g,
@@ -136,32 +136,36 @@ class MainWindow(
         )
         # astro chart drawing
         self.hotkeys.register_hotkey(
-            "g", lambda: self.toggle_chart_setting("enable glyphs")
+            "ctrl+g", lambda: self.toggle_chart_setting("enable glyphs")
         )
         self.hotkeys.register_hotkey(
-            "a", lambda: self.toggle_chart_setting("fixed asc")
+            "ctrl+a", lambda: self.toggle_chart_setting("fixed asc")
         )
         # astro chart outer rings for event 2
-        self.hotkeys.register_hotkey("1", lambda: self.toggle_chart_setting("transit"))
-        self.hotkeys.register_hotkey("2", lambda: self.toggle_chart_setting("varga"))
         self.hotkeys.register_hotkey(
-            "3", lambda: self.toggle_chart_setting("lunar return")
+            "ctrl+1", lambda: self.toggle_chart_setting("transit")
         )
         self.hotkeys.register_hotkey(
-            "4", lambda: self.toggle_chart_setting("solar return")
+            "ctrl+2", lambda: self.toggle_chart_setting("varga")
         )
         self.hotkeys.register_hotkey(
-            "5", lambda: self.toggle_chart_setting("p3 progress")
+            "ctrl+3", lambda: self.toggle_chart_setting("lunar return")
         )
         self.hotkeys.register_hotkey(
-            "6", lambda: self.toggle_chart_setting("p2 progress")
+            "ctrl+4", lambda: self.toggle_chart_setting("solar return")
         )
         self.hotkeys.register_hotkey(
-            "7", lambda: self.toggle_chart_setting("p1 progress")
+            "ctrl+5", lambda: self.toggle_chart_setting("p3 progress")
+        )
+        self.hotkeys.register_hotkey(
+            "ctrl+6", lambda: self.toggle_chart_setting("p2 progress")
+        )
+        self.hotkeys.register_hotkey(
+            "ctrl+7", lambda: self.toggle_chart_setting("p1 progress")
         )
         # astro chart naksatras ring
         self.hotkeys.register_hotkey(
-            "8", lambda: self.toggle_chart_setting("naksatras ring")
+            "ctrl+8", lambda: self.toggle_chart_setting("naksatras ring")
         )
         # toggle rasi / varga aspects table
         self.hotkeys.register_hotkey(
@@ -205,23 +209,25 @@ class MainWindow(
             "\ndelete date-time 2 = erase event 2 data (not interested in transit etc)"
             "\nnote : event name / title will be used for file saving"
             "\n\nhotkeys (hk)"
-            "\nh : show help (this message)"
-            "\ns : toggle side pane"
-            "\ne : toggle selected event"
+            "\nctrl+h : show help (this message)"
+            "\nctrl+s : toggle side pane"
+            "\nctrl+e : toggle selected event"
             "\n\t(ie for change time / time now & datagraph click (set datetime))"
             "\narrow keys : up/down = change period | left/right = change time"
             "\n\tback/forward for selected event"
-            "\nn : set time now for selected event location"
+            "\nctrl+n : set time now for selected event location"
             "\n\t(your computer > utc > event location time)"
             "\ntab/shift+tab : navigate between widgets in side pane"
             "\nspace/enter : activate button / dropdown when focused"
             "\nshift+1/2/3/4 : show single / double / triple / all panes"
-            "\na : toggle zodiac rotation (ascendant vs ari 0° at left)"
-            "\ng : toggle glyphs visibility"
-            "\n1-8 : toggle transit-varga-lunar-solar return-p3-p2-p1-naksatras ring"
+            "\nctrl+a : toggle zodiac rotation (ascendant vs ari 0° at left)"
+            "\nctrl+g : toggle glyphs visibility"
+            "\nctrl+1-8 : toggle transit-varga-lunar-solar return-p3-p2-p1-naksatras ring"
             "\nshift+v : toggle varga aspects table"
-            "\n\nnote : if entry / text field is focused, hotkeys will not work"
-            "\n\t(text field will 'consume' key press)",
+            "\nshift+g : run printscreen sequence"
+            "\nshift+5 : toggle movie mode",
+            # "\n\nnote : if entry / text field is focused, hotkeys will not work"
+            # "\n\t(text field will 'consume' key press)",
             source="help",
             timeout=5,
             route=["user"],
