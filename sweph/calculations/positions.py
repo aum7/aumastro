@@ -49,6 +49,7 @@ def calculate_positions(event: Optional[str] = None) -> None:
             swe.set_topo(sweph["lon"], sweph["lat"], sweph["alt"])
         use_mean_node = app.chart_settings["mean node"]
         use_28_naks = app.chart_settings["28 naksatras"]
+        first_nak = int(app.chart_settings["1st naksatra"])
         division = int(app.chart_settings.get("harmonic ring", "").strip())
         jd_ut = sweph.get("jd_ut")
         # msg += (
@@ -67,9 +68,9 @@ def calculate_positions(event: Optional[str] = None) -> None:
                 result = swe.calc_ut(jd_ut, code, app.sweph_flag)
                 # print(f"positions with speeds & flag used : {result}")
                 positions = result[0] if isinstance(result, tuple) else result
-                naksatra = calculate_naksatra(positions[0], use_28_naks)
+                naksatra = calculate_naksatra(positions[0], use_28_naks, first_nak)
                 varga = get_varga_lon(positions[0], division)
-                varga_nak = calculate_naksatra(varga, use_28_naks)
+                varga_nak = calculate_naksatra(varga, use_28_naks, first_nak)
                 data[code] = {
                     "name": name,
                     "lon": positions[0],

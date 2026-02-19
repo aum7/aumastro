@@ -217,15 +217,15 @@ class MainWindow(
             "\n\tback/forward for selected event"
             "\nctrl+n : set time now for selected event location"
             "\n\t(your computer > utc > event location time)"
-            "\ntab/shift+tab : navigate between widgets in side pane"
-            "\nspace/enter : activate button / dropdown when focused"
-            "\nshift+1/2/3/4 : show single / double / triple / all panes"
             "\nctrl+a : toggle zodiac rotation (ascendant vs ari 0° at left)"
             "\nctrl+g : toggle glyphs visibility"
             "\nctrl+1-8 : toggle transit-varga-lunar-solar return-p3-p2-p1-naksatras ring"
+            "\ntab/shift+tab : navigate widgets in side pane"
+            "\nspace/enter : activate button / dropdown when focused"
+            "\nshift+1/2/3/4 : show single / double / triple / all panes"
+            "\nshift+5 : toggle movie mode"
             "\nshift+v : toggle varga aspects table"
-            "\nshift+g : run printscreen sequence"
-            "\nshift+5 : toggle movie mode",
+            "\nshift+g : run printscreen sequence",
             # "\n\nnote : if entry / text field is focused, hotkeys will not work"
             # "\n\t(text field will 'consume' key press)",
             source="help",

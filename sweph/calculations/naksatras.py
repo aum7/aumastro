@@ -3,7 +3,7 @@
 from sweph.constants import NAKSATRAS27, MANSIONS28
 
 
-def calculate_naksatra(lon: float, use_28_nak: bool = False):
+def calculate_naksatra(lon: float, use_28_nak: bool = False, first_nak: int = 1):
     # calculate naksatras of planets
     if use_28_nak:
         naksatras = MANSIONS28
@@ -13,9 +13,10 @@ def calculate_naksatra(lon: float, use_28_nak: bool = False):
         naksatras = NAKSATRAS27
         span = 360 / 27
         nak_num = 27
-    idx = int(lon // span) + 1
-    if idx > nak_num:
-        idx = nak_num
+    raw_idx = int(lon // span)
+    idx = ((raw_idx + first_nak - 1) % nak_num) + 1
+    # if idx > nak_num:
+    #     idx = nak_num
     ruler, name = naksatras.get(idx, ("", ""))
 
     return idx, name, ruler

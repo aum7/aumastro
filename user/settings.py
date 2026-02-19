@@ -187,7 +187,7 @@ CHART_SETTINGS = {
         False,
         "calculate mean node (vs default true node)",
     ),
-    # --- naksatras MEGA-ring ! lol
+    # --- naksatras ring
     "naksatras ring": (
         True,
         """show 27 naksatras ring
@@ -304,13 +304,13 @@ SOLAR_YEAR = {
     "gre": (365.2425, "gregorian"),
     "jul": (365.25, "julian"),
     "trp": (365.24219, "tropical"),
-    "lun": (354.37, "lunar"),
+    "lun": (354.37, "lunar"),  # 12 * synodic lunar month
 }
 # lunar month lengths
 LUNAR_MONTH = {
+    "syn": (29.53059, "synodic\t\tnew moons"),
     "sid": (27.321661, "sidereal\t\tfixed star"),
     "trp": (27.321582, "tropical\t\t0 ari"),  # houck
-    "syn": (29.53059, "synodic\t\tnew moons"),
     "anm": (27.554551, "anomalistic\tperigee-apogee"),
     "drc": (27.21222, "draconic\tlunar nodes"),
 }
@@ -404,7 +404,8 @@ FILES = {
     ),
     # --- path to data folder & file ; data to be plotted on graph
     "data": (
-        "user/data/gold/gold_d.csv",
+        "user/data/gold/gold_h_utc.csv",
+        # "user/data/gold/gold_d.csv",
         "path to data folder & file name : data for plotting on graph",
     ),
     # --- construct your own 'filename' format: allowed fields

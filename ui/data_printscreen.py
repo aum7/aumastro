@@ -32,7 +32,7 @@ class DataPrintscreen:
         self.skip_flush_redraw = True
         self.gnome_timeout = 2
         # printscreen sequence filter
-        self.test_seq = True
+        self.test_seq = False
         self.test_screenshots = 5
 
     def run_seq(self):

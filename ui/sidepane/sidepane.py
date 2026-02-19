@@ -34,9 +34,10 @@ class SidepaneManager:
     CHANGE_TIME_PERIODS = {
         "3652.0": "10 Y",  # 365 * 10 + 2 leap years (approximation)
         "365.0": "1 Y",  # does not account for leap year
-        "90.0": "3 M (90 D)",
-        "30.0": "1 M (30 D)",
-        "27.321661": "1 M (27.3 D)",
+        "90.0": "90 D",
+        "30.0": "30 D",
+        "29.53059": "syn M 29.5 D",
+        "27.321661": "sid M 27.3 D",
         "7.0": "1 W",
         "1.0": "1 D",
         "0.25": "6 h",  # 1/4 of a day
@@ -58,6 +59,7 @@ class SidepaneManager:
         self.clp_event_two = None
         self.clp_tools = None
         self.clp_settings = None
+        # self.moon_period = self.app.chart_settings[LUNAR_MONTH]
 
     def setup_side_pane(self):
         # main box for widgets
@@ -107,6 +109,7 @@ arrow key up / down : select previous / next time period
 arrow key left / right : move time backward / forward
 
 1 month (27.3 d) = sidereal lunar month
+can be changed in sidepane.py
 
 note : hotkeys arrow left & right will not work when text entry is focused
 or ie panes have been manually resized (click any text to focus sidepane)"""
