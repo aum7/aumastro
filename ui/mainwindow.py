@@ -108,14 +108,14 @@ class MainWindow(
 
     def setup_hotkeys(self):
         """register additional hotkeys"""
-        self.hotkeys.register_hotkey("ctrl+v", lambda: self.tables.toggle_vimso())
-        self.hotkeys.register_hotkey("ctrl+h", self.show_help)
+        self.hotkeys.register_hotkey("shift+v", lambda: self.tables.toggle_vimso())
+        self.hotkeys.register_hotkey("ctrl+m", self.show_manual)
         self.hotkeys.register_hotkey("ctrl+s", self.on_toggle_sidepane)
-        self.hotkeys.register_hotkey("shift+exclam", self.panes_single)
-        self.hotkeys.register_hotkey("shift+quotedbl", self.panes_double)
-        self.hotkeys.register_hotkey("shift+numbersign", self.panes_triple)
-        self.hotkeys.register_hotkey("shift+dollar", self.panes_all)
-        self.hotkeys.register_hotkey("shift+percent", self.panes_movie)
+        self.hotkeys.register_hotkey("shift+exclam", self.panes_single)  # shift+1
+        self.hotkeys.register_hotkey("shift+quotedbl", self.panes_double)  # shift+2
+        self.hotkeys.register_hotkey("shift+numbersign", self.panes_triple)  # shift+3
+        self.hotkeys.register_hotkey("shift+dollar", self.panes_all)  # shift+4
+        self.hotkeys.register_hotkey("shift+percent", self.panes_movie)  # shift+5
         self.hotkeys.register_hotkey("Up", self.obc_arrow_up)
         self.hotkeys.register_hotkey("Down", self.obc_arrow_dn)
         self.hotkeys.register_hotkey("Left", self.obc_arrow_l)
@@ -139,8 +139,13 @@ class MainWindow(
             "ctrl+g", lambda: self.toggle_chart_setting("enable glyphs")
         )
         self.hotkeys.register_hotkey(
-            "ctrl+a", lambda: self.toggle_chart_setting("fixed asc")
+            "ctrl+f", lambda: self.toggle_chart_setting("fixed asc")
         )
+        # toggle rasi / varga / harmonic aspects table
+        self.hotkeys.register_hotkey(
+            "ctrl+h", lambda: self.toggle_chart_setting("use varga aspect")
+        )
+        self.hotkeys.register_hotkey("shift+g", self.on_data_seq)
         # astro chart outer rings for event 2
         self.hotkeys.register_hotkey(
             "ctrl+1", lambda: self.toggle_chart_setting("transit")
@@ -167,11 +172,6 @@ class MainWindow(
         self.hotkeys.register_hotkey(
             "ctrl+8", lambda: self.toggle_chart_setting("naksatras ring")
         )
-        # toggle rasi / varga aspects table
-        self.hotkeys.register_hotkey(
-            "shift+v", lambda: self.toggle_chart_setting("use varga aspect")
-        )
-        self.hotkeys.register_hotkey("shift+g", self.on_data_seq)
 
     def on_data_seq(self):
         # run printscreen for data sequence in datagraph
@@ -193,7 +193,7 @@ class MainWindow(
         )
 
     # help / manual
-    def show_help(self):
+    def show_manual(self):
         self.notify.debug(
             "manual\n"
             "\nhover mouse over buttons & text = show tooltips"
@@ -207,9 +207,9 @@ class MainWindow(
             "\n\tenter location 2 for relocation event (transit will be for location 2)"
             # "\n\tenter custom name 2 (ie 'marriage') = save event 2 linked to event 1"
             "\ndelete date-time 2 = erase event 2 data (not interested in transit etc)"
-            "\nnote : event name / title will be used for file saving"
+            # "\nnote : event name / title will be used for file saving"
             "\n\nhotkeys (hk)"
-            "\nctrl+h : show help (this message)"
+            "\nctrl+m : show manual / help (this message)"
             "\nctrl+s : toggle side pane"
             "\nctrl+e : toggle selected event"
             "\n\t(ie for change time / time now & datagraph click (set datetime))"
@@ -217,14 +217,15 @@ class MainWindow(
             "\n\tback/forward for selected event"
             "\nctrl+n : set time now for selected event location"
             "\n\t(your computer > utc > event location time)"
-            "\nctrl+a : toggle zodiac rotation (ascendant vs ari 0° at left)"
+            "\nctrl+f : toggle zodiac rotation (ascendant vs ari 0° at left)"
             "\nctrl+g : toggle glyphs visibility"
+            "\nctrl+h : toggle varga aspects table"  # harmonic
             "\nctrl+1-8 : toggle transit-varga-lunar-solar return-p3-p2-p1-naksatras ring"
             "\ntab/shift+tab : navigate widgets in side pane"
             "\nspace/enter : activate button / dropdown when focused"
             "\nshift+1/2/3/4 : show single / double / triple / all panes"
             "\nshift+5 : toggle movie mode"
-            "\nshift+v : toggle varga aspects table"
+            "\nshift+v : toggle vimsottari level"
             "\nshift+g : run printscreen sequence",
             # "\n\nnote : if entry / text field is focused, hotkeys will not work"
             # "\n\t(text field will 'consume' key press)",

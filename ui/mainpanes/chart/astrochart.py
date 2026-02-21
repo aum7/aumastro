@@ -182,10 +182,10 @@ class AstroChart(Gtk.Box):
         # draw rings
         max_radius = base * 0.97
         # outer rings linked to event 2 :
-        # - primary & tertiary progression
+        # - primary & secondary & tertiary progression
         # - solar & lunar return
-        # - transit
-        # - also naksatras & harmonic ring
+        # - transit v1 & vX
+        # + naksatras & harmonic ring (vX) for event 1
         outer_rings = []
         if getattr(self.app, "e2_active", False):
             msg += "e2 is active\n"

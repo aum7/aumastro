@@ -1,4 +1,4 @@
-# ui/mainpanes/chart/rings.py : by copilot = v2
+# ui/mainpanes/chart/rings.py
 # ui/fonts/victor/victormonolightastro.ttf
 # ruff: noqa: E402
 import cairo
@@ -739,13 +739,15 @@ class Signs(RingBase):
             cr.stroke()
         # glyphs
         self.set_custom_font(cr, self.font_size)
-        for i, (sign, (glyph, element, mode)) in enumerate(SIGNS.items()):
+        # for i, (sign, (glyph, element, mode)) in enumerate(SIGNS.items()):
+        for i, (_, (glyph, _, _)) in enumerate(SIGNS.items()):
             angle = pi - i * segment_angle - offset
             x = self.cx + self.radius * 0.96 * cos(angle)
             y = self.cy + self.radius * 0.96 * sin(angle)
             self.draw_rotated_text(cr, glyph, x, y, angle)
         self.set_custom_font(cr, self.font_size * 1.2)
-        for name, (lon, _) in self.stars.items():
+        # for name, (lon, _) in self.stars.items():
+        for _, (lon, _) in self.stars.items():
             angle = pi - radians(lon)
             x = self.cx + self.radius * 0.97 * cos(angle)
             y = self.cy + self.radius * 0.97 * sin(angle)
@@ -799,7 +801,7 @@ class Naksatras(RingBase):
             cr.new_path()
 
 
-class Harmonic(RingBase):
+class Harmonic(ObjectRingBase):
     # draw harmonic (aka division aka varga) ring
     def __init__(
         self, notify, radius, cx, cy, division, varga_data, radius_dict, font_size=14
@@ -873,6 +875,10 @@ class Harmonic(RingBase):
                 glyph = get_glyph(ruler, False)
                 self.draw_rotated_text(cr, glyph, xg, yg, mid_angle)
         elif self.division > 1 and self.varga_data is not None:
+            # prepare data for the draw order lookup
+            guest_by_name = {
+                obj.data.get("name", "").lower(): obj for obj in self.varga_data
+            }
             # draw divisions for selected harmonic
             segment_angle = 2 * pi / 12
             # sign borders
@@ -885,7 +891,11 @@ class Harmonic(RingBase):
                 cr.set_source_rgba(1, 1, 1, 0.5)
                 cr.set_line_width(1)
                 cr.stroke()
-            for obj in self.varga_data:
+            # for obj in self.varga_data:
+            for name in self.draw_order:
+                obj = guest_by_name.get(name)
+                if not obj or obj.data.get("name") is None:
+                    continue
                 # print(f"rings : lot : {lot.data}")
                 if self.event != "e1":
                     return

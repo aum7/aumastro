@@ -204,7 +204,7 @@ class Tables(Gtk.Notebook):
             f"{self.v_sym} hs\n"
         )
         text += header
-        separ = f"{self.h_sym * 56}\n"
+        # separ = f"{self.h_sym * 56}\n"
         # loop through positions and calculate houses if possible
         for key, obj in pos_map.items():
             name = obj.get("name", "")
@@ -283,7 +283,7 @@ class Tables(Gtk.Notebook):
                     f" ra : {int(raH):02d}h{int(raM):02d}m{int(raS):02d}s\n"
                     f" {weekday} : {hora_glyph}\n"  # type:ignore
                 )
-            ln_csps += separ
+            # ln_csps += separ
             text += ln_csps
         return text
 
