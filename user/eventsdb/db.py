@@ -85,6 +85,7 @@ DEFAULT_E2 = {
 # 2026-02-17  12:13:06  121  annular
 # 2026-08-12  17:47:06  126  -total
 # ------------------------------------------------------------------------------
+# --- eurojackpot
 # "country": "finland",
 # "city": "vantaa",  # helsinki
 # "location": "60 17 36 n 25 02 17 e 0038 m",
@@ -103,11 +104,11 @@ DEFAULT_E2 = {
 # "location": "46 03 03 n 014 30 18 e 0294 m",
 # "name": "simon",
 # "datetime": "1975 2 8 14 10",
-# --- houck p59
+# --- houck p59 kojak actor
 # "country": "USA",
 # "city": "Garden City",  # ny
 # "location": "40 44 00 n 073 58 00 w 0032 m",
-# "name": "telly savalas",  # kojak actor
+# "name": "telly savalas",
 # "datetime": "1924-1-20 5:00:00",
 # --- houck p59
 # "country": "USA",
@@ -133,11 +134,11 @@ DEFAULT_E2 = {
 # "location": "40 36 29 n 074 16 39 w 0007 m",
 # "name": "houck # 3",
 # "datetime": "1964-12-13 15:00:00",
-# ---
+# --- houck usa
 # "country": "USA",
 # "city": "philadelphia, pa",
 # "location": "39 57 08 n 075 09 49 w 0046 m",
-# "name": "usa 4.jul birth", # houck
+# "name": "usa 4th jul birth",
 # "datetime": "1776-6-19 11:53:00",
 # ---
 # "country": "Morocco",

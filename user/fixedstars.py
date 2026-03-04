@@ -20,40 +20,41 @@
 
 fixedstars = {
     "custom": [
-        ("alCMa", "sirius", "096. sirius"),
-        # ("etTau", "krttika", "03 krt krttika"),
+        ("alCMa", "sirius", "096. sirius"),  # 6/27
+        # ("bePer", "algol", "01. algol"),  # 3/27
+        ("etTau", "krttika", "03 krt krttika"),  # 3/27
         # ("GCLiu", "gcliu", "galactic center (new) (liu/zhu/zhang 2010)"),
     ],
     "naksatras": [  # 28
-        ("beAri", "ashvini", "01 asv asvini"),
-        ("41Ari", "bharani", "02 bha bharani"),
-        ("etTau", "krttika", "03 krt krttika"),
-        ("alTau", "rohini", "04 roh rohini"),
-        ("laOri", "mrgashirsha", "05 mrg mrgasira"),
-        ("alOri", "ardra", "06 ard ardra"),
-        ("beGem", "punarvasu", "07 pun punarvasu"),
-        ("deCnc", "pushya", "08 pus pusya"),
-        ("epHya", "ashlesha", "09 asl aslesa"),
-        # ("alCnc", "aslesa (colebrook)", "09 aslesa (colebrook)"),
-        ("alLeo", "magha", "10 mag magha"),
-        ("deLeo", "purvaphalguni", "11 ppa purvaphalguni"),
-        ("beLeo", "uttaraphalguni", "12 upa uttaraphalguni"),
-        ("deCrv", "hasta", "13 has hasta"),
-        ("alVir", "citra", "14 cit chitra"),
-        ("alBoo", "svati", "15 sva svati"),
-        ("io-1Lib", "vishakha", "16 vis visakha"),
-        ("deSco", "anuradha", "17 anu anuradha"),
-        ("alSco", "jyeshtha", "18 jye jyestha"),
-        ("laSco", "mula", "19 mul mula"),
-        ("deSgr", "purvashadha", "20 pas purvasadha"),
-        ("siSgr", "uttarashadha", "21 uas uttarasadha"),
-        ("alLyr", "abhijit", "22 abh abhijit"),
-        ("alAql", "shravana", "23 sra sravana"),
-        ("beDel", "dhanishtha", "24 dha dhanistha"),
-        ("laAqr", "shatabhishak", "25 sat satabhisa"),
-        ("alPeg", "purvabhadra", "26 pbh purvabhadra"),
-        ("gaPeg", "uttarabhadra", "27 ubh uttarabhadra"),
-        ("zePsc", "revati", "28 rev revati"),
+        ("beAri", "ashvini", "01 asv asvini"),  # sheratan
+        ("41Ari", "bharani", "02 bha bharani"),  # /
+        ("etTau", "krttika", "03 krt krttika"),  # alcyone
+        ("alTau", "rohini", "04 roh rohini"),  # aldebaran
+        ("laOri", "mrgashirsha", "05 mrg mrgasira"),  # ??? meissa
+        ("alOri", "ardra", "06 ard ardra"),  # betelgeuse
+        ("beGem", "punarvasu", "07 pun punarvasu"),  # pollux
+        ("deCnc", "pushya", "08 pus pusya"),  # asellus australis
+        # ("epHya", "ashlesha", "09 asl aslesa"), # /
+        ("alCnc", "aslesa (colebrook)", "09 aslesa (colebrook)"),  # acubens
+        ("alLeo", "magha", "10 mag magha"),  # regulus
+        ("deLeo", "purvaphalguni", "11 ppa purvaphalguni"),  # zosma
+        ("beLeo", "uttaraphalguni", "12 upa uttaraphalguni"),  # denebola
+        ("deCrv", "hasta", "13 has hasta"),  # algorab
+        # ("alVir", "citra", "14 cit chitra"),  # spica
+        ("alBoo", "svati", "15 sva svati"),  # arcturus
+        ("io-1Lib", "vishakha", "16 vis visakha"),  # /
+        ("deSco", "anuradha", "17 anu anuradha"),  # dschubba
+        ("alSco", "jyeshtha", "18 jye jyestha"),  # antares
+        ("laSco", "mula", "19 mul mula"),  # ??? shaula
+        ("deSgr", "purvashadha", "20 pas purvasadha"),  # kaus media
+        ("siSgr", "uttarashadha", "21 uas uttarasadha"),  # nunki, pelagus
+        ("alLyr", "abhijit", "22 abh abhijit"),  # vega
+        ("alAql", "shravana", "23 sra sravana"),  # altair
+        ("beDel", "dhanishtha", "24 dha dhanistha"),  # /
+        ("laAqr", "shatabhishak", "25 sat satabhisa"),  # ekkhysis, hydor
+        ("alPeg", "purvabhadra", "26 pbh purvabhadra"),  # markab
+        ("gaPeg", "uttarabhadra", "27 ubh uttarabhadra"),  # algenib
+        ("zePsc", "revati", "28 rev revati"),  # /
     ],
     "behenian": [  # 15
         ("bePer", "algol", "01. algol"),

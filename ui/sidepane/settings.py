@@ -168,7 +168,8 @@ event 1 & 2 can have different objects"""
     subsubpnl_prenatal.set_title_tooltip(
         """prenatal lunation & eclipse
     syzygy = prenatal lunation, either full or new moon before event
-    eclipses are both solar or lunar one before event"""
+    eclipses are both solar or lunar one before event
+    (aka last solar / lunar eclipse)"""
     )
     # main box
     box_prenatal = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5)

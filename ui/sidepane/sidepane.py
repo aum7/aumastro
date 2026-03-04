@@ -22,11 +22,11 @@ class SidepaneManager:
     _update_main_title: Callable
 
     CHANGE_TIME_BUTTONS: Dict[str, str] = {
-        "arrow_l": "move time backward (hk : arrow left)",
-        "arrow_r": "move time forward (hk : arrow right)",
+        "arrow_l": "move time backward\n(hk : arrow left)",
+        "arrow_r": "move time forward\n(hk : arrow right)",
         "time_now": "time now (hk : n)\nset time now for selected event",
-        "arrow_up": "select previous time period (hk : arrow up)",
-        "arrow_dn": "select next time period (hk : arrow down)",
+        "arrow_up": "select previous time period\n(hk : arrow up)",
+        "arrow_dn": "select next time period\n(hk : arrow down)",
     }
     # value for selected change time : 1 day as default
     CHANGE_TIME_SELECTED = 1.0
@@ -108,11 +108,24 @@ hotkeys :
 arrow key up / down : select previous / next time period
 arrow key left / right : move time backward / forward
 
-1 month (27.3 d) = sidereal lunar month
-can be changed in sidepane.py
+note : since arrow keys are mapped to ct,
+navigating any text entry is a bit tricky
+(industry standard missing single arrow keys) :
+shift + left / right arrow : select / deselect character
+ctrl + left / right arrow : jump cursor between elements
+shift + ctrl + left / right arrow : select / deselect elements
+ctrl + a : select all text
+ctrl + c : copy selected text
+ctrl + v : paste text, ie from external source,
+    or event one / two
+(already proper format yuhuuu)
+backspace / delete : delete text / character
+recommended workflow if you use manual input :
+    select either all text, or its element
+    delete it & enter desired one
 
-note : hotkeys arrow left & right will not work when text entry is focused
-or ie panes have been manually resized (click any text to focus sidepane)"""
+this text can be changed in
+ui / sidepane / sidepane.py"""
         )
         # horizontal box for time navigation icons
         box_time_icons = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
@@ -132,7 +145,8 @@ or ie panes have been manually resized (click any text to focus sidepane)"""
             "select period to use for change time\n(hk : arrow up / down)",
         )
         self.ddn_time_periods.add_css_class("dropdown")
-        # set default time period : 1 day
+        # set default time period : 1 day ; pick any period
+        # from above CHANGE_TIME_PERIODS list
         default_period = self.time_periods_list.index("1 D")
         self.ddn_time_periods.set_selected(default_period)
         # change time selected as julian day / float

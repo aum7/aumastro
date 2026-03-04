@@ -111,6 +111,7 @@ class MainWindow(
         self.hotkeys.register_hotkey("shift+v", lambda: self.tables.toggle_vimso())
         self.hotkeys.register_hotkey("ctrl+m", self.show_manual)
         self.hotkeys.register_hotkey("ctrl+s", self.on_toggle_sidepane)
+        # below works for qwertz keyboard, modify according to your keyboard layout
         self.hotkeys.register_hotkey("shift+exclam", self.panes_single)  # shift+1
         self.hotkeys.register_hotkey("shift+quotedbl", self.panes_double)  # shift+2
         self.hotkeys.register_hotkey("shift+numbersign", self.panes_triple)  # shift+3
@@ -196,16 +197,16 @@ class MainWindow(
     def show_manual(self):
         self.notify.debug(
             "manual\n"
-            "\nhover mouse over buttons & text = show tooltips"
-            "\nhover mouse over notification message = do not hide message"
+            "\nhover mouse over buttons & text = show tooltips (aka detailed manual)"
+            "\nhover mouse over (ie this) notification message = do not hide message"
             "\nesc : discard notification message"
-            "\n\ntop info bar : app name | selected event (e1/e2) date-time | selected change time period (ie 1 Day)"
+            "\n\ntop info bar : app name | selected event (e1/e2) | date-time | selected change time period (ie 1 Day)"
             "\n\nrecommended workflow :"
             "\nenter event 1 data = calculate event / birth chart"
-            "\nif you want transit / progression (aka event 2) :"
+            "\nif you want transit / progression etc (aka event 2) :"
             "\n\tenter date-time 2 (app will reuse event 1 location & name)"
             "\n\tenter location 2 for relocation event (transit will be for location 2)"
-            # "\n\tenter custom name 2 (ie 'marriage') = save event 2 linked to event 1"
+            "\n\tenter custom name 2 (ie 'marriage' - not saved currently)"
             "\ndelete date-time 2 = erase event 2 data (not interested in transit etc)"
             # "\nnote : event name / title will be used for file saving"
             "\n\nhotkeys (hk)"
@@ -213,10 +214,9 @@ class MainWindow(
             "\nctrl+s : toggle side pane"
             "\nctrl+e : toggle selected event"
             "\n\t(ie for change time / time now & datagraph click (set datetime))"
-            "\narrow keys : up/down = change period | left/right = change time"
-            "\n\tback/forward for selected event"
+            "\narrow keys : up/down = change period | left/right = change time back/forward for selected event"
             "\nctrl+n : set time now for selected event location"
-            "\n\t(your computer > utc > event location time)"
+            "\n\t(your computer time > utc > event location time)"
             "\nctrl+f : toggle zodiac rotation (ascendant vs ari 0° at left)"
             "\nctrl+g : toggle glyphs visibility"
             "\nctrl+h : toggle varga aspects table"  # harmonic

@@ -23,26 +23,38 @@ def setup_event(manager, event_name: str, expand: bool) -> CollapsePanel:
     lbl_event = panel.get_title()
     lbl_event.set_tooltip_text(
         """main event ie natal / event chart
-        click to set focus to event 1
+    click to set focus to event 1
 so change time will apply to it
-hk : e (toggle)
+hk : ctrl + e (toggle)
 
-note
-location (latitude & longitude) 1 + 
-name / title 1 +
-date-time 1
+note :
+location (latitude & longitude) one + 
+name / title one +
+date-time one
 are mandatory"""
         if event_name == "e1"
-        else """secondary event ie transit / progression etc
-click to set focus to event 2 
+        else """secondary event ie :
+    transit
+    primary | secondary | tertiary progression
+    solar | lunar return
+    
+    click to set focus to event 2 
 so change time will apply to it
+hk : ctrl + e (toggle)
 
-notes
-enter datetime 2 only if interested in transit etc (aka event 2)
-if location 2 = location 1 : set latitude & longitude (& city) 2 to empty
-enter custom name / title 2 = save event 2 linked to event 1
-delete datetime 2 = clear event 2 data"""
+notes :
+enter datetime two only if interested in transit etc
+(aka event two)
+if location two = location one (no realocation) :
+set latitude & longitude (& city) two to empty
+delete datetime two : clear event two data
+
+this text can be changed in
+user / events.py
+default event one / two can be set in
+user / eventsdb / db.py (database)"""
     )
+    # todo on clear event 2 data remove also from top title bar
     gesture = Gtk.GestureClick.new()
     gesture.connect(
         "pressed",
@@ -68,9 +80,11 @@ delete datetime 2 = clear event 2 data"""
     ddn_country.set_name("country one" if event_name == "e1" else "country two")
     ddn_country.set_tooltip_text(
         """select country for location
-in aumastro/user/ folder there is file named
+in user/ folder there is file named
 countries.txt
-open it with text editor & un-comment any country of interest (delete '# ' & save file)
+open it with text editor &
+un-comment any country of interest 
+(delete '# ' & save file) or
 comment (add '# ' & save file) uninterested country"""
     )
     ddn_country.add_css_class("dropdown")
@@ -152,7 +166,8 @@ user needs to select the one of interest
         """latitude & longitude (location)
 
 if country & city are selected, this field auto-populates
-then fine-tune or enter geo coordinates manually
+then fine-tune or
+enter geo coordinates manually
 
 clearest form is :
     deg min (sec) n(orth) / s(outh) & e(ast) / w(est) (m (alt))

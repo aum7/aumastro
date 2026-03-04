@@ -9,12 +9,13 @@
 # for glyph explanation see ui/fonts/victor/...pdf
 # main application panes orientation : horizontal vs vertical
 # see uisetup.py > setup_paned_widgets
+# todo not fully implemented : mainwindow.py > panes_x all need love
 APP_ORIENTATION = "vertical"
+# change objects color & names below
 OBJECTS = {  # one-but-last = color ; last = size scale = drawing order
     0: ("su", "sun", "sy", "surya", (1.0, 0.898, 0.0, 1), 0.82),
     1: ("mo", "moon", "ca", "candra", (0.95, 0.95, 0.95, 1), 0.73),
     2: ("me", "mercury", "bu", "budha", (0.2, 0.5, 0.2, 1), 0.76),
-    # 3: ("ve", "venus", "sk", "sukra", (0.976, 0.2588, 0.6196, 1), 0.79),
     3: ("ve", "venus", "sk", "sukra", (0.98, 0.45, 0.75, 1), 0.79),
     4: ("ma", "mars", "ma", "mangala", (0.7, 0.1, 0.1, 1), 0.85),
     5: ("ju", "jupiter", "gu", "guru", (0.7, 0.4, 0.0, 1), 0.88),
@@ -24,6 +25,8 @@ OBJECTS = {  # one-but-last = color ; last = size scale = drawing order
     9: ("pl", "pluto", "pl", "pluto", (0.1784, 0.1784, 0.1784, 1), 1.0),
     11: ("ra", "true node", "ra", "rahu", (0.4, 0.3, 0.3, 1), 1.1),
     # 10: rahu mean is handled in positions.py
+    # heliocentric view
+    # not implemented (deleted as some stubborn issue was persistent)
     # 14: ("ea", "earth", "ea", "earth"), ke color (0.3, 0.3, 0.3, 1)
 }
 # selected objects for event 2
@@ -92,7 +95,7 @@ PRENATAL = {
     },
     "eclipse": {
         "enable": True,
-        "tooltip": "last solar and lunar eclipse before event",
+        "tooltip": "last solar & lunar eclipse before event",
     },
 }
 # default prenatal for event 2 todo do we need this ???
@@ -203,6 +206,7 @@ CHART_SETTINGS = {
 25 pbh\t26 ubh\t27 rev""",
     ),
     # --- use 28 (all equal = no mini abhijt) else standard 27 naksatras
+    # rulership as per chinese astrology / vivian e robson - fixed stars ...
     "28 naksatras": (
         True,
         """use 28 (all equal = no mini abhijit) vs standard 27 naksatras
@@ -212,7 +216,11 @@ CHART_SETTINGS = {
 13 has\t14 cit\t15 sva\t16 vis
 17 anu\t18 jye\t19 mul\t20 pas
 21 uas\t22 abh\t23 sra\t24 dha
-25 sat\t26 pbh\t27 ubh\t28 rev""",
+25 sat\t26 pbh\t27 ubh\t28 rev
+
+rulership (in tables) changes to weekday order !
+can be changed in
+sweph / constants.py""",
     ),
     # --- start naksatras ring with naksatra
     "1st naksatra": (
@@ -223,34 +231,40 @@ CHART_SETTINGS = {
     # 1+ simple divisions, similar but NOT all equal to varga
     "harmonic ring": (
         "9",
-        "harmonic (aka varga) ring\nempty : do NOT show | 1 : egypt. terms (bounds)\n1+ : simple harmonic for event 1 *similar* to varga",
+        "harmonic (aka varga) ring\nempty : do NOT show | 1 : egypt. terms (bounds)\n1+ : simple harmonic for event 1 *similar* to varga\nterms can be changed in\nsweph / constants.py",
     ),
     # --- event 2 astro chart circles : draw progressions (p1 & p3) | returns | transit
+    # calculated in sweph / calculations / ...
     "event2 rings": {
         "p1 progress": (
             False,
-            "show traditional primary progression (p1) for event 2\ncalculations as per martin gansten / ptolemy\n[todo, current is simple calculation]",
+            "show traditional primary progression (p1) for event 2\ncalculations as per martin gansten / ptolemy\n[todo needs verification : current is simple calculation]\nchange in sweph / calculations / ...",
         ),
         "p2 progress": (
             False,
-            "show secondary progression (p2) for event 2",
+            "show secondary progression (p2) for event 2\nchange in sweph / calculations / ...",
         ),
         "p3 progress": (
             False,
-            "show tertiary progression (p3) for event 2\ncalculations as per richard houck",
+            "show tertiary progression (p3) for event 2\ncalculations as per richard houck\nchange in sweph / calculations / ...",
         ),
-        "solar return": (False, "show solar return for event 2"),
+        "solar return": (
+            False,
+            "show solar return for event 2\nchange in sweph / calculations / ...",
+        ),
         "lunar return": (False, "show lunar return for event 2"),
         "varga": (
             False,
-            "show (simple) varga ring for event 2\nset varga in above harmonic ring",
+            "show (simple) varga / harmonic ring for event 2\nset varga in above harmonic ring",
         ),
         "transit": (False, "show transit for event 2"),
     },
     # --- use varga positions for aspects
+    # ctrl+v hotkey was 1st choice, but that defaults now for text paste
+    # todo change to use harmonic aspect : also
     "use varga aspect": (
         True,
-        "use varga positions for aspects matrix calculation\nsort of 'harmonic aspects, in tables window\nhk : [shift+v]'",
+        "use *simple* varga / harmonic positions for aspects matrix calculation\nsort of 'harmonic aspects, in tables window\nhk : ctrl+h (toggle h1 <> hX)",
     ),
     # --- draw fixed stars
     # in user/fixedstars.py are categories of stars :
