@@ -334,7 +334,7 @@ LUNAR_MONTH = {
 # also arrange order as you please > move line up / down & save file
 # top line is default choice
 AYANAMSA = {
-    17: ("Galact. Center 0 Sag", "glc (17)"),  # SIDM_GALCENT_0SAG
+    17: ("Galact. Center 0 Sag", "glc (17)"),  # SIDM_GALCENT_0SAG j2000 = 26°50'31.8335
     255: ("user-defined (below)", "usr"),  # SIDM_USER
     45: ("Krishnamurti-Senthilathiban", "kms (45)"),  # SIDM_KRISHNAMURTI_VP291
     # 0: ("Fagan/Bradley", "fbr (00)"),  # SIDM_FAGAN_BRADLEY
