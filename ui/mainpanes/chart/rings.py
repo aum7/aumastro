@@ -909,35 +909,36 @@ class Harmonic(ObjectRingBase):
                 angle = pi - radians(lon)
                 x = self.cx + radius * cos(angle)
                 y = self.cy + radius * sin(angle)
-                marker_size = 0.6
-                if name == "asc":
-                    self.draw_marker(
-                        cr,
-                        x,
-                        y,
-                        angle,
-                        self.scaled_marker_size() * marker_size,
-                        (1, 1, 1, 0.5),
-                        self.draw_triangle,
-                    )
-                elif name == "mc":
-                    self.draw_marker(
-                        cr,
-                        x,
-                        y,
-                        angle,
-                        self.scaled_marker_size() * marker_size,
-                        (1, 1, 1, 0.5),
-                        self.draw_diamond,
-                    )
-                else:
-                    obj.draw(
-                        cr,
-                        self.cx,
-                        self.cy,
-                        radius,
-                        self.font_size * 0.6,
-                    )
+                # asc & mc of harmonic ring
+                # marker_size = 0.6
+                # if name == "asc":
+                #     self.draw_marker(
+                #         cr,
+                #         x,
+                #         y,
+                #         angle,
+                #         self.scaled_marker_size() * marker_size,
+                #         (1, 1, 1, 0.5),
+                #         self.draw_triangle,
+                #     )
+                # elif name == "mc":
+                #     self.draw_marker(
+                #         cr,
+                #         x,
+                #         y,
+                #         angle,
+                #         self.scaled_marker_size() * marker_size,
+                #         (1, 1, 1, 0.5),
+                #         self.draw_diamond,
+                #     )
+                # else:
+                obj.draw(
+                    cr,
+                    self.cx,
+                    self.cy,
+                    radius,
+                    self.font_size * 0.6,
+                )
 
 
 class P1Progress(ObjectRingBase):

@@ -85,13 +85,26 @@ DEFAULT_E2 = {
 # 2026-02-17  12:13:06  121  annular
 # 2026-08-12  17:47:06  126  -total
 # ------------------------------------------------------------------------------
+# --- simon prenatal solar eclipse 152 partial
+# "country": "Slo",
+# "city": "ljubljana",
+# "location": "46 03 10 n 14 31 26 e 0294 m", # porodnišnica lj
+# "name": "simon pse",
+# "datetime": "1974 12 13 17 13",
+# "datetime": "1805 07 26", # 1st ecl of series
+# --- simon prenatal lunar eclipse 125 total
+# "country": "Slo",
+# "city": "ljubljana",
+# "location": "46 03 10 n 14 31 26 e 0294 m", # porodnišnica lj
+# "name": "simon pse",
+# "datetime": "1974 11 29 16 14",
+# "datetime": "1306 02 04", # 1st ecl of series
 # --- intel
 # "country": "usa",
 # "city": "santa clara",  # california
 # "location": "37 23 16 n 121 57 49 e 0038 m",
 # "name":"intel",
 # "datetime": "1968-07-18 10:00:00",
-# ---
 # --- eurojackpot
 # "country": "finland",
 # "city": "vantaa",  # helsinki
