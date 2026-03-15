@@ -911,7 +911,9 @@ class Harmonic(ObjectRingBase):
                 y = self.cy + radius * sin(angle)
                 # asc & mc of harmonic ring
                 # marker_size = 0.6
-                # if name == "asc":
+                if name == "asc":
+                    # explicitly dont draw asc
+                    continue
                 #     self.draw_marker(
                 #         cr,
                 #         x,
@@ -921,7 +923,9 @@ class Harmonic(ObjectRingBase):
                 #         (1, 1, 1, 0.5),
                 #         self.draw_triangle,
                 #     )
-                # elif name == "mc":
+                elif name == "mc":
+                    # explicitly dont draw mc
+                    continue
                 #     self.draw_marker(
                 #         cr,
                 #         x,
@@ -931,14 +935,14 @@ class Harmonic(ObjectRingBase):
                 #         (1, 1, 1, 0.5),
                 #         self.draw_diamond,
                 #     )
-                # else:
-                obj.draw(
-                    cr,
-                    self.cx,
-                    self.cy,
-                    radius,
-                    self.font_size * 0.6,
-                )
+                else:
+                    obj.draw(
+                        cr,
+                        self.cx,
+                        self.cy,
+                        radius,
+                        self.font_size * 0.6,
+                    )
 
 
 class P1Progress(ObjectRingBase):
