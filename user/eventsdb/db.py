@@ -8,16 +8,17 @@
 # "datetime": "2025-03-29 10:47:34",  # last solecl
 # "datetime": "2025 8 1 17 1", # trading start
 DEFAULT_E1 = {
-    # "country": "Slo",
-    # "city": "ljubljana",
+    "country": "Slo",
+    "city": "ljubljana",
     # "location": "46 3 8 N 14 27 9 E 355 m",  # mons casino
-    # "name": "mons",
-    # "datetime": "2025-09-29 11:11:27",
-    "country": "UK",
-    "city": "london",
-    "location": "51 30 54 n 000 05 56 w 10 m",
-    "name": "lse",  # next solecl
-    "datetime": "2006-03-29 11:11:27",
+    "location": "46 03 10 n 14 31 26 e 0294 m",  # porodnišnica lj
+    "name": "nau",
+    "datetime": "1975 2 8 14 10",
+    # "country": "UK",
+    # "city": "london",
+    # "location": "51 30 54 n 000 05 56 w 10 m",
+    # "name": "lse",  # next solecl
+    # "datetime": "2006-03-29 11:11:27",
 }
 DEFAULT_E2 = {
     "datetime": "2007-03-09 14:00:00",
@@ -99,6 +100,12 @@ DEFAULT_E2 = {
 # "name": "simon pse",
 # "datetime": "1974 11 29 16 14",
 # "datetime": "1306 02 04", # 1st ecl of series
+# --- lili t
+# "country": "Serbia",
+# "city": "kovin",
+# "location": "44 44 51 n 020 58 33 e 0078 m",
+# "name": "lili t",
+# "datetime": "1942 5 10 15 30",
 # --- intel
 # "country": "usa",
 # "city": "santa clara",  # california

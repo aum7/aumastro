@@ -238,7 +238,7 @@ def vimsottari_table(mo_deg, e1_jd, e2_jd=None, current_lvl=1, max_lvl=3):
     nak_lord, nak_name = NAKSATRAS27[idx]
     separ = f"{'-' * 42}\n"
     header = (
-        f"\n 'v' : toggle dasas level\n"
+        f"\n 'shift+v' : toggle dasas level\n"
         " level 1 & 2 : complete dasas\n"
         " levels 3-5 : event 2 datetime maha dasa only\n"
         f"{separ}"
