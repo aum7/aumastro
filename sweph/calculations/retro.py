@@ -1,6 +1,6 @@
 # sweph/calculations/retro.py
 # ruff: noqa: E402, E701
-import swisseph as swe
+import swisseph as swe  # type:ignore
 import gi
 
 gi.require_version("Gtk", "4.0")
@@ -71,6 +71,9 @@ def calculate_retro(event: str):
         elif event_name == "p3":
             pos = getattr(app, "p3_pos")
             jd_ut = next(d["p3jdut"] for d in pos if "p3jdut" in d)
+        elif event_name == "p3m":
+            pos = getattr(app, "p3m_pos")
+            jd_ut = next(d["p3mjdut"] for d in pos if "p3mjdut" in d)
         # msg += f"{event} jdut curr : {jdtoiso(jd_ut)}\n"
         if not jd_ut:
             notify.warning(

@@ -1,6 +1,6 @@
 # sweph/calculations/lunation.py
 # ruff: noqa: E402
-import swisseph as swe
+import swisseph as swe  # type:ignore
 import gi
 
 gi.require_version("Gtk", "4.0")
@@ -41,7 +41,7 @@ def calculate_lunation(event: str):
                 route=[""],
             )
             return
-        if prenatal and "lunation" in prenatal:
+        if prenatal and "lunation" in prenatal:  # type:ignore
             flag = swe_flag
             # find closest lunation
             flag |= swe.ECL_ONE_TRY

@@ -17,9 +17,10 @@ from ui.mainpanes.chart.rings import (
     Signs,
     Naksatras,
     Harmonic,
-    P1Progress,
+    D1PrimaryDirection,
     P2Progress,
     P3Progress,
+    P3MinorProgress,
     SolarReturn,
     LunarReturn,
     Varga,
@@ -57,12 +58,13 @@ class AstroChart(Gtk.Box):
         signal._connect("e2_cleared", self.e2_cleared)
         signal._connect("settings_changed", self.settings_changed)
         signal._connect("stars_changed", self.stars_changed)
-        signal._connect("p1_changed", self.p1_changed)
+        signal._connect("transit_changed", self.transit_changed)
         signal._connect("p2_changed", self.p2_changed)
         signal._connect("p3_changed", self.p3_changed)
-        signal._connect("solar_return_changed", self.solar_return_changed)
+        signal._connect("p3m_changed", self.p3m_changed)
+        signal._connect("d1_changed", self.d1_changed)
         signal._connect("lunar_return_changed", self.lunar_return_changed)
-        signal._connect("transit_changed", self.transit_changed)
+        signal._connect("solar_return_changed", self.solar_return_changed)
 
     def event_changed(self, event):
         # main data / event changed : load new data
@@ -115,7 +117,7 @@ class AstroChart(Gtk.Box):
     def settings_changed(self, arg):
         # grab data & redraw
         self.chart_settings = getattr(self.app, "chart_settings", {})
-        self.p1_changed(arg)
+        self.d1_changed(arg)
         self.drawing_area.queue_draw()
 
     def stars_changed(self, event, stars):
@@ -127,9 +129,9 @@ class AstroChart(Gtk.Box):
             # print(f"name : {name} | lon : {lon} | designation : {nomenclature}")
         self.drawing_area.queue_draw()
 
-    def p1_changed(self, event):
+    def d1_changed(self, event):
         # primary progression changed
-        self.p1_pos = getattr(self.app, "p1_pos", None)
+        self.d1_pos = getattr(self.app, "d1_pos", None)
         self.drawing_area.queue_draw()
 
     def p2_changed(self, event):
@@ -140,6 +142,11 @@ class AstroChart(Gtk.Box):
     def p3_changed(self, event):
         # tertiary progression changed
         self.p3_pos = getattr(self.app, "p3_pos", None)
+        self.drawing_area.queue_draw()
+
+    def p3m_changed(self, event):
+        # minor tertiary progression changed
+        self.p3m_pos = getattr(self.app, "p3m_pos", None)
         self.drawing_area.queue_draw()
 
     def solar_return_changed(self, event):
@@ -182,9 +189,9 @@ class AstroChart(Gtk.Box):
         # draw rings
         max_radius = base * 0.97
         # outer rings linked to event 2 :
-        # - primary & secondary & tertiary progression
+        # - primary direction & secondary & tertiary & minor progression
         # - solar & lunar return
-        # - transit v1 & vX
+        # - transit v1 & vX (harmonic)
         # + naksatras & harmonic ring (vX) for event 1
         outer_rings = []
         if getattr(self.app, "e2_active", False):
@@ -194,16 +201,18 @@ class AstroChart(Gtk.Box):
                 outer_rings.append("transit")
             if self.chart_settings.get("varga"):
                 outer_rings.append("varga")
-            if self.chart_settings.get("solar return"):
-                outer_rings.append("solar return")
-            if self.chart_settings.get("lunar return"):
-                outer_rings.append("lunar return")
-            if self.chart_settings.get("p1 progress"):
-                outer_rings.append("p1 progress")
             if self.chart_settings.get("p2 progress"):
                 outer_rings.append("p2 progress")
             if self.chart_settings.get("p3 progress"):
                 outer_rings.append("p3 progress")
+            if self.chart_settings.get("p3m progress"):
+                outer_rings.append("p3m progress")
+            if self.chart_settings.get("d1 direction"):
+                outer_rings.append("d1 direction")
+            if self.chart_settings.get("solar return"):
+                outer_rings.append("solar return")
+            if self.chart_settings.get("lunar return"):
+                outer_rings.append("lunar return")
         if self.chart_settings.get("harmonic ring", "").strip():
             outer_rings.append("harmonic")
         if self.chart_settings.get("naksatras ring", ""):
@@ -213,11 +222,12 @@ class AstroChart(Gtk.Box):
         outer_portion = {
             "transit": 0.08,
             "varga": 0.08,
+            "p2 progress": 0.08,
+            "p3 progress": 0.08,
+            "p3m progress": 0.08,
+            "d1 direction": 0.08,
             "lunar return": 0.08,
             "solar return": 0.08,
-            "p3 progress": 0.08,
-            "p2 progress": 0.08,
-            "p1 progress": 0.08,
             "harmonic": 0.06,
             "naksatras": 0.05,
         }
@@ -275,6 +285,54 @@ class AstroChart(Gtk.Box):
                     radius_dict=radius_dict,
                 )
                 ring_varga.draw(cr)
+        # --- secondary progressions
+        if "p2 progress" in outer_rings:
+            ring_p2 = P2Progress(
+                radius=radius_dict.get("p2 progress", max_radius),
+                cx=cx,
+                cy=cy,
+                font_size=int(12 * font_scale),
+                p2_pos=self.p2_pos,
+                retro=calculate_retro("p2"),
+                radius_dict=radius_dict,
+            )
+            ring_p2.draw(cr)
+        # --- tertiary progressions
+        if "p3 progress" in outer_rings:
+            ring_p3 = P3Progress(
+                radius=radius_dict.get("p3 progress", max_radius),
+                cx=cx,
+                cy=cy,
+                font_size=int(12 * font_scale),
+                p3_pos=self.p3_pos,
+                retro=calculate_retro("p3"),
+                radius_dict=radius_dict,
+            )
+            ring_p3.draw(cr)
+        # --- minor tertiary progressions
+        if "p3m progress" in outer_rings:
+            ring_p3m = P3MinorProgress(
+                radius=radius_dict.get("p3m progress", max_radius),
+                cx=cx,
+                cy=cy,
+                font_size=int(12 * font_scale),
+                p3m_pos=self.p3m_pos,
+                retro=calculate_retro("p3m"),
+                radius_dict=radius_dict,
+            )
+            ring_p3m.draw(cr)
+        # --- primary progressions
+        if "d1 direction" in outer_rings:
+            ring_d1 = D1PrimaryDirection(
+                radius=radius_dict.get("d1 direction", max_radius),
+                cx=cx,
+                cy=cy,
+                font_size=int(12 * font_scale),
+                chart_settings=self.chart_settings,
+                d1_pos=self.d1_pos,
+                radius_dict=radius_dict,
+            )
+            ring_d1.draw(cr)
         # --- lunar return
         if "lunar return" in outer_rings:
             ring_lunar = LunarReturn(
@@ -297,42 +355,6 @@ class AstroChart(Gtk.Box):
                 radius_dict=radius_dict,
             )
             ring_solar.draw(cr)
-        # --- tertiary progressions
-        if "p3 progress" in outer_rings:
-            ring_p3 = P3Progress(
-                radius=radius_dict.get("p3 progress", max_radius),
-                cx=cx,
-                cy=cy,
-                font_size=int(12 * font_scale),
-                p3_pos=self.p3_pos,
-                retro=calculate_retro("p3"),
-                radius_dict=radius_dict,
-            )
-            ring_p3.draw(cr)
-        # --- secondary progressions
-        if "p2 progress" in outer_rings:
-            ring_p2 = P2Progress(
-                radius=radius_dict.get("p2 progress", max_radius),
-                cx=cx,
-                cy=cy,
-                font_size=int(12 * font_scale),
-                p2_pos=self.p2_pos,
-                retro=calculate_retro("p2"),
-                radius_dict=radius_dict,
-            )
-            ring_p2.draw(cr)
-        # --- primary progressions
-        if "p1 progress" in outer_rings:
-            ring_p1 = P1Progress(
-                radius=radius_dict.get("p1 progress", max_radius),
-                cx=cx,
-                cy=cy,
-                font_size=int(12 * font_scale),
-                chart_settings=self.chart_settings,
-                p1_pos=self.p1_pos,
-                radius_dict=radius_dict,
-            )
-            ring_p1.draw(cr)
         # --- optional rings : harmonic
         if "harmonic" in outer_rings:
             varga_data = None

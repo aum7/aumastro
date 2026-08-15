@@ -93,13 +93,23 @@ DEFAULT_E2 = {
 # "name": "simon pse",
 # "datetime": "1974 12 13 17 13",
 # "datetime": "1805 07 26", # 1st ecl of series
-# --- simon prenatal lunar eclipse 125 total
+# - simon prenatal lunar eclipse 125 total
 # "country": "Slo",
 # "city": "ljubljana",
 # "location": "46 03 10 n 14 31 26 e 0294 m", # porodnišnica lj
 # "name": "simon pse",
 # "datetime": "1974 11 29 16 14",
 # "datetime": "1306 02 04", # 1st ecl of series
+# - simon life events
+# 1980-03-22 ciril life end, birth 1943-10-09 ljubljana
+# 1948-02-15 mother born opatija home
+# ear surgery
+# fell from height on back
+# 2007-08-22 ljubljana home sold
+# 2011-11-15 globoka home bought, moved into 11-19
+# 2015-05-31 oskar died plD
+# 2020-06-09 name change to aum neD
+# 2023-08-09 globoka sold, moved out 2023-09-11
 # --- lili t
 # "country": "Serbia",
 # "city": "kovin",

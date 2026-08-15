@@ -1,6 +1,8 @@
 # sweph/calculations/p3.py
 # ruff: noqa: E402
-import swisseph as swe
+# tertiary progression (day for a month - earth-moon) (houck)
+# 13.369 ratio
+import swisseph as swe  # type:ignore
 import gi
 
 gi.require_version("Gtk", "4.0")
@@ -32,29 +34,22 @@ def calculate_p3(event: str):
     # gather data
     e1_sweph = getattr(app, "e1_sweph", None)
     e2_sweph = getattr(app, "e2_sweph", None)
-    if e1_sweph:
-        e1_jd = e1_sweph.get("jd_ut")
-    if e2_sweph:
-        e2_jd = e2_sweph.get("jd_ut")
-    sel_year = getattr(app, "selected_year_period", (365.2425, "gregorian"))
-    # substitute with exact lunar return calculations : before & after e2 datetime
-    sel_month = getattr(app, "selected_month_period", (27.321661, "sidereal"))
-    YEARLENGTH = sel_year[0]
-    MONTHLENGTH = sel_month[0]
-    if e1_jd and e2_jd:
-        # period elapsed from birth in years : needs event 2 datetime
-        period = e2_jd - e1_jd
-        age_years = period / YEARLENGTH
-        app.age_y = age_years
-        # how many lunar months
-        age_months = period / MONTHLENGTH
-        app.age_m = age_months
-        # print(f"deltayears : {delta_years}")
     chart_sett = getattr(app, "chart_settings")
     use_mean_node = chart_sett.get("mean node")
     objs = getattr(app, "selected_objects_e2", None)
     e1_pos = getattr(app, "e1_positions", None)
     e1_houses = getattr(app, "e1_houses", None)
+    # definitions to shush editor
+    e1_jd = 0.0
+    e2_jd = 0.0
+    e1_su = None
+    e1_mo = None
+    age_years = 0.0
+    age_months = 0.0
+    e1_asc = 0.0
+    e1_mc = 0.0
+    e1_asc_arc = 0.0
+    e1_mc_arc = 0.0
     # msg += f"e2objs : {objs}\n"
     if e1_pos:
         # get natal moon for lunar returns
@@ -87,6 +82,24 @@ def calculate_p3(event: str):
     # f"e1mo : {e1_mo} | e1su : {e1_su} | "
     # f"e1ascarc : {e1_asc_arc} | e1mcarc : {e1_mc_arc}\n"
     # )
+    if e1_sweph:
+        e1_jd = e1_sweph.get("jd_ut")
+    if e2_sweph:
+        e2_jd = e2_sweph.get("jd_ut")
+    sel_year = getattr(app, "selected_year_period", (365.2425, "gregorian"))
+    # substitute with exact lunar return calculations : before & after e2 datetime
+    sel_month = getattr(app, "selected_month_period", (27.321661, "sidereal"))
+    YEARLENGTH = sel_year[0]
+    MONTHLENGTH = sel_month[0]
+    if e1_jd and e2_jd:
+        # period elapsed from birth in years : needs event 2 datetime
+        period = e2_jd - e1_jd
+        age_years = period / YEARLENGTH  # unused
+        app.age_y = age_years
+        # how many lunar months
+        age_months = period / MONTHLENGTH
+        app.age_m = age_months
+        # print(f"deltayears : {delta_years}")
     # previous lunar return : search x days back range
     prev_jd = e2_jd - 27.5
     lr_prev_jd = swe.mooncross_ut(e1_mo, prev_jd, app.sweph_flag)
@@ -95,7 +108,9 @@ def calculate_p3(event: str):
     lr_next_jd = swe.mooncross_ut(e1_mo, next_jd, app.sweph_flag)
     # calculate lunar month length
     lr_month = lr_next_jd - lr_prev_jd
+    # main calculation of progress in days
     p3_diff = (age_months / lr_month) * lr_month
+    # print(f"p3 : agemonths={age_months} | lunarreturnmonth={lr_month}")
     p3_jd = e1_jd + p3_diff
     p3_date = tuple_to_iso(p3_jd)
     # msg += p3_date
@@ -126,15 +141,15 @@ def calculate_p3(event: str):
                 source="p3",
                 route=["terminal"],
             )
-    p3_tasc = ascmc[0]
-    p3_tmc = ascmc[1]
+    p3_tasc = ascmc[0]  # type:ignore
+    p3_tmc = ascmc[1]  # type:ignore
     p3_data.append({"name": "tas", "lon": p3_tasc})
     p3_data.append({"name": "tmc", "lon": p3_tmc})
     # todo asc by tables of houses ???
     p3_asc = p3_su + e1_asc_arc
     # progress mc by solar arc : p3-su + (Nsu - Nmc)
     p3_mc = p3_su + e1_mc_arc
-    # insert ascendant & midheaven with p1solarc
+    # insert ascendant & midheaven with p3 solarc
     p3_data.append({"name": "asc", "lon": p3_asc})
     p3_data.append({"name": "mc", "lon": p3_mc})
     # find positions on p3 date
@@ -192,7 +207,7 @@ def connect_signals_p3(signal_manager):
     signal_manager._connect("e2_cleared", e2_cleared)
 
 
-# tertiary progression (aka minor progression)
+# tertiary progression
 # as per richard houck (astrology of death)
 # divide year by sidereal month & use blocks of 13-14 days as representing
 # a year in life

@@ -172,6 +172,16 @@ HOUSE_SYSTEMS = [
     ("K", "kch : koch", "kch"),
 ]
 CHART_SETTINGS = {
+    # --- use mean node else true node
+    "mean node": (
+        False,
+        "calculate mean node (vs default true node)",
+    ),
+    # ---
+    "exact lunar month": (
+        False,
+        "calculate exact vs average lunar month length for progressions",
+    ),
     # --- toggle glyphs visibility (shortcut)
     "enable glyphs": (True, "toggle glyphs visibility"),
     # --- show true midheaven & imum coeli when equal or whole house system is
@@ -185,11 +195,6 @@ CHART_SETTINGS = {
     "fixed asc": (
         False,
         "rotate chart so ascendant is fixed at left (east)\nelse aries 0° is fixed at left (default)",
-    ),
-    # --- use mean node else true node
-    "mean node": (
-        False,
-        "calculate mean node (vs default true node)",
     ),
     # --- naksatras ring
     "naksatras ring": (
@@ -236,9 +241,10 @@ sweph / constants.py""",
     # --- event 2 astro chart circles : draw progressions (p1 & p3) | returns | transit
     # calculated in sweph / calculations / ...
     "event2 rings": {
-        "p1 progress": (
+        "transit": (False, "show transit for event 2\nhk: "),
+        "varga": (
             False,
-            "show traditional primary progression (p1) for event 2\ncalculations as per martin gansten / ptolemy\n[todo needs verification : current is simple calculation]\nchange in sweph / calculations / ...",
+            "show (simple) varga / harmonic ring for event 2\nset varga in above harmonic ring",
         ),
         "p2 progress": (
             False,
@@ -248,16 +254,19 @@ sweph / constants.py""",
             False,
             "show tertiary progression (p3) for event 2\ncalculations as per richard houck\nchange in sweph / calculations / ...",
         ),
+        "p3m progress": (
+            False,
+            "show minor (tertiary) progression (p3m) for event 2\nchange in sweph / calculations / ...",
+        ),
+        "d1 direction": (
+            False,
+            "show traditional primary direction (d1) for event 2\ncalculations as per martin gansten / ptolemy\n[todo needs verification : current is simple calculation]\nchange in sweph / calculations / ...",
+        ),
+        "lunar return": (False, "show lunar return for event 2"),
         "solar return": (
             False,
             "show solar return for event 2\nchange in sweph / calculations / ...",
         ),
-        "lunar return": (False, "show lunar return for event 2"),
-        "varga": (
-            False,
-            "show (simple) varga / harmonic ring for event 2\nset varga in above harmonic ring",
-        ),
-        "transit": (False, "show transit for event 2"),
     },
     # --- use varga positions for aspects
     # ctrl+v hotkey was 1st choice, but that defaults now for text paste

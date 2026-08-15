@@ -1,6 +1,6 @@
 # sweph/calculations/houses.py
 # ruff: noqa: E402, E701
-import swisseph as swe
+import swisseph as swe  # type:ignore
 import gi
 
 gi.require_version("Gtk", "4.0")

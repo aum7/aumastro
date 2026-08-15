@@ -19,9 +19,10 @@ from sweph.calculations.houses import connect_signals_houses
 from sweph.calculations.stars import connect_signals_stars
 from sweph.calculations.aspects import connect_signals_aspects
 from sweph.calculations.vimsottari import connect_signals_vimsottari
-from sweph.calculations.p1 import connect_signals_p1
+from sweph.calculations.d1 import connect_signals_d1
 from sweph.calculations.p2 import connect_signals_p2
 from sweph.calculations.p3 import connect_signals_p3
+from sweph.calculations.p3m import connect_signals_p3m
 from sweph.calculations.returnsolar import connect_signals_solarreturn
 from sweph.calculations.returnlunar import connect_signals_lunarreturn
 from sweph.calculations.transit import connect_signals_transit
@@ -68,13 +69,14 @@ class MainWindow(
         connect_signals_stars(self.app.signal_manager)
         connect_signals_aspects(self.app.signal_manager)
         connect_signals_vimsottari(self.app.signal_manager)
-        connect_signals_p1(self.app.signal_manager)
-        connect_signals_p2(self.app.signal_manager)
-        connect_signals_p3(self.app.signal_manager)
-        connect_signals_solarreturn(self.app.signal_manager)
-        connect_signals_lunarreturn(self.app.signal_manager)
         connect_signals_transit(self.app.signal_manager)
         connect_signals_varga(self.app.signal_manager)
+        connect_signals_p2(self.app.signal_manager)
+        connect_signals_p3(self.app.signal_manager)
+        connect_signals_p3m(self.app.signal_manager)
+        connect_signals_d1(self.app.signal_manager)
+        connect_signals_solarreturn(self.app.signal_manager)
+        connect_signals_lunarreturn(self.app.signal_manager)
         # 4 main panes
         self.astro_chart = AstroChart()
         self.tables = Tables()
@@ -108,19 +110,23 @@ class MainWindow(
 
     def setup_hotkeys(self):
         """register additional hotkeys"""
+        # [shift]
+        # toggle vimsottari table level
         self.hotkeys.register_hotkey("shift+v", lambda: self.tables.toggle_vimso())
-        self.hotkeys.register_hotkey("ctrl+m", self.show_manual)
-        self.hotkeys.register_hotkey("ctrl+s", self.on_toggle_sidepane)
         # below works for qwertz keyboard, modify according to your keyboard layout
         self.hotkeys.register_hotkey("shift+exclam", self.panes_single)  # shift+1
         self.hotkeys.register_hotkey("shift+quotedbl", self.panes_double)  # shift+2
         self.hotkeys.register_hotkey("shift+numbersign", self.panes_triple)  # shift+3
         self.hotkeys.register_hotkey("shift+dollar", self.panes_all)  # shift+4
         self.hotkeys.register_hotkey("shift+percent", self.panes_movie)  # shift+5
+        self.hotkeys.register_hotkey("shift+ampersand", self.on_data_seq)
         self.hotkeys.register_hotkey("Up", self.obc_arrow_up)
         self.hotkeys.register_hotkey("Down", self.obc_arrow_dn)
         self.hotkeys.register_hotkey("Left", self.obc_arrow_l)
         self.hotkeys.register_hotkey("Right", self.obc_arrow_r)
+        # [ctrl]
+        self.hotkeys.register_hotkey("ctrl+m", self.show_manual)
+        self.hotkeys.register_hotkey("ctrl+s", self.on_toggle_sidepane)
         # call helper function for time now
         self.hotkeys.register_hotkey("ctrl+n", lambda: self.on_time_now())
         # toggle selected event
@@ -146,8 +152,8 @@ class MainWindow(
         self.hotkeys.register_hotkey(
             "ctrl+h", lambda: self.toggle_chart_setting("use varga aspect")
         )
-        self.hotkeys.register_hotkey("shift+g", self.on_data_seq)
         # astro chart outer rings for event 2
+        # transit|varga|p2|p3|p3m|d1|lunar|solar return|naksatras ring
         self.hotkeys.register_hotkey(
             "ctrl+1", lambda: self.toggle_chart_setting("transit")
         )
@@ -155,23 +161,26 @@ class MainWindow(
             "ctrl+2", lambda: self.toggle_chart_setting("varga")
         )
         self.hotkeys.register_hotkey(
-            "ctrl+3", lambda: self.toggle_chart_setting("lunar return")
+            "ctrl+3", lambda: self.toggle_chart_setting("p2 progress")
         )
         self.hotkeys.register_hotkey(
-            "ctrl+4", lambda: self.toggle_chart_setting("solar return")
+            "ctrl+4", lambda: self.toggle_chart_setting("p3 progress")
         )
         self.hotkeys.register_hotkey(
-            "ctrl+5", lambda: self.toggle_chart_setting("p3 progress")
+            "ctrl+5", lambda: self.toggle_chart_setting("p3m progress")
         )
         self.hotkeys.register_hotkey(
-            "ctrl+6", lambda: self.toggle_chart_setting("p2 progress")
+            "ctrl+6", lambda: self.toggle_chart_setting("d1 direction")
         )
         self.hotkeys.register_hotkey(
-            "ctrl+7", lambda: self.toggle_chart_setting("p1 progress")
+            "ctrl+7", lambda: self.toggle_chart_setting("lunar return")
+        )
+        self.hotkeys.register_hotkey(
+            "ctrl+8", lambda: self.toggle_chart_setting("solar return")
         )
         # astro chart naksatras ring
         self.hotkeys.register_hotkey(
-            "ctrl+8", lambda: self.toggle_chart_setting("naksatras ring")
+            "ctrl+9", lambda: self.toggle_chart_setting("naksatras ring")
         )
 
     def on_data_seq(self):
@@ -217,16 +226,19 @@ class MainWindow(
             "\narrow keys : up/down = change period | left/right = change time back/forward for selected event"
             "\nctrl+n : set time now for selected event location"
             "\n\t(your computer time > utc > event location time)"
-            "\nctrl+f : toggle zodiac rotation (ascendant vs ari 0° at left)"
+            "\nctrl+f : toggle fixed ascendant vs ari 0° at zodiac left"
             "\nctrl+g : toggle glyphs visibility"
-            "\nctrl+h : toggle varga aspects table"  # harmonic
-            "\nctrl+1-8 : toggle transit-varga-lunar-solar return-p3-p2-p1-naksatras ring"
+            "\nctrl+h : toggle harmonic / varga aspects table"  # harmonic
+            "\nctrl+1-9 : toggle"
+            "\n\ttransit|varga|p2|p3|p3m|d1|lunar|solar return|naksatras ring"
+            "\n\tnote : d1 primary direction goes with chart settings 'harmonic ring 1'"
             "\ntab/shift+tab : navigate widgets in side pane"
             "\nspace/enter : activate button / dropdown when focused"
             "\nshift+1/2/3/4 : show single / double / triple / all panes"
             "\nshift+5 : toggle movie mode"
-            "\nshift+v : toggle vimsottari level"
-            "\nshift+g : run printscreen sequence",
+            "\nshift+6 : run printscreen sequence"
+            "\n\tnote : could take a lot of time !"
+            "\nshift+v : toggle vimsottari level",
             # "\n\nnote : if entry / text field is focused, hotkeys will not work"
             # "\n\t(text field will 'consume' key press)",
             source="help",

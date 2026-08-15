@@ -945,145 +945,6 @@ class Harmonic(ObjectRingBase):
                     )
 
 
-class P1Progress(ObjectRingBase):
-    def __init__(self, radius, cx, cy, font_size, chart_settings, p1_pos, radius_dict):
-        super().__init__(radius, cx, cy, chart_settings, radius_dict)
-        self.app = Gtk.Application.get_default()
-        self.notify = self.app.notify_manager
-        self.font_size = font_size
-        self.guests = [
-            AstroObject(obj) for obj in (p1_pos or []) if isinstance(obj, dict)
-        ]
-        keys = list(radius_dict.keys())
-        idx = keys.index("p1 progress")
-        next_val = (
-            radius_dict[keys[idx + 1]]
-            if idx < len(keys) - 1
-            else radius_dict["p1 progress"]
-        )
-        self.mid_ring = (radius_dict["p1 progress"] + next_val) / 2
-
-    def marker_color(self, name):
-        return (0, 0.3, 0.721, 1)
-
-    def draw(self, cr):
-        cr.arc(self.cx, self.cy, self.radius, 0, 2 * pi)
-        cr.set_source_rgba(0.0471, 0.1059, 0.1843, 1.0)
-        cr.fill_preserve()
-        cr.set_source_rgba(0.5, 0.5, 0.5, 0.7)
-        cr.set_line_width(1)
-        cr.stroke()
-        segment_angle = 2 * pi / 12
-        for j in range(12):
-            angle = pi - j * segment_angle
-            x1 = self.cx + self.radius * 0.9 * cos(angle)
-            y1 = self.cy + self.radius * 0.9 * sin(angle)
-            x2 = self.cx + self.radius * cos(angle)
-            y2 = self.cy + self.radius * sin(angle)
-            cr.move_to(x1, y1)
-            cr.line_to(x2, y2)
-            cr.set_source_rgba(1, 1, 1, 0.5)
-            cr.set_line_width(1)
-            cr.stroke()
-        self.draw_guests(cr)
-
-
-class P2Progress(ObjectRingBase):
-    def __init__(self, radius, cx, cy, font_size, p2_pos, retro, radius_dict):
-        super().__init__(radius, cx, cy, None, radius_dict)
-        self.app = Gtk.Application.get_default()
-        self.notify = self.app.notify_manager
-        self.font_size = font_size
-        self.guests = [
-            AstroObject(obj)
-            for obj in (p2_pos or [])
-            if (isinstance(obj, dict) and obj.get("name") != "p3date")
-        ]
-        keys = list(radius_dict.keys())
-        idx = keys.index("p2 progress")
-        next_val = (
-            radius_dict[keys[idx + 1]]
-            if idx < len(keys) - 1
-            else radius_dict["p2 progress"]
-        )
-        self.mid_ring = (radius_dict["p2 progress"] + next_val) / 2
-        # note : planets in retro should match those in guests (that can go retro)
-        self.retro = retro
-        # print(f"rings : p2retro : {self.retro}")
-
-    def marker_color(self, name):  # type:ignore
-        return (0, 0.3, 0.721, 0.5)
-
-    def draw(self, cr):
-        cr.arc(self.cx, self.cy, self.radius, 0, 2 * pi)
-        cr.set_source_rgba(0.0353, 0.0863, 0.1804, 1)
-        cr.fill_preserve()
-        cr.set_source_rgba(0.5, 0.5, 0.5, 0.5)
-        cr.set_line_width(1)
-        cr.stroke()
-        segment_angle = 2 * pi / 12
-        for j in range(12):
-            angle = pi - j * segment_angle
-            x1 = self.cx + self.radius * 0.9 * cos(angle)
-            y1 = self.cy + self.radius * 0.9 * sin(angle)
-            x2 = self.cx + self.radius * cos(angle)
-            y2 = self.cy + self.radius * sin(angle)
-            cr.move_to(x1, y1)
-            cr.line_to(x2, y2)
-            cr.set_source_rgba(1, 1, 1, 0.5)
-            cr.set_line_width(1)
-            cr.stroke()
-        self.draw_guests(cr)
-
-
-class P3Progress(ObjectRingBase):
-    def __init__(self, radius, cx, cy, font_size, p3_pos, retro, radius_dict):
-        super().__init__(radius, cx, cy, None, radius_dict)
-        self.app = Gtk.Application.get_default()
-        self.notify = self.app.notify_manager
-        self.font_size = font_size
-        self.guests = [
-            AstroObject(obj)
-            for obj in (p3_pos or [])
-            if (isinstance(obj, dict) and obj.get("name") != "p3date")
-        ]
-        keys = list(radius_dict.keys())
-        idx = keys.index("p3 progress")
-        next_val = (
-            radius_dict[keys[idx + 1]]
-            if idx < len(keys) - 1
-            else radius_dict["p3 progress"]
-        )
-        self.mid_ring = (radius_dict["p3 progress"] + next_val) / 2
-        # note : planets in retro should match those in guests (that can go retro)
-        self.retro = retro
-        # print(f"rings : p3retro : {self.retro}")
-
-    def marker_color(self, name):  # type:ignore
-        return (0, 0.3, 0.721, 0.5)
-
-    def draw(self, cr):
-        cr.arc(self.cx, self.cy, self.radius, 0, 2 * pi)
-        cr.set_source_rgba(0.0353, 0.0863, 0.1490, 1)
-        cr.fill_preserve()
-        cr.set_source_rgba(0.5, 0.5, 0.5, 0.5)
-        cr.set_line_width(1)
-        cr.stroke()
-        segment_angle = 2 * pi / 12
-        for j in range(12):
-            angle = pi - j * segment_angle
-            x1 = self.cx + self.radius * 0.9 * cos(angle)
-            y1 = self.cy + self.radius * 0.9 * sin(angle)
-            x2 = self.cx + self.radius * cos(angle)
-            y2 = self.cy + self.radius * sin(angle)
-            cr.move_to(x1, y1)
-            cr.line_to(x2, y2)
-            cr.set_source_rgba(1, 1, 1, 0.5)
-            cr.set_line_width(1)
-            cr.stroke()
-        self.draw_guests(cr)
-
-
 class SolarReturn(ObjectRingBase):
     def __init__(self, radius, cx, cy, font_size, sol_ret_data, radius_dict):
         super().__init__(radius, cx, cy, None, radius_dict)
@@ -1180,6 +1041,201 @@ class LunarReturn(ObjectRingBase):
             cr.line_to(x2, y2)
             cr.set_source_rgba(1, 1, 0.6, 1)
             cr.stroke()
+        segment_angle = 2 * pi / 12
+        for j in range(12):
+            angle = pi - j * segment_angle
+            x1 = self.cx + self.radius * 0.9 * cos(angle)
+            y1 = self.cy + self.radius * 0.9 * sin(angle)
+            x2 = self.cx + self.radius * cos(angle)
+            y2 = self.cy + self.radius * sin(angle)
+            cr.move_to(x1, y1)
+            cr.line_to(x2, y2)
+            cr.set_source_rgba(1, 1, 1, 0.5)
+            cr.set_line_width(1)
+            cr.stroke()
+        self.draw_guests(cr)
+
+
+class D1PrimaryDirection(ObjectRingBase):
+    def __init__(self, radius, cx, cy, font_size, chart_settings, d1_pos, radius_dict):
+        super().__init__(radius, cx, cy, chart_settings, radius_dict)
+        self.app = Gtk.Application.get_default()
+        self.notify = self.app.notify_manager
+        self.font_size = font_size
+        self.guests = [
+            AstroObject(obj) for obj in (d1_pos or []) if isinstance(obj, dict)
+        ]
+        keys = list(radius_dict.keys())
+        idx = keys.index("d1 direction")
+        next_val = (
+            radius_dict[keys[idx + 1]]
+            if idx < len(keys) - 1
+            else radius_dict["d1 direction"]
+        )
+        self.mid_ring = (radius_dict["d1 direction"] + next_val) / 2
+
+    def marker_color(self, name):
+        return (0, 0.3, 0.721, 1)
+
+    def draw(self, cr):
+        cr.arc(self.cx, self.cy, self.radius, 0, 2 * pi)
+        # color of ring background
+        cr.set_source_rgba(0.13, 0.13, 0.13, 1.0)
+        cr.fill_preserve()
+        cr.set_source_rgba(0.5, 0.5, 0.5, 0.7)
+        cr.set_line_width(1)
+        cr.stroke()
+        segment_angle = 2 * pi / 12
+        for j in range(12):
+            angle = pi - j * segment_angle
+            x1 = self.cx + self.radius * 0.9 * cos(angle)
+            y1 = self.cy + self.radius * 0.9 * sin(angle)
+            x2 = self.cx + self.radius * cos(angle)
+            y2 = self.cy + self.radius * sin(angle)
+            cr.move_to(x1, y1)
+            cr.line_to(x2, y2)
+            cr.set_source_rgba(1, 1, 1, 0.5)
+            cr.set_line_width(1)
+            cr.stroke()
+        self.draw_guests(cr)
+
+
+class P3MinorProgress(ObjectRingBase):
+    def __init__(self, radius, cx, cy, font_size, p3m_pos, retro, radius_dict):
+        super().__init__(radius, cx, cy, None, radius_dict)
+        self.app = Gtk.Application.get_default()
+        self.notify = self.app.notify_manager
+        self.font_size = font_size
+        self.guests = [
+            AstroObject(obj)
+            for obj in (p3m_pos or [])
+            # if isinstance(obj, dict)
+            if isinstance(obj, dict) and "name" in obj and "lon" in obj
+            # if (isinstance(obj, dict) and obj.get("name") != "p3mdate")
+        ]
+        print(f"p3mprogress : p3m_pos :\n{p3m_pos}")
+        keys = list(radius_dict.keys())
+        idx = keys.index("p3m progress")
+        next_val = (
+            radius_dict[keys[idx + 1]]
+            if idx < len(keys) - 1
+            else radius_dict["p3m progress"]
+        )
+        self.mid_ring = (radius_dict["p3m progress"] + next_val) / 2
+        # note : planets in retro should match those in guests (that can go retro)
+        self.retro = retro
+        # print(f"rings : p3retro : {self.retro}")
+
+    def marker_color(self, name):  # type:ignore
+        return (0, 0.3, 0.721, 0.5)
+
+    def draw(self, cr):
+        cr.arc(self.cx, self.cy, self.radius, 0, 2 * pi)
+        cr.set_source_rgba(0.0471, 0.1059, 0.1843, 1.0)
+        # cr.set_source_rgba(0.0353, 0.0863, 0.1490, 1)
+        cr.fill_preserve()
+        cr.set_source_rgba(0.5, 0.5, 0.5, 0.5)
+        cr.set_line_width(1)
+        cr.stroke()
+        segment_angle = 2 * pi / 12
+        for j in range(12):
+            angle = pi - j * segment_angle
+            x1 = self.cx + self.radius * 0.9 * cos(angle)
+            y1 = self.cy + self.radius * 0.9 * sin(angle)
+            x2 = self.cx + self.radius * cos(angle)
+            y2 = self.cy + self.radius * sin(angle)
+            cr.move_to(x1, y1)
+            cr.line_to(x2, y2)
+            cr.set_source_rgba(1, 1, 1, 0.5)
+            cr.set_line_width(1)
+            cr.stroke()
+        self.draw_guests(cr)
+
+
+class P3Progress(ObjectRingBase):
+    def __init__(self, radius, cx, cy, font_size, p3_pos, retro, radius_dict):
+        super().__init__(radius, cx, cy, None, radius_dict)
+        self.app = Gtk.Application.get_default()
+        self.notify = self.app.notify_manager
+        self.font_size = font_size
+        self.guests = [
+            AstroObject(obj)
+            for obj in (p3_pos or [])
+            # if isinstance(obj, dict)
+            if isinstance(obj, dict) and "name" in obj and "lon" in obj
+            # if (isinstance(obj, dict) and obj.get("name") != "p3date")
+        ]
+        # print(f"p3progress : p3_pos :\n{p3_pos}")
+        keys = list(radius_dict.keys())
+        idx = keys.index("p3 progress")
+        next_val = (
+            radius_dict[keys[idx + 1]]
+            if idx < len(keys) - 1
+            else radius_dict["p3 progress"]
+        )
+        self.mid_ring = (radius_dict["p3 progress"] + next_val) / 2
+        # note : planets in retro should match those in guests (that can go retro)
+        self.retro = retro
+        # print(f"rings : p3retro : {self.retro}")
+
+    def marker_color(self, name):  # type:ignore
+        return (0, 0.3, 0.721, 0.5)
+
+    def draw(self, cr):
+        cr.arc(self.cx, self.cy, self.radius, 0, 2 * pi)
+        cr.set_source_rgba(0.0353, 0.0863, 0.1490, 1)
+        cr.fill_preserve()
+        cr.set_source_rgba(0.5, 0.5, 0.5, 0.5)
+        cr.set_line_width(1)
+        cr.stroke()
+        segment_angle = 2 * pi / 12
+        for j in range(12):
+            angle = pi - j * segment_angle
+            x1 = self.cx + self.radius * 0.9 * cos(angle)
+            y1 = self.cy + self.radius * 0.9 * sin(angle)
+            x2 = self.cx + self.radius * cos(angle)
+            y2 = self.cy + self.radius * sin(angle)
+            cr.move_to(x1, y1)
+            cr.line_to(x2, y2)
+            cr.set_source_rgba(1, 1, 1, 0.5)
+            cr.set_line_width(1)
+            cr.stroke()
+        self.draw_guests(cr)
+
+
+class P2Progress(ObjectRingBase):
+    def __init__(self, radius, cx, cy, font_size, p2_pos, retro, radius_dict):
+        super().__init__(radius, cx, cy, None, radius_dict)
+        self.app = Gtk.Application.get_default()
+        self.notify = self.app.notify_manager
+        self.font_size = font_size
+        self.guests = [
+            AstroObject(obj)
+            for obj in (p2_pos or [])
+            if (isinstance(obj, dict) and obj.get("name") != "p2date")
+        ]
+        keys = list(radius_dict.keys())
+        idx = keys.index("p2 progress")
+        next_val = (
+            radius_dict[keys[idx + 1]]
+            if idx < len(keys) - 1
+            else radius_dict["p2 progress"]
+        )
+        self.mid_ring = (radius_dict["p2 progress"] + next_val) / 2
+        # note : planets in retro should match those in guests (that can go retro)
+        self.retro = retro
+        # print(f"rings : p2retro : {self.retro}")
+
+    def marker_color(self, name):  # type:ignore
+        return (0, 0.3, 0.721, 0.5)
+
+    def draw(self, cr):
+        cr.arc(self.cx, self.cy, self.radius, 0, 2 * pi)
+        cr.set_source_rgba(0.0353, 0.0863, 0.1804, 1)
+        cr.fill_preserve()
+        cr.set_source_rgba(0.5, 0.5, 0.5, 0.5)
+        cr.set_line_width(1)
+        cr.stroke()
         segment_angle = 2 * pi / 12
         for j in range(12):
             angle = pi - j * segment_angle

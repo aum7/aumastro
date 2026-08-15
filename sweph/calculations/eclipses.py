@@ -1,6 +1,6 @@
 # sweph/calculations/eclipses.py
 # ruff: noqa: E402
-import swisseph as swe
+import swisseph as swe  # type:ignore
 import gi
 
 gi.require_version("Gtk", "4.0")
@@ -40,7 +40,7 @@ def calculate_eclipses(event: str):
                 route=[""],
             )
             return
-        if prenatal and "eclipse" in prenatal:
+        if prenatal and "eclipse" in prenatal:  # type:ignore
             # get last solar eclipse before event
             solar = find_solecl_glob(jd_ut, swe_flag, search="prev")
             # get last lunar eclipse

@@ -1,6 +1,6 @@
 # ui/sidepane/settings.py
 # ruff: noqa: E402
-import swisseph as swe
+import swisseph as swe  # type:ignore
 import gi
 
 gi.require_version("Gtk", "4.0")
@@ -252,6 +252,7 @@ event 1 & 2 can have different objects"""
     # calculations checkboxes
     for setting in [
         "mean node",
+        "exact lunar month",
         # "true mc & ic",
     ]:
         row = Gtk.ListBoxRow()
@@ -376,18 +377,18 @@ event 1 & 2 can have different objects"""
     # progress row
     row_prog = Gtk.ListBoxRow()
     box_prog = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
-    # checkbox for p1
-    p1_data = CHART_SETTINGS["event2 rings"]["p1 progress"]
-    p1_chk = Gtk.CheckButton(label="p1")
-    p1_chk.set_active(p1_data[0])
-    p1_chk.set_tooltip_text(p1_data[1])
-    p1_chk.connect(
+    # checkbox for d1
+    d1_data = CHART_SETTINGS["event2 rings"]["d1 direction"]
+    d1_chk = Gtk.CheckButton(label="d1")
+    d1_chk.set_active(d1_data[0])
+    d1_chk.set_tooltip_text(d1_data[1])
+    d1_chk.connect(
         "toggled",
-        lambda chk, k="p1 progress", m=manager: chart_settings_toggled(chk, k, m),
+        lambda chk, k="d1 direction", m=manager: chart_settings_toggled(chk, k, m),
     )
-    box_prog.append(p1_chk)
-    manager.app.checkbox_chart_settings["p1 progress"] = p1_chk
-    manager.app.chart_settings["p1 progress"] = p1_data[0]
+    box_prog.append(d1_chk)
+    manager.app.checkbox_chart_settings["d1 direction"] = d1_chk
+    manager.app.chart_settings["d1 direction"] = d1_data[0]
     # checkbox for p2
     p2_data = CHART_SETTINGS["event2 rings"]["p2 progress"]
     p2_chk = Gtk.CheckButton(label="p2")
@@ -412,8 +413,20 @@ event 1 & 2 can have different objects"""
     box_prog.append(p3_chk)
     manager.app.checkbox_chart_settings["p3 progress"] = p3_chk
     manager.app.chart_settings["p3 progress"] = p3_data[0]
+    # checkbox for p3m
+    p3m_data = CHART_SETTINGS["event2 rings"]["p3m progress"]
+    p3m_chk = Gtk.CheckButton(label="p3m")
+    p3m_chk.set_active(p3m_data[0])
+    p3m_chk.set_tooltip_text(p3m_data[1])
+    p3m_chk.connect(
+        "toggled",
+        lambda chk, k="p3m progress", m=manager: chart_settings_toggled(chk, k, m),
+    )
+    box_prog.append(p3m_chk)
+    manager.app.checkbox_chart_settings["p3m progress"] = p3m_chk
+    manager.app.chart_settings["p3m progress"] = p3m_data[0]
     # label at end
-    lbl_prog = Gtk.Label(label="progressions")
+    lbl_prog = Gtk.Label(label="progressions etc")
     lbl_prog.set_halign(Gtk.Align.START)
     # box_prog.append(lbl_prog)
     lbx_chart_setts_btm.append(lbl_prog)
@@ -471,7 +484,7 @@ event 1 & 2 can have different objects"""
     lbl_tran = Gtk.Label(label="transit")
     lbl_tran.set_halign(Gtk.Align.START)
     data_tran = CHART_SETTINGS["event2 rings"]["transit"]
-    chk_tran = Gtk.CheckButton(label="rasi (d1)")
+    chk_tran = Gtk.CheckButton(label="rasi (v1)")
     chk_tran.set_active(data_tran[0])
     chk_tran.set_tooltip_text(data_tran[1])
     chk_tran.connect(

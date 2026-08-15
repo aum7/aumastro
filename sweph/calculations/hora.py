@@ -3,7 +3,7 @@
 # todo where do we cast back to event time ?
 # planetary order : sa, ju, ma, su, ve, me, mo
 # ruff: noqa: E402
-import swisseph as swe
+import swisseph as swe  # type:ignore
 import gi
 
 gi.require_version("Gtk", "4.0")
