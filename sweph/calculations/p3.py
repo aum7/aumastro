@@ -105,23 +105,23 @@ def calculate_p3(event: str):
         # app.age_m = age_months # already set in p2 ?
         # print(f"deltayears : {delta_years}")
     if exact_lunar_month and e2_mo:
-        print("p3 : using exact lunar month length")
+        # print("p3 : using exact lunar month length")
         # lunar returns : search x days range
         lr_prev_jd = swe.mooncross_ut(e2_mo, e2_jd - 27.5, app.sweph_flag)
         lr_next_jd = swe.mooncross_ut(e2_mo, e2_jd + 0.1, app.sweph_flag)
         # lr_next_jd = swe.mooncross_ut(e2_mo, e2_jd, app.sweph_flag)
         # calculate lunar month length
         lr_month = lr_next_jd - lr_prev_jd
-        print(f"calculatep3 : lrmonth={lr_month}")
+        # print(f"calculatep3 : lrmonth={lr_month}")
         # completed returns for mark pottenger / houck exact calculation
         # last lunar return before e2 - birth jd
         completed_returns = round((lr_prev_jd - e1_jd) / MONTHLENGTH)
         cycle_fraction = (e2_jd - lr_prev_jd) / lr_month
         total_lunar_months = completed_returns + cycle_fraction
-        print(f"calculatep3 : totallunarmonths={total_lunar_months}")
+        # print(f"calculatep3 : totallunarmonths={total_lunar_months}")
         p3_diff = total_lunar_months
     else:
-        print("p3 : using average lunar month length")
+        # print("p3 : using average lunar month length")
         p3_diff = period / MONTHLENGTH
     # main calculation of progress in days
     p3_jd = e1_jd + p3_diff

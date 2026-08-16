@@ -114,7 +114,7 @@ def calculate_p3m(event: str):
     # calculate current lunar month length
     exact_lunar_month = chart_sett.get("exact lunar month", False)
     if exact_lunar_month and e1_mo:
-        print("p3m : using exact lunar month length")
+        # print("p3m : using exact lunar month length")
         full_years = int(age_years)
         fract_year = age_years - full_years
         # find n-th lunar return after birth
@@ -127,7 +127,7 @@ def calculate_p3m(event: str):
         p3m_jd = lr_n_jd + (fract_year * cycle_length)
         p3m_diff = p3m_jd - e1_jd
     else:
-        print("p3m : using average lunar month length")
+        # print("p3m : using average lunar month length")
         p3m_diff = age_years * MONTHLENGTH
     p3m_jd = e1_jd + p3m_diff
     p3m_date = tuple_to_iso(p3m_jd)

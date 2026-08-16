@@ -7,10 +7,15 @@
 
 #--- copies of original lines > renamed -----
 ("SI", "Slo", "SVN"),
+("SE", "Sweden", "SWE"),
+("FI", "Finland", "FIN"),
+("NL", "Netherlands", "NLD"),
+("DK", "Denmark", "DNK"),
+("GB", "UK", "GBR"),
+("CA", "Canada", "CAN"),
 #("JP", "Japan", "JPN"),
 #("CN", "China", "CHN"),
 #("IN", "India", "IND"),
-#("GB", "UK", "GBR"),
 #("US", "USA", "USA"),
 #("AU", "Australia", "AUS"),
 #("MC", "Monaco", "MCO"),

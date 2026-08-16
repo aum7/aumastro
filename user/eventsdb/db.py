@@ -8,17 +8,30 @@
 # "datetime": "2025-03-29 10:47:34",  # last solecl
 # "datetime": "2025 8 1 17 1", # trading start
 DEFAULT_E1 = {
-    "country": "Slo",
-    "city": "ljubljana",
+    # "country": "Slo",
+    # "city": "ljubljana",
     # "location": "46 3 8 N 14 27 9 E 355 m",  # mons casino
-    "location": "46 03 10 n 14 31 26 e 0294 m",  # porodnišnica lj
-    "name": "nau",
-    "datetime": "1975 2 8 14 10",
+    # "location": "46 03 10 n 14 31 26 e 0294 m",  # porodnišnica lj
+    # "name": "nau",
+    # "datetime": "1975 2 8 14 10",
+    # ---
     # "country": "UK",
     # "city": "london",
     # "location": "51 30 54 n 000 05 56 w 10 m",
     # "name": "lse",  # next solecl
     # "datetime": "2006-03-29 11:11:27",
+    # ---
+    "country": "Finland",
+    "city": "turku",
+    "location": "60 27 n 022 17 w",
+    "name": "gansten i male",
+    "datetime": "1973-12-18 10:05:00",  # eet
+    # ---
+    # "country": "Sweden",
+    # "city": "lund",
+    # "location": "55 41 n 013 11 e",
+    # "name": "gansten j male",
+    # "datetime": "1981-10-8 14:21:00",  # cet
 }
 DEFAULT_E2 = {
     "datetime": "2007-03-09 14:00:00",
@@ -183,3 +196,33 @@ DEFAULT_E2 = {
 # "location": "30 25 12 n 009 35 53 w 0 m",
 # "name": "solitaire",
 # "datetime": "2024-6-19 11:53:00",
+# --- gansten book examples --------------------
+# a. male, 6 january, 1937, 19:14 cet, 56n03, 12e42 helsingborg sweden
+# b. female, 16 october, 1939, 23:40 cet, 56n03, 12e42 helsingborg sweden
+# c. female, 10 october, 1954, 07:30 cet, 53n12, 05e46 leeuwarden netherlands
+# d. male, 2 july, 1955, 14:35 cet, 60n40, 17e10 ga(e)vle sweden
+# e. male, 31 december, 1958, 12:40 cet, 56n03, 12e42 helsingborg sweden
+# f. male, 26 february, 1963, 06:20 cet, 55n42, 12e36 copenhagen denmark
+# g. male, 29 may, 1969, 16:21 cet, 55n35, 13e00 malmo sweden
+# h. female, 10 april, 1970, 00:30 cet, 63n50, 20e15 umea sweden
+# --- i male, 18 december, 1973, 10:05 eet, 60n27, 22e17 turku finland
+# "country": "finland",
+# "city": "turku",
+# "location": "60 27 n 022 17 w",
+# "name": "gansten i male",
+# "datetime": "1973-12-18 10:05:00", # eet
+# --- j. male, 8 october, 1981, 14:21 cet, 55n41, 13e11 lund sweden
+# "country": "sweden",
+# "city": "lund",
+# "location": "55 41 n 013 11 e",
+# "name": "gansten j male",
+# "datetime": "1981-10-8 14:21:00", # cet
+# --- k. male, 6 november, 1984, 10:46 gmt, 56n24, 03w28 perth scotland uk
+# "country": "uk",
+# "city": "perth",
+# "location": "56 24 n 003 28 w",
+# "name": "gansten k male",
+# "datetime": "1984-11-6 10:46:00", # gmt
+# l. male, 31 august, 1985, 09:05 mdt, 53n17, 110w00 lloydminster alberta/saskatchewan canada
+# presley, lisa marie: 1 february, 1968, 17:01 cst, memphis,
+# tennessee: 35n09, 90w03

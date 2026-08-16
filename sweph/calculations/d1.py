@@ -1,5 +1,6 @@
 # sweph/calculations/d1.py
 # ruff: noqa: E402, E701
+# original (ai code)
 # primary direction (aka primary progression)
 # actual motion of heavens in hours following birth, brings objects to
 # places in natal chart, unfolding events in years to come; each degree

@@ -161,10 +161,10 @@ if checked also select ayanamsa below""",
 # below are most popular 7 out of 24+; arrange line up or down as you please
 # top line is default choice
 HOUSE_SYSTEMS = [
+    ("O", "prp : porphyry", "prp"),
     ("W", "whs : whole sign", "whs"),  # jyotisa & houck
     ("E", "eqa : equal asc", "eqa"),
     ("B", "alc : alcabitus", "alc"),  # gansten : close to porphyry
-    ("O", "prp : porphyry", "prp"),
     ("D", "eqm : equal mc", "eqm"),
     ("P", "plc : placidus", "plc"),
     ("R", "rgm : regiomontanus", "rgm"),
@@ -193,12 +193,12 @@ CHART_SETTINGS = {
     # --- rotate whole chart so ascendant is fixed at left (east)
     # else aries (mesha) 0° is fixed at left
     "fixed asc": (
-        False,
+        True,
         "rotate chart so ascendant is fixed at left (east)\nelse aries 0° is fixed at left (default)",
     ),
     # --- naksatras ring
     "naksatras ring": (
-        True,
+        False,
         """show 27 naksatras ring
 1  asv\t2  bha\t3  krt
 4  roh\t5  mrg\t6  ard
@@ -235,7 +235,7 @@ sweph / constants.py""",
     # --- harmonics division ring : 0 hide | 1 egypt. terms (bounds) |
     # 1+ simple divisions, similar but NOT all equal to varga
     "harmonic ring": (
-        "9",
+        "1",
         "harmonic (aka varga) ring\nempty : do NOT show | 1 : egypt. terms (bounds)\n1+ : simple harmonic for event 1 *similar* to varga\nterms can be changed in\nsweph / constants.py",
     ),
     # --- event 2 astro chart circles : draw progressions (p1 & p3) | returns | transit
@@ -259,7 +259,7 @@ sweph / constants.py""",
             "show minor (tertiary) progression (p3m) for event 2\nchange in sweph / calculations / ...",
         ),
         "d1 direction": (
-            False,
+            True,
             "show traditional primary direction (d1) for event 2\ncalculations as per martin gansten / ptolemy\n[todo needs verification : current is simple calculation]\nchange in sweph / calculations / ...",
         ),
         "lunar return": (False, "show lunar return for event 2"),
@@ -343,9 +343,9 @@ LUNAR_MONTH = {
 # also arrange order as you please > move line up / down & save file
 # top line is default choice
 AYANAMSA = {
+    45: ("Krishnamurti-Senthilathiban", "kms (45)"),  # SIDM_KRISHNAMURTI_VP291
     17: ("Galact. Center 0 Sag", "glc (17)"),  # SIDM_GALCENT_0SAG j2000 = 26°50'31.8335
     255: ("user-defined (below)", "usr"),  # SIDM_USER
-    45: ("Krishnamurti-Senthilathiban", "kms (45)"),  # SIDM_KRISHNAMURTI_VP291
     # 0: ("Fagan/Bradley", "fbr (00)"),  # SIDM_FAGAN_BRADLEY
     # 1: ("Lahiri 1", "lhr (01)"),  # SIDM_LAHIRI
     # 2: ("De Luce", "dlc (02)"),  # SIDM_DELUCE

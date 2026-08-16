@@ -1,7 +1,8 @@
-# sweph/calculations/p1.py
+# sweph/calculations/d1.py
+# gansten calculations
 # ruff: noqa: E402, E701
 import math
-import swisseph as swe
+import swisseph as swe  # type:ignore
 import gi
 
 gi.require_version("Gtk", "4.0")
@@ -9,7 +10,7 @@ from gi.repository import Gtk  # type: ignore
 from ui.helpers import _object_name_to_code as objcode
 
 
-def calculate_p1(event: str):
+def calculate_d1(event: str):
     # grab application data & calculate vimsottari for event 1
     app = Gtk.Application.get_default()
     notify = app.notify_manager
@@ -18,8 +19,8 @@ def calculate_p1(event: str):
     # check against lumies since e1_sweph can have 0 objects (user-selectable)
     if not app.e1_sweph.get("jd_ut") or not app.e2_sweph.get("jd_ut"):
         notify.error(
-            "missing event 1 or 2 data needed for p1 : exiting ...",
-            source="p1",
+            "missing event 1 or 2 data needed for d1 : exiting ...",
+            source="d1",
             route=[""],
         )
         return
@@ -35,7 +36,7 @@ def calculate_p1(event: str):
         e1_jd = e1_sweph.get("jd_ut")
         e1_lat = e1_sweph.get("lat")
         e1_lon = e1_sweph.get("lon")
-    # need tropical houses for p1
+    # need tropical houses for d1
     e1_houses_ra = swe.houses(e1_jd, e1_lat, e1_lon, h_sys)
     e1_asc = e1_houses_ra[1][0]  # ascmc[0]
     e1_mc = e1_houses_ra[1][1]  # ascmc[1]
@@ -74,7 +75,7 @@ def calculate_p1(event: str):
     )
     e1_lat_rad = math.radians(e1_lat)
     # natal objects positions
-    e1_pos_p1 = {}
+    e1_pos_d1 = {}
     e1_sel_objs = getattr(app, "selected_objects_e1", None)
     if e1_jd and e1_sel_objs:
         for obj in e1_sel_objs:
@@ -101,7 +102,7 @@ def calculate_p1(event: str):
                         )
                     )
                 )
-                e1_pos_p1[code] = {
+                e1_pos_d1[code] = {
                     "name": name,
                     "pole": pole,
                     "zpp": zpp,
@@ -109,10 +110,10 @@ def calculate_p1(event: str):
             except (swe.Error, ValueError) as e:
                 notify.error(
                     f"tropical positions calculation failed for [e1] : {event}\n\tdata {name}\n\tswe error :\n\t{e}",
-                    source="p1",
+                    source="d1",
                     route=["terminal"],
                 )
-        # msg += f"e1posp1 :\n\t{e1_pos_p1}\n"
+        # msg += f"e1posd1 :\n\t{e1_pos_d1}\n"
     if event == "e2":
         msg += "e2 detected\n"
         # msg += f"{e2_cleared(event)}"
@@ -121,7 +122,7 @@ def calculate_p1(event: str):
         # objects list from sidepane > settings > objects panel
         e2_sel_objs = getattr(app, "selected_objects_e2", None)
         # msg += f"e2jd : {e2_jd}\ne2selobjs : {e2_sel_objs}\n"
-        e2_pos_p1 = {}
+        e2_pos_d1 = {}
         if e2_jd and e2_sel_objs and flag:
             for obj in e2_sel_objs:
                 code, name = objcode(obj, use_mean_node)
@@ -162,7 +163,7 @@ def calculate_p1(event: str):
                             )
                         )
                     )
-                    e2_pos_p1[code] = {
+                    e2_pos_d1[code] = {
                         "name": name,
                         "ra": data[0],
                         "decl": data[1],
@@ -190,13 +191,13 @@ def calculate_p1(event: str):
                 except swe.Error as e:
                     notify.error(
                         f"tropical positions calculation failed for : {event}\n\tdata {name}\n\tswe error :\n\t{e}",
-                        source="p1",
+                        source="d1",
                         route=["terminal"],
                     )
-            msg += f"e2posp1 :\n\t{e2_pos_p1}\n"
+            msg += f"e2posd1 :\n\t{e2_pos_d1}\n"
         # calculate final direction arcs between event 1 & 2
         directions = {}
-        for e2_code, e2_obj in e2_pos_p1.items():
+        for e2_code, e2_obj in e2_pos_d1.items():
             e2_name = e2_obj["name"]
             directions[e2_name] = {}
             # mundane directions
@@ -210,7 +211,7 @@ def calculate_p1(event: str):
                 "direct": e2_obj["arc_dsc"],
             }
             # directions[e2_code] = {}
-            for e1_code, e1_obj in e1_pos_p1.items():
+            for e1_code, e1_obj in e1_pos_d1.items():
                 if e2_code == e1_code:
                     continue  # skip same object
                 # pole_e2 = e2_obj["pole"]
@@ -227,9 +228,9 @@ def calculate_p1(event: str):
                 }
         # msg += f"directions :\n\t{directions}\n"
         # global store todo need ???
-        app.p1_directions = directions
+        app.d1_directions = directions
         # store zpp positions for chart drawing
-        app.p1_positions = e2_pos_p1
+        app.d1_positions = e2_pos_d1
         # sidereal flag is detected on settings change & stored application-wide
         # FLG_SIDEREAL vs FLG_TROPICAL (default)
         if getattr(app, "is_sidereal", False) and e2_jd:
@@ -238,21 +239,21 @@ def calculate_p1(event: str):
             # cur_ayanamsa = swe.get_ayanamsa_ex_ut(e2_jd, flag)[1] if e2_jd else None
             # msg += f"curayan : {cur_ayanamsa}\n"
             # convert tropical to sidereal
-            app.p1_positions = ra_to_sidereal(e2_pos_p1, cur_ayanamsa)
-            # msg += f"possidereal :\n\t{app.p1_positions}\n"
-        msg += f"p1pos :\n\t{app.p1_positions}\n"
+            app.d1_positions = ra_to_sidereal(e2_pos_d1, cur_ayanamsa)
+            # msg += f"possidereal :\n\t{app.d1_positions}\n"
+        msg += f"d1pos :\n\t{app.d1_positions}\n"
         # make table
-        # table = p1_table(directions)
-        # msg += f"p1 table\n{table}"
-    app.signal_manager._emit("p1_changed", event)
+        # table = d1_table(directions)
+        # msg += f"d1 table\n{table}"
+    app.signal_manager._emit("d1_changed", event)
     notify.debug(
         msg,
-        source="p1",
+        source="d1",
         route=["terminal"],
     )
 
 
-def p1_table(directions):
+def d1_table(directions):
     # prints a plain text table of primary directions
     col1_width = 3
     col2_width = 3
@@ -269,7 +270,6 @@ def p1_table(directions):
                 f"{e1_name:<{col2_width}} | "
                 f"{arc_str:<{col3_width}}"
             )
-
             table_lines.append(row)
     return "\n".join(table_lines)
 
@@ -293,7 +293,7 @@ def e2_cleared(event):
         return "e2 was cleared : todo\n"
 
 
-def connect_signals_p1(signal_manager):
+def connect_signals_d1(signal_manager):
     # update progressions when data used changes
-    signal_manager._connect("event_changed", calculate_p1)
+    signal_manager._connect("event_changed", calculate_d1)
     signal_manager._connect("e2_cleared", e2_cleared)
