@@ -40,7 +40,7 @@ def calculate_p3m(event: str):
     e1_su = None
     e1_mo = None
     age_years = 0.0
-    age_months = 0.0
+    # age_months = 0.0
     e1_asc = 0.0
     e1_mc = 0.0
     e1_asc_arc = 0.0
@@ -51,23 +51,23 @@ def calculate_p3m(event: str):
         e2_jd = e2_sweph.get("jd_ut")
     sel_year = getattr(app, "selected_year_period", (365.2425, "gregorian"))
     # substitute with exact lunar return calculations : before & after e2 datetime
-    # sel_month = getattr(app, "selected_month_period", (27.321661, "sidereal")) < commented
+    sel_month = getattr(app, "selected_month_period", (27.321661, "sidereal"))
     YEARLENGTH = sel_year[0]
-    # MONTHLENGTH = sel_month[0]
-    MINORLENGTH = 13.369  # < added
+    MONTHLENGTH = sel_month[0]
     if e1_jd and e2_jd:
         # period elapsed from birth in years : needs event 2 datetime
         period = e2_jd - e1_jd
         age_years = period / YEARLENGTH
-        app.age_y = age_years
+        # app.age_y = age_years # already set in p2 | p3 ?
         # how many lunar months
-        age_months = period / MINORLENGTH  # < changed to new fixed period length
-        app.age_m = age_months
+        # age_months = period / MONTHLENGTH
+        # app.age_m = age_months # same as age_y
         # print(f"deltayears : {delta_years}")
     chart_sett = getattr(app, "chart_settings")
     use_mean_node = chart_sett.get("mean node")
     objs = getattr(app, "selected_objects_e2", None)
     e1_pos = getattr(app, "e1_positions", None)
+    # e2_pos = getattr(app, "e2_positions", None)
     e1_houses = getattr(app, "e1_houses", None)
     # msg += f"e2objs : {objs}\n"
     if e1_pos:
@@ -88,6 +88,16 @@ def calculate_p3m(event: str):
                 if isinstance(v, dict) and v.get("name") == "su"
             )
         )
+    # if e2_pos:
+    # get natal moon for lunar returns
+    # e2_mo = next(
+    #     (
+    #         v["lon"]
+    #         for v in e2_pos.values()
+    #         if isinstance(v, dict) and v.get("name") == "mo"
+    #     ),
+    #     None,
+    # )
     if e1_houses:
         # get ascendant & midheaven
         e1_asc = e1_houses[1][0]
@@ -101,22 +111,28 @@ def calculate_p3m(event: str):
     # f"e1mo : {e1_mo} | e1su : {e1_su} | "
     # f"e1ascarc : {e1_asc_arc} | e1mcarc : {e1_mc_arc}\n"
     # ).
-    # previous lunar return : search x days back range < su-mo cycle - search full | new moon ?
-    prev_jd = e2_jd - 27.5  # < 14 as in 14-day su-mo synodic ?
-    lr_prev_jd = swe.mooncross_ut(e1_mo, prev_jd, app.sweph_flag)
-    # next lunar return
-    next_jd = e2_jd
-    lr_next_jd = swe.mooncross_ut(e1_mo, next_jd, app.sweph_flag)
-    # calculate lunar month length
-    lr_month = lr_next_jd - lr_prev_jd
-    p3m_diff = (age_months / lr_month) * lr_month
+    # calculate current lunar month length
+    exact_lunar_month = chart_sett.get("exact lunar month", False)
+    if exact_lunar_month and e1_mo:
+        print("p3m : using exact lunar month length")
+        full_years = int(age_years)
+        fract_year = age_years - full_years
+        # find n-th lunar return after birth
+        search_jd = e1_jd + (full_years * MONTHLENGTH) - 15
+        lr_n_jd = swe.mooncross_ut(e1_mo, search_jd, app.sweph_flag)
+        # find (n+1) lunar return
+        lr_n1_jd = swe.mooncross_ut(e1_mo, lr_n_jd + 0.1, app.sweph_flag)
+
+        cycle_length = lr_n1_jd - lr_n_jd
+        p3m_jd = lr_n_jd + (fract_year * cycle_length)
+        p3m_diff = p3m_jd - e1_jd
+    else:
+        print("p3m : using average lunar month length")
+        p3m_diff = age_years * MONTHLENGTH
     p3m_jd = e1_jd + p3m_diff
     p3m_date = tuple_to_iso(p3m_jd)
-    # msg += p3_date
-    p3m_data: list[dict] = []
-    # insert p3 date
-    p3m_data.append({"p3mjdut": p3m_jd})
-    p3m_data.append({"p3mdate": p3m_date})
+    # msg += p3m_date
+    p3m_data = [{"p3mjdut": p3m_jd}, {"p3mdate": p3m_date}]
     try:
         result, e = swe.calc_ut(p3m_jd, swe.SUN, app.sweph_flag)  # su lon
     except Exception as e:

@@ -1113,7 +1113,6 @@ class P3MinorProgress(ObjectRingBase):
             if isinstance(obj, dict) and "name" in obj and "lon" in obj
             # if (isinstance(obj, dict) and obj.get("name") != "p3mdate")
         ]
-        print(f"p3mprogress : p3m_pos :\n{p3m_pos}")
         keys = list(radius_dict.keys())
         idx = keys.index("p3m progress")
         next_val = (
@@ -1131,8 +1130,7 @@ class P3MinorProgress(ObjectRingBase):
 
     def draw(self, cr):
         cr.arc(self.cx, self.cy, self.radius, 0, 2 * pi)
-        cr.set_source_rgba(0.0471, 0.1059, 0.1843, 1.0)
-        # cr.set_source_rgba(0.0353, 0.0863, 0.1490, 1)
+        cr.set_source_rgba(0.0353, 0.0863, 0.1804, 1)
         cr.fill_preserve()
         cr.set_source_rgba(0.5, 0.5, 0.5, 0.5)
         cr.set_line_width(1)
@@ -1183,7 +1181,8 @@ class P3Progress(ObjectRingBase):
 
     def draw(self, cr):
         cr.arc(self.cx, self.cy, self.radius, 0, 2 * pi)
-        cr.set_source_rgba(0.0353, 0.0863, 0.1490, 1)
+        cr.set_source_rgba(0.0353, 0.0863, 0.1390, 1)
+        # cr.set_source_rgba(0.0353, 0.0863, 0.1804, 1)
         cr.fill_preserve()
         cr.set_source_rgba(0.5, 0.5, 0.5, 0.5)
         cr.set_line_width(1)
@@ -1231,7 +1230,7 @@ class P2Progress(ObjectRingBase):
 
     def draw(self, cr):
         cr.arc(self.cx, self.cy, self.radius, 0, 2 * pi)
-        cr.set_source_rgba(0.0353, 0.0863, 0.1804, 1)
+        cr.set_source_rgba(0.0353, 0.0863, 0.1, 1)
         cr.fill_preserve()
         cr.set_source_rgba(0.5, 0.5, 0.5, 0.5)
         cr.set_line_width(1)

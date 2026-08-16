@@ -38,29 +38,23 @@ def calculate_p3(event: str):
     use_mean_node = chart_sett.get("mean node")
     objs = getattr(app, "selected_objects_e2", None)
     e1_pos = getattr(app, "e1_positions", None)
+    e2_pos = getattr(app, "e2_positions", None)
+    exact_lunar_month = chart_sett.get("exact lunar month", False)
     e1_houses = getattr(app, "e1_houses", None)
     # definitions to shush editor
     e1_jd = 0.0
     e2_jd = 0.0
     e1_su = None
-    e1_mo = None
-    age_years = 0.0
-    age_months = 0.0
+    e2_mo = None
+    # age_years = 0.0
+    # age_months = 0.0
+    period = 0.0
     e1_asc = 0.0
     e1_mc = 0.0
     e1_asc_arc = 0.0
     e1_mc_arc = 0.0
     # msg += f"e2objs : {objs}\n"
     if e1_pos:
-        # get natal moon for lunar returns
-        e1_mo = next(
-            (
-                v["lon"]
-                for v in e1_pos.values()
-                if isinstance(v, dict) and v.get("name") == "mo"
-            ),
-            None,
-        )
         # get natal sun for p3 asc & mc arc calculation
         e1_su = next(
             (
@@ -68,6 +62,16 @@ def calculate_p3(event: str):
                 for v in e1_pos.values()
                 if isinstance(v, dict) and v.get("name") == "su"
             )
+        )
+    if e2_pos:
+        # get natal moon for lunar returns
+        e2_mo = next(
+            (
+                v["lon"]
+                for v in e2_pos.values()
+                if isinstance(v, dict) and v.get("name") == "mo"
+            ),
+            None,
         )
     if e1_houses:
         # get ascendant & midheaven
@@ -86,38 +90,44 @@ def calculate_p3(event: str):
         e1_jd = e1_sweph.get("jd_ut")
     if e2_sweph:
         e2_jd = e2_sweph.get("jd_ut")
-    sel_year = getattr(app, "selected_year_period", (365.2425, "gregorian"))
+    # sel_year = getattr(app, "selected_year_period", (365.2425, "gregorian"))
     # substitute with exact lunar return calculations : before & after e2 datetime
     sel_month = getattr(app, "selected_month_period", (27.321661, "sidereal"))
-    YEARLENGTH = sel_year[0]
+    # YEARLENGTH = sel_year[0]
     MONTHLENGTH = sel_month[0]
     if e1_jd and e2_jd:
         # period elapsed from birth in years : needs event 2 datetime
         period = e2_jd - e1_jd
-        age_years = period / YEARLENGTH  # unused
-        app.age_y = age_years
+        # age_years = period / YEARLENGTH  # unused
+        # app.age_y = age_years
         # how many lunar months
-        age_months = period / MONTHLENGTH
-        app.age_m = age_months
+        # age_months = period / MONTHLENGTH
+        # app.age_m = age_months # already set in p2 ?
         # print(f"deltayears : {delta_years}")
-    # previous lunar return : search x days back range
-    prev_jd = e2_jd - 27.5
-    lr_prev_jd = swe.mooncross_ut(e1_mo, prev_jd, app.sweph_flag)
-    # next lunar return
-    next_jd = e2_jd
-    lr_next_jd = swe.mooncross_ut(e1_mo, next_jd, app.sweph_flag)
-    # calculate lunar month length
-    lr_month = lr_next_jd - lr_prev_jd
+    if exact_lunar_month and e2_mo:
+        print("p3 : using exact lunar month length")
+        # lunar returns : search x days range
+        lr_prev_jd = swe.mooncross_ut(e2_mo, e2_jd - 27.5, app.sweph_flag)
+        lr_next_jd = swe.mooncross_ut(e2_mo, e2_jd + 0.1, app.sweph_flag)
+        # lr_next_jd = swe.mooncross_ut(e2_mo, e2_jd, app.sweph_flag)
+        # calculate lunar month length
+        lr_month = lr_next_jd - lr_prev_jd
+        print(f"calculatep3 : lrmonth={lr_month}")
+        # completed returns for mark pottenger / houck exact calculation
+        # last lunar return before e2 - birth jd
+        completed_returns = round((lr_prev_jd - e1_jd) / MONTHLENGTH)
+        cycle_fraction = (e2_jd - lr_prev_jd) / lr_month
+        total_lunar_months = completed_returns + cycle_fraction
+        print(f"calculatep3 : totallunarmonths={total_lunar_months}")
+        p3_diff = total_lunar_months
+    else:
+        print("p3 : using average lunar month length")
+        p3_diff = period / MONTHLENGTH
     # main calculation of progress in days
-    p3_diff = (age_months / lr_month) * lr_month
-    # print(f"p3 : agemonths={age_months} | lunarreturnmonth={lr_month}")
     p3_jd = e1_jd + p3_diff
     p3_date = tuple_to_iso(p3_jd)
     # msg += p3_date
-    p3_data: list[dict] = []
-    # insert p3 date
-    p3_data.append({"p3jdut": p3_jd})
-    p3_data.append({"p3date": p3_date})
+    p3_data = [{"p3jdut": p3_jd}, {"p3date": p3_date}]
     try:
         result, e = swe.calc_ut(p3_jd, swe.SUN, app.sweph_flag)  # su lon
     except Exception as e:
