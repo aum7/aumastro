@@ -235,7 +235,7 @@ sweph / constants.py""",
     # --- harmonics division ring : 0 hide | 1 egypt. terms (bounds) |
     # 1+ simple divisions, similar but NOT all equal to varga
     "harmonic ring": (
-        "1",
+        "9",
         "harmonic (aka varga) ring\nempty : do NOT show | 1 : egypt. terms (bounds)\n1+ : simple harmonic for event 1 *similar* to varga\nterms can be changed in\nsweph / constants.py",
     ),
     # --- event 2 astro chart circles : draw progressions (p1 & p3) | returns | transit
@@ -259,7 +259,7 @@ sweph / constants.py""",
             "show minor (tertiary) progression (p3m) for event 2\nchange in sweph / calculations / ...",
         ),
         "d1 direction": (
-            True,
+            False,
             "show traditional primary direction (d1) for event 2\ncalculations as per martin gansten / ptolemy\n[todo needs verification : current is simple calculation]\nchange in sweph / calculations / ...",
         ),
         "lunar return": (False, "show lunar return for event 2"),
@@ -320,6 +320,11 @@ example : {name}\n{date}\n{wday} {time_short}\n{city} @ {country}\n{lat}\n{lon}"
 \n = new line
 example : {hsys} | {zod}\n{aynm}""",
     ),
+    # astro chart angle ruler snapping angle (or distance px ???)
+    "snap tolerance": (
+        "2.5",  # 2.5
+        "snap distance for angle ruler\nhk : shift+r (toggle measuring on / off)",
+    ),
 }
 # --- time constants ---
 # (solar) year lengths in days
@@ -332,8 +337,8 @@ SOLAR_YEAR = {
 }
 # lunar month lengths
 LUNAR_MONTH = {
-    "syn": (29.53059, "synodic\t\tnew moons"),
     "sid": (27.321661, "sidereal\t\tfixed star"),
+    "syn": (29.53059, "synodic\t\tnew moons"),
     "trp": (27.321582, "tropical\t\t0 ari"),  # houck
     "anm": (27.554551, "anomalistic\tperigee-apogee"),
     "drc": (27.21222, "draconic\tlunar nodes"),

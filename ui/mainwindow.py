@@ -113,6 +113,7 @@ class MainWindow(
         # [shift]
         # toggle vimsottari table level
         self.hotkeys.register_hotkey("shift+v", lambda: self.tables.toggle_vimso())
+        self.hotkeys.register_hotkey("shift+r", lambda: self.astro_chart.ruler.toggle())
         # below works for qwertz keyboard, modify according to your keyboard layout
         self.hotkeys.register_hotkey("shift+exclam", self.panes_single)  # shift+1
         self.hotkeys.register_hotkey("shift+quotedbl", self.panes_double)  # shift+2
@@ -183,25 +184,6 @@ class MainWindow(
             "ctrl+9", lambda: self.toggle_chart_setting("naksatras ring")
         )
 
-    def on_data_seq(self):
-        # run printscreen for data sequence in datagraph
-        if hasattr(self, "data_seq"):
-            self.data_seq.run_seq()
-
-    def toggle_chart_setting(self, setting):
-        # hotkey callback to toggle chart setting & checkbox
-        current_val = self.app.chart_settings.get(setting, False)
-        new_val = not current_val
-        self.app.chart_settings[setting] = new_val
-        # update checkbox
-        update_chart_setting_checkbox(self, setting, new_val)
-        self.app.signal_manager._emit("settings_changed", None)
-        self.notify.debug(
-            f"toggled {setting} : {new_val}",
-            source="mainwindow",
-            route=[""],
-        )
-
     # help / manual
     def show_manual(self):
         self.notify.debug(
@@ -238,12 +220,32 @@ class MainWindow(
             "\nshift+5 : toggle movie mode"
             "\nshift+6 : run printscreen sequence"
             "\n\tnote : could take a lot of time !"
-            "\nshift+v : toggle vimsottari level",
+            "\nshift+v : toggle vimsottari level"
+            "\nshift+r : toggle astro chart angle ruler",
             # "\n\nnote : if entry / text field is focused, hotkeys will not work"
             # "\n\t(text field will 'consume' key press)",
             source="help",
             timeout=5,
             route=["user"],
+        )
+
+    def on_data_seq(self):
+        # run printscreen for data sequence in datagraph
+        if hasattr(self, "data_seq"):
+            self.data_seq.run_seq()
+
+    def toggle_chart_setting(self, setting):
+        # hotkey callback to toggle chart setting & checkbox
+        current_val = self.app.chart_settings.get(setting, False)
+        new_val = not current_val
+        self.app.chart_settings[setting] = new_val
+        # update checkbox
+        update_chart_setting_checkbox(self, setting, new_val)
+        self.app.signal_manager._emit("settings_changed", None)
+        self.notify.debug(
+            f"toggled {setting} : {new_val}",
+            source="mainwindow",
+            route=[""],
         )
 
     def init_panes(self):

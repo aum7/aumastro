@@ -529,6 +529,10 @@ event 1 & 2 can have different objects"""
     box_fixed_stars.append(ent_fixed_stars)
     app.chart_settings["fixed stars"] = ent_fixed_stars.get_text()
     row.set_child(box_fixed_stars)
+    # label for snapping on astro chart
+    lbl_settings_snap = Gtk.Label(label="snapping")
+    # entry for snapping angle (or distance if we choose to use it)
+    # HERE add row into lbx_chart_setts_btm
     lbx_chart_setts_btm.append(row)
     box_chart_settings.append(lbx_chart_setts_btm)
     # --- chart info string : basic & extra ------------------

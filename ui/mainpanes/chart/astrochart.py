@@ -11,6 +11,7 @@ from sweph.calculations.eclipses import calculate_eclipses
 from sweph.calculations.lunation import calculate_lunation
 from sweph.calculations.varga import calculate_varga
 from ui.mainpanes.chart.astroobject import AstroObject
+from ui.mainpanes.chart.angleruler import AngleRuler
 from ui.mainpanes.chart.rings import (
     Info,
     Event,
@@ -65,6 +66,8 @@ class AstroChart(Gtk.Box):
         signal._connect("d1_changed", self.d1_changed)
         signal._connect("lunar_return_changed", self.lunar_return_changed)
         signal._connect("solar_return_changed", self.solar_return_changed)
+        # angle ruler on astrochart
+        self.ruler = AngleRuler(self)
 
     def event_changed(self, event):
         # main data / event changed : load new data
@@ -166,6 +169,8 @@ class AstroChart(Gtk.Box):
         msg = ""
         cx = width / 2
         cy = height / 2
+        # angle ruler
+        # radius = min(cx, cy)
         # size of application pane(s)
         base = min(width, height) * 0.5
         font_scale = base / 300.0
@@ -217,7 +222,7 @@ class AstroChart(Gtk.Box):
             outer_rings.append("harmonic")
         if self.chart_settings.get("naksatras ring", ""):
             outer_rings.append("naksatras")
-        msg += f"outerrings : {outer_rings}\n"
+        # msg += f"outerrings : {outer_rings}\n"
         # factor per ring : e2 first : in below order : circle outer diameter
         outer_portion = {
             "transit": 0.08,
@@ -444,6 +449,10 @@ class AstroChart(Gtk.Box):
             source="astrochart",
             route=[""],
         )
+        # angle ruler
+        self.max_radius = max_radius
+        self.radius_dict = radius_dict
+        self.ruler.draw(cr, cx, cy, max_radius)
 
     def create_astro_object(self, obj):
         return AstroObject(obj)
