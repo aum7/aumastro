@@ -1037,7 +1037,7 @@ def chart_settings_toggled(button, setting, manager):
     manager.notify.debug(
         f"chartsettingstoggled : {setting} toggled ({button.get_active()})",
         source="panel.settings",
-        route=["terminal"],
+        route=[""],
     )
 
 

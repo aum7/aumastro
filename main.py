@@ -4,7 +4,7 @@
 # os.environ["GTK_DEBUG"] = "keybindings geometry size-request actions constraints"
 # import atexit
 import os
-import swisseph as swe
+import swisseph as swe  # type:ignore
 import gi
 
 gi.require_version("Gtk", "4.0")
