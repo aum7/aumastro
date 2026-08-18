@@ -104,6 +104,10 @@ def _update_main_title(manager, change_time=None):
         title += f" | ct : {change_time}"
     elif change_time is None:
         title += " | ct : 1 D"
+    # todo remove e2 if e2 not active - do we have existing signal ?
+    e2_active = getattr(manager.app, "e2_active", False)
+    if e2_active:
+        pass # remove e2
     mainwindow = next(
         (w for w in manager.app.get_windows() if isinstance(w, Gtk.ApplicationWindow)),
         None,

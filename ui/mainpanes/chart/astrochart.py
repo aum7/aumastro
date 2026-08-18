@@ -177,6 +177,7 @@ class AstroChart(Gtk.Box):
         # sort by scale : smaller in front of larger rings
         guests = {}
         if self.positions and isinstance(self.positions, dict):
+            # print(f"astrochart : positions :\n\t{self.positions}")
             guests = sorted(
                 [
                     self.create_astro_object(obj)
@@ -186,6 +187,7 @@ class AstroChart(Gtk.Box):
                 key=lambda o: o.scale,
                 reverse=True,
             )
+            # print(f"astrochart : guests :\n\t{guests}")
         # construct extra info
         self.extra_info["zod"] = "sid" if self.app.is_sidereal else "tro"
         self.extra_info["aynm"] = (
@@ -452,6 +454,7 @@ class AstroChart(Gtk.Box):
         # angle ruler
         self.max_radius = max_radius
         self.radius_dict = radius_dict
+        # print(f"astrochart : radiusdict :\n\t{self.radius_dict}")
         self.ruler.draw(cr, cx, cy, max_radius)
 
     def create_astro_object(self, obj):

@@ -249,6 +249,7 @@ class Tables(Gtk.Notebook):
                 hsys_char = None
             ln_csps = ""
             raH, raM, raS = decra(self.armc)
+            # todo need conversion to event time
             horas_data = calculate_hora(event)
             if horas_data:
                 horas = horas_data["horas"]
@@ -364,75 +365,6 @@ class Tables(Gtk.Notebook):
             route=[""],
         )
         return text
-
-    def vimsottari_changed(self, event, vimsottari):
-        # receives table as plain text
-        if event not in self.events_data:
-            self.events_data[event] = {"vimsottari": None}
-        self.events_data[event]["vimsottari"] = vimsottari
-        self.current_event = event
-        # print(f"vmst chg : {str(self.events_data[event].get('vimsottari'))[:800]}")
-        self.update_vimsottari("vimsottari", vimsottari)
-
-    def vimsottari_widget(self, event: str, content: str):
-        # create a scrollable text view for an event
-        scroll = Gtk.ScrolledWindow()
-        scroll.set_name(f"vimso_scroll_{event}")
-        scroll.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
-        scroll.set_hexpand(False)
-        scroll.set_vexpand(True)
-        text_view = Gtk.TextView()
-        text_view.set_margin_top(self.margin)
-        text_view.set_margin_bottom(self.margin)
-        text_view.set_margin_start(self.margin)
-        text_view.set_margin_end(self.margin)
-        # text_view.set_wrap_mode(Gtk.WrapMode.CHAR)
-        text_view.set_editable(False)
-        text_view.set_cursor_visible(False)
-        text_view.add_css_class("table-text")
-        buffer = text_view.get_buffer()
-        buffer.set_text(content)
-        scroll.set_child(text_view)
-        self.insert_page(scroll, Gtk.Label.new(event), -1)
-        self.page_widgets[event] = scroll
-        self.set_current_page(self.get_n_pages() - 1)
-
-    def update_vimsottari(self, event: str, content: str):
-        # print(f"upd vmst : {content[:600]}")
-        if event in self.page_widgets:
-            # print("vimsottari_widget : updating table")
-            scroll = self.page_widgets[event]
-            text_view = scroll.get_child()
-            buffer = text_view.get_buffer()
-            buffer.set_text(content)
-        else:
-            # print("vimsottari_widget : creating new page")
-            self.vimsottari_widget(event, content)
-
-    # def toggle_vimso(self, gesture=None, n_press=0, x=0, y=0):
-    def toggle_vimso(self):
-        # cycle toggle level: 1->2->3->4->5->1
-        event = "e1"  # self.current_event
-        # print(f"toggle_vimso  {event} called")
-        if self.app.current_lvl == 1:
-            self.app.current_lvl = 2
-        elif self.app.current_lvl == 2:
-            self.app.current_lvl = 3
-        elif self.app.current_lvl == 3:
-            self.app.current_lvl = 4
-        elif self.app.current_lvl == 4:
-            self.app.current_lvl = 5
-        else:
-            self.app.current_lvl = 1
-        # print(f"current_lvl : {self.app.current_lvl}")
-        # update vimsottari for new level
-        if event and event in self.events_data:
-            # emit signal to force recalculation
-            self.app.signal_manager._emit(
-                "luminaries_changed",
-                event,
-                # "luminaries_changed", "vimsottari", self.app.last_luminaries
-            )
 
     def p2_changed(self, event):
         self.p2_pos = getattr(self.app, "p2_pos", None)
@@ -721,3 +653,73 @@ class Tables(Gtk.Notebook):
         # add page with event label as tab title
         self.append_page(scroll, Gtk.Label.new(event))
         self.page_widgets[event] = scroll
+        
+    def vimsottari_changed(self, event, vimsottari):
+        # receives table as plain text
+        if event not in self.events_data:
+            self.events_data[event] = {"vimsottari": None}
+        self.events_data[event]["vimsottari"] = vimsottari
+        self.current_event = event
+        # print(f"vmst chg : {str(self.events_data[event].get('vimsottari'))[:800]}")
+        self.update_vimsottari("vimsottari", vimsottari)
+
+    def vimsottari_widget(self, event: str, content: str):
+        # create a scrollable text view for an event
+        scroll = Gtk.ScrolledWindow()
+        scroll.set_name(f"vimso_scroll_{event}")
+        scroll.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
+        scroll.set_hexpand(False)
+        scroll.set_vexpand(True)
+        text_view = Gtk.TextView()
+        text_view.set_margin_top(self.margin)
+        text_view.set_margin_bottom(self.margin)
+        text_view.set_margin_start(self.margin)
+        text_view.set_margin_end(self.margin)
+        # text_view.set_wrap_mode(Gtk.WrapMode.CHAR)
+        text_view.set_editable(False)
+        text_view.set_cursor_visible(False)
+        text_view.add_css_class("table-text")
+        buffer = text_view.get_buffer()
+        buffer.set_text(content)
+        scroll.set_child(text_view)
+        self.insert_page(scroll, Gtk.Label.new(event), -1)
+        self.page_widgets[event] = scroll
+        self.set_current_page(self.get_n_pages() - 1)
+
+    def update_vimsottari(self, event: str, content: str):
+        # print(f"upd vmst : {content[:600]}")
+        if event in self.page_widgets:
+            # print("vimsottari_widget : updating table")
+            scroll = self.page_widgets[event]
+            text_view = scroll.get_child()
+            buffer = text_view.get_buffer()
+            buffer.set_text(content)
+        else:
+            # print("vimsottari_widget : creating new page")
+            self.vimsottari_widget(event, content)
+
+    # def toggle_vimso(self, gesture=None, n_press=0, x=0, y=0):
+    def toggle_vimso(self):
+        # cycle toggle level: 1->2->3->4->5->1
+        event = "e1"  # self.current_event
+        # print(f"toggle_vimso  {event} called")
+        if self.app.current_lvl == 1:
+            self.app.current_lvl = 2
+        elif self.app.current_lvl == 2:
+            self.app.current_lvl = 3
+        elif self.app.current_lvl == 3:
+            self.app.current_lvl = 4
+        elif self.app.current_lvl == 4:
+            self.app.current_lvl = 5
+        else:
+            self.app.current_lvl = 1
+        # print(f"current_lvl : {self.app.current_lvl}")
+        # update vimsottari for new level
+        if event and event in self.events_data:
+            # emit signal to force recalculation
+            self.app.signal_manager._emit(
+                "luminaries_changed",
+                event,
+                # "luminaries_changed", "vimsottari", self.app.last_luminaries
+            )
+

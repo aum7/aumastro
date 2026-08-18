@@ -24,7 +24,8 @@ class AstroObject:
         # use this to access data with print(...)
         name = self.data.get("name", "/")
         lon = self.data.get("lon", "/")
-        return f"astroobject : {name} - {lon}"
+        lat = self.data.get("lat", "/")
+        return f"{name}-lon:{lon}-lat:{lat}"
 
     def draw(self, cr, cx, cy, radius, obj_scale=1.0, scale=None, color=None):
         # allow for custom color & scale

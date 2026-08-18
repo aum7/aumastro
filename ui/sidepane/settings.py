@@ -532,7 +532,7 @@ event 1 & 2 can have different objects"""
     # label for snapping on astro chart
     lbl_settings_snap = Gtk.Label(label="snapping")
     # entry for snapping angle (or distance if we choose to use it)
-    # HERE add row into lbx_chart_setts_btm
+    # HERE add row into lbx_chart_setts_btm or as needed according to general design of parent & sibling rows / boxes ...
     lbx_chart_setts_btm.append(row)
     box_chart_settings.append(lbx_chart_setts_btm)
     # --- chart info string : basic & extra ------------------

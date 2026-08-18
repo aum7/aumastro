@@ -322,7 +322,7 @@ example : {hsys} | {zod}\n{aynm}""",
     ),
     # astro chart angle ruler snapping angle (or distance px ???)
     "snap tolerance": (
-        "2.5",  # 2.5
+        "4.5",
         "snap distance for angle ruler\nhk : shift+r (toggle measuring on / off)",
     ),
 }

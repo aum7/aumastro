@@ -123,7 +123,7 @@ class EventData:
                 return
             # todo remove this ?
             if location == self.old_location:
-                msg += f"{location_name} not changed"
+                msg += f"\n{location_name} not changed"
             return
         try:
             # parse location data
@@ -278,9 +278,9 @@ class EventData:
             if timezone_:
                 self.timezone = timezone_
             else:
-                msg += f"{location_name} timezone not received\n"
+                msg += f"\n{location_name} timezone not received\n"
             self.old_location = location_formatted
-            msg += f"{location_name} valid & formatted\n"
+            msg += f"\n{location_name} valid & formatted\n"
         except Exception as e:
             self.notify.error(
                 f"{location_name} invalid : we accept"
@@ -351,7 +351,7 @@ class EventData:
             self.app.e2_sweph["lat"] = lat
             self.app.e2_sweph["lon"] = lon
             self.app.e2_sweph["alt"] = int(alt)
-        msg += f"{location_name} updated\n"
+        msg += f"\n{location_name} updated\n"
         self.notify.debug(
             msg,
             source="eventdata",
@@ -372,7 +372,7 @@ class EventData:
             )
             return
         if name == self.old_name:
-            msg += f"{name_name} not changed : exiting ..."
+            msg += f"\n{name_name} not changed : exiting ..."
             return
         if len(name) > 30:
             self.notify.warning(
@@ -457,10 +457,10 @@ class EventData:
                     h, m, s = map(int, parts[-1].strip().split(":"))
                     # convert to decimal hour
                     self.tz_offset = days * 24 + h + m / 60 + s / 3600
-                    # msg += f"timenow : tz_offset : {self.tz_offset}"
+                    # msg += f"\ntimenow : tz_offset : {self.tz_offset}"
                     # todo enable below ???
                     msg += (
-                        f"{datetime_name} timezone : using time now for {tz}"
+                        f"\n{datetime_name} timezone : using time now for {tz}"
                         if self.timezone
                         else f"{datetime_name} no timezone : using event one ({tz})"
                     )
@@ -543,6 +543,7 @@ class EventData:
                 # python datetime only goes down to year 1
                 if Y >= 1:
                     if tz:
+                        # todo calculate horas while we have proper times ???
                         dt_event = datetime(Y, M, D, h, m, s, tzinfo=ZoneInfo(tz))
                         # calculate weekday
                         wday = weekdays[dt_event.weekday()]
@@ -589,7 +590,7 @@ class EventData:
                 route=["terminal"],
             )
             return
-        msg += f"{datetime_name} julian day : {jd_ut}"
+        # msg += f"\n{datetime_name} julian day : {jd_ut}"
         # update datetime entry
         if dt_event_str:
             entry.set_text(dt_event_str)
@@ -624,7 +625,7 @@ class EventData:
             self.app.e2_chart["hora"] = hora
             self.app.e2_chart["offset"] = str(self.tz_offset)
             self.app.e2_sweph["jd_ut"] = jd_ut
-        msg += f"{datetime_name} updated\n\t{dt_event_str} | {wday} | jdut : {jd_ut}"
+        msg += f"\n{datetime_name} updated\n\t{dt_event_str} | {wday} | jdut : {jd_ut}"
         # all good : set new old date-time
         self.old_date_time = dt_event_str
         # if datetime two is NOT empty, user is interested in event 2
@@ -634,14 +635,14 @@ class EventData:
             # declare e2 NOT active
             self.app.e2_active = False
             msg += (
-                "datetime 2 is none : user not interested in event 2 : skipping ..."
+                "\ndatetime two is none : user not interested in event 2 : skipping ..."
                 f"\n\te2 active : {self.app.e2_active}"
             )
         elif self.app.e2_chart.get("datetime"):
             # declare e2 active
             self.app.e2_active = True
             msg += (
-                f"\n\tdatetime 2 not empty : {self.app.e2_chart.get('datetime')} : "
+                f"\n\tdatetime two not empty : {self.app.e2_chart.get('datetime')} : "
                 "merging e1 > e2 data"
                 f"\n\te2 active : {self.app.e2_active}"
             )
@@ -657,7 +658,9 @@ class EventData:
                     self.app.e2_chart[key] = self.app.e1_chart.get(key)
                 for key in ["lat", "lon", "alt"]:
                     self.app.e2_sweph[key] = self.app.e1_sweph.get(key)
-            msg += "cou & cit & loc & tz & iso & offset + lat & lon & alt : data 1 => 2"
+            msg += (
+                "\ncou & cit & loc & tz & iso & offset + lat & lon & alt : data 1 => 2"
+            )
         # debug-print all data
         import json
 
@@ -678,11 +681,11 @@ class EventData:
         else:
             event = "e2"
         self.app.signal_manager._emit("event_changed", event)
-        msg += f"{datetime_name} ({event}): emitted event changed signal"
+        msg += f"\n{datetime_name} ({event}): emitted event changed signal"
         self.notify.debug(
             msg,
             source="eventdata",
-            route=["none"],
+            route=["terminal"],
         )
         change_time = getattr(self.app, "selected_change_time_str", "1 D")
         _update_main_title(self, change_time)
