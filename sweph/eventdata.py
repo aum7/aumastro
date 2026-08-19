@@ -118,7 +118,7 @@ class EventData:
                 self.notify.info(
                     f"{location_name} empty : cleared e2 data",
                     source="eventdata",
-                    route=["terminal"],
+                    route=[""],  # terminal
                 )
                 return
             # todo remove this ?
@@ -685,7 +685,7 @@ class EventData:
         self.notify.debug(
             msg,
             source="eventdata",
-            route=["terminal"],
+            route=[""],  # terminal
         )
         change_time = getattr(self.app, "selected_change_time_str", "1 D")
         _update_main_title(self, change_time)

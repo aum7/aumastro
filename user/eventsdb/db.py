@@ -21,20 +21,27 @@ DEFAULT_E1 = {
     # "name": "lse",  # next solecl
     # "datetime": "2006-03-29 11:11:27",
     # ---
-    "country": "Finland",
-    "city": "turku",
-    "location": "60 27 n 022 17 w",
-    "name": "gansten i male",
-    "datetime": "1973-12-18 10:05:00",  # eet
+    # "country": "Finland",
+    # "city": "turku",
+    # "location": "60 27 n 022 17 w",
+    # "name": "gansten i male",
+    # "datetime": "1973-12-18 10:05:00",  # eet
     # ---
     # "country": "Sweden",
     # "city": "lund",
     # "location": "55 41 n 013 11 e",
     # "name": "gansten j male",
     # "datetime": "1981-10-8 14:21:00",  # cet
+    # --- lisa marie presley
+    "country": "usa",
+    "city": "memphis",
+    "location": "35 9 n 090 3 w",
+    "name": "lisa presley",
+    "datetime": "1968-02-01 17:01",  # cst
 }
 DEFAULT_E2 = {
-    "datetime": "1973-12-18 10:05:00",  # eet
+    "datetime": "2013-02-01 10:05:00",  # lisa presley 45th revolution
+    # "datetime": "1973-12-18 10:05:00",  # eet
     # "datetime": "2007-03-09 14:00:00",
 }
 # --- solar eclipses -----------------------------------------------------------
@@ -206,6 +213,13 @@ DEFAULT_E2 = {
 # f. male, 26 february, 1963, 06:20 cet, 55n42, 12e36 copenhagen denmark
 # g. male, 29 may, 1969, 16:21 cet, 55n35, 13e00 malmo sweden
 # h. female, 10 april, 1970, 00:30 cet, 63n50, 20e15 umea sweden
+# lisa marie presley : 1968 2 1 17 1 (cst) memphis tennesse 35 09 n 90 3 w
+# --- lisa marie presley
+# "country": "usa",
+# "city": "memphis",
+# "location": "35 9 n 090 3 w",
+# "name": "lisa marie presley",
+# "datetime": "1968-02-01 17:01", # cst
 # --- i male, 18 december, 1973, 10:05 eet, 60n27, 22e17 turku finland
 # "country": "finland",
 # "city": "turku",

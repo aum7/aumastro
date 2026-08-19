@@ -223,11 +223,12 @@ CHART_SETTINGS = {
 21 uas\t22 abh\t23 sra\t24 dha
 25 sat\t26 pbh\t27 ubh\t28 rev
 
-rulership (in tables) changes to weekday order !
+rulership changes to weekday order !
+basically chinese / arabian mansions
 can be changed in
 sweph / constants.py""",
     ),
-    # --- start naksatras ring with naksatra
+    # --- start naksatras ring with which naksatra
     "1st naksatra": (
         1,
         "start naksatras ring with any naksatra\nrotate relative to 0° aries\n1 = asvini (standard)\n19 = mula\n22 = abhijit if 28 naksatras etc",
@@ -293,17 +294,29 @@ sweph / constants.py""",
             "\nmodify user/fixedstars.py > add / remove from custom"
         ),
     ),
+    # --- astro chart angle ruler snapping distance (or angle)
+    "snap tolerance": (
+        "4.5",
+        (
+            "snap distance for angle ruler\nhk : shift+r (toggle measuring on / off)"
+            "\nsnapping works :"
+            "\n\trings : middle of rings for objects & signs & houses"
+            "\n\tradix : at center of planets for natal objects"
+            "\n\t\t& at house cusps & signs ring"
+        ),
+    ),
     # --- event data to be presented in chart info
     # construct your own 'chart info' format
     "chart info string": (
         r"{name}\n{date}\n{wday} {time_short} {hora}\n{city} @ {iso3}\n{lat}\n{lon}",
         r"""construct your own 'chart info' format : allowed fields :
     1: event {name} | 2: {datetime} | 3: {date} | 4: {time}
-    5: {time_short} no seconds | 6: {hora} | 7: {wday} weekday
-    8: {country} | 9: {iso3} country code | 10: {city}
-    11: {location} | 12: {lat}itude | 13: {lon}gitude
-    14: {timezone} | 15: timezone {offset} | 16: moon {nak}satra
-    17: {nakvar} moon varga naksatra | chars: @ | - :
+    5: {time_short} no seconds | 6: {hora} glyph
+    7: {wday} weekday 8: {country} | 9: {iso3} country code
+    10: {city} 11: {location} | 12: {lat}itude
+    13: {lon}gitude 14: {timezone} | 15: timezone {offset}
+    16: moon {nak}satra 17: {nakvar} moon varga naksatra
+    chars: @ | - :
 \n = new line
 example : {name}\n{date}\n{wday} {time_short}\n{city} @ {country}\n{lat}\n{lon}""",
     ),
@@ -315,15 +328,10 @@ example : {name}\n{date}\n{wday} {time_short}\n{city} @ {country}\n{lat}\n{lon}"
         r"""additional 'chart info' format : allowed fields :
     1: {hsys} house system
     2: {zod}iac
-    3: {aynm} ayanamsa name
+    3: {aynm} ayanamsa name & number
     chars: @ | - :
 \n = new line
 example : {hsys} | {zod}\n{aynm}""",
-    ),
-    # astro chart angle ruler snapping angle (or distance px ???)
-    "snap tolerance": (
-        "4.5",
-        "snap distance for angle ruler\nhk : shift+r (toggle measuring on / off)",
     ),
 }
 # --- time constants ---

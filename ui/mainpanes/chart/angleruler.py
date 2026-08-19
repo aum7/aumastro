@@ -38,14 +38,17 @@ class AngleRuler:
         self.hover_label = ""
         self.hover_pos = None
         self.hover_lon = None
-        chart_settings = getattr(self.chart, "chart_settings", {})
-        snap_val = chart_settings.get("snap tolerance", 6.5)
-        if isinstance(snap_val, (tuple, list)):
-            snap_val = snap_val[0]
-        try:
-            self.snap_tolerance = float(snap_val)
-        except (ValueError, TypeError):
-            self.snap_tolerance = 6.5
+        # chart_settings = getattr(self.chart.app, "chart_settings", {})
+        # snap_val = chart_settings.get("snap tolerance", 6.5)
+        # print(f"angleruler : snapval={snap_val}")
+        # if isinstance(snap_val, (tuple, list)):
+        #     snap_val = snap_val[0]
+        # try:
+        #     self.snap_tolerance = float(snap_val)
+        #     print(f"angleruler : snapval ({snap_val}) changed")
+        # except (ValueError, TypeError):
+        #     self.snap_tolerance = 6.5
+        #     print(f"angleruler : snapval ({snap_val}) error")
 
         self.setup_controllers()
 
@@ -141,6 +144,7 @@ class AngleRuler:
         max_radius = getattr(self.chart, "max_radius", 300)
         radius_dict = getattr(self.chart, "radius_dict", {})
         # print(f"angleruler : radiusdict :\n\t{radius_dict}")
+        # print(f"angleruler : mouser={mouse_r}")
         info_r = radius_dict.get("info", max_radius * 0.4)
         event_r = radius_dict.get("event", max_radius * 0.85)
         signs_r = radius_dict.get("signs", max_radius * 0.92)
@@ -149,7 +153,7 @@ class AngleRuler:
             return []
         targets = []
         positions = getattr(self.chart, "positions", {}) or {}
-        print(f"angleruler : positions :\n\t{positions}")
+        # print(f"angleruler : positions :\n\t{positions}")
         # event ring : snap to planets & house cusps
         if info_r <= mouse_r < event_r:
             if isinstance(positions, dict):
@@ -159,14 +163,14 @@ class AngleRuler:
                     for v in positions.values()
                 )
                 if is_nested:
-                    event_data = positions.get("event", {})
+                    event1_data = positions.get("event", {})
                     # for ring_name, ring_data in positions.items():
                     # if isinstance(ring_data, dict):
                     #     ring_rad = radius_dict.get(
                     #         ring_name, radius_dict.get("event", max_radius * 0.85)
                     #     )
-                    if isinstance(event_data, dict):
-                        for code, data in event_data.items():
+                    if isinstance(event1_data, dict):
+                        for code, data in event1_data.items():
                             if isinstance(data, dict) and "lon" in data:
                                 name = data.get("name", str(code))
                                 lat = data.get("lat", 0.0)
@@ -192,11 +196,11 @@ class AngleRuler:
                 #             )
                 #             glyph = glyphs.get_glyph(name, False) or name
                 #             targets.append((data["lon"], glyph, rad))
-            # line_r = (
-            #     mouse_r
-            #     if mouse_r is not None and mouse_r > 0
-            #     else radius_dict.get("event", max_radius * 0.85)
-            # )
+            line_r = (
+                mouse_r
+                if mouse_r is not None and mouse_r > 0
+                else radius_dict.get("event", max_radius * 0.85)
+            )
             # snap to house cusps
             mid_event = (info_r + event_r) / 2.0
             cusps = getattr(self.chart, "cusps", {}) or {}
@@ -226,20 +230,31 @@ class AngleRuler:
                 sign_glyph = sign_tuple[0]
                 targets.append((i * 30.0, f"0° {sign_glyph}", mid_signs))
         # outer rings : snap
-        elif mouse_r >= signs_r:
-            chart_settings = getattr(self.chart, "chart_settings", {})
-            # outer rings
-            if isinstance(positions, dict):
-                for ring_name, ring_data in radius_dict.items():
-                    if ring_name in ("info", "event", "signs", "harmonic", "naksatras")
-        
+        # elif mouse_r >= signs_r:
+        #     chart_settings = getattr(self.chart, "chart_settings", {})
+        #     # outer rings
+        #     if isinstance(positions, dict):
+        #         for ring_name, ring_data in radius_dict.items():
+        #             if ring_name in ("info", "event", "signs", "harmonic", "naksatras")
+
         return targets
+
+    def get_snap_tolerance(self):
+        chart_settings = getattr(self.chart.app, "chart_settings", {})
+        snap_val = chart_settings.get("snap tolerance", 6.5)
+        if isinstance(snap_val, (tuple, list)):
+            snap_val = snap_val[0]
+        try:
+            return float(snap_val)
+        except (ValueError, TypeError):
+            return 6.5
 
     def _find_snap(self, x, y):
         mouse_r = math.hypot(x - self.cx, y - self.cy)
         targets = self._get_snappable_targets(mouse_r=mouse_r)
+        # print(f"angleruler : mouser={mouse_r}")
         best_target = None
-        min_dist = self.snap_tolerance
+        min_dist = self.get_snap_tolerance()
         for lon, label, rad in targets:
             tx, ty = self._lon_to_xy(lon, rad)
             dist = math.hypot(x - tx, y - ty)

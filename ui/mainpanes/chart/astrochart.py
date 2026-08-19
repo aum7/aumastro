@@ -43,9 +43,9 @@ class AstroChart(Gtk.Box):
         self.drawing_area.set_vexpand(True)
         self.append(self.drawing_area)
         # initial data
-        self.positions = {}
-        self.cusps = {}
-        self.ascmc = None
+        self.positions = {}  # e1 for inner rings
+        self.cusps = {}  # also e1
+        self.ascmc = None  # also e1
         self.e1_chart_info = {}
         self.chart_settings = getattr(self.app, "chart_settings", {})
         self.extra_info = {}

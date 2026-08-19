@@ -229,13 +229,6 @@ event 1 & 2 can have different objects"""
         expanded=False,  # todo
     )
     subpnl_chart_settings.set_title_tooltip("""chart drawing & info display settings""")
-    # ------ sub-sub-panel : chart info -----------------
-    subsubpnl_chart_info = CollapsePanel(
-        title="chart info",
-        indent=21,
-        expanded=False,
-    )
-    subsubpnl_chart_info.set_title_tooltip("diy chart info string")
     # main box
     box_chart_settings = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5)
     box_chart_settings.set_margin_start(manager.margin_end)
@@ -245,8 +238,8 @@ event 1 & 2 can have different objects"""
     lbl_settings_calc.set_halign(Gtk.Align.START)
     box_chart_settings.append(lbl_settings_calc)
     # listbox with rows for calculations settings
-    manager.lbx_chart_setts_top = Gtk.ListBox()
-    manager.lbx_chart_setts_top.set_selection_mode(Gtk.SelectionMode.NONE)
+    manager.lbx_chart_setts_1 = Gtk.ListBox()
+    manager.lbx_chart_setts_1.set_selection_mode(Gtk.SelectionMode.NONE)
     app.chart_settings = {}
     app.checkbox_chart_settings = {}
     # calculations checkboxes
@@ -266,16 +259,16 @@ event 1 & 2 can have different objects"""
         )
         row.set_tooltip_text(tooltip)
         row.set_child(check)
-        manager.lbx_chart_setts_top.append(row)
+        manager.lbx_chart_setts_1.append(row)
         app.chart_settings[setting] = default
-    box_chart_settings.append(manager.lbx_chart_setts_top)
+    box_chart_settings.append(manager.lbx_chart_setts_1)
     # label for chart drawing
-    lbl_settings_draw = Gtk.Label(label="drawing")
+    lbl_settings_draw = Gtk.Label(label="drawing & calculations")
     lbl_settings_draw.set_halign(Gtk.Align.START)
     box_chart_settings.append(lbl_settings_draw)
-    # listbox with rows for drawing settings
-    lbx_chart_setts_btm = Gtk.ListBox()
-    lbx_chart_setts_btm.set_selection_mode(Gtk.SelectionMode.NONE)
+    # listbox 2 with rows for drawing & calculations settings
+    lbx_chart_setts_2 = Gtk.ListBox()
+    lbx_chart_setts_2.set_selection_mode(Gtk.SelectionMode.NONE)
     # calculations checkboxes
     for setting in [
         "enable glyphs",
@@ -292,7 +285,7 @@ event 1 & 2 can have different objects"""
         )
         row.set_tooltip_text(tooltip)
         row.set_child(check)
-        lbx_chart_setts_btm.append(row)
+        lbx_chart_setts_2.append(row)
         # store checkbox reference for later update
         app.chart_settings[setting] = default
         app.checkbox_chart_settings[setting] = check
@@ -313,7 +306,7 @@ event 1 & 2 can have different objects"""
     app.chart_settings["naksatras ring"] = manager.chk_naks_ring.get_active()
     app.checkbox_chart_settings["naksatras ring"] = manager.chk_naks_ring
     row.set_child(manager.chk_naks_ring)
-    lbx_chart_setts_btm.append(row)
+    lbx_chart_setts_2.append(row)
     # row for additional naksatras settings
     row = Gtk.ListBoxRow()
     # box for 28 naksatras checkbox & 1st naksatra
@@ -350,7 +343,7 @@ event 1 & 2 can have different objects"""
     app.chart_settings["1st naksatra"] = manager.ent_1st_nak.get_text()
     box_naks.append(manager.ent_1st_nak)
     row.set_child(box_naks)
-    lbx_chart_setts_btm.append(row)
+    lbx_chart_setts_2.append(row)
     # harmonics ring --------------------------------------
     row = Gtk.ListBoxRow()
     box_harmonics = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=7)
@@ -372,7 +365,7 @@ event 1 & 2 can have different objects"""
     box_harmonics.append(ent_harmonics)
     app.chart_settings["harmonic ring"] = ent_harmonics.get_text()
     row.set_child(box_harmonics)
-    lbx_chart_setts_btm.append(row)
+    lbx_chart_setts_2.append(row)
     # event 2 astro chart rings --------------------------------------------
     # progress row
     row_prog = Gtk.ListBoxRow()
@@ -429,9 +422,9 @@ event 1 & 2 can have different objects"""
     lbl_prog = Gtk.Label(label="progressions etc")
     lbl_prog.set_halign(Gtk.Align.START)
     # box_prog.append(lbl_prog)
-    lbx_chart_setts_btm.append(lbl_prog)
+    lbx_chart_setts_2.append(lbl_prog)
     row_prog.set_child(box_prog)
-    lbx_chart_setts_btm.append(row_prog)
+    lbx_chart_setts_2.append(row_prog)
     # returns row
     row_retu = Gtk.ListBoxRow()
     box_retu = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
@@ -462,9 +455,9 @@ event 1 & 2 can have different objects"""
     lbl_retu = Gtk.Label(label="returns")
     lbl_retu.set_halign(Gtk.Align.START)
     # box_retu.append(lbl_retu)
-    lbx_chart_setts_btm.append(lbl_retu)  # todo
+    lbx_chart_setts_2.append(lbl_retu)  # todo
     row_retu.set_child(box_retu)
-    lbx_chart_setts_btm.append(row_retu)
+    lbx_chart_setts_2.append(row_retu)
     # varga & transit row
     row_var_tran = Gtk.ListBoxRow()
     box_var_tran = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
@@ -495,8 +488,8 @@ event 1 & 2 can have different objects"""
     manager.app.checkbox_chart_settings["transit"] = chk_tran
     manager.app.chart_settings["transit"] = data_tran[0]
     row_var_tran.set_child(box_var_tran)
-    lbx_chart_setts_btm.append(lbl_tran)
-    lbx_chart_setts_btm.append(row_var_tran)
+    lbx_chart_setts_2.append(lbl_tran)
+    lbx_chart_setts_2.append(row_var_tran)
     # checkbox to use varga for aspects
     row_use_varga_aspect = Gtk.ListBoxRow()
     data_use_varga_aspect = CHART_SETTINGS["use varga aspect"]
@@ -510,8 +503,7 @@ event 1 & 2 can have different objects"""
     manager.app.checkbox_chart_settings["use varga aspect"] = chk_use_varga_aspect
     manager.app.chart_settings["use varga aspect"] = data_use_varga_aspect[0]
     row_use_varga_aspect.set_child(chk_use_varga_aspect)
-
-    lbx_chart_setts_btm.append(row_use_varga_aspect)
+    lbx_chart_setts_2.append(row_use_varga_aspect)
     # fixed stars --------------------------------------
     row = Gtk.ListBoxRow()
     box_fixed_stars = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=7)
@@ -529,12 +521,40 @@ event 1 & 2 can have different objects"""
     box_fixed_stars.append(ent_fixed_stars)
     app.chart_settings["fixed stars"] = ent_fixed_stars.get_text()
     row.set_child(box_fixed_stars)
+    lbx_chart_setts_2.append(row)
+    box_chart_settings.append(lbx_chart_setts_2)
     # label for snapping on astro chart
-    lbl_settings_snap = Gtk.Label(label="snapping")
+    lbl_settings_snap = Gtk.Label(label="ruler snapping")
+    lbl_settings_snap.set_halign(Gtk.Align.START)
+    box_chart_settings.append(lbl_settings_snap)
+    # listbox 3 for snapping
+    lbx_chart_setts_3 = Gtk.ListBox()
+    lbx_chart_setts_3.set_selection_mode(Gtk.SelectionMode.NONE)
+    # box with rows for snapping settings
+    box_snap = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
+    # label
+    lbl_snap_tolerance = Gtk.Label(label="snap tolerance")
+    box_snap.append(lbl_snap_tolerance)
     # entry for snapping angle (or distance if we choose to use it)
-    # HERE add row into lbx_chart_setts_btm or as needed according to general design of parent & sibling rows / boxes ...
-    lbx_chart_setts_btm.append(row)
-    box_chart_settings.append(lbx_chart_setts_btm)
+    ent_snap = Gtk.Entry()
+    ent_snap.set_text(CHART_SETTINGS["snap tolerance"][0])
+    ent_snap.set_tooltip_text(CHART_SETTINGS["snap tolerance"][1])
+    ent_snap.set_alignment(0.5)
+    ent_snap.set_max_length(4)
+    ent_snap.set_max_width_chars(4)
+    ent_snap.connect("activate", snapping, manager)
+    box_snap.append(ent_snap)
+    app.chart_settings["snap tolerance"] = ent_snap.get_text()
+    lbx_chart_setts_3.append(box_snap)
+    box_chart_settings.append(lbx_chart_setts_3)
+    # ------ sub-sub-panel : chart info -----------------
+    # positioned at bottom of chart settings panel
+    subsubpnl_chart_info = CollapsePanel(
+        title="chart info",
+        indent=21,
+        expanded=False,
+    )
+    subsubpnl_chart_info.set_title_tooltip("diy chart info string")
     # --- chart info string : basic & extra ------------------
     # main box for chart info string
     box_chart_info = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
@@ -1137,6 +1157,30 @@ def fixed_stars(entry, manager):
         f"fixedstars : {manager.app.chart_settings['fixed stars']}",
         source="panel.settings",
         route=["none"],
+    )
+
+
+def snapping(entry, manager):
+    """chart settings panel : snapping distance to objects on astro chart"""
+    text = entry.get_text().strip()
+    tolerance = CHART_SETTINGS["snap tolerance"][0]
+    if text == "":
+        manager.app.chart_settings["snap tolerance"] = tolerance  # string
+        entry.set_text(tolerance)
+        entry.remove_css_class("entry-warning")
+    else:
+        try:
+            float(text)
+            entry.remove_css_class("entry-warning")
+            manager.app.chart_settings["snap tolerance"] = text
+        except ValueError:
+            entry.add_css_class("entry-warning")
+            entry.set_text(str(tolerance))
+    manager.signal._emit("settings_changed", None)
+    manager.notify.debug(
+        f"snaptolerance : {manager.app.chart_settings['snap tolerance']}",
+        source="panel.settings",
+        route=["terminal"],
     )
 
 

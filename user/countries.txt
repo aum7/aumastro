@@ -1,28 +1,28 @@
 ﻿# countries from geonames.org: 2024-06-01 : 249 countries
 # !!! UNCOMMENT ANY COUNTRY THAT YOU NEED !!!
 # un/comment = delete/add '#', and save file
-# coutries will be sorted alphabetically by long name
-# countris can be renamed - middle / long name only !
+# countries will be sorted alphabetically by long name
+# countries can be renamed - middle / long name only !
 # if renamed > best make copy of whole line & move up
 
 #--- copies of original lines > renamed -----
-("SI", "Slo", "SVN"),
-("SE", "Sweden", "SWE"),
-("FI", "Finland", "FIN"),
-("NL", "Netherlands", "NLD"),
-("DK", "Denmark", "DNK"),
-("GB", "UK", "GBR"),
-("CA", "Canada", "CAN"),
+("US", "USA", "USA"),
+#("SI", "Slo", "SVN"),
+#("SE", "Sweden", "SWE"),
+#("FI", "Finland", "FIN"),
+#("NL", "Netherlands", "NLD"),
+#("DK", "Denmark", "DNK"),
+#("GB", "UK", "GBR"),
+#("CA", "Canada", "CAN"),
 #("JP", "Japan", "JPN"),
 #("CN", "China", "CHN"),
 #("IN", "India", "IND"),
-#("US", "USA", "USA"),
 #("AU", "Australia", "AUS"),
 #("MC", "Monaco", "MCO"),
 #("FI", "Finland", "FIN"),
 #("HR", "Cro", "HRV"),
 #("MA", "Morocco", "MAR"),
-#--------------------------------------------
+#--- originals -----------------------------------------
 #("AF", "Afghanistan", "AFG"),
 #("AX", "Aland Islands", "ALA"),
 #("AL", "Albania", "ALB"),

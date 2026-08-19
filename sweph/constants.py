@@ -92,34 +92,35 @@ NAKSATRAS27 = {
     27: ("me", "rev"),  # 16-40 - 30-00 pis
 }
 MANSIONS28 = {  # 12-51-25
-    1: ("ve", "leu"),  #    00-00-00 - 12-51-25 ari
-    2: ("sa", "oei"),  #    12-51-25 - 25-42-51 ari
-    3: ("su", "mao"),  #    25-42-51 - 08-34-17 tau (krt)
-    4: ("mo", "pi"),  #     08-34-17 - 21-25-43 tau
-    5: ("ma", "tsee"),  #   21-25-43 - 04-17-09 gem
-    6: ("me", "shen"),  #   04-17-09 - 17-08-34 gem
-    7: ("ju", "tsing"),  #  17-08-34 - 30-00-00 gem
-    8: ("ve", "kwei"),  #   00-00-00 - 12-51-25 can
-    9: ("sa", "lieu"),  #   12-51-25 - 25-42-51 can
-    10: ("su", "sing"),  #  25-42-51 - 08-34-17 leo
-    11: ("mo", "chang"),  # 08-34-17 - 21-25-43 leo
-    12: ("ma", "yen"),  #   21-25-43 - 04-17-09 vir
-    13: ("me", "tchin"),  # 04-17-09 - 17-08-34 vir
-    14: ("ju", "kio"),  #   17-08-34 - 30-00-00 vir
-    15: ("ve", "kang"),  #  00-00-00 - 12-51-25 lib
-    16: ("sa", "ti"),  #    12-51-25 - 25-42-51 lib
-    17: ("su", "fang"),  #  25-42-51 - 08-34-17 sco
-    18: ("mo", "sin"),  #   08-34-17 - 21-25-43 sco
-    19: ("ma", "wei"),  #   21-25-43 - 04-17-09 sag
-    20: ("me", "ki"),  #    04-17-09 - 17-08-34 sag
-    21: ("ju", "tow"),  #   17-08-34 - 30-00-00 sag
-    22: ("ve", "nieu"),  #  00-00-00 - 12-51-25 cap
-    23: ("sa", "mo"),  #    12-51-25 - 25-42-51 cap
-    24: ("su", "heu"),  #   25-42-51 - 08-34-17 aqu
-    25: ("mo", "gui"),  #   08-34-17 - 21-25-43 aqu
-    26: ("ma", "shih"),  #  21-25-43 - 04-17-09 pis
-    27: ("me", "peih"),  #  04-17-09 - 17-08-34 pis
-    28: ("ju", "goei"),  #  17-08-34 - 30-00-00 pis
+    # source : vivian robson - fixed stars & constellations in astrology
+    1: ("ve", "leu", "al thurayya"),  #    00-00-00 - 12-51-25 ari
+    2: ("sa", "oei", "al dabaran"),  #    12-51-25 - 25-42-51 ari
+    3: ("su", "mao", "al hak'ah"),  #    25-42-51 - 08-34-17 tau (krt)
+    4: ("mo", "pi", "al han'ah"),  #     08-34-17 - 21-25-43 tau
+    5: ("ma", "tsee", "al dhira"),  #   21-25-43 - 04-17-09 gem
+    6: ("me", "shen", "al nathrah"),  #   04-17-09 - 17-08-34 gem
+    7: ("ju", "tsing", "al tarf"),  #  17-08-34 - 30-00-00 gem
+    8: ("ve", "kwei", "al jabhah"),  #   00-00-00 - 12-51-25 can
+    9: ("sa", "lieu", "al zubrah"),  #   12-51-25 - 25-42-51 can
+    10: ("su", "sing", "al sarfah"),  #  25-42-51 - 08-34-17 leo
+    11: ("mo", "chang", "al awwa"),  # 08-34-17 - 21-25-43 leo
+    12: ("ma", "yen", "al simak"),  #   21-25-43 - 04-17-09 vir
+    13: ("me", "tchin", "al ghafr"),  # 04-17-09 - 17-08-34 vir
+    14: ("ju", "kio", "al jubana"),  #   17-08-34 - 30-00-00 vir
+    15: ("ve", "kang", "iklil al jabhah"),  #  00-00-00 - 12-51-25 lib
+    16: ("sa", "ti", "al kalb"),  #    12-51-25 - 25-42-51 lib
+    17: ("su", "fang", "al shaulah"),  #  25-42-51 - 08-34-17 sco
+    18: ("mo", "sin", "al na'am"),  #   08-34-17 - 21-25-43 sco
+    19: ("ma", "wei", "al baldah"),  #   21-25-43 - 04-17-09 sag
+    20: ("me", "ki", "al sa'd al dhabih"),  #    04-17-09 - 17-08-34 sag
+    21: ("ju", "tow", "al sa'd al bula"),  #   17-08-34 - 30-00-00 sag
+    22: ("ve", "nieu", "al sa'd al su'ud"),  #  00-00-00 - 12-51-25 cap
+    23: ("sa", "mo", "al sa'd al ahbiyah"),  #    12-51-25 - 25-42-51 cap
+    24: ("su", "heu", "al fargh al mukdim"),  #   25-42-51 - 08-34-17 aqu
+    25: ("mo", "gui", "al fargh al thani"),  #   08-34-17 - 21-25-43 aqu
+    26: ("ma", "shih", "al batn al hut"),  #  21-25-43 - 04-17-09 pis
+    27: ("me", "peih", "al sharatain"),  #  04-17-09 - 17-08-34 pis
+    28: ("ju", "goei", "al butain"),  #  17-08-34 - 30-00-00 pis
 }
 TOKENS = (
     "in",
