@@ -8,6 +8,7 @@ import gi
 gi.require_version("Gtk", "4.0")
 gi.require_version("Gdk", "4.0")
 from gi.repository import Gtk, Gdk  # type: ignore
+from sweph.constants import NAKSATRAS27, MANSIONS28
 
 
 class AngleRuler:
@@ -17,6 +18,7 @@ class AngleRuler:
         self.chart = chart
         self.active = False
         self.dragging = False
+        # colors & styling
         self.line_clr = (1.0, 1.0, 1.0, 0.7)
         self.line_width = 2.0
         # label
@@ -26,31 +28,35 @@ class AngleRuler:
         self.arc_clr = (0.118, 0.565, 1.0, 0.7)
         self.arc_width = 1.7
         self.marker_clr = (0.118, 0.565, 1.0, 0.8)  # dodgerblue
+        # mouse position & chart center
         self.cx = 0.0
         self.cy = 0.0
         self.mouse_x = 0.0
         self.mouse_y = 0.0
         self.arc0_lon = None
         self.arc1_lon = None
+        # snapping
         self.label_angle = ""
         self.label_pos = None
         self.snap_pos = None
+        # hover over
         self.hover_label = ""
         self.hover_pos = None
         self.hover_lon = None
-        # chart_settings = getattr(self.chart.app, "chart_settings", {})
-        # snap_val = chart_settings.get("snap tolerance", 6.5)
-        # print(f"angleruler : snapval={snap_val}")
-        # if isinstance(snap_val, (tuple, list)):
-        #     snap_val = snap_val[0]
-        # try:
-        #     self.snap_tolerance = float(snap_val)
-        #     print(f"angleruler : snapval ({snap_val}) changed")
-        # except (ValueError, TypeError):
-        #     self.snap_tolerance = 6.5
-        #     print(f"angleruler : snapval ({snap_val}) error")
 
         self.setup_controllers()
+
+    def get_snap_tolerance(self):
+        # distance of mouse cursor from snappable object
+        default_snap = 9.9
+        chart_settings = getattr(self.chart.app, "chart_settings", {})
+        snap_val = chart_settings.get("snap tolerance", default_snap)
+        if isinstance(snap_val, (tuple, list)):
+            snap_val = snap_val[0]
+        try:
+            return float(snap_val)
+        except (ValueError, TypeError):
+            return default_snap
 
     def setup_controllers(self):
         # setup mouse press release and motion controllers
@@ -78,6 +84,7 @@ class AngleRuler:
         self.active = not self.active
         if not self.active:
             self.reset()
+            self.update_cursor()
         else:
             lon, label, pos = self._find_snap(self.mouse_x, self.mouse_y)
             self.hover_lon = lon
@@ -100,7 +107,7 @@ class AngleRuler:
 
     def _get_rotation_offset(self):
         # calculate rotation offset if fixed ascendant mode is enabled
-        chart_settings = getattr(self.chart, "chart_settings", {})
+        chart_settings = getattr(self.chart.app, "chart_settings", {})
         ascmc = getattr(self.chart, "ascmc", None)
         if chart_settings.get("fixed asc", False) and ascmc:
             return ascmc[0]
@@ -125,138 +132,119 @@ class AngleRuler:
         y = self.cy + radius * math.sin(angle)
         return x, y
 
-    def _calculate_object_radius(self, name, lat, radius_dict, max_radius):
-        # calculate radial distance for planets based on latitude offset
-        event_r = radius_dict.get("event", max_radius * 0.92)
-        info_r = radius_dict.get("info", max_radius * 0.4)
-        mid_ring = (event_r + info_r) / 2.0
-        if name == "su":
-            return mid_ring
-        max_val = 18.0 if name == "pl" else 8.0
-        ratio = max(-1.0, min(1.0, lat / max_val))
-        if ratio >= 0:
-            return mid_ring + (event_r - mid_ring) * ratio
-        else:
-            return mid_ring + (info_r - mid_ring) * (-ratio)
-
-    def _get_snappable_targets(self, mouse_r=None):
-        # retrieve snappable targets strictly mapped to mouse radial distance
-        max_radius = getattr(self.chart, "max_radius", 300)
-        radius_dict = getattr(self.chart, "radius_dict", {})
-        # print(f"angleruler : radiusdict :\n\t{radius_dict}")
-        # print(f"angleruler : mouser={mouse_r}")
-        info_r = radius_dict.get("info", max_radius * 0.4)
-        event_r = radius_dict.get("event", max_radius * 0.85)
-        signs_r = radius_dict.get("signs", max_radius * 0.92)
-        # disable snapping inside info text ring
-        if mouse_r is None or mouse_r < info_r:
-            return []
-        targets = []
-        positions = getattr(self.chart, "positions", {}) or {}
-        # print(f"angleruler : positions :\n\t{positions}")
-        # event ring : snap to planets & house cusps
-        if info_r <= mouse_r < event_r:
-            if isinstance(positions, dict):
+    def _get_ring_objects(self, ring_name):
+        # fetch ring objects from rings data
+        if ring_name == "event":
+            pos = getattr(self.chart, "position", {})
+            if isinstance(pos, dict):
                 is_nested = any(
                     isinstance(v, dict)
                     and any(isinstance(vv, dict) for vv in v.values())
-                    for v in positions.values()
+                    for v in pos.values()
                 )
                 if is_nested:
-                    event1_data = positions.get("event", {})
-                    # for ring_name, ring_data in positions.items():
-                    # if isinstance(ring_data, dict):
-                    #     ring_rad = radius_dict.get(
-                    #         ring_name, radius_dict.get("event", max_radius * 0.85)
-                    #     )
-                    if isinstance(event1_data, dict):
-                        for code, data in event1_data.items():
-                            if isinstance(data, dict) and "lon" in data:
-                                name = data.get("name", str(code))
-                                lat = data.get("lat", 0.0)
-                                rad = self._calculate_object_radius(
-                                    name, lat, radius_dict, max_radius
-                                )
-                                glyph = glyphs.get_glyph(name, False) or name
-                                # label = (
-                                #     f"{ring_name[:3]} {name}"
-                                #     if len(radius_dict) > 1
-                                #     else glyph
-                                # )
-                                targets.append((data["lon"], glyph, rad))
-                # fallback to flat single-ring positions
-                # block below is same as block above ???
-                # else:
-                #     for code, data in positions.items():
-                #         if isinstance(data, dict) and "lon" in data:
-                #             name = data.get("name", str(code))
-                #             lat = data.get("lat", 0.0)
-                #             rad = self._calculate_object_radius(
-                #                 name, lat, radius_dict, max_radius
-                #             )
-                #             glyph = glyphs.get_glyph(name, False) or name
-                #             targets.append((data["lon"], glyph, rad))
-            line_r = (
-                mouse_r
-                if mouse_r is not None and mouse_r > 0
-                else radius_dict.get("event", max_radius * 0.85)
-            )
+                    pos = pos.get("event", {})
+            if isinstance(pos, dict):
+                return [v for v in pos.values() if isinstance(v, dict) and "lon" in v]
+            return pos or []
+
+        data_map = {
+            "p2 progress": getattr(self.chart, "p2_pos", None),
+            "p3 progress": getattr(self.chart, "p3_pos", None),
+            "p3m progress": getattr(self.chart, "p3m_pos", None),
+            "d1 direction": getattr(self.chart, "d1_pos", None),
+            "solar return": getattr(self.chart, "sol_ret_data", None),
+            "lunar return": getattr(self.chart, "lun_ret_data", None),
+            "transit": getattr(self.chart, "transit_data", None),
+        }
+        raw = data_map.get(ring_name)
+        if not raw:
+            # todo print error
+            return []
+        if isinstance(raw, dict):
+            return [v for v in raw.values() if isinstance(v, dict) and "lon" in v]
+        if isinstance(raw, list):
+            return [item for item in raw if isinstance(item, dict) and "lon" in item]
+        return []
+
+    def _get_snappable_targets(self, mouse_r, radius_dict, info_r):
+        # retrieve snappable targets mapped to mouse radial distance
+        targets = []
+        # determine ring occupied by mouse
+        sorted_rings = sorted(
+            [(k, v) for k, v in radius_dict.items()], key=lambda item: item[1]
+        )
+        current_ring = None
+        for i, (name, r) in enumerate(sorted_rings):
+            if mouse_r < r:
+                current_ring = name
+                break
+        if not current_ring and sorted_rings:
+            current_ring = sorted_rings[-1][0]
+        if current_ring == "info":
+            return []
+        # basic objects for dynamic rings
+        objects = self._get_ring_objects(current_ring)
+        for data in objects:
+            name = data.get("name", "")
+            glyph = glyphs.get_glyph(name, False) or name
+            targets.append((data["lon"], glyph))
+        if current_ring == "event":
             # snap to house cusps
-            mid_event = (info_r + event_r) / 2.0
-            cusps = getattr(self.chart, "cusps", {}) or {}
-            # print(f"angleruler : cusps :\n\t{cusps}")
-            # house_radius = radius_dict.get("event", max_radius * 0.85)
+            cusps = getattr(self.chart, "cusps", {})
             if isinstance(cusps, (list, tuple)):
                 for idx, lon in enumerate(cusps, start=1):
-                    if isinstance(lon, (int, float)):
-                        targets.append((
-                            lon,
-                            f"H {idx}",
-                            mid_event,
-                        ))  # mid event aligns with sun & rahu objects
-            else:
-                print("angleruler : cusps format not recognized !")
-            # snap to ascendant & midheaven : needed for houses without mc
+                    targets.append((lon, f"H {idx}"))
+            # snap to ascendant & midheaven
             ascmc = getattr(self.chart, "ascmc", None)
             if ascmc and len(ascmc) >= 2:
-                asc_mc_r = event_r * 1.04
-                # print(f"angleruler : ascmc :\n\tasc={asc:.3f} mc={mc:.3f}")
-                targets.append((ascmc[0], glyphs.EXTRA.get("asc", "asc"), asc_mc_r))
-                targets.append((ascmc[1], glyphs.EXTRA.get("mc", "mc"), asc_mc_r))
-        # signs ring : snap to signs borders
-        elif event_r <= mouse_r < signs_r:
-            mid_signs = (event_r + signs_r) / 2.0
+                targets.append((ascmc[0], glyphs.EXTRA.get("asc", "asc")))
+                targets.append((ascmc[1], glyphs.EXTRA.get("mc", "mc")))
+        elif current_ring == "signs":
             for i, sign_tuple in enumerate(glyphs.SIGNS.values()):
                 sign_glyph = sign_tuple[0]
-                targets.append((i * 30.0, f"0° {sign_glyph}", mid_signs))
-        # outer rings : snap
-        # elif mouse_r >= signs_r:
-        #     chart_settings = getattr(self.chart, "chart_settings", {})
-        #     # outer rings
-        #     if isinstance(positions, dict):
-        #         for ring_name, ring_data in radius_dict.items():
-        #             if ring_name in ("info", "event", "signs", "harmonic", "naksatras")
+                targets.append((i * 30, f" 0° {sign_glyph}"))
+        elif current_ring == "naksatras":
+            # chart_settings = getattr(self.chart, "chart_settings", {})
+            chart_settings = getattr(self.chart.app, "chart_settings", {})
+            use_28 = chart_settings.get("28 naksatras", False)
+            naks_count = 28 if use_28 else 27
+            step = 360.0 / naks_count
+            source_dict = MANSIONS28 if use_28 else NAKSATRAS27
+            start_nak = chart_settings.get("1st naksatra", 1)
+            if start_nak and isinstance(start_nak, (tuple, list)):
+                start_nak = start_nak[0]
+            try:
+                start_nak = int(start_nak)
+            except (ValueError, TypeError):
+                start_nak = 1
+            for i in range(naks_count):
+                lon_deg = i * step
+                idx = ((start_nak - 1 + i) % naks_count) + 1
+                # fetch tuple & access ruler
+                nak_data = source_dict.get(idx, ("", ""))
+                ruler = nak_data[0]
+                ruler_glyph = glyphs.get_glyph(ruler, False) or ruler
+                targets.append((lon_deg, f"NK {idx} {ruler_glyph}"))
 
         return targets
 
-    def get_snap_tolerance(self):
-        chart_settings = getattr(self.chart.app, "chart_settings", {})
-        snap_val = chart_settings.get("snap tolerance", 6.5)
-        if isinstance(snap_val, (tuple, list)):
-            snap_val = snap_val[0]
-        try:
-            return float(snap_val)
-        except (ValueError, TypeError):
-            return 6.5
-
     def _find_snap(self, x, y):
+        # find objects on chart & snap them with dodgerblue dot
         mouse_r = math.hypot(x - self.cx, y - self.cy)
-        targets = self._get_snappable_targets(mouse_r=mouse_r)
+        max_radius = getattr(self.chart, "max_radius", 300)
+        radius_dict = getattr(self.chart, "radius_dict", {})
+        info_r = radius_dict.get("info", max_radius * 0.4)
+        # disable hover over info ring
+        if mouse_r < info_r:
+            return None, "", None
+        targets = self._get_snappable_targets(mouse_r, radius_dict, info_r)
         # print(f"angleruler : mouser={mouse_r}")
         best_target = None
         min_dist = self.get_snap_tolerance()
-        for lon, label, rad in targets:
-            tx, ty = self._lon_to_xy(lon, rad)
+        for lon, label in targets:
+            # snap visual object at mouse radius : snap line
+            tx, ty = self._lon_to_xy(lon, mouse_r)
             dist = math.hypot(x - tx, y - ty)
             if dist < min_dist:
                 min_dist = dist
@@ -268,12 +256,16 @@ class AngleRuler:
         return mouse_lon, "", None
 
     def on_pressed(self, gesture, n_press, x, y):
+        # todo on double press & mouse @ outer diameter > switch / toggle shapes instead of ticks
         if not self.active:
             return
 
         self.mouse_x = x
         self.mouse_y = y
         lon, label, pos = self._find_snap(x, y)
+        if lon is None:
+            return
+        # overwrite  for continuous measurement on new click
         self.arc0_lon = lon
         self.arc1_lon = lon
         self.snap_pos = pos
@@ -284,6 +276,7 @@ class AngleRuler:
         self.chart.drawing_area.queue_draw()
 
     def on_motion(self, controller, x, y):
+        # on mouse drag or hover
         if not self.active:
             return
 
@@ -291,7 +284,7 @@ class AngleRuler:
         self.mouse_y = y
         lon, label, pos = self._find_snap(x, y)
         self.update_cursor(pos is not None)
-        if self.dragging:
+        if self.dragging and lon is not None:
             self.arc1_lon = lon
             self.snap_pos = pos
             self.label_angle = label
@@ -303,19 +296,49 @@ class AngleRuler:
         self.chart.drawing_area.queue_draw()
 
     def on_released(self, gesture, n_press, x, y):
+        # on mouse button release : drag end
         if not self.active or not self.dragging:
             return
 
         self.mouse_x = x
         self.mouse_y = y
         lon, label, pos = self._find_snap(x, y)
-        self.arc1_lon = lon
-        self.snap_pos = pos
-        self.label_angle = label
-        self.label_pos = (x + 20.0, y - 20.0)
+        if lon is not None:
+            self.arc1_lon = lon
+            self.snap_pos = pos
+            self.label_angle = label
+            self.label_pos = (x + 20.0, y - 20.0)
         self.dragging = False
         self.update_cursor(pos is not None)
         self.chart.drawing_area.queue_draw()
+
+    def draw_ticks(self, cr, max_radius):
+        # draw degree ticks around outer circumference
+        cr.save()
+        for deg in range(360):
+            angle = math.pi - math.radians(deg)
+            if deg % 30 == 0:
+                length, width, alpha = 10, 1.5, 0.8
+            elif deg % 5 == 0:
+                length, width, alpha = 6, 1.0, 0.5
+            else:
+                length, width, alpha = 3, 0.5, 0.3
+            r_out = max_radius
+            r_in = max_radius - length  # type:ignore
+            x1, y1 = (
+                self.cx + r_in * math.cos(angle),
+                self.cy + r_in * math.sin(angle),
+            )
+            x2, y2 = (
+                self.cx + r_out * math.cos(angle),
+                self.cy + r_out * math.sin(angle),
+            )
+            cr.move_to(x1, y1)
+            cr.line_to(x2, y2)
+            cr.set_source_rgba(1.0, 1.0, 1.0, alpha)
+            cr.set_line_width(width)
+            cr.stroke()
+        cr.restore()
 
     def draw(self, cr, cx, cy, radius):
         if not self.active:
@@ -323,9 +346,11 @@ class AngleRuler:
 
         self.cx = cx
         self.cy = cy
+        # draw outer degree ticks todo upgrade to toggle angle shapes
+        self.draw_ticks(cr, radius)
         # hover snap scan before click
         if not self.dragging and self.arc0_lon is None:
-            if self.hover_pos:
+            if self.hover_pos and self.hover_lon is not None:
                 sx, sy = self.hover_pos
                 cr.arc(sx, sy, 5, 0, 2 * math.pi)
                 cr.set_source_rgba(*self.marker_clr)
@@ -339,8 +364,7 @@ class AngleRuler:
                     cr.set_font_size(self.text_size)
                     _, _, tw, th, _, _ = cr.text_extents(self.hover_label)
                     # draw text near mouse cursor
-                    tx = self.mouse_x + 20.0
-                    ty = self.mouse_y - 20.0
+                    tx, ty = self.mouse_x + 12.0, self.mouse_y - 12.0
                     # text background color
                     cr.set_source_rgba(*self.background_clr)
                     cr.rectangle(tx - 4, ty - th - 2, tw + 8, th + 8)
@@ -352,9 +376,10 @@ class AngleRuler:
 
             return
 
+        # dont draw main line if arc started over empty / info space
         if self.arc0_lon is None:
             return
-
+        # active measuring
         x0, y0 = self._lon_to_xy(self.arc0_lon, radius)
         cr.set_source_rgba(*self.line_clr)
         cr.set_line_width(self.line_width)
@@ -394,12 +419,11 @@ class AngleRuler:
             cr.set_font_size(self.text_size)
             _, _, tw, th, _, _ = cr.text_extents(angle_str)
             # draw text near mouse cursor
-            if self.label_pos:
-                tx, ty = self.label_pos
-            else:
-                tx = self.mouse_x + 20.0
-                ty = self.mouse_y - 20.0
-
+            tx, ty = (
+                self.label_pos
+                if self.label_pos
+                else (self.mouse_x + 12.0, self.mouse_y + 12.0)
+            )
             # text background color
             cr.set_source_rgba(*self.background_clr)
             cr.rectangle(tx - 4, ty - th - 2, tw + 8, th + 8)

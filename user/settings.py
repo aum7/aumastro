@@ -296,13 +296,14 @@ sweph / constants.py""",
     ),
     # --- astro chart angle ruler snapping distance (or angle)
     "snap tolerance": (
-        "4.5",
+        "9.9",
         (
             "snap distance for angle ruler\nhk : shift+r (toggle measuring on / off)"
             "\nsnapping works :"
             "\n\trings : middle of rings for objects & signs & houses"
             "\n\tradix : at center of planets for natal objects"
             "\n\t\t& at house cusps & signs ring"
+            "\nrecommended 10-15"
         ),
     ),
     # --- event data to be presented in chart info
