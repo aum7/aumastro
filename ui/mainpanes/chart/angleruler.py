@@ -27,7 +27,8 @@ class AngleRuler:
         self.background_clr = (0.05, 0.05, 0.05, 0.8)  # dark
         self.arc_clr = (0.118, 0.565, 1.0, 0.7)
         self.arc_width = 1.7
-        self.marker_clr = (0.118, 0.565, 1.0, 0.8)  # dodgerblue
+        self.marker_clr = (0.118, 0.565, 1.0, 0.7)  # dodgerblue
+        self.marker_outline = (0.0, 0.0, 0.0, 0.7)
         # mouse position & chart center
         self.cx = 0.0
         self.cy = 0.0
@@ -137,73 +138,131 @@ class AngleRuler:
         if ring_name == "event":
             pos = getattr(self.chart, "position", {})
             if isinstance(pos, dict):
-                is_nested = any(
-                    isinstance(v, dict)
-                    and any(isinstance(vv, dict) for vv in v.values())
-                    for v in pos.values()
-                )
-                if is_nested:
-                    pos = pos.get("event", {})
-            if isinstance(pos, dict):
+                # check if nested under event key as a dictionary
+                if "event" in pos and isinstance(pos["event"], dict):
+                    pos = pos["event"]
                 return [v for v in pos.values() if isinstance(v, dict) and "lon" in v]
-            return pos or []
+            elif isinstance(pos, list):
+                return [
+                    item for item in pos if isinstance(item, dict) and "lon" in item
+                ]
+            return []
 
         data_map = {
+            "transit": getattr(self.chart, "transit_data", None),
+            "varga": getattr(self.chart, "varga_data", None),
             "p2 progress": getattr(self.chart, "p2_pos", None),
             "p3 progress": getattr(self.chart, "p3_pos", None),
             "p3m progress": getattr(self.chart, "p3m_pos", None),
             "d1 direction": getattr(self.chart, "d1_pos", None),
-            "solar return": getattr(self.chart, "sol_ret_data", None),
             "lunar return": getattr(self.chart, "lun_ret_data", None),
-            "transit": getattr(self.chart, "transit_data", None),
+            "solar return": getattr(self.chart, "sol_ret_data", None),
         }
+        # print(
+        #     "angleruler : datamap : rings with house cusps :"
+        #     f"\n{self.chart.transit_data}"
+        #     f"\n{self.chart.lun_ret_data}"
+        #     f"\n{self.chart.sol_ret_data}"
+        # )
         raw = data_map.get(ring_name)
         if not raw:
             # todo print error
+            # print(f"angleruler : getringobjects : raw data missing\n\traw={raw}")
             return []
         if isinstance(raw, dict):
             return [v for v in raw.values() if isinstance(v, dict) and "lon" in v]
         if isinstance(raw, list):
-            return [item for item in raw if isinstance(item, dict) and "lon" in item]
+            return [
+                item
+                for item in raw
+                if (isinstance(item, dict) and "lon" in item)
+                or (isinstance(item, (list, tuple)) and len(item) == 12)
+            ]
         return []
+
+    def _calculate_object_radius(self, name, lat, radius_dict, max_radius):
+        # calculate radial distance - latitude - matching rings.py scaling
+        info_r = radius_dict.get("info", max_radius * 0.4)
+        event_r = radius_dict.get("event", max_radius * 0.85)
+        mid_ring = (info_r + event_r) / 2.0
+        # sun always at 0° latitude : ecliptic
+        if name == "su":
+            return mid_ring
+        try:
+            lat_val = float(lat)
+        except (ValueError, TypeError):
+            lat_val = 0.0
+        # pluto max 18 lat, all other ue 8
+        max_val = 18.0 if name == "pl" else 8.0
+        ratio = lat_val / max_val
+        # clamp ratio to prevetn snapping outside ring
+        ratio = max(-1.0, min(1.0, ratio))
+        if lat_val >= 0:
+            return mid_ring + (event_r - mid_ring) * ratio
+        else:
+            return mid_ring + (info_r - mid_ring) * (-ratio)
 
     def _get_snappable_targets(self, mouse_r, radius_dict, info_r):
         # retrieve snappable targets mapped to mouse radial distance
         targets = []
+        max_radius = getattr(self.chart, "max_radius", 300)
         # determine ring occupied by mouse
         sorted_rings = sorted(
             [(k, v) for k, v in radius_dict.items()], key=lambda item: item[1]
         )
         current_ring = None
-        for i, (name, r) in enumerate(sorted_rings):
+        for name, r in sorted_rings:
+            # for i, (name, r) in enumerate(sorted_rings):
             if mouse_r < r:
                 current_ring = name
                 break
         if not current_ring and sorted_rings:
             current_ring = sorted_rings[-1][0]
+        # dont draw nor snap anything if mouse is inside info central ring
         if current_ring == "info":
             return []
-        # basic objects for dynamic rings
-        objects = self._get_ring_objects(current_ring)
-        for data in objects:
-            name = data.get("name", "")
-            glyph = glyphs.get_glyph(name, False) or name
-            targets.append((data["lon"], glyph))
+        # objects for rings
         if current_ring == "event":
+            # snap to natal planets
+            pos = getattr(self.chart, "positions", {})
+            planet_entries = []
+            if isinstance(pos, dict):
+                if isinstance(pos.get("event"), dict):
+                    pos = pos["event"]
+                planet_entries = [
+                    v for v in pos.values() if isinstance(v, dict) and "lon" in v
+                ]
+            elif isinstance(pos, list):
+                planet_entries = [
+                    item for item in pos if isinstance(item, dict) and "lon" in item
+                ]
+            for data in planet_entries:
+                name = data.get("name", "")
+                lat = data.get("lat", 0.0)
+                glyph = glyphs.get_glyph(name, False) or name
+                # match rings.py latitude formula
+                rad = self._calculate_object_radius(name, lat, radius_dict, max_radius)
+                targets.append((data["lon"], glyph, rad))
             # snap to house cusps
             cusps = getattr(self.chart, "cusps", {})
             if isinstance(cusps, (list, tuple)):
                 for idx, lon in enumerate(cusps, start=1):
                     targets.append((lon, f"H {idx}"))
-            # snap to ascendant & midheaven
-            ascmc = getattr(self.chart, "ascmc", None)
-            if ascmc and len(ascmc) >= 2:
-                targets.append((ascmc[0], glyphs.EXTRA.get("asc", "asc")))
-                targets.append((ascmc[1], glyphs.EXTRA.get("mc", "mc")))
         elif current_ring == "signs":
             for i, sign_tuple in enumerate(glyphs.SIGNS.values()):
                 sign_glyph = sign_tuple[0]
                 targets.append((i * 30, f" 0° {sign_glyph}"))
+            # snap to ascendant & midheaven : they be visually in signs ring
+            ascmc = getattr(self.chart, "ascmc", None)
+            if ascmc and len(ascmc) >= 2:
+                asc = ascmc[0]
+                mc = ascmc[1]
+                dsc = (asc + 180.0) % 360.0
+                ic = (mc + 180.0) % 360.0
+                targets.append((asc, glyphs.EXTRA.get("asc", "asc")))
+                targets.append((mc, glyphs.EXTRA.get("mc", "mc")))
+                targets.append((dsc, glyphs.EXTRA.get("dsc", "dsc")))
+                targets.append((ic, glyphs.EXTRA.get("ic", "ic")))
         elif current_ring == "naksatras":
             # chart_settings = getattr(self.chart, "chart_settings", {})
             chart_settings = getattr(self.chart.app, "chart_settings", {})
@@ -226,6 +285,21 @@ class AngleRuler:
                 ruler = nak_data[0]
                 ruler_glyph = glyphs.get_glyph(ruler, False) or ruler
                 targets.append((lon_deg, f"NK {idx} {ruler_glyph}"))
+        else:
+            # outer rings
+            objects = self._get_ring_objects(current_ring)
+            # ring_r = radius_dict.get(current_ring, mouse_r)
+            for item in objects:
+                # planet
+                if isinstance(item, dict):
+                    name = item.get("name", "")
+                    glyph = glyphs.get_glyph(name, False) or name
+                    targets.append((item["lon"], glyph))
+                # house cusps for outer rings : transit, solar & lunar return
+                elif isinstance(item, (list, tuple)) and len(item) == 12:
+                    for idx, lon in enumerate(item, start=1):
+                        targets.append((lon, f"H {idx}"))
+                # print(f"angleruler : getsnappabletargets : data={name}-{data['lon']}")
 
         return targets
 
@@ -242,9 +316,17 @@ class AngleRuler:
         # print(f"angleruler : mouser={mouse_r}")
         best_target = None
         min_dist = self.get_snap_tolerance()
-        for lon, label in targets:
+        # ---
+        for item in targets:
+            lon = item[0]
+            label = item[1]
+            target_r = item[2] if len(item) > 2 and item[2] is not None else mouse_r
+            # ---
+            # calculate screen coords using object radius
+            # for lon, label in targets:
             # snap visual object at mouse radius : snap line
-            tx, ty = self._lon_to_xy(lon, mouse_r)
+            tx, ty = self._lon_to_xy(lon, target_r)
+            # tx, ty = self._lon_to_xy(lon, mouse_r)
             dist = math.hypot(x - tx, y - ty)
             if dist < min_dist:
                 min_dist = dist
@@ -346,97 +428,120 @@ class AngleRuler:
 
         self.cx = cx
         self.cy = cy
+        # get ring borders : outer radius
+        radius_dict = getattr(self.chart, "radius_dict", {})
+        max_radius = getattr(self.chart, "max_radius", 300)
+        info_r = radius_dict.get("info", max_radius * 0.4)
+        # event_r = radius_dict.get("event", max_radius * 0.85)
         # draw outer degree ticks todo upgrade to toggle angle shapes
         self.draw_ticks(cr, radius)
-        # hover snap scan before click
-        if not self.dragging and self.arc0_lon is None:
-            if self.hover_pos and self.hover_lon is not None:
-                sx, sy = self.hover_pos
-                cr.arc(sx, sy, 5, 0, 2 * math.pi)
-                cr.set_source_rgba(*self.marker_clr)
-                cr.fill()
-                if self.hover_label:
-                    cr.select_font_face(
-                        "VictorMonoLightAstro",
-                        cairo.FONT_SLANT_NORMAL,
-                        cairo.FONT_WEIGHT_BOLD,
-                    )
-                    cr.set_font_size(self.text_size)
-                    _, _, tw, th, _, _ = cr.text_extents(self.hover_label)
-                    # draw text near mouse cursor
-                    tx, ty = self.mouse_x + 12.0, self.mouse_y - 12.0
-                    # text background color
-                    cr.set_source_rgba(*self.background_clr)
-                    cr.rectangle(tx - 4, ty - th - 2, tw + 8, th + 8)
-                    cr.fill()
-                    # text color
-                    cr.set_source_rgba(*self.text_clr)
-                    cr.move_to(tx, ty)
-                    cr.show_text(self.hover_label)
-
-            return
-
-        # dont draw main line if arc started over empty / info space
-        if self.arc0_lon is None:
-            return
-        # active measuring
-        x0, y0 = self._lon_to_xy(self.arc0_lon, radius)
-        cr.set_source_rgba(*self.line_clr)
-        cr.set_line_width(self.line_width)
-        cr.move_to(cx, cy)
-        cr.line_to(x0, y0)
-        cr.stroke()
-        if self.arc1_lon is not None:
-            x1, y1 = self._lon_to_xy(self.arc1_lon, radius)
+        # render completed or in-progress measurement arc & rays
+        if self.arc0_lon is not None:
+            # start arc line after info ring
+            x0_in, y0_in = self._lon_to_xy(self.arc0_lon, info_r)
+            x0_out, y0_out = self._lon_to_xy(self.arc0_lon, radius)
+            # x0, y0 = self._lon_to_xy(self.arc0_lon, radius)
             cr.set_source_rgba(*self.line_clr)
             cr.set_line_width(self.line_width)
-            cr.move_to(cx, cy)
-            cr.line_to(x1, y1)
+            cr.move_to(x0_in, y0_in)
+            cr.line_to(x0_out, y0_out)
+            # cr.move_to(cx, cy)
+            # cr.line_to(x0, y0)
             cr.stroke()
-            # show normalized or full angle
-            # diff = abs((self.arc1_lon - self.arc0_lon) % 360)
-            diff = abs((self.arc1_lon - self.arc0_lon + 180) % 360 - 180)
-            offset = self._get_rotation_offset()
-            a0 = math.pi - math.radians((self.arc0_lon - offset) % 360.0)
-            a1 = math.pi - math.radians((self.arc1_lon - offset) % 360.0)
-            cr.set_source_rgba(*self.arc_clr)
-            # measure arc line width
-            cr.set_line_width(4.0)
-            # measure arc diameter
-            arc_rad = radius * 0.33
-            cr.arc(cx, cy, arc_rad, min(a0, a1), max(a0, a1))
-            cr.stroke()
+            if self.arc1_lon is not None:
+                # start arc line after info ring
+                x1_in, y1_in = self._lon_to_xy(self.arc1_lon, info_r)
+                x1_out, y1_out = self._lon_to_xy(self.arc1_lon, radius)
+                # x1, y1 = self._lon_to_xy(self.arc1_lon, radius)
+                cr.set_source_rgba(*self.line_clr)
+                cr.set_line_width(self.line_width)
+                cr.move_to(x1_in, y1_in)
+                cr.line_to(x1_out, y1_out)
+                # cr.move_to(cx, cy)
+                # cr.line_to(x1, y1)
+                cr.stroke()
+                # calculate & draw arc curve
+                diff = abs((self.arc1_lon - self.arc0_lon + 180) % 360 - 180)
+                offset = self._get_rotation_offset()
 
-            deg = int(diff)
-            minutes = int((diff - deg) * 60)
-            angle_str = f"{deg}° {minutes:02d}'"
-            if self.label_angle:
-                angle_str += f" {self.label_angle}"
-
-            cr.select_font_face(
-                "VictorMonoLightAstro",
-                cairo.FONT_SLANT_NORMAL,
-                cairo.FONT_WEIGHT_BOLD,
-            )
-            cr.set_font_size(self.text_size)
-            _, _, tw, th, _, _ = cr.text_extents(angle_str)
-            # draw text near mouse cursor
-            tx, ty = (
-                self.label_pos
-                if self.label_pos
-                else (self.mouse_x + 12.0, self.mouse_y + 12.0)
-            )
-            # text background color
-            cr.set_source_rgba(*self.background_clr)
-            cr.rectangle(tx - 4, ty - th - 2, tw + 8, th + 8)
-            cr.fill()
-            # text color
-            cr.set_source_rgba(*self.text_clr)
-            cr.move_to(tx, ty)
-            cr.show_text(angle_str)
-
-        if self.snap_pos:
+                v0 = (self.arc0_lon - offset) % 360.0
+                delta = (self.arc1_lon - self.arc0_lon + 180.0) % 360.0 - 180.0
+                start_angle = math.pi - math.radians(v0)
+                end_angle = start_angle - math.radians(delta)
+                # a0 = math.pi - math.radians((self.arc0_lon - offset) % 360.0)
+                # a1 = math.pi - math.radians((self.arc1_lon - offset) % 360.0)
+                cr.set_source_rgba(*self.arc_clr)
+                # angle ruler arc width
+                cr.set_line_width(4.0)
+                # angle ruler arc radius
+                arc_rad = radius * 0.33
+                if start_angle > end_angle:
+                    cr.arc_negative(cx, cy, arc_rad, start_angle, end_angle)
+                else:
+                    cr.arc(cx, cy, arc_rad, start_angle, end_angle)
+                # cr.arc(cx, cy, arc_rad, min(a0, a1), max(a0, a1))
+                cr.stroke()
+                # calculate & draw angle label
+                deg = int(diff)
+                minutes = int((diff - deg) * 60)
+                angle_str = f"{deg}° {minutes:02d}'"
+                if self.label_angle:
+                    angle_str += f" {self.label_angle}"
+                cr.select_font_face(
+                    "VictorMonoLightAstro",
+                    cairo.FONT_SLANT_NORMAL,
+                    cairo.FONT_WEIGHT_BOLD,
+                )
+                cr.set_font_size(self.text_size)
+                _, _, tw, th, _, _ = cr.text_extents(angle_str)
+                # draw text near mouse cursor
+                tx, ty = (
+                    self.label_pos
+                    if self.label_pos
+                    else (self.mouse_x + 12.0, self.mouse_y - 12.0)
+                )
+                # text background color
+                cr.set_source_rgba(*self.background_clr)
+                cr.rectangle(tx - 4, ty - th - 2, tw + 8, th + 8)
+                cr.fill()
+                # text color
+                cr.set_source_rgba(*self.text_clr)
+                cr.move_to(tx, ty)
+                cr.show_text(angle_str)
+        # render snap marker during active drag
+        if self.dragging and self.snap_pos:
             sx, sy = self.snap_pos
+            cr.new_path()
             cr.arc(sx, sy, 5, 0, 2 * math.pi)
             cr.set_source_rgba(*self.marker_clr)
-            cr.fill()
+            cr.fill_preserve()
+            cr.set_source_rgba(*self.marker_outline)
+            cr.set_line_width(1.0)
+            cr.stroke()
+            # cr.fill()
+        # render hover snap marker & label
+        elif not self.dragging and self.hover_pos and self.hover_lon is not None:
+            sx, sy = self.hover_pos
+            cr.new_path()
+            cr.arc(sx, sy, 5, 0, 2 * math.pi)
+            cr.set_source_rgba(*self.marker_clr)
+            cr.fill_preserve()
+            cr.set_source_rgba(*self.marker_outline)
+            cr.set_line_width(1.0)
+            cr.stroke()
+            # cr.fill()
+            if self.hover_label:
+                cr.select_font_face(
+                    "VictorMonoLightAstro",
+                    cairo.FONT_SLANT_NORMAL,
+                    cairo.FONT_WEIGHT_BOLD,
+                )
+                cr.set_font_size(self.text_size)
+                _, _, tw, th, _, _ = cr.text_extents(self.hover_label)
+                tx, ty = self.mouse_x + 12.0, self.mouse_y - 12.0
+                cr.set_source_rgba(*self.background_clr)
+                cr.rectangle(tx - 4, ty - th - 2, tw + 8, th + 8)
+                cr.fill()
+                cr.set_source_rgba(*self.text_clr)
+                cr.move_to(tx, ty)
+                cr.show_text(self.hover_label)

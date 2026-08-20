@@ -81,6 +81,7 @@ class AstroChart(Gtk.Box):
             self.positions = (
                 self.app.e1_positions if hasattr(self.app, "e1_positions") else None
             )
+            # print(f"astrochart : self.positions :\n\t{self.positions}")
         self.drawing_area.queue_draw()
         # print(f"astrochart : {event} positions changed")
 
@@ -275,20 +276,22 @@ class AstroChart(Gtk.Box):
             )
             ring_transit.draw(cr)
         # --- varga
+        self.varga_data = None
         if "varga" in outer_rings:
-            varga_data = None
+            # varga_data = None
             try:
                 division = int(self.chart_settings.get("harmonic ring", "").strip())
-                varga_data = calculate_varga("e2", division)
+                self.varga_data = calculate_varga("e2", division)
             except Exception:
+                self.varga_data = None
                 division = None
-            if varga_data is not None:
+            if self.varga_data is not None:
                 ring_varga = Varga(
                     radius=radius_dict.get("varga", max_radius),
                     cx=cx,
                     cy=cy,
                     font_size=int(12 * font_scale),
-                    varga_data=varga_data,
+                    varga_data=self.varga_data,
                     radius_dict=radius_dict,
                 )
                 ring_varga.draw(cr)
