@@ -394,14 +394,16 @@ class AngleRuler:
             cr.line_to(x1, y1)
             cr.stroke()
             # show normalized or full angle
-            diff = abs((self.arc1_lon - self.arc0_lon) % 360)
-            # diff = abs((self.arc1_lon - self.arc0_lon + 180) % 360 - 180)
+            # diff = abs((self.arc1_lon - self.arc0_lon) % 360)
+            diff = abs((self.arc1_lon - self.arc0_lon + 180) % 360 - 180)
             offset = self._get_rotation_offset()
             a0 = math.pi - math.radians((self.arc0_lon - offset) % 360.0)
             a1 = math.pi - math.radians((self.arc1_lon - offset) % 360.0)
             cr.set_source_rgba(*self.arc_clr)
-            cr.set_line_width(2.0)
-            arc_rad = radius * 0.4
+            # measure arc line width
+            cr.set_line_width(4.0)
+            # measure arc diameter
+            arc_rad = radius * 0.33
             cr.arc(cx, cy, arc_rad, min(a0, a1), max(a0, a1))
             cr.stroke()
 
