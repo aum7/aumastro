@@ -51,11 +51,11 @@ ECLIPSES = {
     "lun": "\u01af",
 }
 SYZYGY = {  # prenatal lunation
-    "syzn": ("\u01ec", "conjunction"),  # new moon
-    "syzf": ("\u01ed", "opposition"),  # full moon
+    "syznew": ("\u01ec", "syzygy new moon"),  # conjunction glyph
+    "syzful": ("\u01ed", "syzygy full moon"),  # opposition glyph
 }
 LOTS = {  # aka arabic parts
-    "fortuna2": "\u018b",  # fortuna X
+    # "fortuna2": "\u018b",  # fortuna X
     "fortuna": "\u01e2",  # mo
     "spirit": "\u01e3",  # su
     "eros": "\u01e4",  # ve
@@ -91,9 +91,16 @@ EXTRA = {
 }
 
 
-def get_lunation_glyph(name: str) -> str:
-    # select conj or oppo glyph
-    return EXTRA.get("jinjang", "")
+def get_syzygy_glyph(name: str) -> str:
+    # identify syzygy
+    glyph = None
+    if name == "syznew":
+        glyph = MOON_PHASES["new"]
+    elif name == "syzful":
+        glyph = MOON_PHASES["full"]
+    # select new or full moon glyph
+    return glyph if (glyph is not None) else ""
+    # return SYZYGY.get(name, ("", ""))[0]
 
 
 def get_eclipse_glyph(name: str) -> str:

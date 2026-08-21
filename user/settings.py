@@ -49,57 +49,60 @@ LOTS = {  # 7 hermetic lots : many different definitions for lots exist
     # https://sarahsastrology.com/arabic-parts
     # LEGAL AFFAIRS   9th house cusp + 3rd house cusp - Venus :
     # "affairs+": {"day": "9th + 3rd - ve"},
+    # day = diurnal birth calculation formula, ie sun is above horizon (asc-dsc)
     "fortuna": {
-        "enable": False,
+        "enable": True,  # todo False
         "day": "asc + (mo - su)",
         "tooltip": "body",
     },
     "spirit": {
-        "enable": False,
+        "enable": True,
         "day": "asc + (su - mo)",
         "tooltip": "soul & intelect",
     },
     "necessity": {
-        "enable": False,
+        "enable": True,
         "day": "(asc + (mo - su)) - me",
         "tooltip": "fortuna - me\nconstraints, war, enmity",
     },
     "eros": {
-        "enable": False,
+        "enable": True,
         "day": "ve - (asc + (su - mo))",
         "tooltip": "ve - spirit\napetite, desire",
     },
     "courage": {
-        "enable": False,
+        "enable": True,
         "day": "(asc + (mo - su)) - ma",
         "tooltip": "fortuna - ma\nboldness, treachery, strength, all evildoings",
     },
     "victory": {
-        "enable": False,
+        "enable": True,
         "day": "ju - (asc + (su - mo))",
         "tooltip": "ju - spirit\nfaith, contests, generosity, success",
     },
     "nemesis": {
-        "enable": False,
+        "enable": True,
         "day": "(asc + (mo - su)) - sa",
         "tooltip": "fortuna - sa\nunderworld, concealed, exposure, destruction",
     },
 }
-# selected lots for event 2 todo do we need this ???
-LOTS_2 = {""}
 # prenatal events : syzygy & eclipses
 PRENATAL = {
-    "lunation": {
-        "enable": False,
-        "tooltip": "syzygy - last full or new moon before event",
+    "syzygy": {
+        "enable": True,
+        "tooltip": (
+            "syzygy - last full or new moon before event 1"
+            "\nnote : syzygy might overlap with eclipses (below)"
+        ),
     },
     "eclipse": {
         "enable": True,
-        "tooltip": "last solar & lunar eclipse before event",
+        "tooltip": (
+            "last solar & lunar eclipse before event 1"
+            "\nnote : eclipses might overlap with lunation (above)"
+        ),
     },
 }
-# default prenatal for event 2 todo do we need this ???
-PRENATAL_2 = {""}
 SWE_FLAG = {
     # default flags for sweph calculations
     # all flags are duplicated & commented as backup ; user can toggle them in
@@ -237,7 +240,7 @@ sweph / constants.py""",
     # 1+ simple divisions, similar but NOT all equal to varga
     "harmonic ring": (
         "9",
-        "harmonic (aka varga) ring\nempty : do NOT show | 1 : egypt. terms (bounds)\n1+ : simple harmonic for event 1 *similar* to varga\nterms can be changed in\nsweph / constants.py",
+        "harmonic (aka varga) ring\nempty : do NOT show | 1 : egypt. terms (bounds)\n2+ : simple harmonic for event 1 *similar* to varga\nterms can be changed in\nsweph / constants.py",
     ),
     # --- event 2 astro chart circles : draw progressions (p1 & p3) | returns | transit
     # calculated in sweph / calculations / ...

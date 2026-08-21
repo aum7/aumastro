@@ -76,7 +76,7 @@ def calculate_retro(event: str):
             jd_ut = next(d["p3mjdut"] for d in pos if "p3mjdut" in d)
         # msg += f"{event} jdut curr : {jdtoiso(jd_ut)}\n"
         if not jd_ut:
-            notify.warning(
+            notify.error(
                 f"jdut for {event_name} not found : exiting ...",
                 source="retro",
                 route=[""],

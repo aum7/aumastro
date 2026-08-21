@@ -50,7 +50,11 @@ def calculate_positions(event: Optional[str] = None) -> None:
         use_mean_node = app.chart_settings["mean node"]
         use_28_naks = app.chart_settings["28 naksatras"]
         first_nak = int(app.chart_settings["1st naksatra"])
-        division = int(app.chart_settings.get("harmonic ring", "").strip())
+        # division / harmonic ring can be empty = dont show harmonic ring
+        try:
+            division = int(app.chart_settings.get("harmonic ring", "").strip())
+        except (ValueError, TypeError):
+            division = 0
         jd_ut = sweph.get("jd_ut")
         # msg += (
         #     f"usemeannode : {use_mean_node} | swephflag : {app.sweph_flag} "

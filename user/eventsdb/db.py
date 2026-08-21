@@ -8,12 +8,12 @@
 # "datetime": "2025-03-29 10:47:34",  # last solecl
 # "datetime": "2025 8 1 17 1", # trading start
 DEFAULT_E1 = {
-    # "country": "Slo",
-    # "city": "ljubljana",
+    "country": "Slo",
+    "city": "ljubljana",
     # "location": "46 3 8 N 14 27 9 E 355 m",  # mons casino
-    # "location": "46 03 10 n 14 31 26 e 0294 m",  # porodnišnica lj
-    # "name": "nau",
-    # "datetime": "1975 2 8 14 10",
+    "location": "46 03 10 n 14 31 26 e 0294 m",  # porodnišnica lj
+    "name": "nau",
+    "datetime": "1975 2 8 14 10",
     # ---
     # "country": "UK",
     # "city": "london",
@@ -33,14 +33,14 @@ DEFAULT_E1 = {
     # "name": "gansten j male",
     # "datetime": "1981-10-8 14:21:00",  # cet
     # --- lisa marie presley
-    "country": "usa",
-    "city": "memphis",
-    "location": "35 9 n 090 3 w",
-    "name": "lisa presley",
-    "datetime": "1968-02-01 17:01",  # cst
+    # "country": "usa",
+    # "city": "memphis",
+    # "location": "35 9 n 090 3 w",
+    # "name": "lisa presley",
+    # "datetime": "1968-02-01 17:01",  # cst
 }
 DEFAULT_E2 = {
-    "datetime": "2013-02-01 10:05:00",  # lisa presley 45th revolution
+    "datetime": "2026-08-21 19:36:00",  # lisa presley 45th revolution
     # "datetime": "1973-12-18 10:05:00",  # eet
     # "datetime": "2007-03-09 14:00:00",
 }

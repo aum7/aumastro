@@ -30,12 +30,12 @@ TERMS = {  # egyptian terms table: starting degree : ruler
     167: "ju",
     171: "ma",
     178: "sa",
-    # 180: "sa",  # extends
+    # 180: "sa",  # extends previous term = same ruler
     186: "me",
     194: "ju",
     201: "ve",
     208: "ma",
-    # 210: "ma",  # extends
+    # 210: "ma",  # extends previous term = same ruler
     217: "ve",
     221: "me",
     229: "ju",

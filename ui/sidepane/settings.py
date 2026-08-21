@@ -10,9 +10,7 @@ from user.settings import (
     OBJECTS,
     OBJECTS_2,
     LOTS,
-    LOTS_2,
     PRENATAL,
-    PRENATAL_2,
     HOUSE_SYSTEMS,
     CHART_SETTINGS,
     SWE_FLAG,
@@ -144,7 +142,6 @@ event 1 & 2 can have different objects"""
     box_lots.append(manager.lbx_lots)
     # track selected lots per event
     app.selected_lots_e1 = set()
-    app.selected_lots_e2 = LOTS_2
     # manager.selected_objects_event = 1 # handled by objects
     for name, obj_data in LOTS.items():
         row = Gtk.ListBoxRow()
@@ -182,7 +179,6 @@ event 1 & 2 can have different objects"""
     box_prenatal.append(manager.lbx_prenatal)
     # track selected prenatal per event
     app.selected_prenatal_e1 = set()
-    app.selected_prenatal_e2 = PRENATAL_2
     # manager.selected_objects_event = 1 # handled by objects
     for name, obj_data in PRENATAL.items():
         row = Gtk.ListBoxRow()
@@ -263,7 +259,7 @@ event 1 & 2 can have different objects"""
         app.chart_settings[setting] = default
     box_chart_settings.append(manager.lbx_chart_setts_1)
     # label for chart drawing
-    lbl_settings_draw = Gtk.Label(label="drawing & calculations")
+    lbl_settings_draw = Gtk.Label(label="drawing")
     lbl_settings_draw.set_halign(Gtk.Align.START)
     box_chart_settings.append(lbl_settings_draw)
     # listbox 2 with rows for drawing & calculations settings

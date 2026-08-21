@@ -8,7 +8,7 @@ import gi
 gi.require_version("Gtk", "4.0")
 gi.require_version("Gdk", "4.0")
 from gi.repository import Gtk, Gdk  # type: ignore
-from sweph.constants import NAKSATRAS27, MANSIONS28
+from sweph.constants import NAKSATRAS27, MANSIONS28, TERMS
 
 
 class AngleRuler:
@@ -157,6 +157,7 @@ class AngleRuler:
             "d1 direction": getattr(self.chart, "d1_pos", None),
             "lunar return": getattr(self.chart, "lun_ret_data", None),
             "solar return": getattr(self.chart, "sol_ret_data", None),
+            # "harmonic": getattr(self.chart, "harmonic_data", None),
         }
         # print(
         #     "angleruler : datamap : rings with house cusps :"
@@ -181,6 +182,7 @@ class AngleRuler:
         return []
 
     def _calculate_object_radius(self, name, lat, radius_dict, max_radius):
+        # print(f"angleruler : radiusdict={radius_dict}")
         # calculate radial distance - latitude - matching rings.py scaling
         info_r = radius_dict.get("info", max_radius * 0.4)
         event_r = radius_dict.get("event", max_radius * 0.85)
@@ -263,6 +265,37 @@ class AngleRuler:
                 targets.append((mc, glyphs.EXTRA.get("mc", "mc")))
                 targets.append((dsc, glyphs.EXTRA.get("dsc", "dsc")))
                 targets.append((ic, glyphs.EXTRA.get("ic", "ic")))
+            # snap to extra objects
+            for extras in ("lots", "syzygy", "eclipses"):
+                data_list = getattr(self.chart, extras, None) or []
+                for item in data_list:
+                    if isinstance(item, dict) and "lon" in item and "name" in item:
+                        name = item.get("name", "")
+                        label = ""
+                        if extras == "syzygy":
+                            if name in glyphs.SYZYGY:
+                                glyph, tooltip = glyphs.SYZYGY[name]
+                                glyph_moon_ph = ""
+                                if name == "syznew":
+                                    glyph_moon_ph = glyphs.MOON_PHASES["new"]
+                                elif name == "syzful":
+                                    glyph_moon_ph = glyphs.MOON_PHASES["full"]
+                                label = f"{glyph} {tooltip} {glyph_moon_ph}"
+                                targets.append((item["lon"], label))
+                        elif extras == "eclipses":
+                            ecl_names = {
+                                "sol": "prenatal solar eclipse",
+                                "lun": "prenatal lunar eclipse",
+                            }
+                            label = f"{ecl_names.get(name, name)}"
+                            targets.append((item["lon"], label))
+                        elif extras == "lots":
+                            lot_info = glyphs.LOTS.get(name, {})
+                            # print(f"angleruler : lotinfo={lot_info}")
+                            # lot_name, glyph = glyphs.LOTS.get(name, {})
+                            label = f"{lot_info} {name}"
+                            targets.append((item["lon"], label))
+                        # targets.append((item["lon"], name))
         elif current_ring == "naksatras":
             # chart_settings = getattr(self.chart, "chart_settings", {})
             chart_settings = getattr(self.chart.app, "chart_settings", {})
@@ -285,10 +318,30 @@ class AngleRuler:
                 ruler = nak_data[0]
                 ruler_glyph = glyphs.get_glyph(ruler, False) or ruler
                 targets.append((lon_deg, f"NK {idx} {ruler_glyph}"))
+        elif current_ring == "harmonic":
+            chart_settings = getattr(self.chart.app, "chart_settings", {})
+            harmonic_value = chart_settings.get("harmonic ring", "0")
+            try:
+                division = int(harmonic_value)
+            except (ValueError, TypeError):
+                division = 0
+            # 1 = terms (bounds)
+            if division == 1:
+                for start_lon, ruler in TERMS.items():
+                    ruler_glypy = glyphs.get_glyph(ruler, False) or ruler
+                    targets.append((float(start_lon), f"T {ruler_glypy}"))
+            elif division > 1:
+                # objects = self._get_ring_objects("harmonic")
+                objects = self.chart.harmonic_data
+                # print(f"angleruler : harmonic objects={objects}")
+                for item in objects:
+                    if isinstance(item, dict) and "lon" in item:
+                        name = item.get("name", "")
+                        glyph = glyphs.get_glyph(name, False) or name
+                        targets.append((item["lon"], glyph))
         else:
             # outer rings
             objects = self._get_ring_objects(current_ring)
-            # ring_r = radius_dict.get(current_ring, mouse_r)
             for item in objects:
                 # planet
                 if isinstance(item, dict):
@@ -316,17 +369,13 @@ class AngleRuler:
         # print(f"angleruler : mouser={mouse_r}")
         best_target = None
         min_dist = self.get_snap_tolerance()
-        # ---
         for item in targets:
             lon = item[0]
             label = item[1]
             target_r = item[2] if len(item) > 2 and item[2] is not None else mouse_r
-            # ---
             # calculate screen coords using object radius
-            # for lon, label in targets:
             # snap visual object at mouse radius : snap line
             tx, ty = self._lon_to_xy(lon, target_r)
-            # tx, ty = self._lon_to_xy(lon, mouse_r)
             dist = math.hypot(x - tx, y - ty)
             if dist < min_dist:
                 min_dist = dist
@@ -440,25 +489,19 @@ class AngleRuler:
             # start arc line after info ring
             x0_in, y0_in = self._lon_to_xy(self.arc0_lon, info_r)
             x0_out, y0_out = self._lon_to_xy(self.arc0_lon, radius)
-            # x0, y0 = self._lon_to_xy(self.arc0_lon, radius)
             cr.set_source_rgba(*self.line_clr)
             cr.set_line_width(self.line_width)
             cr.move_to(x0_in, y0_in)
             cr.line_to(x0_out, y0_out)
-            # cr.move_to(cx, cy)
-            # cr.line_to(x0, y0)
             cr.stroke()
             if self.arc1_lon is not None:
                 # start arc line after info ring
                 x1_in, y1_in = self._lon_to_xy(self.arc1_lon, info_r)
                 x1_out, y1_out = self._lon_to_xy(self.arc1_lon, radius)
-                # x1, y1 = self._lon_to_xy(self.arc1_lon, radius)
                 cr.set_source_rgba(*self.line_clr)
                 cr.set_line_width(self.line_width)
                 cr.move_to(x1_in, y1_in)
                 cr.line_to(x1_out, y1_out)
-                # cr.move_to(cx, cy)
-                # cr.line_to(x1, y1)
                 cr.stroke()
                 # calculate & draw arc curve
                 diff = abs((self.arc1_lon - self.arc0_lon + 180) % 360 - 180)
@@ -468,8 +511,6 @@ class AngleRuler:
                 delta = (self.arc1_lon - self.arc0_lon + 180.0) % 360.0 - 180.0
                 start_angle = math.pi - math.radians(v0)
                 end_angle = start_angle - math.radians(delta)
-                # a0 = math.pi - math.radians((self.arc0_lon - offset) % 360.0)
-                # a1 = math.pi - math.radians((self.arc1_lon - offset) % 360.0)
                 cr.set_source_rgba(*self.arc_clr)
                 # angle ruler arc width
                 cr.set_line_width(4.0)
@@ -479,7 +520,6 @@ class AngleRuler:
                     cr.arc_negative(cx, cy, arc_rad, start_angle, end_angle)
                 else:
                     cr.arc(cx, cy, arc_rad, start_angle, end_angle)
-                # cr.arc(cx, cy, arc_rad, min(a0, a1), max(a0, a1))
                 cr.stroke()
                 # calculate & draw angle label
                 deg = int(diff)
@@ -521,6 +561,7 @@ class AngleRuler:
             # cr.fill()
         # render hover snap marker & label
         elif not self.dragging and self.hover_pos and self.hover_lon is not None:
+            # marker 1st
             sx, sy = self.hover_pos
             cr.new_path()
             cr.arc(sx, sy, 5, 0, 2 * math.pi)
@@ -529,7 +570,6 @@ class AngleRuler:
             cr.set_source_rgba(*self.marker_outline)
             cr.set_line_width(1.0)
             cr.stroke()
-            # cr.fill()
             if self.hover_label:
                 cr.select_font_face(
                     "VictorMonoLightAstro",
@@ -538,7 +578,19 @@ class AngleRuler:
                 )
                 cr.set_font_size(self.text_size)
                 _, _, tw, th, _, _ = cr.text_extents(self.hover_label)
+                # size of canvas
+                _, _, width, _ = cr.clip_extents()
+                # position from mouse cursor
                 tx, ty = self.mouse_x + 12.0, self.mouse_y - 12.0
+                # outer box width
+                box_width = tw + 9.0
+                # flip to left if overflowing right canvas border
+                if (tx - 4.0 + box_width) > width:
+                    tx = self.mouse_x - tw - 12.0
+                # flip down if overflowing top canvas border
+                if (ty - th - 2.0) < 0:
+                    ty = self.mouse_y + th + 16.0
+                # draw label
                 cr.set_source_rgba(*self.background_clr)
                 cr.rectangle(tx - 4, ty - th - 2, tw + 8, th + 8)
                 cr.fill()

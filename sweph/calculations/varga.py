@@ -8,7 +8,12 @@ from gi.repository import Gtk  # type: ignore
 
 
 def get_varga_lon(lon: float, division: int = 9):
-    if division == "" or division == 1:
+    try:
+        division = int(division)
+    except (ValueError, TypeError):
+        return lon
+    # actual division requires integer > 1
+    if division <= 1:
         return lon
     sign = int(lon // 30)
     seg = int((lon % 30) // (30 / division))

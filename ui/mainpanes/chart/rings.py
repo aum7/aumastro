@@ -13,7 +13,7 @@ from ui.fonts.glyphs import (
     get_glyph,
     get_lot_glyph,
     get_eclipse_glyph,
-    get_lunation_glyph,
+    get_syzygy_glyph,
 )
 from ui.mainpanes.chart.astroobject import AstroObject
 from ui.helpers import _object_name_to_code as objcode
@@ -402,7 +402,7 @@ class Event(RingBase):
         retro,
         lots,
         eclipses,
-        lunation,
+        syzygy,
         radius_dict,
     ):
         super().__init__(radius, cx, cy, radius_dict)
@@ -424,8 +424,8 @@ class Event(RingBase):
             for eclipse in (eclipses or [])
             if isinstance(eclipse, dict)
         ]
-        self.lunation = [
-            AstroObject(lun) for lun in (lunation or []) if isinstance(lun, dict)
+        self.syzygy = [
+            AstroObject(lun) for lun in (syzygy or []) if isinstance(lun, dict)
         ]
         if not self.guests or not self.cusps or not self.ascmc:
             return
@@ -659,8 +659,8 @@ class Event(RingBase):
                             cr.show_text(glyph)
                             cr.new_path()
                         cr.restore()
-        if self.lunation:
-            for lun in self.lunation:
+        if self.syzygy:
+            for lun in self.syzygy:
                 # skip event attribute
                 if lun.data.get("name") is None:
                     continue
@@ -677,7 +677,7 @@ class Event(RingBase):
                 )
                 # if 'enable glyphs' > draw glyphs
                 if self.chart_settings.get("enable glyphs", True):
-                    glyph = get_lunation_glyph(name)
+                    glyph = get_syzygy_glyph(name)
                     if glyph:
                         angle = pi - radians(lun.data.get("lon", 0))
                         # print(f"rings : eventdraw : lon : {lun.data.get('lon', 0)}")
@@ -804,20 +804,20 @@ class Naksatras(RingBase):
 class Harmonic(ObjectRingBase):
     # draw harmonic (aka division aka varga) ring
     def __init__(
-        self, notify, radius, cx, cy, division, varga_data, radius_dict, font_size=14
+        self, notify, radius, cx, cy, division, harmonic_data, radius_dict, font_size=14
     ):
         super().__init__(radius, cx, cy, radius_dict)
         self.notify = notify
         self.division = division
         # print(f"rings : divdata1 : {division_data}")
-        if self.division > 1 and not varga_data:
+        if self.division > 1 and not harmonic_data:
             # always set self.division_data to avoid error on init
             self.event = None
-            self.varga_data = None
+            self.harmonic_data = None
             return
-        self.event = varga_data[0].get("event") if varga_data else None
-        self.varga_data = [
-            AstroObject(div) for div in (varga_data or []) if isinstance(div, dict)
+        self.event = harmonic_data[0].get("event") if harmonic_data else None
+        self.harmonic_data = [
+            AstroObject(div) for div in (harmonic_data or []) if isinstance(div, dict)
         ]
         # print(f"rings : divdata : {self.division_data}")
         self.font_size = font_size
@@ -874,10 +874,10 @@ class Harmonic(ObjectRingBase):
                 yg = self.cy + self.mid_ring * glyph_fix * sin(mid_angle)
                 glyph = get_glyph(ruler, False)
                 self.draw_rotated_text(cr, glyph, xg, yg, mid_angle)
-        elif self.division > 1 and self.varga_data is not None:
+        elif self.division > 1 and self.harmonic_data is not None:
             # prepare data for the draw order lookup
             guest_by_name = {
-                obj.data.get("name", "").lower(): obj for obj in self.varga_data
+                obj.data.get("name", "").lower(): obj for obj in self.harmonic_data
             }
             # draw divisions for selected harmonic
             segment_angle = 2 * pi / 12

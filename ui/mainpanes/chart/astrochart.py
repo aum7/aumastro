@@ -8,7 +8,7 @@ from math import radians
 from sweph.calculations.retro import calculate_retro
 from sweph.calculations.lots import calculate_lots
 from sweph.calculations.eclipses import calculate_eclipses
-from sweph.calculations.lunation import calculate_lunation
+from sweph.calculations.syzygy import calculate_syzygy
 from sweph.calculations.varga import calculate_varga
 from ui.mainpanes.chart.astroobject import AstroObject
 from ui.mainpanes.chart.angleruler import AngleRuler
@@ -70,7 +70,7 @@ class AstroChart(Gtk.Box):
         self.ruler = AngleRuler(self)
 
     def event_changed(self, event):
-        # main data / event changed : load new data
+        # main data / event 1 changed : load new data
         if event == "e1":
             self.e1_chart_info = getattr(self.app, "e1_chart", {})
             # print("astrochart : e1 changed")
@@ -203,7 +203,7 @@ class AstroChart(Gtk.Box):
         # + naksatras & harmonic ring (vX) for event 1
         outer_rings = []
         if getattr(self.app, "e2_active", False):
-            msg += "e2 is active\n"
+            msg += "\ne2 is active"
             # collect outer ring candidates
             if self.chart_settings.get("transit"):
                 outer_rings.append("transit")
@@ -225,7 +225,7 @@ class AstroChart(Gtk.Box):
             outer_rings.append("harmonic")
         if self.chart_settings.get("naksatras ring", ""):
             outer_rings.append("naksatras")
-        # msg += f"outerrings : {outer_rings}\n"
+        # msg += f"\nouterrings={outer_rings}"
         # factor per ring : e2 first : in below order : circle outer diameter
         outer_portion = {
             "transit": 0.08,
@@ -255,7 +255,7 @@ class AstroChart(Gtk.Box):
         max_inner = 1 - cumulative
         for ring, portion in inner_portion.items():
             radius_dict[ring] = max_radius * (max_inner * portion)
-        # msg += f"\tradiusdict : {radius_dict}"
+        # msg += f"\nradiusdict : {radius_dict}"
         # --- rotate block : if fixed asc > rotate rings
         if self.chart_settings.get("fixed asc", False) and self.ascmc:
             asc_angle = radians(self.ascmc[0])
@@ -367,10 +367,10 @@ class AstroChart(Gtk.Box):
             ring_solar.draw(cr)
         # --- optional rings : harmonic
         if "harmonic" in outer_rings:
-            varga_data = None
+            self.harmonic_data = None
             try:
                 division = int(self.chart_settings.get("harmonic ring", "").strip())
-                varga_data = calculate_varga("e1", division)
+                self.harmonic_data = calculate_varga("e1", division)
             except Exception:
                 division = None
             if division:
@@ -380,7 +380,7 @@ class AstroChart(Gtk.Box):
                     cx=cx,
                     cy=cy,
                     division=division,
-                    varga_data=varga_data,
+                    harmonic_data=self.harmonic_data,
                     radius_dict=radius_dict,
                     font_size=int(12 * font_scale),
                 )
@@ -411,6 +411,18 @@ class AstroChart(Gtk.Box):
             radius_dict=radius_dict,
         )
         ring_signs.draw(cr)
+        # extra objects data : make available to angleruler
+        # todo retro used in tables, not in astro chart
+        self.retro = calculate_retro("e1")
+        self.lots = calculate_lots()
+        self.eclipses = calculate_eclipses()
+        self.syzygy = calculate_syzygy()
+        # leave on for crosscheck of prenatal lunation (previous code was wrong)
+        msg += f"\nsyzygy={self.syzygy}"
+        print(
+            #     f"astrochart :\n\tretro={self.retro}\n\n\tlots={self.lots}"
+            #     f"\n\n\teclipses={self.eclipses}\n\n\tsyzygy={self.syzygy}"
+        )
         ring_event = Event(
             radius=radius_dict.get("event", 0.0),
             cx=cx,
@@ -420,10 +432,10 @@ class AstroChart(Gtk.Box):
             cusps=self.cusps if self.cusps else [],
             ascmc=self.ascmc if self.ascmc else [],
             chart_settings=self.chart_settings,
-            retro=calculate_retro("e1"),
-            lots=calculate_lots("e1"),
-            eclipses=calculate_eclipses("e1"),
-            lunation=calculate_lunation("e1"),
+            retro=self.retro,
+            lots=self.lots,
+            eclipses=self.eclipses,
+            syzygy=self.syzygy,
             radius_dict=radius_dict,
         )
         ring_event.draw(cr)
@@ -452,7 +464,7 @@ class AstroChart(Gtk.Box):
         self.notify.debug(
             msg,
             source="astrochart",
-            route=[""],
+            route=[""],  # terminal
         )
         # angle ruler
         self.max_radius = max_radius
