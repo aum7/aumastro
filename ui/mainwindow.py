@@ -159,7 +159,7 @@ class MainWindow(
             "ctrl+1", lambda: self.toggle_chart_setting("transit")
         )
         self.hotkeys.register_hotkey(
-            "ctrl+2", lambda: self.toggle_chart_setting("varga")
+            "ctrl+2", lambda: self.toggle_chart_setting("transit varga")
         )
         self.hotkeys.register_hotkey(
             "ctrl+3", lambda: self.toggle_chart_setting("p2 progress")

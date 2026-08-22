@@ -29,16 +29,17 @@ SIGNS = {  # sign, element, mode
     "pi": ("\u019d", "\u01dc", "\u01eb"),  # 12 w d
 }
 ASPECTS = {
-    0: ("\u019e", "conjunction"),
-    36: ("\u01aa", "semiquintile"),
-    45: ("\u01a3", "semisquare"),
-    60: ("\u01a2", "sextile"),
+    0: ("\u019e", "conjunction"),  # series : none = single
+    36: ("\u01aa", "semiquintile"),  # series : 36 72 108 144 [180]
+    45: ("\u01a3", "semisquare"),  # series : 45 90 135 [180]
+    60: ("\u01a2", "sextile"),  # series : 60 120 180
     72: ("\u01a8", "quintile"),
     90: ("\u01a1", "square"),
     108: ("\u01ab", "sesqiquintile"),
     120: ("\u01a0", "trine"),
+    135: ("\u01ad", "sesqisquare"),
     144: ("\u01a9", "biquintile"),
-    150: ("\u01a5", "inconjunct"),
+    150: ("\u01a5", "inconjunct"),  # series : none = single
     180: ("\u019f", "opposition"),
 }
 ELEMENTS = {

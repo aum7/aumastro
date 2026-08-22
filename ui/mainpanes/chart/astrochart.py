@@ -24,7 +24,7 @@ from ui.mainpanes.chart.rings import (
     P3MinorProgress,
     SolarReturn,
     LunarReturn,
-    Varga,
+    TransitVarga,
     Transit,
 )
 
@@ -82,8 +82,8 @@ class AstroChart(Gtk.Box):
                 self.app.e1_positions if hasattr(self.app, "e1_positions") else None
             )
             # print(f"astrochart : self.positions :\n\t{self.positions}")
-        self.drawing_area.queue_draw()
         # print(f"astrochart : {event} positions changed")
+        self.drawing_area.queue_draw()
 
     def houses_changed(self, event):
         if event == "e1":
@@ -126,11 +126,13 @@ class AstroChart(Gtk.Box):
 
     def stars_changed(self, event, stars):
         self.stars = stars
-        for name, (lon, nomenclature) in stars.items():
-            name = name
-            lon = lon
-            nomenclature = nomenclature
-            # print(f"name : {name} | lon : {lon} | designation : {nomenclature}")
+        # for name, (lon, nomenclature) in stars.items():
+        #     name = name
+        #     lon = lon
+        #     nomenclature = nomenclature
+        # print(
+        #     f"astrochart : starschanged : name={name} lon={lon} designation={nomenclature}"
+        # )
         self.drawing_area.queue_draw()
 
     def d1_changed(self, event):
@@ -162,6 +164,7 @@ class AstroChart(Gtk.Box):
         self.drawing_area.queue_draw()
 
     def transit_changed(self, event):
+        # transit varga is calculated from this later
         self.transit_data = getattr(self.app, "transit_data", None)
         self.drawing_area.queue_draw()
 
@@ -170,15 +173,13 @@ class AstroChart(Gtk.Box):
         msg = ""
         cx = width / 2
         cy = height / 2
-        # angle ruler
-        # radius = min(cx, cy)
         # size of application pane(s)
         base = min(width, height) * 0.5
         font_scale = base / 300.0
         # sort by scale : smaller in front of larger rings
         guests = {}
         if self.positions and isinstance(self.positions, dict):
-            # print(f"astrochart : positions :\n\t{self.positions}")
+            # print(f"astrochart : guests :\n\t{self.positions}")
             guests = sorted(
                 [
                     self.create_astro_object(obj)
@@ -207,8 +208,8 @@ class AstroChart(Gtk.Box):
             # collect outer ring candidates
             if self.chart_settings.get("transit"):
                 outer_rings.append("transit")
-            if self.chart_settings.get("varga"):
-                outer_rings.append("varga")
+            if self.chart_settings.get("transit varga"):
+                outer_rings.append("transit varga")
             if self.chart_settings.get("p2 progress"):
                 outer_rings.append("p2 progress")
             if self.chart_settings.get("p3 progress"):
@@ -229,7 +230,7 @@ class AstroChart(Gtk.Box):
         # factor per ring : e2 first : in below order : circle outer diameter
         outer_portion = {
             "transit": 0.08,
-            "varga": 0.08,
+            "transit varga": 0.08,
             "p2 progress": 0.08,
             "p3 progress": 0.08,
             "p3m progress": 0.08,
@@ -275,26 +276,26 @@ class AstroChart(Gtk.Box):
                 radius_dict=radius_dict,
             )
             ring_transit.draw(cr)
-        # --- varga
-        self.varga_data = None
-        if "varga" in outer_rings:
-            # varga_data = None
+        # --- transit varga
+        self.transit_varga_data = None
+        if "transit varga" in outer_rings:
             try:
                 division = int(self.chart_settings.get("harmonic ring", "").strip())
-                self.varga_data = calculate_varga("e2", division)
+                self.transit_varga_data = calculate_varga("e2", division)
+                # print(f"astrochart : transitvargadata={self.transit_varga_data}")
             except Exception:
-                self.varga_data = None
+                self.transit_varga_data = None
                 division = None
-            if self.varga_data is not None:
-                ring_varga = Varga(
-                    radius=radius_dict.get("varga", max_radius),
+            if self.transit_varga_data is not None:
+                ring_transit_varga = TransitVarga(
+                    radius=radius_dict.get("transit varga", max_radius),
                     cx=cx,
                     cy=cy,
                     font_size=int(12 * font_scale),
-                    varga_data=self.varga_data,
+                    transit_varga_data=self.transit_varga_data,
                     radius_dict=radius_dict,
                 )
-                ring_varga.draw(cr)
+                ring_transit_varga.draw(cr)
         # --- secondary progressions
         if "p2 progress" in outer_rings:
             ring_p2 = P2Progress(
@@ -419,10 +420,10 @@ class AstroChart(Gtk.Box):
         self.syzygy = calculate_syzygy()
         # leave on for crosscheck of prenatal lunation (previous code was wrong)
         msg += f"\nsyzygy={self.syzygy}"
-        print(
-            #     f"astrochart :\n\tretro={self.retro}\n\n\tlots={self.lots}"
-            #     f"\n\n\teclipses={self.eclipses}\n\n\tsyzygy={self.syzygy}"
-        )
+        # print(
+        #     f"astrochart :\n\tretro={self.retro}\n\n\tlots={self.lots}"
+        #     f"\n\n\teclipses={self.eclipses}\n\n\tsyzygy={self.syzygy}"
+        # )
         ring_event = Event(
             radius=radius_dict.get("event", 0.0),
             cx=cx,

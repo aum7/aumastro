@@ -457,23 +457,11 @@ event 1 & 2 can have different objects"""
     # varga & transit row
     row_var_tran = Gtk.ListBoxRow()
     box_var_tran = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
-    # checkbox for divisional (varga) ring
-    data_var = CHART_SETTINGS["event2 rings"]["varga"]
-    chk_var = Gtk.CheckButton(label="varga")
-    chk_var.set_active(data_var[0])
-    chk_var.set_tooltip_text(data_var[1])
-    chk_var.connect(
-        "toggled",
-        lambda chk, k="varga", m=manager: chart_settings_toggled(chk, k, m),
-    )
-    box_var_tran.append(chk_var)
-    manager.app.checkbox_chart_settings["varga"] = chk_var
-    manager.app.chart_settings["varga"] = data_var[0]
     # checkbox for transit
     lbl_tran = Gtk.Label(label="transit")
     lbl_tran.set_halign(Gtk.Align.START)
     data_tran = CHART_SETTINGS["event2 rings"]["transit"]
-    chk_tran = Gtk.CheckButton(label="rasi (v1)")
+    chk_tran = Gtk.CheckButton(label="rasi (h1)")
     chk_tran.set_active(data_tran[0])
     chk_tran.set_tooltip_text(data_tran[1])
     chk_tran.connect(
@@ -486,6 +474,18 @@ event 1 & 2 can have different objects"""
     row_var_tran.set_child(box_var_tran)
     lbx_chart_setts_2.append(lbl_tran)
     lbx_chart_setts_2.append(row_var_tran)
+    # checkbox for divisional (transit varga) ring
+    data_var = CHART_SETTINGS["event2 rings"]["transit varga"]
+    chk_var = Gtk.CheckButton(label="varga (hX)")
+    chk_var.set_active(data_var[0])
+    chk_var.set_tooltip_text(data_var[1])
+    chk_var.connect(
+        "toggled",
+        lambda chk, k="transit varga", m=manager: chart_settings_toggled(chk, k, m),
+    )
+    box_var_tran.append(chk_var)
+    manager.app.checkbox_chart_settings["transit varga"] = chk_var
+    manager.app.chart_settings["transit varga"] = data_var[0]
     # checkbox to use varga for aspects
     row_use_varga_aspect = Gtk.ListBoxRow()
     data_use_varga_aspect = CHART_SETTINGS["use varga aspect"]

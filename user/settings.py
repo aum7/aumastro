@@ -51,37 +51,37 @@ LOTS = {  # 7 hermetic lots : many different definitions for lots exist
     # "affairs+": {"day": "9th + 3rd - ve"},
     # day = diurnal birth calculation formula, ie sun is above horizon (asc-dsc)
     "fortuna": {
-        "enable": True,  # todo False
+        "enable": False,  # todo False
         "day": "asc + (mo - su)",
         "tooltip": "body",
     },
     "spirit": {
-        "enable": True,
+        "enable": False,
         "day": "asc + (su - mo)",
         "tooltip": "soul & intelect",
     },
     "necessity": {
-        "enable": True,
+        "enable": False,
         "day": "(asc + (mo - su)) - me",
         "tooltip": "fortuna - me\nconstraints, war, enmity",
     },
     "eros": {
-        "enable": True,
+        "enable": False,
         "day": "ve - (asc + (su - mo))",
         "tooltip": "ve - spirit\napetite, desire",
     },
     "courage": {
-        "enable": True,
+        "enable": False,
         "day": "(asc + (mo - su)) - ma",
         "tooltip": "fortuna - ma\nboldness, treachery, strength, all evildoings",
     },
     "victory": {
-        "enable": True,
+        "enable": False,
         "day": "ju - (asc + (su - mo))",
         "tooltip": "ju - spirit\nfaith, contests, generosity, success",
     },
     "nemesis": {
-        "enable": True,
+        "enable": False,
         "day": "(asc + (mo - su)) - sa",
         "tooltip": "fortuna - sa\nunderworld, concealed, exposure, destruction",
     },
@@ -245,31 +245,31 @@ sweph / constants.py""",
     # --- event 2 astro chart circles : draw progressions (p1 & p3) | returns | transit
     # calculated in sweph / calculations / ...
     "event2 rings": {
-        "transit": (False, "show transit for event 2\nhk: "),
-        "varga": (
+        "transit": (False, "show transit for event 2\nhk: ctrl+1"),
+        "transit varga": (
             False,
-            "show (simple) varga / harmonic ring for event 2\nset varga in above harmonic ring",
+            "show (simple) transit varga / harmonic ring for event 2\nset varga in above harmonic ring\nhk : ctrl+2",
         ),
         "p2 progress": (
             False,
-            "show secondary progression (p2) for event 2\nchange in sweph / calculations / ...",
+            "show secondary progression (p2) for event 2\nhk : ctrl+3\nchange in sweph / calculations / ...",
         ),
         "p3 progress": (
             False,
-            "show tertiary progression (p3) for event 2\ncalculations as per richard houck\nchange in sweph / calculations / ...",
+            "show tertiary progression (p3) for event 2\nhk : ctrl+4\ncalculations as per richard houck\nchange in sweph / calculations / ...",
         ),
         "p3m progress": (
             False,
-            "show minor (tertiary) progression (p3m) for event 2\nchange in sweph / calculations / ...",
+            "show minor (tertiary) progression (p3m) for event 2\nhk : ctrl+5\nchange in sweph / calculations / ...",
         ),
         "d1 direction": (
             False,
-            "show traditional primary direction (d1) for event 2\ncalculations as per martin gansten / ptolemy\n[todo needs verification : current is simple calculation]\nchange in sweph / calculations / ...",
+            "show traditional primary direction (d1) for event 2\nhk : ctrl+6\ncalculations as per martin gansten / ptolemy\n[todo needs verification : current is simple calculation]\nchange in sweph / calculations / ...",
         ),
-        "lunar return": (False, "show lunar return for event 2"),
+        "lunar return": (False, "show lunar return for event 2\nhk : ctrl+7"),
         "solar return": (
             False,
-            "show solar return for event 2\nchange in sweph / calculations / ...",
+            "show solar return for event 2\nhk : ctrl+8\nchange in sweph / calculations / ...",
         ),
     },
     # --- use varga positions for aspects
@@ -277,7 +277,7 @@ sweph / constants.py""",
     # todo change to use harmonic aspect : also
     "use varga aspect": (
         True,
-        "use *simple* varga / harmonic positions for aspects matrix calculation\nsort of 'harmonic aspects, in tables window\nhk : ctrl+h (toggle h1 <> hX)",
+        "use *simple* varga / harmonic positions for aspects matrix calculation\nsort of 'harmonic aspectarian', in tables window\nhk : ctrl+h (toggle h1 <> hX)",
     ),
     # --- draw fixed stars
     # in user/fixedstars.py are categories of stars :

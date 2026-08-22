@@ -299,7 +299,6 @@ class Info(RingBase):
                     if not isinstance(data, dict):
                         continue
                     # naksatra tuple : index, name, ruler
-                    # nak = data.get("naksatra") or ()  # lol ??? wtf
                     varga_nak = data.get("varga naksatra") or ()
                     try:
                         idx = int(varga_nak[0]) if varga_nak else None
@@ -415,7 +414,8 @@ class Event(RingBase):
         self.event_r = radius_dict.get("event", "")
         self.info_r = radius_dict.get("info", "")
         self.mid_ring = (self.event_r + self.info_r) / 2
-        # todo inject retro onto chart
+        # todo inject retro onto chart : how ? they be stationary phases of planets
+        # text comes to mind
         self.retro = retro
         self.lots = [AstroObject(lot) for lot in (lots or []) if isinstance(lot, dict)]
         # print(f"rings : lots : {lots}")
@@ -459,7 +459,6 @@ class Event(RingBase):
             radius_factor = 1.04
             ascendant = self.ascmc[0]
             midheaven = self.ascmc[1]
-            # marker_size = self.radius * 0.03
             # compute positions based on angle transformations
             asc_angle = pi - radians(ascendant)
             asc_x = self.cx + self.radius * radius_factor * cos(asc_angle)
@@ -714,7 +713,7 @@ class Signs(RingBase):
         self.font_size = font_size
         self.stars = stars
         self.radius_dict = radius_dict
-        # print(f"signs : stars : {self.stars}")
+        # print(f"rings : signs : stars : {self.stars}")
 
     def draw(self, cr):
         cr.arc(self.cx, self.cy, self.radius, 0, 2 * pi)
@@ -739,19 +738,23 @@ class Signs(RingBase):
             cr.stroke()
         # glyphs
         self.set_custom_font(cr, self.font_size)
-        # for i, (sign, (glyph, element, mode)) in enumerate(SIGNS.items()):
         for i, (_, (glyph, _, _)) in enumerate(SIGNS.items()):
             angle = pi - i * segment_angle - offset
             x = self.cx + self.radius * 0.96 * cos(angle)
             y = self.cy + self.radius * 0.96 * sin(angle)
             self.draw_rotated_text(cr, glyph, x, y, angle)
         self.set_custom_font(cr, self.font_size * 1.2)
-        # for name, (lon, _) in self.stars.items():
+        cr.save()
+        cr.set_source_rgba(1.0, 0.9, 0.2, 0.8)
         for _, (lon, _) in self.stars.items():
             angle = pi - radians(lon)
             x = self.cx + self.radius * 0.97 * cos(angle)
             y = self.cy + self.radius * 0.97 * sin(angle)
+            cr.new_path()
+            cr.arc(x, y, 2.5, 0, 2 * pi)
+            cr.fill()
             self.draw_rotated_text(cr, "*", x, y, angle, color=(1, 0.9, 0.2, 1))
+        cr.restore()
 
 
 class Naksatras(RingBase):
@@ -891,7 +894,6 @@ class Harmonic(ObjectRingBase):
                 cr.set_source_rgba(1, 1, 1, 0.5)
                 cr.set_line_width(1)
                 cr.stroke()
-            # for obj in self.varga_data:
             for name in self.draw_order:
                 obj = guest_by_name.get(name)
                 if not obj or obj.data.get("name") is None:
@@ -1250,22 +1252,26 @@ class P2Progress(ObjectRingBase):
         self.draw_guests(cr)
 
 
-class Varga(ObjectRingBase):
-    def __init__(self, radius, cx, cy, font_size, varga_data, radius_dict):
+class TransitVarga(ObjectRingBase):
+    def __init__(self, radius, cx, cy, font_size, transit_varga_data, radius_dict):
         # division / varga / harmonic ring for event 2 (transit)
         super().__init__(radius, cx, cy, None, radius_dict)
         self.app = Gtk.Application.get_default()
         self.notify = self.app.notify_manager
         self.font_size = font_size
         self.guests = [
-            AstroObject(obj) for obj in (varga_data or []) if isinstance(obj, dict)
+            AstroObject(obj)
+            for obj in (transit_varga_data or [])
+            if isinstance(obj, dict)
         ]
         keys = list(radius_dict.keys())
-        idx = keys.index("varga")
+        idx = keys.index("transit varga")
         next_val = (
-            radius_dict[keys[idx + 1]] if idx < len(keys) - 1 else radius_dict["varga"]
+            radius_dict[keys[idx + 1]]
+            if idx < len(keys) - 1
+            else radius_dict["transit varga"]
         )
-        self.mid_ring = (radius_dict["varga"] + next_val) / 2
+        self.mid_ring = (radius_dict["transit varga"] + next_val) / 2
         # todo inject retro into ring
         # self.retro = retro
 
