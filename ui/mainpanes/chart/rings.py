@@ -746,14 +746,15 @@ class Signs(RingBase):
         self.set_custom_font(cr, self.font_size * 1.2)
         cr.save()
         cr.set_source_rgba(1.0, 0.9, 0.2, 0.8)
+        # draw stars circle
+        stars_diameter = 7.2
         for _, (lon, _) in self.stars.items():
             angle = pi - radians(lon)
             x = self.cx + self.radius * 0.97 * cos(angle)
             y = self.cy + self.radius * 0.97 * sin(angle)
             cr.new_path()
-            cr.arc(x, y, 2.5, 0, 2 * pi)
+            cr.arc(x, y, stars_diameter, 0, 2 * pi)
             cr.fill()
-            self.draw_rotated_text(cr, "*", x, y, angle, color=(1, 0.9, 0.2, 1))
         cr.restore()
 
 
@@ -894,6 +895,7 @@ class Harmonic(ObjectRingBase):
                 cr.set_source_rgba(1, 1, 1, 0.5)
                 cr.set_line_width(1)
                 cr.stroke()
+            # draw objects
             for name in self.draw_order:
                 obj = guest_by_name.get(name)
                 if not obj or obj.data.get("name") is None:
@@ -912,31 +914,31 @@ class Harmonic(ObjectRingBase):
                 x = self.cx + radius * cos(angle)
                 y = self.cy + radius * sin(angle)
                 # asc & mc of harmonic ring
-                # marker_size = 0.6
+                marker_size = 0.6
                 if name == "asc":
                     # explicitly dont draw asc
-                    continue
-                #     self.draw_marker(
-                #         cr,
-                #         x,
-                #         y,
-                #         angle,
-                #         self.scaled_marker_size() * marker_size,
-                #         (1, 1, 1, 0.5),
-                #         self.draw_triangle,
-                #     )
+                    # continue
+                    self.draw_marker(
+                        cr,
+                        x,
+                        y,
+                        angle,
+                        self.scaled_marker_size() * marker_size,
+                        (1, 1, 1, 0.5),
+                        self.draw_triangle,
+                    )
                 elif name == "mc":
                     # explicitly dont draw mc
-                    continue
-                #     self.draw_marker(
-                #         cr,
-                #         x,
-                #         y,
-                #         angle,
-                #         self.scaled_marker_size() * marker_size,
-                #         (1, 1, 1, 0.5),
-                #         self.draw_diamond,
-                #     )
+                    # continue
+                    self.draw_marker(
+                        cr,
+                        x,
+                        y,
+                        angle,
+                        self.scaled_marker_size() * marker_size,
+                        (1, 1, 1, 0.5),
+                        self.draw_diamond,
+                    )
                 else:
                     obj.draw(
                         cr,

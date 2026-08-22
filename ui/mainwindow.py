@@ -211,16 +211,16 @@ class MainWindow(
             "\n\t(your computer time > utc > event location time)"
             "\nctrl+f : toggle fixed ascendant vs ari 0° at zodiac left"
             "\nctrl+g : toggle glyphs visibility"
-            "\nctrl+h : toggle harmonic / varga aspects table"  # harmonic
+            "\nctrl+h : toggle harmonic / varga hX vs rasi h1 aspects table"  # harmonic
             "\nctrl+1-9 : toggle"
-            "\n\ttransit|varga|p2|p3|p3m|d1|lunar|solar return|naksatras ring"
+            "\n\ttransit|transit varga|p2|p3|p3m|d1|lunar|solar return|naksatras ring"
             "\n\tnote : d1 primary direction goes with chart settings 'harmonic ring 1'"
             "\ntab/shift+tab : navigate widgets in side pane"
             "\nspace/enter : activate button / dropdown when focused"
             "\nshift+1/2/3/4 : show single / double / triple / all panes"
             "\nshift+5 : toggle movie mode"
             "\nshift+6 : run printscreen sequence"
-            "\n\tnote : could take a lot of time !"
+            "\n\tnote : could take a lot of time ! close app to force stop"
             "\nshift+v : toggle vimsottari level"
             "\nshift+r : toggle astro chart angle ruler",
             # "\n\nnote : if entry / text field is focused, hotkeys will not work"

@@ -14,6 +14,41 @@ from sweph.constants import NAKSATRAS27, MANSIONS28, TERMS
 class AngleRuler:
     """angle ruler overlay manager for astro chart"""
 
+    GREEK_PREFIXES = {
+        "al": "α",
+        "be": "β",
+        "ga": "γ",
+        "de": "δ",
+        "ep": "ε",
+        "ze": "ζ",
+        "et": "η",
+        "th": "θ",
+        "io": "ι",
+        "ka": "κ",
+        "la": "λ",
+        "mu": "μ",
+        "nu": "ν",
+        "xi": "ξ",
+        "om": "ο",
+        "pi": "π",
+        "rh": "ρ",
+        "si": "σ",
+        "ta": "τ",
+        "up": "υ",
+        "ph": "φ",
+        "ch": "χ",
+        "ps": "ψ",
+        "ow": "ω",
+    }
+
+    def _format_star_info(self, designat: str) -> str:
+        if isinstance(designat, str) and len(designat) >= 3:
+            greek = designat[:2].lower()
+            constell = designat[2:]
+            if greek in self.GREEK_PREFIXES:
+                return f"{self.GREEK_PREFIXES[greek]}{constell} ({greek})"
+        return designat or ""
+
     def __init__(self, chart):
         self.chart = chart
         self.active = False
@@ -515,8 +550,25 @@ class AngleRuler:
             cusps = getattr(self.chart, "cusps", {})
             if isinstance(cusps, (list, tuple)):
                 for idx, lon in enumerate(cusps, start=1):
-                    targets.append((lon, f"H {idx}"))
+                    glyph = glyphs.EXTRA.get("house")
+                    targets.append((lon, f"{glyph} {idx}"))
         elif current_ring == "signs":
+            # add stars
+            signs_r = radius_dict.get("signs", max_radius)
+            stars_r = signs_r * 0.97
+            stars = getattr(self.chart, "stars", {})
+            if isinstance(stars, dict):
+                for name, info in stars.items():
+                    if isinstance(info, (list, tuple)) and len(info) >= 1:
+                        lon = info[0]
+                        designat = info[1]
+                        # print(f"angleruler : stars={name} {info}")
+                        targets.append((
+                            lon,
+                            f"{name} {self._format_star_info(designat)}",
+                            stars_r,
+                        ))
+            # snap to signs borders
             for i, sign_tuple in enumerate(glyphs.SIGNS.values()):
                 sign_glyph = sign_tuple[0]
                 targets.append((i * 30, f" 0° {sign_glyph}"))
@@ -604,6 +656,31 @@ class AngleRuler:
         else:
             # outer rings
             objects = self._get_ring_objects(current_ring)
+            label = None
+            for item in objects:
+                if isinstance(item, dict):
+                    name = item.get("name")
+                    # dress all asc mc into royal germents
+                    if name == "tas":
+                        glyph = glyphs.EXTRA.get("asc", "")
+                        label = f"{glyph} true".strip()
+                    elif name == "tmc":
+                        glyph = glyphs.EXTRA.get("mc", "")
+                        label = f"{glyph} true".strip()
+                    elif name == "asc":
+                        glyph = glyphs.EXTRA.get("asc", "")
+                        progressed = glyphs.EXTRA.get("progressed", "")
+                        label = f"{glyph} {progressed}"
+                    elif name == "mc":
+                        glyph = glyphs.EXTRA.get("mc", "")
+                        progressed = glyphs.EXTRA.get("progressed", "")
+                        label = f"{glyph} {progressed}"
+                    else:
+                        # planet glyphs
+                        glyph = glyphs.get_glyph(name, False) if name else ""
+                        label = f"{glyph}".strip() if glyph else name
+                    targets.append((item["lon"], label))
+            # print(f"angleruler : getsnappabletargets : objects={objects}")
             for item in objects:
                 # planet
                 if isinstance(item, dict):
@@ -613,8 +690,8 @@ class AngleRuler:
                 # house cusps for outer rings : transit, solar & lunar return
                 elif isinstance(item, (list, tuple)) and len(item) == 12:
                     for idx, lon in enumerate(item, start=1):
-                        targets.append((lon, f"H {idx}"))
-                # print(f"angleruler : getsnappabletargets : data={name}-{data['lon']}")
+                        glyph = glyphs.EXTRA.get("house")
+                        targets.append((lon, f"{glyph} {idx}"))
 
         return targets
 
