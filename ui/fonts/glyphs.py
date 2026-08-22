@@ -31,6 +31,7 @@ SIGNS = {  # sign, element, mode
 ASPECTS = {
     0: ("\u019e", "conjunction"),
     36: ("\u01aa", "semiquintile"),
+    45: ("\u01a3", "semisquare"),
     60: ("\u01a2", "sextile"),
     72: ("\u01a8", "quintile"),
     90: ("\u01a1", "square"),

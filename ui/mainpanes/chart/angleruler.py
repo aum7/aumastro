@@ -134,27 +134,26 @@ class AngleRuler:
 
         return True
 
-        # if dy > 0:
-        #     self.shape_mode = (self.shape_mode - 1) % 4
-        # elif dy < 0:
-        #     self.shape_mode = (self.shape_mode + 1) % 4
-        # print(f"angleruler : shapemode={self.shape_mode}")
-        # self.chart.drawing_area.queue_draw()
-        # return True  # event handled
-
     def on_pressed(self, gesture, n_press, x, y):
-        # todo on double press & mouse @ outer diameter > switch / toggle shapes instead of ticks
+        # handle mouse-click event
         if not self.active:
             return
-        # double-click : shapes off
+
+        dist = math.hypot(x - self.cx, y - self.cy)
+        max_radius = getattr(self.chart, "max_radius", 300.0)
+        is_outside = dist >= (max_radius - self.chart_tolerance)
+        # double-click : rays off
         if n_press == 2:
-            self.shape_mode = 0
+            if is_outside:
+                self.shape_mode = 0
             self.reset()
             self.chart.drawing_area.queue_draw()
             return
 
+        if is_outside:
+            return
+        # single-click inside chart > measure angle
         (x, y), dist = self._clamp_coords(x, y)
-        max_radius = getattr(self.chart, "max_radius", 300.0)
         self.mouse_x = x
         self.mouse_y = y
         lon, label, pos = self._find_snap(x, y)
@@ -170,7 +169,8 @@ class AngleRuler:
         self.label_pos = pos if pos is not None else (x, y)
         # self.label_pos = (x + 20.0, y - 20.0)
         self.dragging = True
-        self.update_cursor(has_snap=(pos is not None), is_outside=(dist >= max_radius))
+        self.update_cursor(has_snap=(pos is not None), is_outside=False)
+        # self.update_cursor(has_snap=(pos is not None), is_outside=(dist >= max_radius))
         self.chart.drawing_area.queue_draw()
 
     def on_motion(self, controller, x, y):
@@ -300,6 +300,42 @@ class AngleRuler:
         cr.move_to(tx, ty)
         cr.show_text(text)
 
+    def _draw_corner_label(self, cr, text: str):
+        # minimize clutter > short transparent aspect rays label
+        if not text:
+            return
+
+        cr.save()
+        cr.select_font_face(
+            "VictorMonoLightAstro",
+            cairo.FONT_SLANT_NORMAL,
+            cairo.FONT_WEIGHT_BOLD,
+        )
+        cr.set_font_size(self.text_size * 1.1)
+        _, _, tw, th, _, _ = cr.text_extents(text)
+        _, _, width, _ = cr.clip_extents()
+
+        margin = 14.0
+        padding_x = 8.0
+        padding_y = 6.0
+        box_width = tw + (padding_x * 2.0)
+        box_height = th + (padding_y * 2.0)
+
+        # top-right corner position
+        bx = width - box_width - margin
+        by = margin
+
+        # semi-transparent dark background (Option 2)
+        cr.set_source_rgba(0.02, 0.02, 0.02, 0.4)
+        cr.rectangle(bx, by, box_width, box_height)
+        cr.fill()
+
+        # semi-transparent text
+        cr.set_source_rgba(1.0, 0.82, 0.1, 0.65)
+        cr.move_to(bx + padding_x, by + th + (padding_y / 2.0))
+        cr.show_text(text)
+        cr.restore()
+
     def _draw_aspect_rays(self, cr, info_r, radius):
         # hide rays while dragging or shape mode is off
         if self.dragging or self.shape_mode == 0:
@@ -338,22 +374,27 @@ class AngleRuler:
             cr.stroke()
         cr.restore()
 
-        # return (glyph, name) tuple
+        # return (glyph, [name,] degrees) tuple
         def _get_aspect(deg):
             if hasattr(glyphs, "ASPECTS") and deg in glyphs.ASPECTS:
-                return glyphs.ASPECTS[deg]
+                glyph = glyphs.ASPECTS[deg][0]
+                return glyph, f"{deg}°"
+                # glyph, name = glyphs.ASPECTS[deg]
+                return glyph, name, f"{deg}°"
             return "", f"{deg}°"
 
-        glyph_maj, num_maj = _get_aspect(maj_deg) if maj_deg is not None else ("", "")
-        glyph_min, num_min = _get_aspect(min_deg) if min_deg is not None else ("", "")
+        glyph_maj, deg_maj = _get_aspect(maj_deg) if maj_deg is not None else ("", "")
+        glyph_min, deg_min = _get_aspect(min_deg) if min_deg is not None else ("", "")
         label_parts = []
-        if num_maj:
-            label_parts.append(f"{glyph_maj} {num_maj}".strip())
-        if num_min:
-            label_parts.append(f"{glyph_min} {num_min}".strip())
+        if deg_maj:
+            label_parts.append(f"{glyph_maj} {deg_maj}".strip())
+            # label_parts.append(f"{glyph_maj} {name_maj} {deg_maj}".strip())
+        if deg_min:
+            label_parts.append(f"{glyph_min} {deg_min}".strip())
+            # label_parts.append(f"{glyph_min} {name_min} {deg_min}".strip())
         label_text = " | ".join(label_parts)
         if label_text:
-            self._draw_label(cr, label_text, (self.mouse_x, self.mouse_y))
+            self._draw_corner_label(cr, label_text)  # , (self.mouse_x, self.mouse_y))
 
     def toggle(self):
         # toggle ruler overlay mode
