@@ -30,9 +30,14 @@ SIGNS = {  # sign, element, mode
 }
 ASPECTS = {
     0: ("\u019e", "conjunction"),
+    36: ("\u01aa", "semiquintile"),
     60: ("\u01a2", "sextile"),
+    72: ("\u01a8", "quintile"),
     90: ("\u01a1", "square"),
+    108: ("\u01ab", "sesqiquintile"),
     120: ("\u01a0", "trine"),
+    144: ("\u01a9", "biquintile"),
+    150: ("\u01a5", "inconjunct"),
     180: ("\u019f", "opposition"),
 }
 ELEMENTS = {

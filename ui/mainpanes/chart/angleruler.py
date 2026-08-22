@@ -29,6 +29,15 @@ class AngleRuler:
         self.arc_width = 1.7
         self.marker_clr = (0.118, 0.565, 1.0, 0.7)  # dodgerblue
         self.marker_outline = (0.0, 0.0, 0.0, 0.7)
+        # quick aspect shapes colors
+        self.shape_mode = 0
+        self.shape_alpha = 0.5
+        self.sqr1_clr = (0.2, 0.9, 0.4, self.shape_alpha)  # light green
+        self.sqr2_clr = (0.05, 0.45, 0.15, self.shape_alpha)  # darkgreen
+        self.trn1_clr = (0.95, 0.95, 0.2, self.shape_alpha)  # light yellow
+        self.trn2_clr = (0.45, 0.45, 0.05, self.shape_alpha)  # dark yellow
+        self.pnt1_clr = (0.9, 0.45, 0.95, self.shape_alpha)  # light magenta
+        self.pnt2_clr = (0.65, 0.25, 0.75, self.shape_alpha)  # dark purple
         # mouse position & chart center
         self.cx = 0.0
         self.cy = 0.0
@@ -36,14 +45,18 @@ class AngleRuler:
         self.mouse_y = 0.0
         self.arc0_lon = None
         self.arc1_lon = None
-        # snapping
+        # measuring angle
         self.label_angle = ""
         self.label_pos = None
         self.snap_pos = None
-        # hover over
+        # hover over snapping
         self.hover_label = ""
         self.hover_pos = None
         self.hover_lon = None
+        # how far inside from astrochart max radius to start rotating rays
+        self.chart_tolerance = 7.0
+        # scroll wheel direction change fix
+        self.scroll_accum = 0.0
 
         self.setup_controllers()
 
@@ -60,25 +73,287 @@ class AngleRuler:
             return default_snap
 
     def setup_controllers(self):
-        # setup mouse press release and motion controllers
+        # setup mouse press release motion scroll controllers
+        # mouse
         click = Gtk.GestureClick()
         click.connect("pressed", self.on_pressed)
         click.connect("released", self.on_released)
         self.chart.drawing_area.add_controller(click)
-
+        # motion & drag
         motion = Gtk.EventControllerMotion()
         motion.connect("motion", self.on_motion)
         self.chart.drawing_area.add_controller(motion)
+        # mouse wheel scroll
+        scroll_flags = (
+            Gtk.EventControllerScrollFlags.VERTICAL
+            | Gtk.EventControllerScrollFlags.DISCRETE
+        )
+        scroll = Gtk.EventControllerScroll.new(scroll_flags)
+        scroll.connect("scroll", self.on_scroll)
+        self.chart.drawing_area.add_controller(scroll)
 
-    def update_cursor(self, has_snap=False):
+    def update_cursor(self, has_snap=False, is_outside=False):
         # update system cursor icon based on active snap state
         if not self.active:
             cursor = Gdk.Cursor.new_from_name("default", None)
+        elif is_outside:
+            cursor = Gdk.Cursor.new_from_name("all-scroll", None)
         elif has_snap:
             cursor = Gdk.Cursor.new_from_name("none", None)
         else:
             cursor = Gdk.Cursor.new_from_name("crosshair", None)
         self.chart.drawing_area.set_cursor(cursor)
+
+    def on_scroll(self, controller, dx, dy):
+        if not self.active:
+            return False
+        # shape cycling when cursor is outside chart
+        dist = math.hypot(self.mouse_x - self.cx, self.mouse_y - self.cy)
+        max_radius = getattr(self.chart, "max_radius", 300.0)
+        # print(
+        #     f"angleruler : scroll detected : dy={dy:.2f}"
+        #     f"\n\tdist={dist:.1f} max_radius={max_radius:.1f}"
+        #     f"\n\tmouse : x={self.mouse_x:.1f} y={self.mouse_y:.1f}"
+        #     f" center={self.cx:.1f}-{self.cy:.1f}"
+        # )
+        if dist < (max_radius - self.chart_tolerance):
+            print("angleruler : scroll ignored : cursor inside chart")
+            # filter scrolling
+            return False
+        # reset scroll accumulator immediately when scroll direction changed
+        if (self.scroll_accum > 0 and dy < 0) or (self.scroll_accum < 0 and dy > 0):
+            self.scroll_accum = 0.0
+        self.scroll_accum += dy
+        if abs(self.scroll_accum) >= 0.5:
+            # dy > 0 scroll down > cycle backward 0>3>2>1>0
+            # dy < 0 scroll up > cycle forward 0>1>2>3>0
+            step = 1 if self.scroll_accum < 0 else -1
+            self.shape_mode = (self.shape_mode + step) % 4
+            self.scroll_accum = 0.0
+            self.chart.drawing_area.queue_draw()
+
+        return True
+
+        # if dy > 0:
+        #     self.shape_mode = (self.shape_mode - 1) % 4
+        # elif dy < 0:
+        #     self.shape_mode = (self.shape_mode + 1) % 4
+        # print(f"angleruler : shapemode={self.shape_mode}")
+        # self.chart.drawing_area.queue_draw()
+        # return True  # event handled
+
+    def on_pressed(self, gesture, n_press, x, y):
+        # todo on double press & mouse @ outer diameter > switch / toggle shapes instead of ticks
+        if not self.active:
+            return
+        # double-click : shapes off
+        if n_press == 2:
+            self.shape_mode = 0
+            self.reset()
+            self.chart.drawing_area.queue_draw()
+            return
+
+        (x, y), dist = self._clamp_coords(x, y)
+        max_radius = getattr(self.chart, "max_radius", 300.0)
+        self.mouse_x = x
+        self.mouse_y = y
+        lon, label, pos = self._find_snap(x, y)
+        if lon is None:
+            return
+        # overwrite  for continuous measurement on new click
+        self.arc0_lon = lon
+        self.arc1_lon = lon
+        self.arc0_snap_pos = pos
+        self.arc1_snap_pos = pos
+        self.snap_pos = pos
+        self.label_angle = label
+        self.label_pos = pos if pos is not None else (x, y)
+        # self.label_pos = (x + 20.0, y - 20.0)
+        self.dragging = True
+        self.update_cursor(has_snap=(pos is not None), is_outside=(dist >= max_radius))
+        self.chart.drawing_area.queue_draw()
+
+    def on_motion(self, controller, x, y):
+        # on mouse drag or hover
+        if not self.active:
+            return
+
+        # dont drag ruler
+        state = controller.get_current_event_state()
+        is_button1_down = bool(state & Gdk.ModifierType.BUTTON1_MASK)
+        if self.dragging and not is_button1_down:
+            self.dragging = False
+        # dx = x - self.cx
+        # dy = y - self.cy
+        max_radius = getattr(self.chart, "max_radius", 300.0)
+        dist = math.hypot(x - self.cx, y - self.cy)
+        # dist = math.hypot(dx, dy)
+        # track cursor continuously for dragless rotation outside chart
+        self.mouse_x = x
+        self.mouse_y = y
+        if not self.dragging:
+            if dist > max_radius:
+                # if self.hover_lon is not None:
+                self.hover_lon = None
+                self.hover_label = ""
+                self.hover_pos = None
+                self.update_cursor(has_snap=False, is_outside=True)
+                self.chart.drawing_area.queue_draw()
+                return
+            lon, label, pos = self._find_snap(x, y)
+            self.hover_lon = lon
+            self.hover_label = label
+            self.hover_pos = pos
+            self.update_cursor(has_snap=(pos is not None), is_outside=False)
+            self.chart.drawing_area.queue_draw()
+            # if self.dragging and lon is not None:
+            # self.arc1_lon = lon
+            # self.snap_pos = pos
+            # self.label_angle = label
+            # self.label_pos = (x + 20.0, y - 20.0)
+            # self.update_cursor(pos is not None)
+        else:
+            if dist > max_radius:
+                (x, y), _ = self._clamp_coords(x, y)
+                self.mouse_x = x
+                self.mouse_y = y
+            lon, label, pos = self._find_snap(x, y)
+            self.update_cursor(
+                has_snap=(pos is not None), is_outside=(dist >= max_radius)
+            )
+            # self.update_cursor(pos is not None)
+            if lon is not None:
+                self.arc1_lon = lon
+                self.arc1_snap_pos = pos
+                self.snap_pos = pos
+                self.label_angle = label
+                # max_radius
+                self.label_pos = (
+                    pos if pos is not None else self._lon_to_xy(lon, max_radius)
+                )
+                # self.label_pos = (x, y)
+            # self.hover_lon = lon
+            # self.hover_label = label
+            # self.hover_pos = pos
+            self.chart.drawing_area.queue_draw()
+
+    def on_released(self, gesture, n_press, x, y):
+        # on mouse button release : drag end
+        if not self.active or not self.dragging:
+            return
+
+        (x, y), dist = self._clamp_coords(x, y)
+        max_radius = getattr(self.chart, "max_radius", 300.0)
+        self.mouse_x = x
+        self.mouse_y = y
+        lon, label, pos = self._find_snap(x, y)
+        if lon is not None:
+            self.arc1_lon = lon
+            self.arc1_snap_pos = pos
+            self.snap_pos = pos
+            self.label_angle = label
+            self.label_pos = (x, y)
+            self.label_pos = (
+                pos if pos is not None else self._lon_to_xy(lon, max_radius)
+            )
+            # self.label_pos = (x, y)
+        self.dragging = False
+        self.update_cursor(has_snap=(pos is not None), is_outside=(dist >= max_radius))
+        # self.update_cursor(pos is not None)
+        self.chart.drawing_area.queue_draw()
+
+    def _draw_label(self, cr, text: str, pos: tuple[float, float] | None = None):
+        # draw & flip hover & measure label
+        if not text:
+            return
+
+        cr.select_font_face(
+            "VictorMonoLightAstro",
+            cairo.FONT_SLANT_NORMAL,
+            cairo.FONT_WEIGHT_BOLD,
+        )
+        cr.set_font_size(self.text_size)
+        _, _, tw, th, _, _ = cr.text_extents(text)
+        _, _, width, height = cr.clip_extents()
+        # take maouse positions
+        bx, by = pos if pos else (self.mouse_x, self.mouse_y)
+        box_width = tw + 9.0
+        box_height = th + 9.0
+        tx = bx + 12.0
+        ty = by - 12.0
+        # flip left if overflowing right border
+        if (tx - 4.0 + box_width) > width:
+            tx = bx - tw - 12.0
+        if (tx - 4.0) < 0:
+            tx = 4.0
+        # flip down if overflowing top border
+        if (ty - th - 2.0) < 0:
+            ty = by + th + 16.0
+        if (ty + 6.0) > height:
+            ty = height - 6.0
+        # draw background box
+        cr.set_source_rgba(*self.background_clr)
+        cr.rectangle(tx - 4, ty - th - 2, box_width, box_height)
+        cr.fill()
+        # draw text
+        cr.set_source_rgba(*self.text_clr)
+        cr.move_to(tx, ty)
+        cr.show_text(text)
+
+    def _draw_aspect_rays(self, cr, info_r, radius):
+        # hide rays while dragging or shape mode is off
+        if self.dragging or self.shape_mode == 0:
+            return
+        dist = math.hypot(self.mouse_x - self.cx, self.mouse_y - self.cy)
+        max_radius = getattr(self.chart, "max_radius", 300.0)
+        if dist < (max_radius - self.chart_tolerance):
+            return
+        base_angle = math.atan2(self.mouse_y - self.cy, self.mouse_x - self.cx)
+        # total rays, major color (light), minor color (dark)
+        family_configs = {  # can accept any recognized glyphs : custom family
+            1: (10, self.pnt1_clr, self.pnt2_clr, 72, 36),
+            2: (8, self.sqr1_clr, self.sqr2_clr, 90, 45),
+            3: (6, self.trn1_clr, self.trn2_clr, 120, 60),
+        }
+        if self.shape_mode not in family_configs:
+            return
+        num_rays, maj_clr, min_clr, maj_deg, min_deg = family_configs[self.shape_mode]
+        step_angle = (2.0 * math.pi) / num_rays
+        cr.save()
+        cr.set_line_width(1.5)
+        for i in range(num_rays):
+            angle = base_angle + i * step_angle
+            # light color visually thiner as dark color > set as point 0
+            color = maj_clr if (i % 2 == 0) else min_clr
+            x_in = self.cx + info_r * math.cos(angle)
+            y_in = self.cy + info_r * math.sin(angle)
+            x_out = self.cx + radius * math.cos(angle)
+            y_out = self.cy + radius * math.sin(angle)
+            # x_out = self.cx + max_radius * math.cos(angle)
+            # y_out = self.cy + max_radius * math.sin(angle)
+            # cairo draw
+            cr.set_source_rgba(*color)
+            cr.move_to(x_in, y_in)
+            cr.line_to(x_out, y_out)
+            cr.stroke()
+        cr.restore()
+
+        # return (glyph, name) tuple
+        def _get_aspect(deg):
+            if hasattr(glyphs, "ASPECTS") and deg in glyphs.ASPECTS:
+                return glyphs.ASPECTS[deg]
+            return "", f"{deg}°"
+
+        glyph_maj, num_maj = _get_aspect(maj_deg) if maj_deg is not None else ("", "")
+        glyph_min, num_min = _get_aspect(min_deg) if min_deg is not None else ("", "")
+        label_parts = []
+        if num_maj:
+            label_parts.append(f"{glyph_maj} {num_maj}".strip())
+        if num_min:
+            label_parts.append(f"{glyph_min} {num_min}".strip())
+        label_text = " | ".join(label_parts)
+        if label_text:
+            self._draw_label(cr, label_text, (self.mouse_x, self.mouse_y))
 
     def toggle(self):
         # toggle ruler overlay mode
@@ -99,12 +374,15 @@ class AngleRuler:
         self.dragging = False
         self.arc0_lon = None
         self.arc1_lon = None
+        self.arc0_snap_pos = None
+        self.arc1_snap_pos = None
         self.label_angle = ""
         self.label_pos = None
         self.snap_pos = None
         self.hover_label = ""
         self.hover_pos = None
         self.hover_lon = None
+        self.scroll_accum = 0.0
 
     def _get_rotation_offset(self):
         # calculate rotation offset if fixed ascendant mode is enabled
@@ -157,7 +435,6 @@ class AngleRuler:
             "d1 direction": getattr(self.chart, "d1_pos", None),
             "lunar return": getattr(self.chart, "lun_ret_data", None),
             "solar return": getattr(self.chart, "sol_ret_data", None),
-            # "harmonic": getattr(self.chart, "harmonic_data", None),
         }
         # print(
         #     "angleruler : datamap : rings with house cusps :"
@@ -172,6 +449,7 @@ class AngleRuler:
             return []
         if isinstance(raw, dict):
             return [v for v in raw.values() if isinstance(v, dict) and "lon" in v]
+        # house cusps list
         if isinstance(raw, list):
             return [
                 item
@@ -204,7 +482,7 @@ class AngleRuler:
         else:
             return mid_ring + (info_r - mid_ring) * (-ratio)
 
-    def _get_snappable_targets(self, mouse_r, radius_dict, info_r):
+    def _get_snappable_targets(self, mouse_r, radius_dict):
         # retrieve snappable targets mapped to mouse radial distance
         targets = []
         max_radius = getattr(self.chart, "max_radius", 300)
@@ -290,9 +568,8 @@ class AngleRuler:
                             label = f"{ecl_names.get(name, name)}"
                             targets.append((item["lon"], label))
                         elif extras == "lots":
-                            lot_info = glyphs.LOTS.get(name, {})
+                            lot_info = glyphs.LOTS.get(name, {})  # gives lot glyph
                             # print(f"angleruler : lotinfo={lot_info}")
-                            # lot_name, glyph = glyphs.LOTS.get(name, {})
                             label = f"{lot_info} {name}"
                             targets.append((item["lon"], label))
                         # targets.append((item["lon"], name))
@@ -365,7 +642,7 @@ class AngleRuler:
         # disable hover over info ring
         if mouse_r < info_r:
             return None, "", None
-        targets = self._get_snappable_targets(mouse_r, radius_dict, info_r)
+        targets = self._get_snappable_targets(mouse_r, radius_dict)
         # print(f"angleruler : mouser={mouse_r}")
         best_target = None
         min_dist = self.get_snap_tolerance()
@@ -386,90 +663,17 @@ class AngleRuler:
 
         return mouse_lon, "", None
 
-    def on_pressed(self, gesture, n_press, x, y):
-        # todo on double press & mouse @ outer diameter > switch / toggle shapes instead of ticks
-        if not self.active:
-            return
+    def _clamp_coords(self, x: float, y: float) -> tuple[tuple[float, float], float]:
+        # calculate distance from center & return clamped x y with distance
+        dx = x - self.cx
+        dy = y - self.cy
+        dist = math.hypot(dx, dy)
+        max_radius = getattr(self.chart, "max_radius", 300.0)
+        if dist > max_radius and dist > 0:
+            x = self.cx + (dx / dist) * max_radius
+            y = self.cy + (dy / dist) * max_radius
 
-        self.mouse_x = x
-        self.mouse_y = y
-        lon, label, pos = self._find_snap(x, y)
-        if lon is None:
-            return
-        # overwrite  for continuous measurement on new click
-        self.arc0_lon = lon
-        self.arc1_lon = lon
-        self.snap_pos = pos
-        self.label_angle = label
-        self.label_pos = (x + 20.0, y - 20.0)
-        self.dragging = True
-        self.update_cursor(pos is not None)
-        self.chart.drawing_area.queue_draw()
-
-    def on_motion(self, controller, x, y):
-        # on mouse drag or hover
-        if not self.active:
-            return
-
-        self.mouse_x = x
-        self.mouse_y = y
-        lon, label, pos = self._find_snap(x, y)
-        self.update_cursor(pos is not None)
-        if self.dragging and lon is not None:
-            self.arc1_lon = lon
-            self.snap_pos = pos
-            self.label_angle = label
-            self.label_pos = (x + 20.0, y - 20.0)
-        else:
-            self.hover_lon = lon
-            self.hover_label = label
-            self.hover_pos = pos
-        self.chart.drawing_area.queue_draw()
-
-    def on_released(self, gesture, n_press, x, y):
-        # on mouse button release : drag end
-        if not self.active or not self.dragging:
-            return
-
-        self.mouse_x = x
-        self.mouse_y = y
-        lon, label, pos = self._find_snap(x, y)
-        if lon is not None:
-            self.arc1_lon = lon
-            self.snap_pos = pos
-            self.label_angle = label
-            self.label_pos = (x + 20.0, y - 20.0)
-        self.dragging = False
-        self.update_cursor(pos is not None)
-        self.chart.drawing_area.queue_draw()
-
-    def draw_ticks(self, cr, max_radius):
-        # draw degree ticks around outer circumference
-        cr.save()
-        for deg in range(360):
-            angle = math.pi - math.radians(deg)
-            if deg % 30 == 0:
-                length, width, alpha = 10, 1.5, 0.8
-            elif deg % 5 == 0:
-                length, width, alpha = 6, 1.0, 0.5
-            else:
-                length, width, alpha = 3, 0.5, 0.3
-            r_out = max_radius
-            r_in = max_radius - length  # type:ignore
-            x1, y1 = (
-                self.cx + r_in * math.cos(angle),
-                self.cy + r_in * math.sin(angle),
-            )
-            x2, y2 = (
-                self.cx + r_out * math.cos(angle),
-                self.cy + r_out * math.sin(angle),
-            )
-            cr.move_to(x1, y1)
-            cr.line_to(x2, y2)
-            cr.set_source_rgba(1.0, 1.0, 1.0, alpha)
-            cr.set_line_width(width)
-            cr.stroke()
-        cr.restore()
+        return (x, y), dist
 
     def draw(self, cr, cx, cy, radius):
         if not self.active:
@@ -482,8 +686,8 @@ class AngleRuler:
         max_radius = getattr(self.chart, "max_radius", 300)
         info_r = radius_dict.get("info", max_radius * 0.4)
         # event_r = radius_dict.get("event", max_radius * 0.85)
-        # draw outer degree ticks todo upgrade to toggle angle shapes
-        self.draw_ticks(cr, radius)
+        # draw shapes
+        self._draw_aspect_rays(cr, info_r, radius)
         # render completed or in-progress measurement arc & rays
         if self.arc0_lon is not None:
             # start arc line after info ring
@@ -515,7 +719,9 @@ class AngleRuler:
                 # angle ruler arc width
                 cr.set_line_width(4.0)
                 # angle ruler arc radius
-                arc_rad = radius * 0.33
+                arc_rad = info_r * 1.1  # todo change arc radius
+                # arc_rad = (event_r - info_r) * 0.6  # todo change arc radius
+                # arc_rad = radius * 0.37
                 if start_angle > end_angle:
                     cr.arc_negative(cx, cy, arc_rad, start_angle, end_angle)
                 else:
@@ -527,73 +733,87 @@ class AngleRuler:
                 angle_str = f"{deg}° {minutes:02d}'"
                 if self.label_angle:
                     angle_str += f" {self.label_angle}"
-                cr.select_font_face(
-                    "VictorMonoLightAstro",
-                    cairo.FONT_SLANT_NORMAL,
-                    cairo.FONT_WEIGHT_BOLD,
-                )
-                cr.set_font_size(self.text_size)
-                _, _, tw, th, _, _ = cr.text_extents(angle_str)
-                # draw text near mouse cursor
-                tx, ty = (
-                    self.label_pos
-                    if self.label_pos
-                    else (self.mouse_x + 12.0, self.mouse_y - 12.0)
-                )
-                # text background color
-                cr.set_source_rgba(*self.background_clr)
-                cr.rectangle(tx - 4, ty - th - 2, tw + 8, th + 8)
-                cr.fill()
-                # text color
-                cr.set_source_rgba(*self.text_clr)
-                cr.move_to(tx, ty)
-                cr.show_text(angle_str)
+                self._draw_label(cr, angle_str, self.label_pos)
         # render snap marker during active drag
-        if self.dragging and self.snap_pos:
-            sx, sy = self.snap_pos
+        active_snap = []
+        if self.dragging:  # and self.snap_pos:
+            if getattr(self, "arc0_snap_pos", None):
+                active_snap.append(self.arc0_snap_pos)
+            if getattr(self, "arc1_snap_pos", None):
+                active_snap.append(self.arc1_snap_pos)
+        elif self.hover_pos and self.hover_lon is not None:
+            active_snap.append(self.hover_pos)
+        for sx, sy in active_snap:
+            cr.save()
+            # sx, sy = self.snap_pos
             cr.new_path()
             cr.arc(sx, sy, 5, 0, 2 * math.pi)
             cr.set_source_rgba(*self.marker_clr)
             cr.fill_preserve()
             cr.set_source_rgba(*self.marker_outline)
-            cr.set_line_width(1.0)
+            cr.set_line_width(1.5)
             cr.stroke()
-            # cr.fill()
+            cr.restore()
         # render hover snap marker & label
-        elif not self.dragging and self.hover_pos and self.hover_lon is not None:
-            # marker 1st
-            sx, sy = self.hover_pos
-            cr.new_path()
-            cr.arc(sx, sy, 5, 0, 2 * math.pi)
-            cr.set_source_rgba(*self.marker_clr)
-            cr.fill_preserve()
-            cr.set_source_rgba(*self.marker_outline)
-            cr.set_line_width(1.0)
-            cr.stroke()
-            if self.hover_label:
-                cr.select_font_face(
-                    "VictorMonoLightAstro",
-                    cairo.FONT_SLANT_NORMAL,
-                    cairo.FONT_WEIGHT_BOLD,
-                )
-                cr.set_font_size(self.text_size)
-                _, _, tw, th, _, _ = cr.text_extents(self.hover_label)
-                # size of canvas
-                _, _, width, _ = cr.clip_extents()
-                # position from mouse cursor
-                tx, ty = self.mouse_x + 12.0, self.mouse_y - 12.0
-                # outer box width
-                box_width = tw + 9.0
-                # flip to left if overflowing right canvas border
-                if (tx - 4.0 + box_width) > width:
-                    tx = self.mouse_x - tw - 12.0
-                # flip down if overflowing top canvas border
-                if (ty - th - 2.0) < 0:
-                    ty = self.mouse_y + th + 16.0
-                # draw label
-                cr.set_source_rgba(*self.background_clr)
-                cr.rectangle(tx - 4, ty - th - 2, tw + 8, th + 8)
-                cr.fill()
-                cr.set_source_rgba(*self.text_clr)
-                cr.move_to(tx, ty)
-                cr.show_text(self.hover_label)
+        if not self.dragging and self.hover_label and self.hover_pos:
+            self._draw_label(cr, self.hover_label)
+
+        # elif not self.dragging and self.hover_pos and self.hover_lon is not None:
+        # marker 1st
+        # sx, sy = self.hover_pos
+        # cr.new_path()
+        # cr.arc(sx, sy, 5, 0, 2 * math.pi)
+        # cr.set_source_rgba(*self.marker_clr)
+        # cr.fill_preserve()
+        # cr.set_source_rgba(*self.marker_outline)
+        # cr.set_line_width(1.0)
+        # cr.stroke()
+        # if self.hover_label:
+        #     self._draw_label(cr, self.hover_label)
+
+    # def _draw_polygon(self, cr, radius, n_sides, start_angle, color):
+    #     cr.save()
+    #     cr.set_source_rgba(*color)
+    #     cr.set_line_width(2.0)
+    #     for i in range(n_sides):
+    #         angle = start_angle + i * (2.0 * math.pi / n_sides)
+    #         x = self.cx + radius * math.cos(angle)
+    #         y = self.cy + radius * math.sin(angle)
+    #         if i == 0:
+    #             cr.move_to(x, y)
+    #         else:
+    #             cr.line_to(x, y)
+    #     cr.close_path()
+    #     cr.stroke()
+    #     cr.restore()
+
+    # def _draw_aspect_shapes(self, cr, radius):
+    #     # hide shapes while dragging or measuring
+    #     if self.dragging or self.shape_mode == 0:
+    #         return
+    #     dist = math.hypot(self.mouse_x - self.cx, self.mouse_y - self.cy)
+    #     max_radius = getattr(self.chart, "max_radius", 300.0)
+    #     # draw shapes only when cursor is outside chart
+    #     if dist < (max_radius - 2.0):
+    #         return
+
+    #     # shape 0 point rotated towards cursor while it be outside chart
+    #     base_angle = math.atan2(self.mouse_y - self.cy, self.mouse_x - self.cx)
+    #     if self.shape_mode == 1:
+    #         # pentagon family : 2 pentas, 1 rotated 36 degrees
+    #         self._draw_polygon(cr, radius, 5, base_angle, self.pnt1_clr)
+    #         self._draw_polygon(
+    #             cr, radius, 5, base_angle + math.radians(36), self.pnt2_clr
+    #         )
+    #     elif self.shape_mode == 2:
+    #         # square family : 2 squares, 1 rotated 45 degrees
+    #         self._draw_polygon(cr, radius, 4, base_angle, self.sqr1_clr)
+    #         self._draw_polygon(
+    #             cr, radius, 4, base_angle + math.radians(45), self.sqr2_clr
+    #         )
+    #     elif self.shape_mode == 3:
+    #         # triangle family : 2 tris, 1 rotated 60 degrees
+    #         self._draw_polygon(cr, radius, 3, base_angle, self.trn1_clr)
+    #         self._draw_polygon(
+    #             cr, radius, 3, base_angle + math.radians(60), self.trn2_clr
+    #         )
