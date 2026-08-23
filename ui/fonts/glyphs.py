@@ -96,6 +96,7 @@ EXTRA = {
     "mc": "\u01c1",
     "ic": "\u01c2",
 }
+# unicode greek alphabet lowercase
 GREEK_PREFIXES = {
     "al": "α",
     "be": "β",

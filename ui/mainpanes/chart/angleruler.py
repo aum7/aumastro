@@ -14,16 +14,9 @@ from sweph.constants import NAKSATRAS27, MANSIONS28, TERMS
 class AngleRuler:
     """angle ruler overlay manager for astro chart"""
 
-    def _format_star_info(self, designat: str) -> str:
-        if isinstance(designat, str) and len(designat) >= 3:
-            greek = designat[:2].lower()
-            constell = designat[2:]
-            if greek in glyphs.GREEK_PREFIXES:
-                return f"{glyphs.GREEK_PREFIXES[greek]}{constell} ({greek})"
-        return designat or ""
-
     def __init__(self, chart):
         self.chart = chart
+        self.notify = getattr(self.chart.app, "notify_manager", None)
         self.active = False
         self.dragging = False
         # colors & styling
@@ -53,8 +46,13 @@ class AngleRuler:
         self.mouse_y = 0.0
         self.arc0_lon = None
         self.arc1_lon = None
+        # measured angle label : 3 merging part
+        self.arc0_label = ""
+        self.arc0_text = ""
+        self.arc1_label = ""
+        self.arc1_text = ""
+        self.measure_text = ""
         # measuring angle
-        self.label_angle = ""
         self.label_pos = None
         self.snap_pos = None
         # hover over snapping
@@ -105,6 +103,24 @@ class AngleRuler:
             cursor = Gdk.Cursor.new_from_name("crosshair", None)
         self.chart.drawing_area.set_cursor(cursor)
 
+    def angle_to_clipboard(self):
+        # copy angle measurement text to clipboard
+        notify = self.notify
+        if not self.active or not notify:
+            print("angleruler : not active or notify missing : exiting ...")
+            return
+        to_clipboard = getattr(self, "measure_text", "")
+        if not to_clipboard:
+            return
+        clipboard = Gdk.Display.get_default().get_clipboard()
+        clipboard.set(to_clipboard)
+        notify.info(
+            f"measured angle text ({to_clipboard}) copied to clipboard",
+            source="angleruler",
+            route=["user", "terminal"],
+            timeout=7,
+        )
+
     def on_scroll(self, controller, dx, dy):
         if not self.active:
             return False
@@ -143,16 +159,19 @@ class AngleRuler:
         (x, y), dist = self._clamp_coords(x, y)
         self.mouse_x = x
         self.mouse_y = y
-        lon, label, pos = self._find_snap(x, y)
+        lon, displ_label, txt_label, pos = self._find_snap(x, y)
         if lon is None:
             return
         # overwrite  for continuous measurement on new click
         self.arc0_lon = lon
         self.arc1_lon = lon
+        self.arc0_label = displ_label if pos is not None else ""
+        self.arc0_text = txt_label if pos is not None else ""
+        self.arc1_label = displ_label if pos is not None else ""
+        self.arc1_text = txt_label if pos is not None else ""
         self.arc0_snap_pos = pos
         self.arc1_snap_pos = pos
         self.snap_pos = pos
-        self.label_angle = label
         self.label_pos = pos if pos is not None else (x, y)
         self.dragging = True
         self.update_cursor(has_snap=(pos is not None), is_outside=False)
@@ -162,7 +181,6 @@ class AngleRuler:
         # on mouse drag or hover
         if not self.active:
             return
-
         # dont drag ruler
         state = controller.get_current_event_state()
         is_button1_down = bool(state & Gdk.ModifierType.BUTTON1_MASK)
@@ -181,9 +199,9 @@ class AngleRuler:
                 self.update_cursor(has_snap=False, is_outside=True)
                 self.chart.drawing_area.queue_draw()
                 return
-            lon, label, pos = self._find_snap(x, y)
+            lon, displ_label, txt_label, pos = self._find_snap(x, y)
             self.hover_lon = lon
-            self.hover_label = label
+            self.hover_label = displ_label
             self.hover_pos = pos
             self.update_cursor(has_snap=(pos is not None), is_outside=False)
             self.chart.drawing_area.queue_draw()
@@ -192,15 +210,16 @@ class AngleRuler:
                 (x, y), _ = self._clamp_coords(x, y)
                 self.mouse_x = x
                 self.mouse_y = y
-            lon, label, pos = self._find_snap(x, y)
+            lon, displ_label, txt_label, pos = self._find_snap(x, y)
             self.update_cursor(
                 has_snap=(pos is not None), is_outside=(dist >= max_radius)
             )
             if lon is not None:
                 self.arc1_lon = lon
+                self.arc1_label = displ_label if pos is not None else ""
+                self.arc1_text = txt_label if pos is not None else ""
                 self.arc1_snap_pos = pos
                 self.snap_pos = pos
-                self.label_angle = label
                 self.label_pos = (
                     pos if pos is not None else self._lon_to_xy(lon, max_radius)
                 )
@@ -208,19 +227,25 @@ class AngleRuler:
 
     def on_released(self, gesture, n_press, x, y):
         # on mouse button release : drag end
-        if not self.active or not self.dragging:
+        notify = self.notify
+        if not self.active or not self.dragging or not notify:
+            print(
+                "angleruler : onreleased : not active or not dragging or "
+                "notify missing : exiting ..."
+            )
             return
 
         (x, y), dist = self._clamp_coords(x, y)
         max_radius = getattr(self.chart, "max_radius", 300.0)
         self.mouse_x = x
         self.mouse_y = y
-        lon, label, pos = self._find_snap(x, y)
+        lon, displ_label, txt_label, pos = self._find_snap(x, y)
         if lon is not None:
             self.arc1_lon = lon
+            self.arc1_label = displ_label if pos is not None else ""
+            self.arc1_text = txt_label if pos is not None else ""
             self.arc1_snap_pos = pos
             self.snap_pos = pos
-            self.label_angle = label
             self.label_pos = (x, y)
             self.label_pos = (
                 pos if pos is not None else self._lon_to_xy(lon, max_radius)
@@ -228,6 +253,91 @@ class AngleRuler:
         self.dragging = False
         self.update_cursor(has_snap=(pos is not None), is_outside=(dist >= max_radius))
         self.chart.drawing_area.queue_draw()
+        # merge text & notify user
+        if self.arc0_lon is not None and self.arc1_lon is not None:
+            diff = abs(self.arc1_lon - self.arc0_lon) % 360.0
+            _, self.measure_text = self._get_formatted_labels(diff)
+            notify.info(
+                f"press [ctrl+c] to copy angle text ({self.measure_text}) "
+                "into clipboard",
+                source="angleruler",
+                route=["user", "terminal"],
+                timeout=7,
+            )
+
+    def toggle(self):
+        # toggle ruler overlay mode
+        self.active = not self.active
+        if not self.active:
+            self.reset()
+            self.update_cursor()
+        else:
+            lon, displ_label, _, pos = self._find_snap(self.mouse_x, self.mouse_y)
+            self.hover_lon = lon
+            self.hover_label = displ_label
+            self.hover_pos = pos
+            self.update_cursor(pos is not None)
+        self.chart.drawing_area.queue_draw()
+
+    def reset(self):
+        # reset all measurement state variables
+        self.dragging = False
+        self.arc0_lon = None
+        self.arc1_lon = None
+        self.arc0_snap_pos = None
+        self.arc0_label = ""
+        self.arc0_text = ""
+        self.arc1_snap_pos = None
+        self.arc1_label = ""
+        self.arc1_text = ""
+        self.measure_text = ""
+        self.label_pos = None
+        self.snap_pos = None
+        self.hover_label = ""
+        self.hover_pos = None
+        self.hover_lon = None
+
+    def _clean_text(self, label):
+        # replace font glyphs with plain text
+        if not label:
+            return ""
+
+        glyph_map = {}
+        for attr in ("PLANETS", "EXTRA", "MOON_PHASES"):
+            for k, v in getattr(glyphs, attr, {}).items():
+                if isinstance(v, str) and v:
+                    glyph_map[v] = k
+            for k, v in getattr(glyphs, "SIGNS", {}).items():
+                if isinstance(v, (list, tuple)) and v:
+                    glyph_map[v[0]] = k
+                elif isinstance(v, str) and v:
+                    glyph_map[v[0]] = k
+            for k, v in getattr(glyphs, "SYZYGY", {}).items():
+                if isinstance(v, (list, tuple)) and v:
+                    glyph_map[v[0]] = k
+            self.glyph_map = glyph_map
+            result = label
+            for glyph, name in self.glyph_map.items():
+                if glyph in result:
+                    result = result.replace(glyph, name)
+            return " ".join(result.split())
+
+    def _get_formatted_labels(self, diff_deg):
+        # format angle degree minute & join labels
+        deg = int(diff_deg)
+        minutes = int((diff_deg - deg) * 60)
+        angle_str = f"{deg}° {minutes:02d}'"
+        displ = " ".join(filter(None, [self.arc0_label, angle_str, self.arc1_label]))
+        text = " ".join(filter(None, [self.arc0_text, angle_str, self.arc1_text]))
+        return displ, text
+
+    def _format_star_info(self, designat: str) -> str:
+        if isinstance(designat, str) and len(designat) >= 3:
+            greek = designat[:2].lower()
+            constell = designat[2:]
+            if greek in glyphs.GREEK_PREFIXES:
+                return f"{glyphs.GREEK_PREFIXES[greek]}{constell} ({greek})"
+        return designat or ""
 
     def _draw_label(self, cr, text: str, pos: tuple[float, float] | None = None):
         # draw & flip hover & measure label
@@ -355,34 +465,6 @@ class AngleRuler:
             # fixed text in pane / window corner
             self._draw_corner_label(cr, label_text)
 
-    def toggle(self):
-        # toggle ruler overlay mode
-        self.active = not self.active
-        if not self.active:
-            self.reset()
-            self.update_cursor()
-        else:
-            lon, label, pos = self._find_snap(self.mouse_x, self.mouse_y)
-            self.hover_lon = lon
-            self.hover_label = label
-            self.hover_pos = pos
-            self.update_cursor(pos is not None)
-        self.chart.drawing_area.queue_draw()
-
-    def reset(self):
-        # reset all measurement state variables
-        self.dragging = False
-        self.arc0_lon = None
-        self.arc1_lon = None
-        self.arc0_snap_pos = None
-        self.arc1_snap_pos = None
-        self.label_angle = ""
-        self.label_pos = None
-        self.snap_pos = None
-        self.hover_label = ""
-        self.hover_pos = None
-        self.hover_lon = None
-
     def _get_rotation_offset(self):
         # calculate rotation offset if fixed ascendant mode is enabled
         chart_settings = getattr(self.chart.app, "chart_settings", {})
@@ -495,24 +577,31 @@ class AngleRuler:
             return (outer_r + inner_r) / 2.0
         return radius_dict.get(ring, 0.0)
 
+    def _get_current_ring(self, mouse_r, radius_dict):
+        # find ring mouse cursor is in
+        if not radius_dict:
+            return None
+        keys = list(radius_dict.keys())
+        # return if cursor outside chart
+        if keys and mouse_r > radius_dict[keys[0]]:
+            return None
+        for i, name in enumerate(keys):
+            outer_r = radius_dict[name]
+            inner_r = radius_dict[keys[i + 1]] if i < len(keys) - 1 else 0.0
+            if inner_r <= mouse_r <= outer_r:
+                return name
+        return None
+
     def _get_snappable_targets(self, mouse_r, radius_dict):
         # retrieve snappable targets mapped to mouse radial distance
+        # determine ring occupied by mouse
+        current_ring = self._get_current_ring(mouse_r, radius_dict)
+        # dont draw nor snap anything if mouse is inside info central ring
+        if not current_ring or current_ring == "info":
+            return []
+
         targets = []
         max_radius = getattr(self.chart, "max_radius", 300)
-        # determine ring occupied by mouse
-        sorted_rings = sorted(
-            [(k, v) for k, v in radius_dict.items()], key=lambda item: item[1]
-        )
-        current_ring = None
-        for name, r in sorted_rings:
-            if mouse_r < r:
-                current_ring = name
-                break
-        if not current_ring and sorted_rings:
-            current_ring = sorted_rings[-1][0]
-        # dont draw nor snap anything if mouse is inside info central ring
-        if current_ring == "info":
-            return []
         # objects for rings
         if current_ring == "event":
             # snap to natal planets
@@ -635,7 +724,6 @@ class AngleRuler:
                     ruler_glypy = glyphs.get_glyph(ruler, False) or ruler
                     targets.append((float(start_lon), f"T {ruler_glypy}"))
             elif division > 1:
-                # objects = self.chart.harmonic_data
                 # harmonic objects snap to mid-ring radius
                 mid_r = self._get_ring_mid_radius("harmonic", radius_dict)
                 # print(f"angleruler : harmonic objects={objects}")
@@ -643,7 +731,8 @@ class AngleRuler:
                     if isinstance(item, dict) and "lon" in item:
                         name = item.get("name", "")
                         glyph = glyphs.get_glyph(name, False) or name
-                        targets.append((item["lon"], glyph, mid_r))
+                        label = f"{glyph} h{division}"
+                        targets.append((item["lon"], label, mid_r))
         else:
             # outer rings
             objects = self._get_ring_objects(current_ring)
@@ -697,7 +786,7 @@ class AngleRuler:
                         label = f"{glyph} {ring}".strip() if glyph else name
                     targets.append((item["lon"], label, mid_r))
                 # print(f"angleruler : getsnappabletargets : objects={objects}")
-                # house cusps for outer rings : transit, solar & lunar return
+                # house cusps for outer rings : transit (both), solar & lunar return
                 elif isinstance(item, (list, tuple)) and len(item) == 12:
                     # house cusps retain radial line snapping
                     glyph = glyphs.EXTRA.get("house", "H")
@@ -712,29 +801,54 @@ class AngleRuler:
         max_radius = getattr(self.chart, "max_radius", 300)
         radius_dict = getattr(self.chart, "radius_dict", {})
         info_r = radius_dict.get("info", max_radius * 0.4)
-        # disable hover over info ring
-        if mouse_r < info_r:
-            return None, "", None
+        if mouse_r < info_r:  # todo do we need this or prev code eliminates info ring ?
+            return None, "", "", None
         targets = self._get_snappable_targets(mouse_r, radius_dict)
-        # print(f"angleruler : mouser={mouse_r}")
+        tolerance = self.get_snap_tolerance()
         best_target = None
-        min_dist = self.get_snap_tolerance()
-        for item in targets:
-            lon = item[0]
-            label = item[1]
-            target_r = item[2] if len(item) > 2 and item[2] is not None else mouse_r
-            # calculate screen coords using object radius
-            # snap visual object at mouse radius : snap line
+        min_dist = tolerance
+        for target in targets:
+            lon = target[0]
+            displ_label = target[1]
+            target_r = (
+                target[2] if len(target) > 2 and target[2] is not None else mouse_r
+            )
             tx, ty = self._lon_to_xy(lon, target_r)
-            dist = math.hypot(x - tx, y - ty)
-            if dist < min_dist:
-                min_dist = dist
-                best_target = (lon, label, (tx, ty))
+            d = math.hypot(x - tx, y - ty)
+            if d < min_dist:
+                min_dist = d
+                txt_label = self._clean_text(displ_label)
+                best_target = (lon, displ_label, txt_label, (tx, ty))
         if best_target:
-            return best_target[0], best_target[1], best_target[2]
-        mouse_lon = self._xy_to_lon(x, y)
+            return best_target
+        # fallback to free radial line snap
+        lon = self._xy_to_lon(x, y)
+        return lon, "", "", None
 
-        return mouse_lon, "", None
+        # info_r = radius_dict.get("info", max_radius * 0.4)
+        # # disable hover over info ring
+        # if mouse_r < info_r:
+        #     return None, "", None
+        # targets = self._get_snappable_targets(mouse_r, radius_dict)
+        # # print(f"angleruler : mouser={mouse_r}")
+        # best_target = None
+        # min_dist = self.get_snap_tolerance()
+        # for item in targets:
+        #     lon = item[0]
+        #     label = item[1]
+        #     target_r = item[2] if len(item) > 2 and item[2] is not None else mouse_r
+        #     # calculate screen coords using object radius
+        #     # snap visual object at mouse radius : snap line
+        #     tx, ty = self._lon_to_xy(lon, target_r)
+        #     dist = math.hypot(x - tx, y - ty)
+        #     if dist < min_dist:
+        #         min_dist = dist
+        #         best_target = (lon, label, (tx, ty))
+        # if best_target:
+        #     return best_target[0], best_target[1], best_target[2]
+        # mouse_lon = self._xy_to_lon(x, y)
+
+        # return mouse_lon, "", None
 
     def _clamp_coords(self, x: float, y: float) -> tuple[tuple[float, float], float]:
         # calculate distance from center & return clamped x y with distance
@@ -796,13 +910,9 @@ class AngleRuler:
                 else:
                     cr.arc(cx, cy, arc_rad, start_angle, end_angle)
                 cr.stroke()
-                # calculate & draw angle label
-                deg = int(diff)
-                minutes = int((diff - deg) * 60)
-                angle_str = f"{deg}° {minutes:02d}'"
-                if self.label_angle:
-                    angle_str += f" {self.label_angle}"
-                self._draw_label(cr, angle_str, self.label_pos)
+                # get labels formatted
+                displ_label, self.measure_text = self._get_formatted_labels(diff)
+                self._draw_label(cr, displ_label, self.label_pos)
         # render snap marker during active drag
         active_snap = []
         if self.dragging:  # and self.snap_pos:

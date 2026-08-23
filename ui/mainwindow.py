@@ -126,6 +126,9 @@ class MainWindow(
         self.hotkeys.register_hotkey("Left", self.obc_arrow_l)
         self.hotkeys.register_hotkey("Right", self.obc_arrow_r)
         # [ctrl]
+        self.hotkeys.register_hotkey(
+            "ctrl+c", lambda: self.astro_chart.ruler.angle_to_clipboard()
+        )
         self.hotkeys.register_hotkey("ctrl+m", self.show_manual)
         self.hotkeys.register_hotkey("ctrl+s", self.on_toggle_sidepane)
         # call helper function for time now
