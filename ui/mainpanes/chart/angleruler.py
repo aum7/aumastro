@@ -14,39 +14,12 @@ from sweph.constants import NAKSATRAS27, MANSIONS28, TERMS
 class AngleRuler:
     """angle ruler overlay manager for astro chart"""
 
-    GREEK_PREFIXES = {
-        "al": "α",
-        "be": "β",
-        "ga": "γ",
-        "de": "δ",
-        "ep": "ε",
-        "ze": "ζ",
-        "et": "η",
-        "th": "θ",
-        "io": "ι",
-        "ka": "κ",
-        "la": "λ",
-        "mu": "μ",
-        "nu": "ν",
-        "xi": "ξ",
-        "om": "ο",
-        "pi": "π",
-        "rh": "ρ",
-        "si": "σ",
-        "ta": "τ",
-        "up": "υ",
-        "ph": "φ",
-        "ch": "χ",
-        "ps": "ψ",
-        "ow": "ω",
-    }
-
     def _format_star_info(self, designat: str) -> str:
         if isinstance(designat, str) and len(designat) >= 3:
             greek = designat[:2].lower()
             constell = designat[2:]
-            if greek in self.GREEK_PREFIXES:
-                return f"{self.GREEK_PREFIXES[greek]}{constell} ({greek})"
+            if greek in glyphs.GREEK_PREFIXES:
+                return f"{glyphs.GREEK_PREFIXES[greek]}{constell} ({greek})"
         return designat or ""
 
     def __init__(self, chart):
@@ -346,16 +319,18 @@ class AngleRuler:
         num_rays, maj_clr, min_clr, maj_deg, min_deg = family_configs[self.shape_mode]
         step_angle = (2.0 * math.pi) / num_rays
         cr.save()
-        cr.set_line_width(1.5)
         for i in range(num_rays):
             angle = base_angle + i * step_angle
+            is_major = i % 2 == 0
             # light color visually thiner as dark color > set as point 0
-            color = maj_clr if (i % 2 == 0) else min_clr
+            color = maj_clr if is_major else min_clr
+            line_width = 2.5 if is_major else 1.9
             x_in = self.cx + info_r * math.cos(angle)
             y_in = self.cy + info_r * math.sin(angle)
             x_out = self.cx + radius * math.cos(angle)
             y_out = self.cy + radius * math.sin(angle)
             # cairo draw
+            cr.set_line_width(line_width)
             cr.set_source_rgba(*color)
             cr.move_to(x_in, y_in)
             cr.line_to(x_out, y_out)
@@ -506,6 +481,20 @@ class AngleRuler:
         else:
             return mid_ring + (info_r - mid_ring) * (-ratio)
 
+    def _get_ring_mid_radius(self, ring, radius_dict):
+        # calculate mid-ring radius
+        keys = list(radius_dict.keys())
+        if ring in keys:
+            idx = keys.index(ring)
+            outer_r = radius_dict[ring]
+            inner_r = (
+                radius_dict[keys[idx + 1]]
+                if idx < len(keys) - 1
+                else radius_dict.get("signs", outer_r * 0.92)
+            )
+            return (outer_r + inner_r) / 2.0
+        return radius_dict.get(ring, 0.0)
+
     def _get_snappable_targets(self, mouse_r, radius_dict):
         # retrieve snappable targets mapped to mouse radial distance
         targets = []
@@ -646,51 +635,73 @@ class AngleRuler:
                     ruler_glypy = glyphs.get_glyph(ruler, False) or ruler
                     targets.append((float(start_lon), f"T {ruler_glypy}"))
             elif division > 1:
-                objects = self.chart.harmonic_data
+                # objects = self.chart.harmonic_data
+                # harmonic objects snap to mid-ring radius
+                mid_r = self._get_ring_mid_radius("harmonic", radius_dict)
                 # print(f"angleruler : harmonic objects={objects}")
-                for item in objects:
+                for item in self.chart.harmonic_data or []:
                     if isinstance(item, dict) and "lon" in item:
                         name = item.get("name", "")
                         glyph = glyphs.get_glyph(name, False) or name
-                        targets.append((item["lon"], glyph))
+                        targets.append((item["lon"], glyph, mid_r))
         else:
             # outer rings
             objects = self._get_ring_objects(current_ring)
+            mid_r = self._get_ring_mid_radius(current_ring, radius_dict)
+            # switch rings to assign ring glyph
+            ring = None
+            match current_ring:
+                case "transit":
+                    ring = f"{glyphs.EXTRA.get('transit', 'T')}"
+                case "transit varga":
+                    ring = f"{glyphs.EXTRA.get('transit', 'T')}hX"
+                case "p2 progress":
+                    ring = f"{glyphs.EXTRA.get('progressed', 'P')}2"
+                case "p3 progress":
+                    ring = f"{glyphs.EXTRA.get('progressed', 'P')}3"
+                case "p3m progress":
+                    ring = f"{glyphs.EXTRA.get('progressed', 'P')}m"
+                case "solar return":
+                    ring = (
+                        f"{glyphs.EXTRA.get('retro', 'R')}"
+                        f"{glyphs.PLANETS.get('su', 'su')}"
+                    )
+                case "lunar return":
+                    ring = (
+                        f"{glyphs.EXTRA.get('retro', 'R')}"
+                        f"{glyphs.PLANETS.get('mo', 'mo')}"
+                    )
+                case _:
+                    ring = ""
             label = None
+            progressed = glyphs.EXTRA.get("progressed", "P")
             for item in objects:
                 if isinstance(item, dict):
                     name = item.get("name")
                     # dress all asc mc into royal germents
                     if name == "tas":
-                        glyph = glyphs.EXTRA.get("asc", "")
+                        glyph = glyphs.EXTRA.get("asc", "true asc")
                         label = f"{glyph} true".strip()
                     elif name == "tmc":
-                        glyph = glyphs.EXTRA.get("mc", "")
+                        glyph = glyphs.EXTRA.get("mc", "true mc")
                         label = f"{glyph} true".strip()
                     elif name == "asc":
-                        glyph = glyphs.EXTRA.get("asc", "")
-                        progressed = glyphs.EXTRA.get("progressed", "")
-                        label = f"{glyph} {progressed}"
+                        glyph = glyphs.EXTRA.get("asc", "asc")
+                        label = f"{glyph}{progressed}"
                     elif name == "mc":
-                        glyph = glyphs.EXTRA.get("mc", "")
-                        progressed = glyphs.EXTRA.get("progressed", "")
-                        label = f"{glyph} {progressed}"
+                        glyph = glyphs.EXTRA.get("mc", "mc")
+                        label = f"{glyph}{progressed}"
                     else:
                         # planet glyphs
                         glyph = glyphs.get_glyph(name, False) if name else ""
-                        label = f"{glyph}".strip() if glyph else name
-                    targets.append((item["lon"], label))
-            # print(f"angleruler : getsnappabletargets : objects={objects}")
-            for item in objects:
-                # planet
-                if isinstance(item, dict):
-                    name = item.get("name", "")
-                    glyph = glyphs.get_glyph(name, False) or name
-                    targets.append((item["lon"], glyph))
+                        label = f"{glyph} {ring}".strip() if glyph else name
+                    targets.append((item["lon"], label, mid_r))
+                # print(f"angleruler : getsnappabletargets : objects={objects}")
                 # house cusps for outer rings : transit, solar & lunar return
                 elif isinstance(item, (list, tuple)) and len(item) == 12:
+                    # house cusps retain radial line snapping
+                    glyph = glyphs.EXTRA.get("house", "H")
                     for idx, lon in enumerate(item, start=1):
-                        glyph = glyphs.EXTRA.get("house")
                         targets.append((lon, f"{glyph} {idx}"))
 
         return targets
@@ -771,7 +782,6 @@ class AngleRuler:
                 # calculate & draw arc curve
                 diff = abs((self.arc1_lon - self.arc0_lon + 180) % 360 - 180)
                 offset = self._get_rotation_offset()
-
                 v0 = (self.arc0_lon - offset) % 360.0
                 delta = (self.arc1_lon - self.arc0_lon + 180.0) % 360.0 - 180.0
                 start_angle = math.pi - math.radians(v0)

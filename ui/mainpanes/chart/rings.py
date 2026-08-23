@@ -203,6 +203,39 @@ class ObjectRingBase(RingBase):
             else:
                 guest.draw(cr, self.cx, self.cy, mid_ring, obj_scale)
 
+    def setup_ring_radius(self, ring: str):
+        # calculate inner & mid-ring radius
+        keys = list(self.radius_dict.keys())
+        if ring in keys:
+            idx = keys.index(ring)
+            # nexr key is always inner boundary
+            if idx < len(keys) - 1:
+                self.inner_r = self.radius_dict[keys[idx + 1]]
+            else:
+                self.inner_r = self.radius_dict.get("signs", self.radius * 0.92)
+        else:
+            self.inner_r = self.radius * 0.92
+
+        self.mid_ring = (self.radius + self.inner_r) / 2
+
+    def draw_sign_borders(self, cr, color=(1, 1, 1, 0.5), line_width=1):
+        # draw 12 signs borders
+        segment_angle = 2 * pi / 12
+        inner_r = getattr(self, "inner_r", self.radius * 0.9)
+        cr.save()
+        cr.set_source_rgba(*color)
+        cr.set_line_width(line_width)
+        for j in range(12):
+            angle = pi - j * segment_angle
+            x1 = self.cx + inner_r * cos(angle)
+            y1 = self.cy + inner_r * sin(angle)
+            x2 = self.cx + self.radius * cos(angle)
+            y2 = self.cy + self.radius * sin(angle)
+            cr.move_to(x1, y1)
+            cr.line_to(x2, y2)
+            cr.stroke()
+        cr.restore()
+
     # override in subclasses for custom colors
     def marker_color(self, name):
         return (0, 0.309, 0.721, 1)
@@ -724,11 +757,13 @@ class Signs(RingBase):
         cr.stroke()
         segment_angle = 2 * pi / 12
         offset = segment_angle / 2
+        # inner diameter
+        inner_r = self.radius_dict.get("event", self.radius * 0.92)
         # sign borders
         for j in range(12):
             angle = pi - j * segment_angle  # start at left
-            x1 = self.cx + self.radius * 0.92 * cos(angle)
-            y1 = self.cy + self.radius * 0.92 * sin(angle)
+            x1 = self.cx + inner_r * cos(angle)
+            y1 = self.cy + inner_r * sin(angle)
             x2 = self.cx + self.radius * cos(angle)
             y2 = self.cy + self.radius * sin(angle)
             cr.move_to(x1, y1)
@@ -810,7 +845,7 @@ class Harmonic(ObjectRingBase):
     def __init__(
         self, notify, radius, cx, cy, division, harmonic_data, radius_dict, font_size=14
     ):
-        super().__init__(radius, cx, cy, radius_dict)
+        super().__init__(radius, cx, cy, radius_dict=radius_dict)
         self.notify = notify
         self.division = division
         # print(f"rings : divdata1 : {division_data}")
@@ -823,23 +858,23 @@ class Harmonic(ObjectRingBase):
         self.harmonic_data = [
             AstroObject(div) for div in (harmonic_data or []) if isinstance(div, dict)
         ]
-        # print(f"rings : divdata : {self.division_data}")
         self.font_size = font_size
+        self.setup_ring_radius("harmonic")
         # print(f"harmonic : raddict : {radius_dict}")
-        keys = list(radius_dict.keys())
-        index = ""
-        try:
-            index = keys.index("harmonic")
-        except ValueError:
-            raise ValueError("missing 'harmonic' key in radiusdict")
-        if index < len(keys) - 1:
-            next_key = keys[index + 1]
-            next_val = radius_dict[next_key]
-        else:
-            # fallback
-            next_val = radius_dict["harmonic"]
-        if radius_dict:
-            self.mid_ring = (radius_dict["harmonic"] + next_val) / 2
+        # keys = list(radius_dict.keys())
+        # index = ""
+        # try:
+        #     index = keys.index("harmonic")
+        # except ValueError:
+        #     raise ValueError("missing 'harmonic' key in radiusdict")
+        # if index < len(keys) - 1:
+        #     next_key = keys[index + 1]
+        #     next_val = radius_dict[next_key]
+        # else:
+        #     # fallback
+        #     next_val = radius_dict["harmonic"]
+        # if radius_dict:
+        #     self.mid_ring = (radius_dict["harmonic"] + next_val) / 2
 
     def draw(self, cr):
         # draw circle
@@ -858,17 +893,18 @@ class Harmonic(ObjectRingBase):
             for i, (deg, ruler) in enumerate(terms_sorted):
                 # start angle
                 angle = pi - (deg * pi / 180)
-                x = self.cx + self.radius * cos(angle)
-                y = self.cy + self.radius * sin(angle)
-                cr.move_to(self.cx, self.cy)
-                cr.line_to(x, y)
+                x1 = self.cx + self.inner_r * cos(angle)
+                y1 = self.cy + self.inner_r * sin(angle)
+                x2 = self.cx + self.radius * cos(angle)
+                y2 = self.cy + self.radius * sin(angle)
+                cr.move_to(x1, y1)
+                cr.line_to(x2, y2)
                 cr.set_source_rgba(1, 1, 1, 0.5)
                 cr.stroke()
                 # glyphs : next border for mid term position
-                if i == terms_num - 1:
-                    next_deg = 360
-                else:
-                    next_deg = terms_sorted[(i + 1) % terms_num][0]
+                next_deg = (
+                    360 if i == terms_num - 1 else terms_sorted[(i + 1) % terms_num][0]
+                )
                 angle_next = pi - (next_deg * pi / 180)
                 # handle wrap-around
                 mid_angle = (angle + angle_next) / 2
@@ -883,29 +919,19 @@ class Harmonic(ObjectRingBase):
             guest_by_name = {
                 obj.data.get("name", "").lower(): obj for obj in self.harmonic_data
             }
-            # draw divisions for selected harmonic
-            segment_angle = 2 * pi / 12
-            # sign borders
-            for j in range(12):
-                angle = pi - j * segment_angle  # start at left
-                x = self.cx + self.radius * cos(angle)
-                y = self.cy + self.radius * sin(angle)
-                cr.move_to(self.cx, self.cy)
-                cr.line_to(x, y)
-                cr.set_source_rgba(1, 1, 1, 0.5)
-                cr.set_line_width(1)
-                cr.stroke()
+            # clean sign borders
+            self.draw_sign_borders(cr)
             # draw objects
             for name in self.draw_order:
                 obj = guest_by_name.get(name)
-                if not obj or obj.data.get("name") is None:
+                if not obj or obj.data.get("name") is None or self.event != "e1":
                     continue
                 # print(f"rings : lot : {lot.data}")
-                if self.event != "e1":
-                    return
+                # if self.event != "e1":
+                #     return
                 # skip event attribute
-                if obj.data.get("name") is None:
-                    continue
+                # if obj.data.get("name") is None:
+                #     continue
                 name = obj.data.get("name", "").lower()
                 lon = obj.data.get("lon", 0.0)
                 # print(f"{name} : lon={lon} ({decsigndms(lon, use_glyph=False)}) ")
@@ -951,7 +977,7 @@ class Harmonic(ObjectRingBase):
 
 class SolarReturn(ObjectRingBase):
     def __init__(self, radius, cx, cy, font_size, sol_ret_data, radius_dict):
-        super().__init__(radius, cx, cy, None, radius_dict)
+        super().__init__(radius, cx, cy, None, radius_dict=radius_dict)
         self.app = Gtk.Application.get_default()
         self.notify = self.app.notify_manager
         self.font_size = font_size
@@ -959,14 +985,7 @@ class SolarReturn(ObjectRingBase):
         self.guests = [
             AstroObject(obj) for obj in (sol_ret_data or []) if isinstance(obj, dict)
         ]
-        keys = list(radius_dict.keys())
-        idx = keys.index("solar return")
-        next_val = (
-            radius_dict[keys[idx + 1]]
-            if idx < len(keys) - 1
-            else radius_dict["solar return"]
-        )
-        self.mid_ring = (radius_dict["solar return"] + next_val) / 2
+        self.setup_ring_radius("solar return")
 
     def marker_color(self, name):  # type:ignore
         return (0.6686, 0.6569, 0.5392, 1)
@@ -981,8 +1000,8 @@ class SolarReturn(ObjectRingBase):
         # cusps
         for angle in self.cusps:
             angle = pi - radians(angle)
-            x1 = self.cx + self.radius * 0.35 * cos(angle)
-            y1 = self.cy + self.radius * 0.35 * sin(angle)
+            x1 = self.cx + self.inner_r * cos(angle)
+            y1 = self.cy + self.inner_r * sin(angle)
             x2 = self.cx + self.radius * cos(angle)
             y2 = self.cy + self.radius * sin(angle)
             cr.move_to(x1, y1)
@@ -991,24 +1010,14 @@ class SolarReturn(ObjectRingBase):
             cr.set_source_rgba(1, 1, 0.6, 0.7)
             cr.stroke()
         # sign borders
-        segment_angle = 2 * pi / 12
-        for j in range(12):
-            angle = pi - j * segment_angle
-            x1 = self.cx + self.radius * 0.9 * cos(angle)
-            y1 = self.cy + self.radius * 0.9 * sin(angle)
-            x2 = self.cx + self.radius * cos(angle)
-            y2 = self.cy + self.radius * sin(angle)
-            cr.move_to(x1, y1)
-            cr.line_to(x2, y2)
-            cr.set_source_rgba(1, 1, 1, 0.5)
-            cr.set_line_width(1)
-            cr.stroke()
+        self.draw_sign_borders(cr)
+        # draw planets
         self.draw_guests(cr)
 
 
 class LunarReturn(ObjectRingBase):
     def __init__(self, radius, cx, cy, font_size, lun_ret_data, radius_dict):
-        super().__init__(radius, cx, cy, None, radius_dict)
+        super().__init__(radius, cx, cy, None, radius_dict=radius_dict)
         self.app = Gtk.Application.get_default()
         self.notify = self.app.notify_manager
         self.font_size = font_size
@@ -1016,14 +1025,7 @@ class LunarReturn(ObjectRingBase):
         self.guests = [
             AstroObject(obj) for obj in (lun_ret_data or []) if isinstance(obj, dict)
         ]
-        keys = list(radius_dict.keys())
-        idx = keys.index("lunar return")
-        next_val = (
-            radius_dict[keys[idx + 1]]
-            if idx < len(keys) - 1
-            else radius_dict["lunar return"]
-        )
-        self.mid_ring = (radius_dict["lunar return"] + next_val) / 2
+        self.setup_ring_radius("lunar return")
 
     def marker_color(self, name):  # type:ignore
         return (0.549, 0.568, 0, 1)
@@ -1037,46 +1039,29 @@ class LunarReturn(ObjectRingBase):
         cr.stroke()
         for angle in self.cusps:
             angle = pi - radians(angle)
-            x1 = self.cx + self.radius * 0.35 * cos(angle)
-            y1 = self.cy + self.radius * 0.35 * sin(angle)
+            x1 = self.cx + self.inner_r * cos(angle)
+            y1 = self.cy + self.inner_r * sin(angle)
             x2 = self.cx + self.radius * cos(angle)
             y2 = self.cy + self.radius * sin(angle)
             cr.move_to(x1, y1)
             cr.line_to(x2, y2)
             cr.set_source_rgba(1, 1, 0.6, 1)
             cr.stroke()
-        segment_angle = 2 * pi / 12
-        for j in range(12):
-            angle = pi - j * segment_angle
-            x1 = self.cx + self.radius * 0.9 * cos(angle)
-            y1 = self.cy + self.radius * 0.9 * sin(angle)
-            x2 = self.cx + self.radius * cos(angle)
-            y2 = self.cy + self.radius * sin(angle)
-            cr.move_to(x1, y1)
-            cr.line_to(x2, y2)
-            cr.set_source_rgba(1, 1, 1, 0.5)
-            cr.set_line_width(1)
-            cr.stroke()
+        # draw sign borders
+        self.draw_sign_borders(cr)
         self.draw_guests(cr)
 
 
 class D1PrimaryDirection(ObjectRingBase):
     def __init__(self, radius, cx, cy, font_size, chart_settings, d1_pos, radius_dict):
-        super().__init__(radius, cx, cy, chart_settings, radius_dict)
+        super().__init__(radius, cx, cy, chart_settings, radius_dict=radius_dict)
         self.app = Gtk.Application.get_default()
         self.notify = self.app.notify_manager
         self.font_size = font_size
         self.guests = [
             AstroObject(obj) for obj in (d1_pos or []) if isinstance(obj, dict)
         ]
-        keys = list(radius_dict.keys())
-        idx = keys.index("d1 direction")
-        next_val = (
-            radius_dict[keys[idx + 1]]
-            if idx < len(keys) - 1
-            else radius_dict["d1 direction"]
-        )
-        self.mid_ring = (radius_dict["d1 direction"] + next_val) / 2
+        self.setup_ring_radius("d1 direction")
 
     def marker_color(self, name):
         return (0, 0.3, 0.721, 1)
@@ -1089,42 +1074,22 @@ class D1PrimaryDirection(ObjectRingBase):
         cr.set_source_rgba(0.5, 0.5, 0.5, 0.7)
         cr.set_line_width(1)
         cr.stroke()
-        segment_angle = 2 * pi / 12
-        for j in range(12):
-            angle = pi - j * segment_angle
-            x1 = self.cx + self.radius * 0.9 * cos(angle)
-            y1 = self.cy + self.radius * 0.9 * sin(angle)
-            x2 = self.cx + self.radius * cos(angle)
-            y2 = self.cy + self.radius * sin(angle)
-            cr.move_to(x1, y1)
-            cr.line_to(x2, y2)
-            cr.set_source_rgba(1, 1, 1, 0.5)
-            cr.set_line_width(1)
-            cr.stroke()
+        self.draw_sign_borders(cr)
         self.draw_guests(cr)
 
 
 class P3MinorProgress(ObjectRingBase):
     def __init__(self, radius, cx, cy, font_size, p3m_pos, retro, radius_dict):
-        super().__init__(radius, cx, cy, None, radius_dict)
+        super().__init__(radius, cx, cy, None, radius_dict=radius_dict)
         self.app = Gtk.Application.get_default()
         self.notify = self.app.notify_manager
         self.font_size = font_size
         self.guests = [
             AstroObject(obj)
             for obj in (p3m_pos or [])
-            # if isinstance(obj, dict)
             if isinstance(obj, dict) and "name" in obj and "lon" in obj
-            # if (isinstance(obj, dict) and obj.get("name") != "p3mdate")
         ]
-        keys = list(radius_dict.keys())
-        idx = keys.index("p3m progress")
-        next_val = (
-            radius_dict[keys[idx + 1]]
-            if idx < len(keys) - 1
-            else radius_dict["p3m progress"]
-        )
-        self.mid_ring = (radius_dict["p3m progress"] + next_val) / 2
+        self.setup_ring_radius("p3m progress")
         # note : planets in retro should match those in guests (that can go retro)
         self.retro = retro
         # print(f"rings : p3retro : {self.retro}")
@@ -1139,43 +1104,23 @@ class P3MinorProgress(ObjectRingBase):
         cr.set_source_rgba(0.5, 0.5, 0.5, 0.5)
         cr.set_line_width(1)
         cr.stroke()
-        segment_angle = 2 * pi / 12
-        for j in range(12):
-            angle = pi - j * segment_angle
-            x1 = self.cx + self.radius * 0.9 * cos(angle)
-            y1 = self.cy + self.radius * 0.9 * sin(angle)
-            x2 = self.cx + self.radius * cos(angle)
-            y2 = self.cy + self.radius * sin(angle)
-            cr.move_to(x1, y1)
-            cr.line_to(x2, y2)
-            cr.set_source_rgba(1, 1, 1, 0.5)
-            cr.set_line_width(1)
-            cr.stroke()
+        self.draw_sign_borders(cr)
         self.draw_guests(cr)
 
 
 class P3Progress(ObjectRingBase):
     def __init__(self, radius, cx, cy, font_size, p3_pos, retro, radius_dict):
-        super().__init__(radius, cx, cy, None, radius_dict)
+        super().__init__(radius, cx, cy, None, radius_dict=radius_dict)
         self.app = Gtk.Application.get_default()
         self.notify = self.app.notify_manager
         self.font_size = font_size
         self.guests = [
             AstroObject(obj)
             for obj in (p3_pos or [])
-            # if isinstance(obj, dict)
             if isinstance(obj, dict) and "name" in obj and "lon" in obj
-            # if (isinstance(obj, dict) and obj.get("name") != "p3date")
         ]
         # print(f"p3progress : p3_pos :\n{p3_pos}")
-        keys = list(radius_dict.keys())
-        idx = keys.index("p3 progress")
-        next_val = (
-            radius_dict[keys[idx + 1]]
-            if idx < len(keys) - 1
-            else radius_dict["p3 progress"]
-        )
-        self.mid_ring = (radius_dict["p3 progress"] + next_val) / 2
+        self.setup_ring_radius("p3 progress")
         # note : planets in retro should match those in guests (that can go retro)
         self.retro = retro
         # print(f"rings : p3retro : {self.retro}")
@@ -1191,24 +1136,13 @@ class P3Progress(ObjectRingBase):
         cr.set_source_rgba(0.5, 0.5, 0.5, 0.5)
         cr.set_line_width(1)
         cr.stroke()
-        segment_angle = 2 * pi / 12
-        for j in range(12):
-            angle = pi - j * segment_angle
-            x1 = self.cx + self.radius * 0.9 * cos(angle)
-            y1 = self.cy + self.radius * 0.9 * sin(angle)
-            x2 = self.cx + self.radius * cos(angle)
-            y2 = self.cy + self.radius * sin(angle)
-            cr.move_to(x1, y1)
-            cr.line_to(x2, y2)
-            cr.set_source_rgba(1, 1, 1, 0.5)
-            cr.set_line_width(1)
-            cr.stroke()
+        self.draw_sign_borders(cr)
         self.draw_guests(cr)
 
 
 class P2Progress(ObjectRingBase):
     def __init__(self, radius, cx, cy, font_size, p2_pos, retro, radius_dict):
-        super().__init__(radius, cx, cy, None, radius_dict)
+        super().__init__(radius, cx, cy, None, radius_dict=radius_dict)
         self.app = Gtk.Application.get_default()
         self.notify = self.app.notify_manager
         self.font_size = font_size
@@ -1217,14 +1151,7 @@ class P2Progress(ObjectRingBase):
             for obj in (p2_pos or [])
             if (isinstance(obj, dict) and obj.get("name") != "p2date")
         ]
-        keys = list(radius_dict.keys())
-        idx = keys.index("p2 progress")
-        next_val = (
-            radius_dict[keys[idx + 1]]
-            if idx < len(keys) - 1
-            else radius_dict["p2 progress"]
-        )
-        self.mid_ring = (radius_dict["p2 progress"] + next_val) / 2
+        self.setup_ring_radius("p2 progress")
         # note : planets in retro should match those in guests (that can go retro)
         self.retro = retro
         # print(f"rings : p2retro : {self.retro}")
@@ -1239,25 +1166,14 @@ class P2Progress(ObjectRingBase):
         cr.set_source_rgba(0.5, 0.5, 0.5, 0.5)
         cr.set_line_width(1)
         cr.stroke()
-        segment_angle = 2 * pi / 12
-        for j in range(12):
-            angle = pi - j * segment_angle
-            x1 = self.cx + self.radius * 0.9 * cos(angle)
-            y1 = self.cy + self.radius * 0.9 * sin(angle)
-            x2 = self.cx + self.radius * cos(angle)
-            y2 = self.cy + self.radius * sin(angle)
-            cr.move_to(x1, y1)
-            cr.line_to(x2, y2)
-            cr.set_source_rgba(1, 1, 1, 0.5)
-            cr.set_line_width(1)
-            cr.stroke()
+        self.draw_sign_borders(cr)
         self.draw_guests(cr)
 
 
 class TransitVarga(ObjectRingBase):
     def __init__(self, radius, cx, cy, font_size, transit_varga_data, radius_dict):
         # division / varga / harmonic ring for event 2 (transit)
-        super().__init__(radius, cx, cy, None, radius_dict)
+        super().__init__(radius, cx, cy, None, radius_dict=radius_dict)
         self.app = Gtk.Application.get_default()
         self.notify = self.app.notify_manager
         self.font_size = font_size
@@ -1266,16 +1182,7 @@ class TransitVarga(ObjectRingBase):
             for obj in (transit_varga_data or [])
             if isinstance(obj, dict)
         ]
-        keys = list(radius_dict.keys())
-        idx = keys.index("transit varga")
-        next_val = (
-            radius_dict[keys[idx + 1]]
-            if idx < len(keys) - 1
-            else radius_dict["transit varga"]
-        )
-        self.mid_ring = (radius_dict["transit varga"] + next_val) / 2
-        # todo inject retro into ring
-        # self.retro = retro
+        self.setup_ring_radius("transit varga")
 
     def marker_color(self, name):  # type:ignore
         return (0, 1, 0, 0.5)
@@ -1287,24 +1194,13 @@ class TransitVarga(ObjectRingBase):
         cr.set_source_rgba(0.5, 0.5, 0.5, 0.7)
         cr.set_line_width(1)
         cr.stroke()
-        segment_angle = 2 * pi / 12
-        for j in range(12):
-            angle = pi - j * segment_angle
-            x1 = self.cx + self.radius * 0.9 * cos(angle)
-            y1 = self.cy + self.radius * 0.9 * sin(angle)
-            x2 = self.cx + self.radius * cos(angle)
-            y2 = self.cy + self.radius * sin(angle)
-            cr.move_to(x1, y1)
-            cr.line_to(x2, y2)
-            cr.set_source_rgba(1, 1, 1, 0.5)
-            cr.set_line_width(1)
-            cr.stroke()
+        self.draw_sign_borders(cr)
         self.draw_guests(cr)
 
 
 class Transit(ObjectRingBase):
     def __init__(self, radius, cx, cy, font_size, transit_data, retro, radius_dict):
-        super().__init__(radius, cx, cy, None, radius_dict)
+        super().__init__(radius, cx, cy, None, radius_dict=radius_dict)
         self.app = Gtk.Application.get_default()
         self.notify = self.app.notify_manager
         self.font_size = font_size
@@ -1312,14 +1208,7 @@ class Transit(ObjectRingBase):
         self.guests = [
             AstroObject(obj) for obj in (transit_data or []) if isinstance(obj, dict)
         ]
-        keys = list(radius_dict.keys())
-        idx = keys.index("transit")
-        next_val = (
-            radius_dict[keys[idx + 1]]
-            if idx < len(keys) - 1
-            else radius_dict["transit"]
-        )
-        self.mid_ring = (radius_dict["transit"] + next_val) / 2
+        self.setup_ring_radius("transit")
         # todo inject retro into ring
         self.retro = retro
 
@@ -1335,24 +1224,13 @@ class Transit(ObjectRingBase):
         cr.stroke()
         for angle in self.cusps:
             angle = pi - radians(angle)
-            x1 = self.cx + self.radius * 0.35 * cos(angle)
-            y1 = self.cy + self.radius * 0.35 * sin(angle)
+            x1 = self.cx + self.inner_r * cos(angle)
+            y1 = self.cy + self.inner_r * sin(angle)
             x2 = self.cx + self.radius * cos(angle)
             y2 = self.cy + self.radius * sin(angle)
             cr.move_to(x1, y1)
             cr.line_to(x2, y2)
             cr.set_source_rgba(0, 1, 0, 1)
             cr.stroke()
-        segment_angle = 2 * pi / 12
-        for j in range(12):
-            angle = pi - j * segment_angle
-            x1 = self.cx + self.radius * 0.9 * cos(angle)
-            y1 = self.cy + self.radius * 0.9 * sin(angle)
-            x2 = self.cx + self.radius * cos(angle)
-            y2 = self.cy + self.radius * sin(angle)
-            cr.move_to(x1, y1)
-            cr.line_to(x2, y2)
-            cr.set_source_rgba(1, 1, 1, 0.5)
-            cr.set_line_width(1)
-            cr.stroke()
+        self.draw_sign_borders(cr)
         self.draw_guests(cr)

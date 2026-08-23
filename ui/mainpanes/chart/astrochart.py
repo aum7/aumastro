@@ -195,8 +195,9 @@ class AstroChart(Gtk.Box):
         self.extra_info["aynm"] = (
             self.app.selected_ayan_str if self.app.selected_ayan_str else "-"
         )
-        # draw rings
-        max_radius = base * 0.97
+        # draw rings : max diameter of astrochart : determines distance
+        # from pane edges
+        max_radius = base * 0.95
         # outer rings linked to event 2 :
         # - primary direction & secondary & tertiary & minor progression
         # - solar & lunar return
