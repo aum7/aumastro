@@ -9,7 +9,7 @@ from typing import Tuple
 from ui.helpers import _decimal_to_sign_dms as decsigndms
 from ui.helpers import _decimal_to_ra as decra
 from user.settings import HOUSE_SYSTEMS
-from sweph.calculations.retro import calculate_retro, retro_marker
+from sweph.calculations.stations import calculate_stations, retro_marker
 from sweph.calculations.hora import calculate_hora
 from sweph.swetime import jd_to_custom_iso as jdtoiso
 from ui.fonts.glyphs import get_glyph
@@ -213,9 +213,9 @@ class Tables(Gtk.Notebook):
             speed_rel = self.speed_relative(key, speed)
             # print(f"tables : speed : {speed}")
             body = key
-            retro = " "
+            stations = " "
             if name and body:
-                retro = retro_marker(body, speed)
+                stations = retro_marker(body, speed)
             lon = obj.get("lon", 0)
             # calculate house if cusps are available
             house = self.which_house(lon, tuple(cusps)) if cusps else ""
@@ -223,7 +223,7 @@ class Tables(Gtk.Notebook):
             var_lon = obj.get("varga", 0)
             var_nak = obj.get("varga naksatra", "")
             ln_pos = (
-                f" {obj.get('name', '')}{retro} {self.v_sym} "
+                f" {obj.get('name', '')}{stations} {self.v_sym} "
                 f"{decsigndms(lon):10} {nak[0]:02}-{nak[2]} {self.v_sym} "
                 f"{decsigndms(var_lon):10} {var_nak[0]:02}-{var_nak[2]} {self.v_sym} "
                 f"{obj.get('lat', 0):5.2f} {self.v_sym} "
@@ -332,10 +332,9 @@ class Tables(Gtk.Notebook):
         for row_name in obj_names:
             i = name2idx[row_name]
             speed = speeds.get(row_name, 0.0)
-            retro = "R" if speed < 0 else " "
+            retro_char = "R" if speed < 0 else " "
             # 1st column
-            text += f" {row_name}{retro}{self.v_sym}"
-            # text += f" {row_name:>2} {v_}"
+            text += f" {row_name}{retro_char}{self.v_sym}"
             for col_name in obj_names:
                 j = name2idx[col_name]
                 cell = matrix[i][j]
@@ -368,7 +367,7 @@ class Tables(Gtk.Notebook):
 
     def p2_changed(self, event):
         self.p2_pos = getattr(self.app, "p2_pos", None)
-        self.p2_retro = calculate_retro("p2")
+        self.p2_stations = calculate_stations("p2")
         self.update_p2(event)
 
     def update_p2(self, event):
@@ -408,11 +407,12 @@ class Tables(Gtk.Notebook):
             if list(obj.keys())[0] in ("p2jdut", "p2date"):
                 continue
             lon = obj.get("lon", 0)
-            if self.p2_retro:
-                retro_info = next(
-                    (r for r in self.p2_retro if r.get("name") == name), None
+            stations_data = None
+            if self.p2_stations:
+                stations_data = next(
+                    (r for r in self.p2_stations if r.get("name") == name), None
                 )
-            direction = retro_info["direction"] if retro_info else ""  # type:ignore
+            direction = stations_data["direction"] if stations_data else ""
             # dont show direct indicator
             if direction == "D":
                 direction = ""
@@ -426,20 +426,20 @@ class Tables(Gtk.Notebook):
             content += ln_pos
         content += separ
         content += " planetary stations :\n"
-        # additional retro data
-        if self.p2_retro:
-            retro_sorted = sorted(
-                self.p2_retro,
+        # additional stations data
+        if self.p2_stations:
+            stations_sorted = sorted(
+                self.p2_stations,
                 key=lambda r: self.order.index(r["name"])
                 if r.get("name") in self.order
                 else len(self.order),
             )
-            for retro in retro_sorted:
-                if "name" not in retro:
+            for station in stations_sorted:
+                if "name" not in station:
                     continue
-                name = retro["name"]
-                prev_st = jdtoiso(retro.get("prevstation"))
-                next_st = jdtoiso(retro.get("nextstation"))
+                name = station["name"]
+                prev_st = jdtoiso(station.get("prevstation"))
+                next_st = jdtoiso(station.get("nextstation"))
                 content += f" {name}\n"
                 content += f"   prev : {prev_st}\n"
                 content += f"   next : {next_st}\n"
@@ -483,7 +483,7 @@ class Tables(Gtk.Notebook):
     # ----
     def p3_changed(self, event):
         self.p3_pos = getattr(self.app, "p3_pos", None)
-        self.p3_retro = calculate_retro("p3")
+        self.p3_stations = calculate_stations("p3")
         self.update_p3(event)
 
     def update_p3(self, event):
@@ -523,11 +523,11 @@ class Tables(Gtk.Notebook):
             if list(obj.keys())[0] in ("p3jdut", "p3date"):
                 continue
             lon = obj.get("lon", 0)
-            if self.p3_retro:
-                retro_info = next(
-                    (r for r in self.p3_retro if r.get("name") == name), None
+            if self.p3_stations:
+                stations_data = next(
+                    (r for r in self.p3_stations if r.get("name") == name), None
                 )
-            direction = retro_info["direction"] if retro_info else ""  # type:ignore
+            direction = stations_data["direction"] if stations_data else ""  # type:ignore
             # dont show direct indicator
             if direction == "D":
                 direction = ""
@@ -541,20 +541,20 @@ class Tables(Gtk.Notebook):
             content += ln_pos
         content += separ
         content += " planetary stations :\n"
-        # additional retro data
-        if self.p3_retro:
-            retro_sorted = sorted(
-                self.p3_retro,
+        # additional stations data
+        if self.p3_stations:
+            stations_sorted = sorted(
+                self.p3_stations,
                 key=lambda r: self.order.index(r["name"])
                 if r.get("name") in self.order
                 else len(self.order),
             )
-            for retro in retro_sorted:
-                if "name" not in retro:
+            for station in stations_sorted:
+                if "name" not in station:
                     continue
-                name = retro["name"]
-                prev_st = jdtoiso(retro.get("prevstation"))
-                next_st = jdtoiso(retro.get("nextstation"))
+                name = station["name"]
+                prev_st = jdtoiso(station.get("prevstation"))
+                next_st = jdtoiso(station.get("nextstation"))
                 content += f" {name}\n"
                 content += f"   prev : {prev_st}\n"
                 content += f"   next : {next_st}\n"
@@ -653,7 +653,7 @@ class Tables(Gtk.Notebook):
         # add page with event label as tab title
         self.append_page(scroll, Gtk.Label.new(event))
         self.page_widgets[event] = scroll
-        
+
     def vimsottari_changed(self, event, vimsottari):
         # receives table as plain text
         if event not in self.events_data:
@@ -722,4 +722,3 @@ class Tables(Gtk.Notebook):
                 event,
                 # "luminaries_changed", "vimsottari", self.app.last_luminaries
             )
-

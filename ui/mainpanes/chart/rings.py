@@ -431,7 +431,7 @@ class Event(RingBase):
         cusps,
         ascmc,
         chart_settings,
-        retro,
+        stations,
         lots,
         eclipses,
         syzygy,
@@ -447,9 +447,9 @@ class Event(RingBase):
         self.event_r = radius_dict.get("event", "")
         self.info_r = radius_dict.get("info", "")
         self.mid_ring = (self.event_r + self.info_r) / 2
-        # todo inject retro onto chart : how ? they be stationary phases of planets
+        # todo inject stations onto chart : how ? they be stationary phases of planets
         # text comes to mind
-        self.retro = retro
+        self.stations = stations
         self.lots = [AstroObject(lot) for lot in (lots or []) if isinstance(lot, dict)]
         # print(f"rings : lots : {lots}")
         self.eclipses = [
@@ -1079,7 +1079,7 @@ class D1PrimaryDirection(ObjectRingBase):
 
 
 class P3MinorProgress(ObjectRingBase):
-    def __init__(self, radius, cx, cy, font_size, p3m_pos, retro, radius_dict):
+    def __init__(self, radius, cx, cy, font_size, p3m_pos, stations, radius_dict):
         super().__init__(radius, cx, cy, None, radius_dict=radius_dict)
         self.app = Gtk.Application.get_default()
         self.notify = self.app.notify_manager
@@ -1090,9 +1090,9 @@ class P3MinorProgress(ObjectRingBase):
             if isinstance(obj, dict) and "name" in obj and "lon" in obj
         ]
         self.setup_ring_radius("p3m progress")
-        # note : planets in retro should match those in guests (that can go retro)
-        self.retro = retro
-        # print(f"rings : p3retro : {self.retro}")
+        # note : planets in stations should match those in guests (that can go retro)
+        self.stations = stations
+        # print(f"rings : p3stations : {self.stations}")
 
     def marker_color(self, name):  # type:ignore
         return (0, 0.3, 0.721, 0.5)
@@ -1109,7 +1109,7 @@ class P3MinorProgress(ObjectRingBase):
 
 
 class P3Progress(ObjectRingBase):
-    def __init__(self, radius, cx, cy, font_size, p3_pos, retro, radius_dict):
+    def __init__(self, radius, cx, cy, font_size, p3_pos, stations, radius_dict):
         super().__init__(radius, cx, cy, None, radius_dict=radius_dict)
         self.app = Gtk.Application.get_default()
         self.notify = self.app.notify_manager
@@ -1121,9 +1121,9 @@ class P3Progress(ObjectRingBase):
         ]
         # print(f"p3progress : p3_pos :\n{p3_pos}")
         self.setup_ring_radius("p3 progress")
-        # note : planets in retro should match those in guests (that can go retro)
-        self.retro = retro
-        # print(f"rings : p3retro : {self.retro}")
+        # note : planets in stations should match those in guests (that can go retro)
+        self.stations = stations
+        # print(f"rings : p3stations : {self.stations}")
 
     def marker_color(self, name):  # type:ignore
         return (0, 0.3, 0.721, 0.5)
@@ -1141,7 +1141,7 @@ class P3Progress(ObjectRingBase):
 
 
 class P2Progress(ObjectRingBase):
-    def __init__(self, radius, cx, cy, font_size, p2_pos, retro, radius_dict):
+    def __init__(self, radius, cx, cy, font_size, p2_pos, stations, radius_dict):
         super().__init__(radius, cx, cy, None, radius_dict=radius_dict)
         self.app = Gtk.Application.get_default()
         self.notify = self.app.notify_manager
@@ -1152,9 +1152,9 @@ class P2Progress(ObjectRingBase):
             if (isinstance(obj, dict) and obj.get("name") != "p2date")
         ]
         self.setup_ring_radius("p2 progress")
-        # note : planets in retro should match those in guests (that can go retro)
-        self.retro = retro
-        # print(f"rings : p2retro : {self.retro}")
+        # note : planets in stations should match those in guests (that can go retro)
+        self.stations = stations
+        # print(f"rings : p2stations : {self.stations}")
 
     def marker_color(self, name):  # type:ignore
         return (0, 0.3, 0.721, 0.5)
@@ -1199,7 +1199,7 @@ class TransitVarga(ObjectRingBase):
 
 
 class Transit(ObjectRingBase):
-    def __init__(self, radius, cx, cy, font_size, transit_data, retro, radius_dict):
+    def __init__(self, radius, cx, cy, font_size, transit_data, stations, radius_dict):
         super().__init__(radius, cx, cy, None, radius_dict=radius_dict)
         self.app = Gtk.Application.get_default()
         self.notify = self.app.notify_manager
@@ -1209,8 +1209,8 @@ class Transit(ObjectRingBase):
             AstroObject(obj) for obj in (transit_data or []) if isinstance(obj, dict)
         ]
         self.setup_ring_radius("transit")
-        # todo inject retro into ring
-        self.retro = retro
+        # todo inject stations into ring
+        self.stations = stations
 
     def marker_color(self, name):  # type:ignore
         return (0, 1, 0, 0.5)

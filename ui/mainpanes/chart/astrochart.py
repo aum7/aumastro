@@ -5,7 +5,7 @@ import gi
 gi.require_version("Gtk", "4.0")
 from gi.repository import Gtk  # type: ignore
 from math import radians
-from sweph.calculations.retro import calculate_retro
+from sweph.calculations.stations import calculate_stations
 from sweph.calculations.lots import calculate_lots
 from sweph.calculations.eclipses import calculate_eclipses
 from sweph.calculations.syzygy import calculate_syzygy
@@ -273,7 +273,7 @@ class AstroChart(Gtk.Box):
                 cy=cy,
                 font_size=min(int(12 * font_scale), 14),
                 transit_data=self.transit_data,
-                retro=calculate_retro("e2"),
+                stations=calculate_stations("e2"),
                 radius_dict=radius_dict,
             )
             ring_transit.draw(cr)
@@ -305,7 +305,7 @@ class AstroChart(Gtk.Box):
                 cy=cy,
                 font_size=int(12 * font_scale),
                 p2_pos=self.p2_pos,
-                retro=calculate_retro("p2"),
+                stations=calculate_stations("p2"),
                 radius_dict=radius_dict,
             )
             ring_p2.draw(cr)
@@ -317,7 +317,7 @@ class AstroChart(Gtk.Box):
                 cy=cy,
                 font_size=int(12 * font_scale),
                 p3_pos=self.p3_pos,
-                retro=calculate_retro("p3"),
+                stations=calculate_stations("p3"),
                 radius_dict=radius_dict,
             )
             ring_p3.draw(cr)
@@ -329,7 +329,7 @@ class AstroChart(Gtk.Box):
                 cy=cy,
                 font_size=int(12 * font_scale),
                 p3m_pos=self.p3m_pos,
-                retro=calculate_retro("p3m"),
+                stations=calculate_stations("p3m"),
                 radius_dict=radius_dict,
             )
             ring_p3m.draw(cr)
@@ -414,15 +414,16 @@ class AstroChart(Gtk.Box):
         )
         ring_signs.draw(cr)
         # extra objects data : make available to angleruler
-        # todo retro used in tables, not in astro chart
-        self.retro = calculate_retro("e1")
+        # todo stations used in tables, not in astro chart
+        # test_stations = calculate_stations("e1")
+        # print(f"astrochart : stations={stations}")
         self.lots = calculate_lots()
         self.eclipses = calculate_eclipses()
         self.syzygy = calculate_syzygy()
         # leave on for crosscheck of prenatal lunation (previous code was wrong)
         msg += f"\nsyzygy={self.syzygy}"
         # print(
-        #     f"astrochart :\n\tretro={self.retro}\n\n\tlots={self.lots}"
+        #     f"astrochart :\n\tstations={self.stations}\n\n\tlots={self.lots}"
         #     f"\n\n\teclipses={self.eclipses}\n\n\tsyzygy={self.syzygy}"
         # )
         ring_event = Event(
@@ -434,7 +435,7 @@ class AstroChart(Gtk.Box):
             cusps=self.cusps if self.cusps else [],
             ascmc=self.ascmc if self.ascmc else [],
             chart_settings=self.chart_settings,
-            retro=self.retro,
+            stations=calculate_stations("e1"),
             lots=self.lots,
             eclipses=self.eclipses,
             syzygy=self.syzygy,

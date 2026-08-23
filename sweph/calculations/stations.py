@@ -47,12 +47,12 @@ def retro_marker(body: int, speed: float) -> str:
         return "R" if speed < 0 else " "
 
 
-def calculate_retro(event: str):
+def calculate_stations(event: str):
     """calculate retro stations & direction for event"""
     # grab existing positions with lon speed & calculate direction & stations
     app = Gtk.Application.get_default()
     notify = app.notify_manager
-    retro_data = []
+    stations = []
     msg = f"event {event}\n"
     events: List[str] = [event] if event else ["e1", "e2"]
     if "e2" in events and not app.e2_sweph.get("jd_ut"):
@@ -84,7 +84,7 @@ def calculate_retro(event: str):
             return
         objs = app.selected_objects_e1 if event == "e1" else app.selected_objects_e2
         use_mean_node = app.chart_settings["mean node"]
-        retro_data.append({"event": event_name})
+        stations.append({"event": event_name})
         for obj in objs:
             code, name = objcode(obj, use_mean_node)
             if code not in station_speed:
@@ -107,7 +107,7 @@ def calculate_retro(event: str):
             if s_prev is None or s_next is None:
                 msg += f"station for {name} not found\n"
                 continue
-            retro_data.append({
+            stations.append({
                 "name": name,
                 "prevstation": s_prev,
                 "nextstation": s_next,
@@ -118,13 +118,13 @@ def calculate_retro(event: str):
                     f"[{event}] {name} [{direction}] :\nprev={jdtoiso(s_prev)} "
                     f"< curr={jdtoiso(jd_ut)} < next={jdtoiso(s_next)}\n"
                 )
-        # msg += f"retrodata : {retro_data}\n"
+        # msg += f"retrodata : {stations}\n"
     notify.debug(
         msg,
         source="retro",
         route=[""],
     )
-    return retro_data
+    return stations
 
 
 def lon_speed(body: int, jd_ut: float) -> float:

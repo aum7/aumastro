@@ -1,273 +1,38 @@
-ai prompt - add datagraph.py if needed
-since time when data graph has been implemented, app has hotkeys issue :
-- when datagraph (visible, of course, via shift+3 or +4 or now even +5 app layout) is clicked, click is converted to various func, ie shift-click on graph left/right will move data for x-bars back/forward, while click on datagraph will pick date-time & send it to astrochart, which will update itself with new date-time
-- however, this click will grab focus, & disable previously fine working hotkeys, incl, most importantly, arrowkeys (for changing astrochart date-time, both period & actual date-time)
+---
 
-we want hotkeys to be active even when datagraph kidnaps focus
+### Handover Context for Next Chat: Notification System & Architecture Updates
 
-this is important for future planned update : have synced data between datagraph & astrochart
-this is currently partialy implemented, ie click on datagraph updates astrochart
-in future we will implement : on button enabled (ie btn_sync_data_astro - not implemented yet) when hotkey is pressed / change_time is changed, update datagraph info cursor - find closest date-time in datagraph data, ie 2000-5-12 00:00, and update / move datagraph info cursor to that date-time
+**1. Primary Topic for New Chat: Notification & Logging Architecture**
 
-1st we need always available hotkeys, as long as app is focused, of course, especialy when self.movie_mode = True = enabled
-
-# ui/mainwindow.py
-import gi
-...
-from .sidepane.sidepane import SidepaneManager
-from .sidepane.settings import update_chart_setting_checkbox
-from .uisetup import UISetup
-from .hotkeymanager import HotkeyManager
-from ui.helpers import _event_selection
-from ui.mainpanes.tables import Tables
-from ui.mainpanes.chart.astrochart import AstroChart
-from ui.mainpanes.datagraph import DataGraph
-from sweph.calculations.positions import connect_signals_positions
-from sweph.calculations.houses import connect_signals_houses
-...
-from .data_printscreen import DataPrintscreen
+* **Problem:** Math and calculation modules (like `stations.py`) directly depend on GTK UI context via `Gtk.Application.get_default()` and `notify_manager`. This couples pure astronomical calculations to UI execution, breaking headless execution, testing, and clean error handling.
 
 
-class MainWindow(
-    Gtk.ApplicationWindow,
-    SidepaneManager,
-    UISetup,
-):
-...
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        """initialize the main window"""
-        Gtk.ApplicationWindow.__init__(self, *args, **kwargs)
-        SidepaneManager.__init__(self, app=self.get_application())
-        self.app = self.get_application() or Gtk.Application.get_default()
-        self.notify = self.app.notify_manager
-...
-        self.set_default_size(800, 600)
-        # setup ui : side pane
-        self.setup_revealer()
-        self.setup_css()
-        # 4 resizable panes for charts & tables etc
-        self.setup_main_panes()
-        # hotkey manager
-        self.hotkeys = HotkeyManager(self)
-        self.setup_hotkeys()
-        # intercept toggle pane button
-        self.hotkeys.intercept_button_controller(self.btn_toggle_pane, "toggle_pane")
-        # connect signals
-        connect_signals_positions(self.app.signal_manager)
-        connect_signals_houses(self.app.signal_manager)
-...
-        # 4 main panes
-        self.astro_chart = AstroChart()
-        self.tables = Tables()
-        self.datagraph = DataGraph()
-        self.astrodata = AstroChart()  # extra astro chart for data overlay
-        self.init_panes()
-        # printscreen sequence script
-        self.data_seq = DataPrintscreen(self.app)
-        # movie overlay mode : data graph over astro chart
-        self.movie_overlay = None
-        self.overlay_mode = False
-        self.orig_target = None
-        self.orig_top_right_child = None  # datagraph to be overlaid
-        # initialize panes layout todo ko
-        self.connect("realize", lambda w: self.panes_double())
-...
-    def setup_hotkeys(self):
-        """register additional hotkeys"""
-        self.hotkeys.register_hotkey("v", lambda: self.tables.toggle_vimso())
-        self.hotkeys.register_hotkey("h", self.show_help)
-        self.hotkeys.register_hotkey("s", self.on_toggle_sidepane)
-        self.hotkeys.register_hotkey("shift+exclam", self.panes_single)
-        self.hotkeys.register_hotkey("shift+quotedbl", self.panes_double)
-        self.hotkeys.register_hotkey("shift+numbersign", self.panes_triple)
-        self.hotkeys.register_hotkey("shift+dollar", self.panes_all)
-        self.hotkeys.register_hotkey("shift+percent", self.panes_movie)
-        self.hotkeys.register_hotkey("Up", self.obc_arrow_up) < we need up down left right
-        self.hotkeys.register_hotkey("Down", self.obc_arrow_dn)
-        self.hotkeys.register_hotkey("Left", self.obc_arrow_l)
-        self.hotkeys.register_hotkey("Right", self.obc_arrow_r)
-        # call helper function for time now
-        self.hotkeys.register_hotkey("n", lambda: self.on_time_now())
-        # toggle selected event
-        self.hotkeys.register_hotkey(
-            "e",
-...
-        # astro chart drawing
-        self.hotkeys.register_hotkey(
-            "g", lambda: self.toggle_chart_setting("enable glyphs")
-        )
-        self.hotkeys.register_hotkey(
-            "a", lambda: self.toggle_chart_setting("fixed asc")
-        )
-        # astro chart outer rings for event 2
-        self.hotkeys.register_hotkey("1", lambda: self.toggle_chart_setting("transit"))
-        self.hotkeys.register_hotkey("2", lambda: self.toggle_chart_setting("varga"))
-...
-        self.hotkeys.register_hotkey("shift+g", self.on_data_seq)
-...
+* **Goal:** Replace direct UI/GTK calls in engine/math modules with standard Python `logging` (`logger.debug`, `logger.error`, etc.).
+* **UI Integration:** Design a custom `LoggingHandler` attached at the GTK application level that intercepts standard log records and routes them directly to `notify_manager` or the terminal based on log level.
 
-# ruff: noqa: E402
-import inspect
-import gi
+---
 
-gi.require_version("Gtk", "4.0")
-gi.require_version("Gdk", "4.0")
-from gi.repository import Gtk, Gdk  # type: ignore
-from typing import Dict, Callable
+**2. Standardized Terms & Formatting**
+
+* **`astro_glyph`**: The actual unicode/font character rendered from the custom font (e.g., `VictorMonoLightAstro`).
+* **`plain_text`**: Clean, human-readable string used for notifications, clipboard exports, logging, and tooltips (`"jupiter"`, `"retro"`, `"h12"`).
+* **`glyphs.resolve(key)`**: Unified lookup function returning `(astro_glyph, plain_text)` across all glyph registries.
+
+---
+
+**3. Engine & Drawing Refactoring Decisions**
+
+* **Snap Coordinates (`rings.py` $\rightarrow$ `angleruler.py`):**
+* `rings.py` acts as the single source of truth for visual object locations.
+* During its draw pass, `rings.py` will publish calculated positions into `chart.snap_targets = [(lon, x, y, astro_glyph, plain_text, ring_name), ...]`.
+* `angleruler.py` will query `chart.snap_targets` directly, eliminating duplicate position, latitude, and ring calculations.
 
 
-class HotkeyManager:
-    """global hotkeys manager for keyboard + mouse combinations"""
 
-    action_func: Callable < changed just now
 
-    def __init__(self, window: Gtk.Window) -> None:
-        self.window = window
-        self.hotkey_map: Dict[str, Callable] = {}
-        self.active_modifiers = {
-            Gdk.KEY_Control_L: False,
-            Gdk.KEY_Shift_L: False,
-        }
-        # store reference to window methods
-        self.actions = {
-            "toggle_pane": getattr(window, "on_toggle_sidepane", None),
-            "panes_single": getattr(window, "panes_single", None),
-            "panes_double": getattr(window, "panes_double", None),
-            "panes_triple": getattr(window, "panes_triple", None),
-            "panes_all": getattr(window, "panes_all", None),
-        }
-        self.setup_controllers()
+* **Stations Calculation (`stations.py`):**
+* **Explicit Direction States:** Support directional station flags (`SR` for Stationary Retrograde, `SD` for Stationary Direct, `R` for Retrograde, `' '` for Direct) by checking velocity delta ($\Delta JD \pm 0.1$).
+* **Cache Invalidation:** Change `last_stations` cache key from `body` to `(body, round(jd_ut, 2))` to prevent date bleeding across charts or progressions.
 
-    def setup_controllers(self) -> None:
-        key_controller = Gtk.EventControllerKey()
-        key_controller.connect("key-pressed", self.on_key_pressed)
-        key_controller.connect("key-released", self.on_key_released)
-        self.window.add_controller(key_controller)
 
-    def intercept_button_controller(self, button: Gtk.Button, action_name: str) -> None:
-        """intercept button click events"""
-        # remove existing controllers
-        controllers = button.observe_controllers()
-        for controller in controllers:
-            if isinstance(controller, Gtk.GestureClick):
-                button.remove_controller(controller)
-        # add new controller
-        click_controller = Gtk.GestureClick()
-        click_controller.connect(
-            "pressed",
-            lambda gesture, n_press, x, y: self._handle_button_press(
-                gesture,
-                n_press,
-                x,
-                y,
-                button,
-                action_name,
-            ),
-        )
-        button.add_controller(click_controller)
-
-    def _handle_button_press(self, gesture, n_press, x, y, button, action_name):
-        """handle button press with modifier awareness"""
-        # check for modifiers
-        if self.active_modifiers[Gdk.KEY_Shift_L] and n_press in (1, 2, 3, 4):
-            if n_press == 1:
-                action_func = getattr(self.window, "panes_single", None)
-            elif n_press == 2:
-                action_func = getattr(self.window, "panes_double", None)
-            elif n_press == 3:
-                action_func = getattr(self.window, "panes_triple", None)
-            elif n_press == 4:
-                action_func = getattr(self.window, "panes_all", None) < we are missing shift+5, as next line codes, however app works properly as is (shift+5 only coded in mainwindow.py:setup_hotkeys(), but not as shift+mouse-click_x_nums - not needed actually)
-            if action_func: < changed just now - are both last changes proper replacement for next (commented) line ? - editor gives warning : action_func is possibly unbound
-                # if callable(action_func): < original code, replaced with both last changes
-                action_func()
-                gesture.set_state(Gtk.EventSequenceState.CLAIMED)
-                return
-            # fallback if not callable
-            action_func = self.actions.get(action_name)
-            if not callable(action_func):
-                action_func = getattr(self.window, action_name, None)
-                self.actions[action_name] = action_func
-            if callable(action_func):
-                action_func(button)
-                gesture.set_state(Gtk.EventSequenceState.CLAIMED)
-                return
-        # no modifier or different action, trigger default action
-        if action_name in self.actions:
-            action = self.actions[action_name]
-            # try fetch dynamically from window
-            if not callable(action):
-                action = getattr(self.window, action_name, None)
-                self.actions[action_name] = action
-            if callable(action):
-                action(button)
-
-    def on_key_pressed(self, controller, keyval, keycode, state) -> bool:
-        if keyval == Gdk.KEY_Control_L:
-            self.active_modifiers[Gdk.KEY_Control_L] = True
-        elif keyval == Gdk.KEY_Shift_L:
-            self.active_modifiers[Gdk.KEY_Shift_L] = True
-
-        shortcut = self._create_keyboard_shortcut(keyval, state)
-        return self._trigger_hotkey(shortcut)
-
-    def on_key_released(self, controller, keyval, keycode, state) -> None:
-        if keyval == Gdk.KEY_Control_L:
-            self.active_modifiers[Gdk.KEY_Control_L] = False
-        elif keyval == Gdk.KEY_Shift_L:
-            self.active_modifiers[Gdk.KEY_Shift_L] = False
-
-    def register_hotkey(self, shortcut: str, callback: Callable) -> None:
-        self.hotkey_map[shortcut.lower()] = callback
-
-    def unregister_hotkey(self, shortcut: str) -> None:
-        if shortcut.lower() in self.hotkey_map:
-            del self.hotkey_map[shortcut.lower()]
-
-    def _create_keyboard_shortcut(self, keyval: int, state: Gdk.ModifierType) -> str:
-        key_name = Gdk.keyval_name(keyval)
-        if not key_name:
-            return ""
-
-        parts = []
-        if self.active_modifiers[Gdk.KEY_Control_L]:
-            parts.append("ctrl")
-        if self.active_modifiers[Gdk.KEY_Shift_L]:
-            parts.append("shift")
-
-        parts.append(key_name.lower())
-        return "+".join(parts)
-
-    def _trigger_hotkey(self, shortcut: str) -> bool:
-        if shortcut and shortcut in self.hotkey_map:
-            # check what function expects
-            sig = inspect.signature(self.hotkey_map[shortcut])
-            param_count = len(sig.parameters)
-            if param_count <= 1:  # just self
-                self.hotkey_map[shortcut]()
-            elif param_count <= 2:  # self, widget
-                self.hotkey_map[shortcut](None)
-            elif param_count <= 3:  # self, widget, data
-                self.hotkey_map[shortcut](None, None, None)
-            else:  # default : try withouth params
-                self.hotkey_map[shortcut](None, 1, 0, 0)
-            return True
-
-        return False
---- file end
-
-ui/sidepane/sidepane.py :
-...
-class SidepaneManager:
-...
-    # change time handlers
-    def obc_arrow_l(
-        self, widget: Optional[Gtk.Widget] = None, data: Optional[str] = None
-    ):
-        """move selected event time backward"""
-        self.change_event_time(-float(self.CHANGE_TIME_SELECTED))
-
-    def obc_arrow_r(
-...
-
-revise, advise
+* **Decoupling:** Convert calculation signatures to accept explicit parameters (`jd_ut`, `selected_objects`, `use_mean_node`) rather than reading off the GTK `app` instance.

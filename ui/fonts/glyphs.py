@@ -32,7 +32,7 @@ ASPECTS = {
     0: ("\u019e", "conjunction"),  # series : none = single
     36: ("\u01aa", "semiquintile"),  # series : 36 72 108 144 [180]
     45: ("\u01a3", "semisquare"),  # series : 45 90 135 [180]
-    60: ("\u01a2", "sextile"),  # series : 60 120 180
+    60: ("\u01a2", "sextile"),  # series : 60 120 [180]
     72: ("\u01a8", "quintile"),
     90: ("\u01a1", "square"),
     108: ("\u01ab", "sesqiquintile"),
@@ -40,7 +40,7 @@ ASPECTS = {
     135: ("\u01ad", "sesqisquare"),
     144: ("\u01a9", "biquintile"),
     150: ("\u01a5", "inconjunct"),  # series : none = single
-    180: ("\u019f", "opposition"),
+    180: ("\u019f", "opposition"),  # series : falls in 36, 45, 60
 }
 ELEMENTS = {
     "fire": "\u01d9",
