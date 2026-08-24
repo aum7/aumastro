@@ -9,7 +9,7 @@
 
 * **Goal:** Replace direct UI/GTK calls in engine/math modules with standard Python `logging` (`logger.debug`, `logger.error`, etc.).
 * **UI Integration:** Design a custom `LoggingHandler` attached at the GTK application level that intercepts standard log records and routes them directly to `notify_manager` or the terminal based on log level.
-
+aum DONE
 ---
 
 **2. Standardized Terms & Formatting**

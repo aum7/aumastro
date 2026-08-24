@@ -1,4 +1,86 @@
 # sweph/constants.py
+# standard planetary order
+PLANETARY_ORDER = (
+    "su",
+    "mo",
+    "me",
+    "ve",
+    "ma",
+    "ju",
+    "sa",
+    "ur",
+    "ne",
+    "pl",
+    "ra",
+)
+# drawing order for objects in reverse
+DRAW_ORDER_REVERSE = [
+    "ra",
+    "pl",
+    "ne",
+    "ur",
+    "sa",
+    "ju",
+    "ma",
+    "su",
+    "ve",
+    "me",
+    "mo",
+    "tas",  # true p3 ascendant
+    "tmc",  # true p3 midheaven
+    "asc",
+    "mc",
+]
+# retro periods
+# legend :
+#     Rl - average length of retro period
+#     f - (yearly) frequency
+#     as - average speed
+#     ms - max speed
+# obj : Rl     : f                   : as    : ms
+# me : 21 d    : 3 times a year      : 1.607 : 1.6667  # (6') 5' / d : 24 h
+# ve : 40-44 d : every 18 months     : 1.174 : 1.25  # 3' / d : 3 d 4 h
+# ma : 60-80 d : every 26 months     : 0.524 : 0.7833  # 90" / d : 6 d 12 h
+# ju : 4 m     : every 13 months     : 0.083 : 0.2333  # 60" / d : 7 d
+# sa : 4.5 m   : every 12 1/2 months : 0.033 : 0.12472  # 60" /  : 7 d
+# ur : 5 m     : every 12 months     : 0.012 : 0.05722  # 20" / d : 6 d 12 h
+# ne : 5 m 6 d : every 12 months     : 0.006 : 0.038055556  # 10" / d
+# pl : 5-6 m   : every 12 months     : 0.004 : 0.036388889  # 10" / d
+RETRO_DAYS = {  # average length of retro period
+    2: 21.0,  # "me"
+    3: 42.0,  # "ve"
+    4: 70.0,  # "ma"
+    5: 120.0,  # "ju"
+    6: 135.0,  # "sa"
+    7: 150.0,  # "ur"
+    8: 156.0,  # "ne"
+    9: 168.0,  # "pl"
+}
+STATION_SPEED = {  # stationary speed
+    2: 0.08333,  # "me"
+    3: 0.05,  # "ve"
+    4: 0.025,  # "ma"
+    5: 0.016666667,  # "ju"
+    6: 0.016666667,  # "sa"
+    7: 0.005555556,  # "ur"
+    8: 0.002777778,  # "ne"
+    9: 0.002777778,  # "pl"
+}
+# average planet speeds
+AVG_SPEEDS = {
+    0: 0.9856,  # sun
+    1: 13.176,  # moon
+    2: 1.607,  # mercury
+    3: 1.174,  # venus
+    4: 0.524,  # mars
+    5: 0.0831,  # jupiter
+    6: 0.0335,  # saturn
+    7: 0.0117,  # uranus
+    8: 0.0060,  # neptune
+    9: 0.0039,  # pluto
+    10: 0.0529,  # mean node (retrograde)
+    11: 0.0529,  # true node (retrograde)
+}
 TERMS = {  # egyptian terms table: starting degree : ruler
     0: "ju",
     6: "ve",
@@ -61,7 +143,6 @@ TERMS = {  # egyptian terms table: starting degree : ruler
     349: "ma",
     358: "sa",
 }
-
 NAKSATRAS27 = {
     1: ("ke", "asv"),  #  00-00 - 13-20 ari
     2: ("ve", "bha"),  #  13-20 - 26-40 ari

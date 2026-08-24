@@ -14,7 +14,8 @@ from ui.helpers import _event_selection
 from ui.mainpanes.tables import Tables
 from ui.mainpanes.chart.astrochart import AstroChart
 from ui.mainpanes.datagraph import DataGraph
-from sweph.calculations.positions import connect_signals_positions
+
+# from sweph.calculations.positions import connect_signals_positions
 from sweph.calculations.houses import connect_signals_houses
 from sweph.calculations.stars import connect_signals_stars
 from sweph.calculations.aspects import connect_signals_aspects
@@ -64,7 +65,7 @@ class MainWindow(
         # intercept toggle pane button
         self.hotkeys.intercept_button_controller(self.btn_toggle_pane, "toggle_pane")
         # connect signals
-        connect_signals_positions(self.app.signal_manager)
+        # connect_signals_positions(self.app.signal_manager)
         connect_signals_houses(self.app.signal_manager)
         connect_signals_stars(self.app.signal_manager)
         connect_signals_aspects(self.app.signal_manager)

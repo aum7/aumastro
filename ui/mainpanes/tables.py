@@ -4,31 +4,11 @@ import gi
 
 gi.require_version("Gtk", "4.0")
 from gi.repository import Gtk  # type: ignore
-from typing import Tuple
-
 from ui.helpers import _decimal_to_sign_dms as decsigndms
 from ui.helpers import _decimal_to_ra as decra
 from user.settings import HOUSE_SYSTEMS
-from sweph.calculations.stations import calculate_stations, retro_marker
-from sweph.calculations.hora import calculate_hora
 from sweph.swetime import jd_to_custom_iso as jdtoiso
 from ui.fonts.glyphs import get_glyph
-
-# average planet speeds
-AVG_SPEEDS = {
-    0: 0.9856,  # sun
-    1: 13.176,  # moon
-    2: 1.607,  # mercury
-    3: 1.174,  # venus
-    4: 0.524,  # mars
-    5: 0.0831,  # jupiter
-    6: 0.0335,  # saturn
-    7: 0.0117,  # uranus
-    8: 0.0060,  # neptune
-    9: 0.0039,  # pluto
-    10: 0.0529,  # mean node (retrograde)
-    11: 0.0529,  # true node (retrograde)
-}
 
 
 class Tables(Gtk.Notebook):
@@ -58,17 +38,14 @@ class Tables(Gtk.Notebook):
         self.mc = "\u01c1"
         self.order = ("su", "mo", "me", "ve", "ma", "ju", "sa", "ur", "ne", "pl", "ra")
         # event data widget
-        signal._connect("positions_changed", self.positions_changed)
-        signal._connect("houses_changed", self.houses_changed)
-        signal._connect("aspects_changed", self.aspects_changed)
-        # vimsottari dasa widget
-        signal._connect("vimsottari_changed", self.vimsottari_changed)
-        # p2 table
-        signal._connect("p2_changed", self.p2_changed)
-        # p3 table
-        signal._connect("p3_changed", self.p3_changed)
-        # daily horas
-        signal._connect("horas_changed", self.horas_changed)
+        signal._connect("data_calculated", self.data_calculated)
+
+    def data_calculated(self, event: str, data: str):
+        if event not in ("e1", "e2"):
+            return
+        self.events_data[event] = data
+        self.current_event = event
+        self.update_event_data(event)
 
     def event_data_widget(self, event: str, content: str):
         # create a scrollable text view for an event
@@ -94,16 +71,14 @@ class Tables(Gtk.Notebook):
 
     def update_event_data(self, event: str):
         # calculations of table content by event
-        pos = self.update_positions(event)
-        aspects = self.update_aspects(event)
-        # cycle = self.update_cycle(event)
+        data = self.events_data.get(event, {})
+        pos = self.get_positions_text(event, data)
+        aspects = self.get_aspects_text(event, data)
         content = ""
         if pos:
             content += pos
         if aspects:
             content += aspects
-        # if horas:
-        # pass
         # update page widget if exists, else create one
         if event in self.page_widgets:
             scroll = self.page_widgets[event]
@@ -112,85 +87,33 @@ class Tables(Gtk.Notebook):
             buffer.set_text(content)
         else:
             self.event_data_widget(event, content)
+        if "vimsottari" in data and event == "e1":
+            self.update_vimsottari("vimsottari", data["vimsottari"])
+        if "horas" in data:
+            self.update_horas(f"{event} horas", data["horas"])
+        if event == "e2":
+            if "p2_pos" in data:
+                self.update_p2("p2", data)
+            if "p3_pos" in data:
+                self.update_p3("p3", data)
+            if "p3m_pos" in data:  # todo add p3m widget
+                self.update_p3m("p3m", data)
 
-    def positions_changed(self, event: str):
-        # update event with positions data
-        if event not in self.events_data:
-            self.events_data[event] = {"positions": None}
-        if event == "e1":
-            self.events_data[event]["positions"] = (
-                self.app.e1_positions if hasattr(self.app, "e1_positions") else None
-            )
-        elif event == "e2":
-            self.events_data[event]["positions"] = (
-                self.app.e2_positions if hasattr(self.app, "e2_positions") else None
-            )
-        self.update_event_data(event)
-
-    def houses_changed(self, event: str):
-        # store houses data and update if positions already exist
-        if event not in self.events_data:
-            self.events_data[event] = {"houses": None}
-        if event == "e1":
-            self.events_data[event]["houses"] = (
-                self.app.e1_houses if hasattr(self.app, "e1_houses") else None
-            )
-        elif event == "e2":
-            self.events_data[event]["houses"] = (
-                self.app.e2_houses if hasattr(self.app, "e2_houses") else None
-            )
-        self.update_event_data(event)
-
-    def which_house(self, lon: float, cusps: Tuple[float, ...]) -> str:
-        # determine which house a celestial longitude falls in
-        if not cusps:
-            return ""
-        cusp_list = [(c, i + 1) for i, c in enumerate(cusps)]
-        n = len(cusp_list)
-        for i in range(n):
-            c0, h0 = cusp_list[i]
-            c1, _ = cusp_list[(i + 1) % n]
-            if c0 <= c1:
-                if c0 <= lon < c1:
-                    return f"{h0:2d}"
-            else:
-                if lon >= c0 or lon < c1:
-                    return f"{h0:2d}"
-        return ""
-
-    def speed_relative(self, body: int, speed: float) -> int:
-        # calculate relative planet speed
-        if body not in AVG_SPEEDS:
-            return 0
-        avg = AVG_SPEEDS[body]
-        if avg == 0:
-            return 0
-        pct = (speed / avg) * 100
-        return int(pct)
-
-    def update_positions(self, event: str):
-        # called by update_event_data()
-        if (
-            event not in self.events_data
-            or "positions" not in self.events_data[event]
-            or not self.events_data[event]["positions"]
-            or "houses" not in self.events_data[event]
-            or not self.events_data[event]["houses"]
-        ):
+    def get_positions_text(self, event: str, data: dict):
+        # get positions
+        positions = data.get("positions", {})
+        # get houses data if available
+        houses = data.get("houses", {})
+        if not positions or not houses:
             self.notify.error(
                 f"positions or houses missing for {event} : exiting ...",
                 source="tables",
-                route=[""],
+                route=["terminal"],
             )
-            return
-        # get positions
-        pos = self.events_data[event].get("positions")
-        pos_map = {k: v for k, v in pos.items() if isinstance(k, int)}
-        # get houses data if available
-        houses = self.events_data[event].get("houses")
-        # if houses:
+            return ""
+        pos_map = {k: v for k, v in positions.items() if isinstance(k, int)}
         cusps, ascmc = houses if houses else ((), None)
-        if ascmc:  # type:ignore
+        if ascmc:
             self.ascendant = ascmc[0]
             self.midheaven = ascmc[1]
             self.armc = ascmc[2]
@@ -207,23 +130,19 @@ class Tables(Gtk.Notebook):
         # separ = f"{self.h_sym * 56}\n"
         # loop through positions and calculate houses if possible
         for key, obj in pos_map.items():
-            name = obj.get("name", "")
+            name = obj.get("name", "name")
             speed = obj.get("lon speed", 0)
             # relative speed
-            speed_rel = self.speed_relative(key, speed)
+            speed_rel = obj.get("speed relative", 0)
             # print(f"tables : speed : {speed}")
-            body = key
-            stations = " "
-            if name and body:
-                stations = retro_marker(body, speed)
+            retro = obj.get("retro", "")
             lon = obj.get("lon", 0)
-            # calculate house if cusps are available
-            house = self.which_house(lon, tuple(cusps)) if cusps else ""
-            nak = obj.get("naksatra", "")
+            house = obj.get("house", "")
+            nak = obj.get("naksatra", ("", "", ""))
             var_lon = obj.get("varga", 0)
-            var_nak = obj.get("varga naksatra", "")
+            var_nak = obj.get("varga naksatra", ("", "", ""))
             ln_pos = (
-                f" {obj.get('name', '')}{stations} {self.v_sym} "
+                f" {name}{retro} {self.v_sym} "
                 f"{decsigndms(lon):10} {nak[0]:02}-{nak[2]} {self.v_sym} "
                 f"{decsigndms(var_lon):10} {var_nak[0]:02}-{var_nak[2]} {self.v_sym} "
                 f"{obj.get('lat', 0):5.2f} {self.v_sym} "
@@ -232,34 +151,22 @@ class Tables(Gtk.Notebook):
             text += ln_pos
         # houses
         if cusps:
-            if hasattr(self.app, "selected_house_sys_str"):
-                if isinstance(self.app.selected_house_sys_str, bytes):
-                    selected = self.app.selected_house_sys_str.decode("ascii")
-                else:
-                    selected = self.app.selected_house_sys_str
-            else:
-                selected = ""
+            selected = getattr(self.app, "selected_house_sys_str", "")
+            if isinstance(selected, bytes):
+                selected = selected.decode("ascii")
             hsys_char = None
             for sys in HOUSE_SYSTEMS:
                 if sys[2] == selected.lower():
                     hsys_char = sys[0]
                     break
-            else:
-                selected = ""
-                hsys_char = None
             ln_csps = ""
             raH, raM, raS = decra(self.armc)
-            # todo need conversion to event time
-            horas_data = calculate_hora(event)
-            if horas_data:
-                horas = horas_data["horas"]
-                curr_hora = horas_data["current_hora"]
-                hora_glyph = get_glyph(curr_hora, False)
-                weekday = horas[0]["weekday"]
-                sunrise = horas[0]["sunrise"]
-                sunset = horas[0]["sunset"]
-                sunrise_next = horas[0]["sunrise_next"]
-                # weekday = horas_data["horas"][0]["weekday"]
+            # todo horas need conversion to event time
+            weekday = self.events_data[event].get("weekday", "")
+            hora_glyph = self.events_data[event].get("hora_glyph", "")
+            sunrise = self.events_data[event].get("sunrise", "")
+            sunset = self.events_data[event].get("sunset", "")
+            sunrise_next = self.events_data[event].get("sunrise_next", "")
             if hsys_char in ["E", "D", "W"]:
                 # print(f"selected_hsys : {self.app.selected_house_sys_str}")
                 # if selected in ["eqasc", "eqmc", "wholehs"]:
@@ -288,27 +195,16 @@ class Tables(Gtk.Notebook):
             text += ln_csps
         return text
 
-    def aspects_changed(self, event, aspects):
-        # todo only 1 set of aspects : event 1
-        if event not in self.events_data:
-            self.events_data[event] = {"aspects": None}
-        self.events_data[event]["aspects"] = aspects
-        self.update_event_data(event)
-
-    def update_aspects(self, event):
-        # called by update_event_data()
-        if (
-            event not in self.events_data
-            or "aspects" not in self.events_data[event]
-            or not self.events_data[event]["aspects"]
-        ):
+    def get_aspects_text(self, event: str, data: dict):
+        aspects = data.get("aspects", {})
+        if not aspects:
             self.notify.error(
-                f"aspects missing for {event}",
+                f"aspects missing for {event} : exiting ...",
                 source="tables",
                 route=["terminal"],
             )
-            return
-        aspects = self.events_data[event].get("aspects")
+            return ""
+
         use_varga_aspect = self.app.chart_settings.get("use varga aspect", False)
         division = self.app.chart_settings.get("harmonic ring", "1").strip()
         obj_names = aspects["obj names"]
@@ -365,14 +261,9 @@ class Tables(Gtk.Notebook):
         )
         return text
 
-    def p2_changed(self, event):
-        self.p2_pos = getattr(self.app, "p2_pos", None)
-        self.p2_stations = calculate_stations("p2")
-        self.update_p2(event)
-
-    def update_p2(self, event):
-        p2_pos = getattr(self, "p2_pos", None)
-        msg = ""
+    def update_p2(self, event: str, data: dict):
+        p2_pos = data.get("p2_pos", [])
+        p2_stations = data.get("p2_stations", [])
         if not p2_pos:
             self.notify.error(
                 "missing p2 positions : exiting ...",
@@ -413,9 +304,6 @@ class Tables(Gtk.Notebook):
                     (r for r in self.p2_stations if r.get("name") == name), None
                 )
             direction = stations_data["direction"] if stations_data else ""
-            # dont show direct indicator
-            if direction == "D":
-                direction = ""
             name_with_dir = f"{name}{direction}"
             ln_pos = f" {name_with_dir:3} {self.v_sym} {decsigndms(lon):10}\n"
             if name == "tas":
@@ -427,7 +315,7 @@ class Tables(Gtk.Notebook):
         content += separ
         content += " planetary stations :\n"
         # additional stations data
-        if self.p2_stations:
+        if p2_stations:
             stations_sorted = sorted(
                 self.p2_stations,
                 key=lambda r: self.order.index(r["name"])
@@ -443,12 +331,6 @@ class Tables(Gtk.Notebook):
                 content += f" {name}\n"
                 content += f"   prev : {prev_st}\n"
                 content += f"   next : {next_st}\n"
-        self.notify.debug(
-            msg,
-            source="tables",
-            route=[""],
-        )
-        event = "p2"
         if event in self.page_widgets:
             scroll = self.page_widgets[event]
             text_view = scroll.get_child()
@@ -456,6 +338,11 @@ class Tables(Gtk.Notebook):
             buffer.set_text(content)
         else:
             self.p2_widget(event, content)
+        self.notify.debug(
+            "p2 tables set",
+            source="tables",
+            route=["terminal"],
+        )
 
     def p2_widget(self, event: str, content: str):
         # create a scrollable text view for tertiary progression
@@ -481,14 +368,9 @@ class Tables(Gtk.Notebook):
         self.set_current_page(self.get_n_pages() - 1)
 
     # ----
-    def p3_changed(self, event):
-        self.p3_pos = getattr(self.app, "p3_pos", None)
-        self.p3_stations = calculate_stations("p3")
-        self.update_p3(event)
-
-    def update_p3(self, event):
-        p3_pos = getattr(self, "p3_pos", None)
-        msg = ""
+    def update_p3(self, event: str, data: dict):
+        p3_pos = data.get("p3_pos", [])
+        p3_stations = data.get("p3_stations", [])
         if not p3_pos:
             self.notify.error(
                 "missing p3 positions : exiting ...",
@@ -496,7 +378,6 @@ class Tables(Gtk.Notebook):
                 route=["terminal", "user"],
             )
             return
-        # msg += f"p3changed : p3pos :\n\t{p3_pos}\n"
         separ = f"{self.h_sym * 20}\n"
         content = ""
         p3_date = next(d["p3date"] for d in p3_pos if "p3date" in d)
@@ -528,9 +409,6 @@ class Tables(Gtk.Notebook):
                     (r for r in self.p3_stations if r.get("name") == name), None
                 )
             direction = stations_data["direction"] if stations_data else ""  # type:ignore
-            # dont show direct indicator
-            if direction == "D":
-                direction = ""
             name_with_dir = f"{name}{direction}"
             ln_pos = f" {name_with_dir:3} {self.v_sym} {decsigndms(lon):10}\n"
             if name == "tas":
@@ -542,9 +420,9 @@ class Tables(Gtk.Notebook):
         content += separ
         content += " planetary stations :\n"
         # additional stations data
-        if self.p3_stations:
+        if p3_stations:
             stations_sorted = sorted(
-                self.p3_stations,
+                p3_stations,
                 key=lambda r: self.order.index(r["name"])
                 if r.get("name") in self.order
                 else len(self.order),
@@ -558,12 +436,6 @@ class Tables(Gtk.Notebook):
                 content += f" {name}\n"
                 content += f"   prev : {prev_st}\n"
                 content += f"   next : {next_st}\n"
-        self.notify.debug(
-            msg,
-            source="tables",
-            route=[""],
-        )
-        event = "p3"
         if event in self.page_widgets:
             scroll = self.page_widgets[event]
             text_view = scroll.get_child()
@@ -571,6 +443,11 @@ class Tables(Gtk.Notebook):
             buffer.set_text(content)
         else:
             self.p3_widget(event, content)
+        self.notify.debug(
+            "p3 data set",
+            source="tables",
+            route=["terminal"],
+        )
 
     def p3_widget(self, event: str, content: str):
         # create a scrollable text view for tertiary progression
@@ -595,7 +472,7 @@ class Tables(Gtk.Notebook):
         self.page_widgets[event] = scroll
         self.set_current_page(self.get_n_pages() - 1)
 
-    def horas_changed(self, event: str, horas: list):
+    def update_horas(self, page: str, horas: list):
         if not horas:
             self.notify.error(
                 "missing horas : exiting ...",
@@ -604,7 +481,7 @@ class Tables(Gtk.Notebook):
             )
             return
         separ = f"{self.h_sym * 21}\n"
-        content = " horas SHOULD BE local time\n"
+        content = " horas should be local time : todo\n"
         weekday = horas[0]["weekday"]
         sunrise = horas[0]["sunrise"]
         sunset = horas[0]["sunset"]
@@ -622,8 +499,6 @@ class Tables(Gtk.Notebook):
                 f"- {hora['end'][11:]} {lord} {glyph}\n"
             )
         content += separ
-
-        page = f"{event} horas"
         if page in self.page_widgets:
             scroll = self.page_widgets[page]
             text_view = scroll.get_child()
@@ -654,14 +529,15 @@ class Tables(Gtk.Notebook):
         self.append_page(scroll, Gtk.Label.new(event))
         self.page_widgets[event] = scroll
 
-    def vimsottari_changed(self, event, vimsottari):
+    def update_vimsottari(self, event: str, content: str):
         # receives table as plain text
-        if event not in self.events_data:
-            self.events_data[event] = {"vimsottari": None}
-        self.events_data[event]["vimsottari"] = vimsottari
-        self.current_event = event
-        # print(f"vmst chg : {str(self.events_data[event].get('vimsottari'))[:800]}")
-        self.update_vimsottari("vimsottari", vimsottari)
+        if event in self.page_widgets:
+            scroll = self.page_widgets[event]
+            text_view = scroll.get_child()
+            buffer = text_view.get_buffer()
+            buffer.set_text(content)
+        else:
+            self.vimsottari_widget(event, content)
 
     def vimsottari_widget(self, event: str, content: str):
         # create a scrollable text view for an event
@@ -684,21 +560,9 @@ class Tables(Gtk.Notebook):
         scroll.set_child(text_view)
         self.insert_page(scroll, Gtk.Label.new(event), -1)
         self.page_widgets[event] = scroll
-        self.set_current_page(self.get_n_pages() - 1)
+        self.set_current_page(0)  # todo
+        # self.set_current_page(self.get_n_pages() - 1)
 
-    def update_vimsottari(self, event: str, content: str):
-        # print(f"upd vmst : {content[:600]}")
-        if event in self.page_widgets:
-            # print("vimsottari_widget : updating table")
-            scroll = self.page_widgets[event]
-            text_view = scroll.get_child()
-            buffer = text_view.get_buffer()
-            buffer.set_text(content)
-        else:
-            # print("vimsottari_widget : creating new page")
-            self.vimsottari_widget(event, content)
-
-    # def toggle_vimso(self, gesture=None, n_press=0, x=0, y=0):
     def toggle_vimso(self):
         # cycle toggle level: 1->2->3->4->5->1
         event = "e1"  # self.current_event
@@ -720,5 +584,4 @@ class Tables(Gtk.Notebook):
             self.app.signal_manager._emit(
                 "luminaries_changed",
                 event,
-                # "luminaries_changed", "vimsottari", self.app.last_luminaries
             )

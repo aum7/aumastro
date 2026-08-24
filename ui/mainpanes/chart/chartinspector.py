@@ -11,7 +11,7 @@ from gi.repository import Gtk, Gdk  # type: ignore
 from sweph.constants import NAKSATRAS27, MANSIONS28, TERMS
 
 
-class AngleRuler:
+class ChartInspector:
     """angle ruler overlay manager for astro chart"""
 
     def __init__(self, chart):

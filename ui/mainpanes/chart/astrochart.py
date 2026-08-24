@@ -4,29 +4,8 @@ import gi
 
 gi.require_version("Gtk", "4.0")
 from gi.repository import Gtk  # type: ignore
-from math import radians
-from sweph.calculations.stations import calculate_stations
-from sweph.calculations.lots import calculate_lots
-from sweph.calculations.eclipses import calculate_eclipses
-from sweph.calculations.syzygy import calculate_syzygy
-from sweph.calculations.varga import calculate_varga
-from ui.mainpanes.chart.astroobject import AstroObject
-from ui.mainpanes.chart.angleruler import AngleRuler
-from ui.mainpanes.chart.rings import (
-    Info,
-    Event,
-    Signs,
-    Naksatras,
-    Harmonic,
-    D1PrimaryDirection,
-    P2Progress,
-    P3Progress,
-    P3MinorProgress,
-    SolarReturn,
-    LunarReturn,
-    TransitVarga,
-    Transit,
-)
+from ui.mainpanes.chart.chartinspector import ChartInspector
+from ui.mainpanes.chart.rings import Rings
 
 
 class AstroChart(Gtk.Box):
@@ -42,194 +21,73 @@ class AstroChart(Gtk.Box):
         self.drawing_area.set_hexpand(True)
         self.drawing_area.set_vexpand(True)
         self.append(self.drawing_area)
-        # initial data
-        self.positions = {}  # e1 for inner rings
-        self.cusps = {}  # also e1
-        self.ascmc = None  # also e1
-        self.e1_chart_info = {}
+        # data
+        self.events_data = {}
         self.chart_settings = getattr(self.app, "chart_settings", {})
         self.extra_info = {}
-        self.stars = {}
-        self.lun_ret_data = []
+        self.snap_targets = []
         # subscribe to signals
         signal = self.app.signal_manager
-        signal._connect("event_changed", self.event_changed)
-        signal._connect("positions_changed", self.positions_changed)
-        signal._connect("houses_changed", self.houses_changed)
-        signal._connect("e2_cleared", self.e2_cleared)
+        signal._connect("data_calculated", self.data_calculated)
         signal._connect("settings_changed", self.settings_changed)
-        signal._connect("stars_changed", self.stars_changed)
-        signal._connect("transit_changed", self.transit_changed)
-        signal._connect("p2_changed", self.p2_changed)
-        signal._connect("p3_changed", self.p3_changed)
-        signal._connect("p3m_changed", self.p3m_changed)
-        signal._connect("d1_changed", self.d1_changed)
-        signal._connect("lunar_return_changed", self.lunar_return_changed)
-        signal._connect("solar_return_changed", self.solar_return_changed)
-        # angle ruler on astrochart
-        self.ruler = AngleRuler(self)
+        self.inspector = ChartInspector(self)
 
-    def event_changed(self, event):
-        # main data / event 1 changed : load new data
-        if event == "e1":
-            self.e1_chart_info = getattr(self.app, "e1_chart", {})
-            # print("astrochart : e1 changed")
-        self.drawing_area.queue_draw()
+    def data_calculated(self, event: str, data: dict):
+        if event not in ("e1", "e2"):
+            return
 
-    def positions_changed(self, event):
-        if event == "e1":
-            self.positions = (
-                self.app.e1_positions if hasattr(self.app, "e1_positions") else None
-            )
-            # print(f"astrochart : self.positions :\n\t{self.positions}")
-        # print(f"astrochart : {event} positions changed")
-        self.drawing_area.queue_draw()
-
-    def houses_changed(self, event):
-        if event == "e1":
-            cusps, ascmc = (), ()
-            try:
-                houses = getattr(self.app, "e1_houses", None)
-                if houses:
-                    cusps, ascmc = houses
-            except Exception as e:
-                self.notify(
-                    f"invalid houses data\n\terror :\n\t{e}",
-                    source="astrochart",
-                    route=["terminal"],
-                )
-            # if cusps and ascmc:
-            self.cusps = cusps
-            self.ascmc = ascmc
-        # print(f"astrochart : cusps : {self.cusps} | ascmc : {self.ascmc}")
-        # construct extra info
-        self.extra_info["hsys"] = getattr(self.app, "selected_house_sys_str")
-        self.drawing_area.queue_draw()
-        # print(f"astrochart : {event} houses changed")
-
-    def e2_cleared(self, event):
-        # clenup after event 2 deletion
-        """clear event 2 rings"""
-        if event == "e2":
-            self.notify.info(
-                f"{event} cleared",
-                source="astrochart",
-                route=["terminal"],
-            )
+        if not data and event in self.events_data:
+            del self.events_data[event]
+        else:
+            self.events_data[event] = data
+        self.extra_info["hsys"] = getattr(self.app, "selected_house_sys_str", "")
+        self.extra_info["zod"] = (
+            "sid" if getattr(self.app, "is_sidereal", False) else "tro"
+        )
+        self.extra_info["aynm"] = getattr(self.app, "selected_ayan_str", "-") or "-"
         self.drawing_area.queue_draw()
 
     def settings_changed(self, arg):
         # grab data & redraw
         self.chart_settings = getattr(self.app, "chart_settings", {})
-        self.d1_changed(arg)
-        self.drawing_area.queue_draw()
-
-    def stars_changed(self, event, stars):
-        self.stars = stars
-        # for name, (lon, nomenclature) in stars.items():
-        #     name = name
-        #     lon = lon
-        #     nomenclature = nomenclature
-        # print(
-        #     f"astrochart : starschanged : name={name} lon={lon} designation={nomenclature}"
-        # )
-        self.drawing_area.queue_draw()
-
-    def d1_changed(self, event):
-        # primary progression changed
-        self.d1_pos = getattr(self.app, "d1_pos", None)
-        self.drawing_area.queue_draw()
-
-    def p2_changed(self, event):
-        # secondary progression changed
-        self.p2_pos = getattr(self.app, "p2_pos", None)
-        self.drawing_area.queue_draw()
-
-    def p3_changed(self, event):
-        # tertiary progression changed
-        self.p3_pos = getattr(self.app, "p3_pos", None)
-        self.drawing_area.queue_draw()
-
-    def p3m_changed(self, event):
-        # minor tertiary progression changed
-        self.p3m_pos = getattr(self.app, "p3m_pos", None)
-        self.drawing_area.queue_draw()
-
-    def solar_return_changed(self, event):
-        self.sol_ret_data = getattr(self.app, "sol_ret_data", None)
-        self.drawing_area.queue_draw()
-
-    def lunar_return_changed(self, event):
-        self.lun_ret_data = getattr(self.app, "lun_ret_data", None)
-        self.drawing_area.queue_draw()
-
-    def transit_changed(self, event):
-        # transit varga is calculated from this later
-        self.transit_data = getattr(self.app, "transit_data", None)
         self.drawing_area.queue_draw()
 
     def draw(self, area, cr, width, height):
         # get center and base radius
-        msg = ""
         cx = width / 2
         cy = height / 2
         # size of application pane(s)
         base = min(width, height) * 0.5
         font_scale = base / 300.0
-        # sort by scale : smaller in front of larger rings
-        guests = {}
-        if self.positions and isinstance(self.positions, dict):
-            # print(f"astrochart : guests :\n\t{self.positions}")
-            guests = sorted(
-                [
-                    self.create_astro_object(obj)
-                    for obj in self.positions.values()
-                    if isinstance(obj, dict) and "lon" in obj
-                ],
-                key=lambda o: o.scale,
-                reverse=True,
-            )
-            # print(f"astrochart : guests :\n\t{guests}")
-        # construct extra info
-        self.extra_info["zod"] = "sid" if self.app.is_sidereal else "tro"
-        self.extra_info["aynm"] = (
-            self.app.selected_ayan_str if self.app.selected_ayan_str else "-"
-        )
+        max_radius = base * 0.95
+        outer_rings = []
+        e2_active = "e2" in self.events_data and bool(self.events_data["e2"])
+        if e2_active:
+            for key in (
+                "transit",
+                "transit varga",
+                "p2 progress",
+                "p3 progress",
+                "p3m progress",
+                "d1 return",
+                "solar return",
+                "lunar return",
+            ):
+                if self.chart_settings.get(key):
+                    outer_rings.append(key)
+        if self.chart_settings.get("harmonic ring", "").strip():
+            outer_rings.append("harmonic")
+        if self.chart_settings.get("naksatras ring", ""):
+            outer_rings.append("naksatras")
         # draw rings : max diameter of astrochart : determines distance
         # from pane edges
-        max_radius = base * 0.95
         # outer rings linked to event 2 :
         # - primary direction & secondary & tertiary & minor progression
         # - solar & lunar return
         # - transit v1 & vX (harmonic)
         # + naksatras & harmonic ring (vX) for event 1
-        outer_rings = []
-        if getattr(self.app, "e2_active", False):
-            msg += "\ne2 is active"
-            # collect outer ring candidates
-            if self.chart_settings.get("transit"):
-                outer_rings.append("transit")
-            if self.chart_settings.get("transit varga"):
-                outer_rings.append("transit varga")
-            if self.chart_settings.get("p2 progress"):
-                outer_rings.append("p2 progress")
-            if self.chart_settings.get("p3 progress"):
-                outer_rings.append("p3 progress")
-            if self.chart_settings.get("p3m progress"):
-                outer_rings.append("p3m progress")
-            if self.chart_settings.get("d1 direction"):
-                outer_rings.append("d1 direction")
-            if self.chart_settings.get("solar return"):
-                outer_rings.append("solar return")
-            if self.chart_settings.get("lunar return"):
-                outer_rings.append("lunar return")
-        if self.chart_settings.get("harmonic ring", "").strip():
-            outer_rings.append("harmonic")
-        if self.chart_settings.get("naksatras ring", ""):
-            outer_rings.append("naksatras")
-        # msg += f"\nouterrings={outer_rings}"
         # factor per ring : e2 first : in below order : circle outer diameter
-        outer_portion = {
+        outer_portions = {
             "transit": 0.08,
             "transit varga": 0.08,
             "p2 progress": 0.08,
@@ -242,7 +100,7 @@ class AstroChart(Gtk.Box):
             "naksatras": 0.05,
         }
         # mandatory rings for event 1 : circle diameter ratio
-        inner_portion = {
+        inner_portions = {
             "signs": 1.0,
             "event": 0.92,
             "info": 0.4,
@@ -250,230 +108,30 @@ class AstroChart(Gtk.Box):
         radius_dict = {}
         cumulative = 0.0
         # use fixed order for event 2 rings
-        for ring, portion in outer_portion.items():
+        for ring, portion in outer_portions.items():
             if ring in outer_rings:
                 radius_dict[ring] = max_radius * (1 - cumulative)
                 cumulative += portion
         max_inner = 1 - cumulative
-        for ring, portion in inner_portion.items():
+        for ring, portion in inner_portions.items():
             radius_dict[ring] = max_radius * (max_inner * portion)
         # msg += f"\nradiusdict : {radius_dict}"
-        # --- rotate block : if fixed asc > rotate rings
-        if self.chart_settings.get("fixed asc", False) and self.ascmc:
-            asc_angle = radians(self.ascmc[0])
-            cr.save()
-            cr.translate(cx, cy)
-            cr.rotate(asc_angle)
-            cr.translate(-cx, -cy)
-        # --- outer rings : transit
-        if "transit" in outer_rings:
-            ring_transit = Transit(
-                radius=radius_dict.get("transit", max_radius),
-                cx=cx,
-                cy=cy,
-                font_size=min(int(12 * font_scale), 14),
-                transit_data=self.transit_data,
-                stations=calculate_stations("e2"),
-                radius_dict=radius_dict,
-            )
-            ring_transit.draw(cr)
-        # --- transit varga
-        self.transit_varga_data = None
-        if "transit varga" in outer_rings:
-            try:
-                division = int(self.chart_settings.get("harmonic ring", "").strip())
-                self.transit_varga_data = calculate_varga("e2", division)
-                # print(f"astrochart : transitvargadata={self.transit_varga_data}")
-            except Exception:
-                self.transit_varga_data = None
-                division = None
-            if self.transit_varga_data is not None:
-                ring_transit_varga = TransitVarga(
-                    radius=radius_dict.get("transit varga", max_radius),
-                    cx=cx,
-                    cy=cy,
-                    font_size=int(12 * font_scale),
-                    transit_varga_data=self.transit_varga_data,
-                    radius_dict=radius_dict,
-                )
-                ring_transit_varga.draw(cr)
-        # --- secondary progressions
-        if "p2 progress" in outer_rings:
-            ring_p2 = P2Progress(
-                radius=radius_dict.get("p2 progress", max_radius),
-                cx=cx,
-                cy=cy,
-                font_size=int(12 * font_scale),
-                p2_pos=self.p2_pos,
-                stations=calculate_stations("p2"),
-                radius_dict=radius_dict,
-            )
-            ring_p2.draw(cr)
-        # --- tertiary progressions
-        if "p3 progress" in outer_rings:
-            ring_p3 = P3Progress(
-                radius=radius_dict.get("p3 progress", max_radius),
-                cx=cx,
-                cy=cy,
-                font_size=int(12 * font_scale),
-                p3_pos=self.p3_pos,
-                stations=calculate_stations("p3"),
-                radius_dict=radius_dict,
-            )
-            ring_p3.draw(cr)
-        # --- minor tertiary progressions
-        if "p3m progress" in outer_rings:
-            ring_p3m = P3MinorProgress(
-                radius=radius_dict.get("p3m progress", max_radius),
-                cx=cx,
-                cy=cy,
-                font_size=int(12 * font_scale),
-                p3m_pos=self.p3m_pos,
-                stations=calculate_stations("p3m"),
-                radius_dict=radius_dict,
-            )
-            ring_p3m.draw(cr)
-        # --- primary progressions
-        if "d1 direction" in outer_rings:
-            ring_d1 = D1PrimaryDirection(
-                radius=radius_dict.get("d1 direction", max_radius),
-                cx=cx,
-                cy=cy,
-                font_size=int(12 * font_scale),
-                chart_settings=self.chart_settings,
-                d1_pos=self.d1_pos,
-                radius_dict=radius_dict,
-            )
-            ring_d1.draw(cr)
-        # --- lunar return
-        if "lunar return" in outer_rings:
-            ring_lunar = LunarReturn(
-                radius=radius_dict.get("lunar return", max_radius),
-                cx=cx,
-                cy=cy,
-                font_size=int(12 * font_scale),
-                lun_ret_data=self.lun_ret_data,
-                radius_dict=radius_dict,
-            )
-            ring_lunar.draw(cr)
-        # --- solar return
-        if "solar return" in outer_rings:
-            ring_solar = SolarReturn(
-                radius=radius_dict.get("solar return", max_radius),
-                cx=cx,
-                cy=cy,
-                font_size=int(12 * font_scale),
-                sol_ret_data=self.sol_ret_data,
-                radius_dict=radius_dict,
-            )
-            ring_solar.draw(cr)
-        # --- optional rings : harmonic
-        if "harmonic" in outer_rings:
-            self.harmonic_data = None
-            try:
-                division = int(self.chart_settings.get("harmonic ring", "").strip())
-                self.harmonic_data = calculate_varga("e1", division)
-            except Exception:
-                division = None
-            if division:
-                ring_harmonic = Harmonic(
-                    self.notify,
-                    radius=radius_dict.get("harmonic", max_radius),
-                    cx=cx,
-                    cy=cy,
-                    division=division,
-                    harmonic_data=self.harmonic_data,
-                    radius_dict=radius_dict,
-                    font_size=int(12 * font_scale),
-                )
-                ring_harmonic.draw(cr)
-        # --- naksatras
-        if "naksatras" in outer_rings:
-            naks_num = 28 if self.chart_settings.get("28 naksatras", False) else 27
-            first_nak = int(self.chart_settings.get("1st naksatra", 1))
-            ring_naksatras = Naksatras(
-                radius=radius_dict.get("naksatras", ""),
-                cx=cx,
-                cy=cy,
-                font_size=int(12 * font_scale),
-                naks_num=naks_num,
-                first_nak=first_nak,
-                radius_dict=radius_dict,
-            )
-            ring_naksatras.draw(cr)
-        # --- outer rings end
-        # --- mandatory inner rings
-        # chart rings
-        ring_signs = Signs(
-            radius=radius_dict.get("signs", 0.0),
-            cx=cx,
-            cy=cy,
-            font_size=int(radius_dict.get("signs", 0.0) * 0.07),
-            stars=self.stars,
-            radius_dict=radius_dict,
-        )
-        ring_signs.draw(cr)
-        # extra objects data : make available to angleruler
-        # todo stations used in tables, not in astro chart
-        # test_stations = calculate_stations("e1")
-        # print(f"astrochart : stations={stations}")
-        self.lots = calculate_lots()
-        self.eclipses = calculate_eclipses()
-        self.syzygy = calculate_syzygy()
-        # leave on for crosscheck of prenatal lunation (previous code was wrong)
-        msg += f"\nsyzygy={self.syzygy}"
-        # print(
-        #     f"astrochart :\n\tstations={self.stations}\n\n\tlots={self.lots}"
-        #     f"\n\n\teclipses={self.eclipses}\n\n\tsyzygy={self.syzygy}"
-        # )
-        ring_event = Event(
-            radius=radius_dict.get("event", 0.0),
-            cx=cx,
-            cy=cy,
-            font_size=int(radius_dict.get("event", 0.0) * 0.08),
-            guests=guests,
-            cusps=self.cusps if self.cusps else [],
-            ascmc=self.ascmc if self.ascmc else [],
-            chart_settings=self.chart_settings,
-            stations=calculate_stations("e1"),
-            lots=self.lots,
-            eclipses=self.eclipses,
-            syzygy=self.syzygy,
-            radius_dict=radius_dict,
-        )
-        ring_event.draw(cr)
-        # restore context if chart rotation was applied
-        if self.chart_settings.get("fixed asc", False) and self.ascmc:
-            cr.restore()
-        # --- rotate block end
-        # draw info ring last > no text rotation
-        # if self.chart_settings.get("mean node", False) and self.app.movie_mode:
-        #     use_mean_node = self.chart_settings["mean node"]
-        ring_info = Info(
-            self.notify,
-            radius=radius_dict.get("info", 0.0),
-            cx=cx,
-            cy=cy,
-            font_size=int(radius_dict.get("info", 0.0) * 0.17),
-            chart_settings=self.chart_settings,
-            event_data=self.e1_chart_info,
-            extra_info=self.extra_info,
-            use_mean_node=self.chart_settings["mean node"],
-            movie_info=self.positions,
-            movie_mode=getattr(self.app, "movie_mode", False),
-            radius_dict=radius_dict,
-        )
-        ring_info.draw(cr)
-        self.notify.debug(
-            msg,
-            source="astrochart",
-            route=[""],  # terminal
-        )
-        # angle ruler
+        ctx = {
+            "cx": cx,
+            "cy": cy,
+            "font_scale": font_scale,
+            "max_radius": max_radius,
+            "radius_dict": radius_dict,
+            "outer_rings": outer_rings,
+            "extra_info": self.extra_info,
+            "chart_settings": self.chart_settings,
+            "notify": self.notify,
+            "movie_mode": getattr(self.app, "movie_mode", False),
+        }
         self.max_radius = max_radius
         self.radius_dict = radius_dict
-        # print(f"astrochart : radiusdict :\n\t{self.radius_dict}")
-        self.ruler.draw(cr, cx, cy, max_radius)
-
-    def create_astro_object(self, obj):
-        return AstroObject(obj)
+        rings = Rings(ctx, self.events_data)  # or we draw in rings.py
+        rings.draw(cr)
+        # self.snap_targets = getattr(rings, "snap_targets", [])
+        # inspector toggled with hotkey
+        # self.inspector.draw(cr, cx, cy, max_radius)
