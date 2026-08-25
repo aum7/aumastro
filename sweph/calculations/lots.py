@@ -1,52 +1,55 @@
 # sweph/calculations/lots.py
 # ruff: noqa: E402, E701
-import gi
-
-gi.require_version("Gtk", "4.0")
-from gi.repository import Gtk  # type: ignore
-from user.settings import LOTS
+import logging as log
+from sweph.helpers import ok, err
 
 
-def calculate_lots():
+def calculate_lots(jd_ut, geo=(), objs=(), flags=0, params=None):
     """calculate arabic parts aka hermetic lots for event"""
     # grab existing positions with lon & calculate positions of lots
-    app = Gtk.Application.get_default()
-    notify = app.notify_manager
-    # msg = f"event {event}\n"
-    positions = getattr(app, "e1_positions", None)
-    houses = getattr(app, "e1_houses", None)
-    # print(f"lots : houses={houses}")
-    selected_lots = getattr(app, "selected_lots_e1", None)
-    calc_data = None
-    if not positions or not selected_lots:
-        return None
-    # get ascendant longitude
-    if houses:
-        calc_data = {"asc": houses[1][0]}
-        # example if house cusps are needed
-        # calc_data["3rd"] = houses[0][2]  # 3rd house cusp
-        # calc_data["10th"] = houses[0][9]  # 10th cusp (equal & whole-sign houses)
-        # calc_data["mc"] = houses[1][1]  # true midheaven (quadrant houses)
-    # get planets longitude
-    for planet in positions.values():
-        if isinstance(planet, dict) and "name" in planet and "lon" in planet:
-            calc_data[planet["name"]] = planet["lon"]  # type:ignore
-    lots = [{"event": "e1"}]
-    for lot_key in selected_lots:
-        lot_data = LOTS.get(lot_key, {})
-        formula = lot_data.get("day")
+    if jd_ut is None:
+        return err("invalid jd_ut")
+    p = params or {}
+    lots_def = p.get("lots_def", p.get("lots", {}))
+    if not lots_def:
+        return err("missing lots definitions")
+    is_day = p.get("is_day", True)
+    calc_data = {}
+    if "calc_data" in p:
+        calc_data = p["calc_data"]
+    else:
+        ascmc = p.get("ascmc", [])
+        if len(ascmc) > 0:
+            calc_data["asc"] = ascmc[0]
+        if len(ascmc) > 1:
+            calc_data["mc"] = ascmc[1]
+        positions = p.get("positions", {})
+        if isinstance(positions, dict):
+            for k, v in positions.items():
+                if isinstance(v, dict) and "lon" in v:
+                    calc_data[k] = v["lon"]
+                elif isinstance(v, (int, float)):
+                    calc_data[k] = float(v)
+        elif isinstance(positions, list):
+            for item in positions:
+                if isinstance(item, dict) and "name" in item and "lon" in item:
+                    calc_data[item["name"]] = item["lon"]
+    if not calc_data:
+        return err("missing calculation data for lots")
+    lots = []
+    for lot, data in lots_def.items():
+        if not isinstance(data, dict):
+            continue
+        formula = data.get("day") if is_day else data.get("night", data.get("day"))
         if not formula:
             continue
         try:
-            lot_lon = eval(formula, {}, calc_data) % 360.0
+            lot_lon = eval(formula, {"__builtins__": None}, data) % 360.0
             lots.append({
-                "name": lot_key,
+                "name": lot,
                 "lon": lot_lon,
             })
         except Exception as e:
-            notify.error(
-                f"lot calculation error :\n\t{e}\nkey : {lot_key}",
-                source="lots",
-                route=["user", "terminal"],
-            )
-    return lots
+            log.error(f"lot calculation error for {lot} : {e}")
+            continue
+    return ok(lots)

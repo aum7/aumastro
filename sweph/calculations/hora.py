@@ -3,12 +3,10 @@
 # todo where do we cast back to event time ?
 # planetary order : sa, ju, ma, su, ve, me, mo
 # ruff: noqa: E402
-import swisseph as swe  # type:ignore
-import gi
-
-gi.require_version("Gtk", "4.0")
-from gi.repository import Gtk  # type: ignore
+import logging as log
+import swisseph as swe
 from sweph.swetime import jd_to_custom_iso as jdtoiso
+from sweph.helpers import ok, err
 from datetime import datetime, timezone  # , date, timedelta
 from zoneinfo import ZoneInfo
 from timezonefinder import TimezoneFinder
@@ -27,23 +25,14 @@ WEEKDAY = {
 ORDER = ["sa", "ju", "ma", "su", "ve", "me", "mo"]
 
 
-def get_current_hora(jd_ut, lon, lat, alt, flag):
-    # find current hora for given julian day utc
-    horas = get_day_horas(jd_ut, lon, lat, alt, flag=flag)
-    # print(f"hora : horas : {horas}")
-    notify = Gtk.Application.get_default().notify_manager
+def get_current_hora(jd_ut, horas):
     if not horas:
-        notify.error(
-            "no horas data : exiting ...",
-            source="hora",
-            route=["terminal"],
-        )
         return None
-    # print(f"DBG : getcurrenthora : jdut {jdtoiso(jd_ut)}")
     for hora in horas:
-        if hora.get("start_jd", 0.0) <= jd_ut < hora.get("end_jd", 0.0):
-            # print(f"DBG : getcurrenthora : jdut {jdtoiso(jd_ut)}")
-            return hora["lord"]
+        if isinstance(hora, dict) and hora.get("start_jd", 0.0) <= jd_ut < hora.get(
+            "end_jd", 0.0
+        ):
+            return hora.get("lord")
     return None
 
 
@@ -61,9 +50,16 @@ def jd_to_local_time(jd, lat, lon, tz_name=None):
     return local_dt
 
 
-def get_day_horas(jd_ut, lon, lat, alt, flag=0):
-    notify = Gtk.Application.get_default().notify_manager
+def get_day_horas(jd_ut, lon, lat, alt=0.0, flag=0, tz_name=None):
     # calculate list of all horas of the day
+    if tz_name is None:
+        tzf = TimezoneFinder()
+        tz_name = tzf.timezone_at(lat=lat, lng=lon)
+
+        def to_event_str(jd):
+            dt_event = jd_to_local_time(jd, lat, lon, tz_name)
+            return dt_event.strftime("%Y-%m-%d %H:%M:%S")
+
     # take start of jd = midnight
     Y, M, D, _ = swe.revjul(jd_ut)
     jd_day = swe.julday(Y, M, D, 0.0)
@@ -121,29 +117,28 @@ def get_day_horas(jd_ut, lon, lat, alt, flag=0):
             flags=flag,
         )
         srise_next = data[0]
+    except swe.Error as e:
+        log.error(f"sunrise / set calculation failed : {e}")
+        return None
     except Exception as e:
-        notify.error(
-            f"sunrise / set failed :\n\terror : {e}\nexiting ...",
-            source="hora",
-            route=["terminal", "user"],
-        )
+        log.error(f"unexpected error in sunrise / set : {e}")
         return None
     # validate
     sunrise = jdtoiso(srise)
+    srise_event = to_event_str(srise)  # type:ignore
     sunset = jdtoiso(sset)
+    sset_event = to_event_str(sset)  # type:ignore
     sunrise_next = jdtoiso(srise_next)
+    srise_next_event = to_event_str(srise_next)  # type:ignore
     # print(
     #     f"DBG : getdayhoras :\nsrise {sunrise} | sset {sunset} | srnext {sunrise_next}\n"
     # )
     if not (srise < sset < srise_next):
-        notify.error(
+        log.error(
             f"invalid hora calculation :\n"
             f"\tsunrise : {sunrise}\n"
             f"\tsunset : {sunset}\n"
             f"\tnext sunrise : {sunrise_next}\n"
-            "exiting ...",
-            source="hora",
-            route=["terminal", "user"],
         )
         return None
     # weekday from sunrise
@@ -155,13 +150,14 @@ def get_day_horas(jd_ut, lon, lat, alt, flag=0):
     night_length = srise_next - sset
     day_hour = day_length / 12.0
     night_hour = night_length / 12.0
-    horas = []
-    horas.append({
-        "weekday": weekday,
-        "sunrise": sunrise,
-        "sunset": sunset,
-        "sunrise_next": sunrise_next,
-    })
+    horas: list[dict] = [
+        {
+            "weekday": weekday,
+            "sunrise": sunrise,
+            "sunset": sunset,
+            "sunrise_next": sunrise_next,
+        }
+    ]
     for i in range(24):
         if i < 12:
             start = srise + i * day_hour
@@ -175,53 +171,21 @@ def get_day_horas(jd_ut, lon, lat, alt, flag=0):
             "lord": lord,
             "start_jd": start,
             "end_jd": end,
-            "start": jdtoiso(start),
-            "end": jdtoiso(end),
+            "start_e": to_event_str(start),  # type:ignore
+            "end_e": to_event_str(end),  # type:ignore
         })
     # print(f"DBG : getdayhoras : horas :\n{horas}")
     return horas
 
 
-def calculate_hora(event: str):
+def calculate_hora(jd_ut, geo=(), objs=(), flags=0, params=None):
     # calculate list of horas & current hora from sunrise, sunset, next sunrise
-    app = Gtk.Application.get_default()
-    notify = app.notify_manager
-    msg = f"event {event}\n"
-    flag = app.sweph_flag
-    sweph = None
-    # gather data
-    if event == "e1":
-        sweph = getattr(app, "e1_sweph", None)
-    elif event == "e2":
-        sweph = getattr(app, "e2_sweph", None)
-    if sweph is not None:
-        jd_ut = sweph.get("jd_ut")
-        lon = sweph.get("lon")
-        lat = sweph.get("lat")
-        alt = sweph.get("alt")
-    else:
-        notify.error(
-            "missing data : exiting ...",
-            source="hora",
-            route=["terminal"],
-        )
-        return
-    msg += f"jdut : {jdtoiso(jd_ut)}\n"
-    if event == "e1":
-        horas = get_day_horas(jd_ut, lon, lat, alt, flag)
-        curr_hora = get_current_hora(jd_ut, lon, lat, alt, flag)
-        msg += f"horas : {horas}\n"
-        msg += f"currhora : {curr_hora}\n"
-    else:
-        horas = get_day_horas(jd_ut, lon, lat, alt, flag)
-        curr_hora = get_current_hora(jd_ut, lon, lat, alt, flag)
-        msg += f"{event} : currhora : {curr_hora}\n"
-    notify.debug(
-        msg,
-        source="hora : calculatehora",
-        route=[""],
-    )
-    # emit signal for tables
-    signal = app.signal_manager
-    signal._emit("horas_changed", event, horas)
-    return {"horas": horas, "current_hora": curr_hora}
+    if jd_ut is None or len(geo) < 2:
+        return err("invalid jd_ut or geo coordinates")
+    lon, lat = geo[0], geo[1]
+    alt = geo[2] if len(geo) > 2 else 0.0
+    horas = get_day_horas(jd_ut, lon, lat, alt, flag=flags)
+    if not horas:
+        return err("failed to calculate hora data")
+    curr_hora = get_current_hora(jd_ut, horas[1:])
+    return ok({"horas": horas, "current hora": curr_hora})

@@ -5,17 +5,16 @@ import logging
 import cairo
 import ui.fonts.glyphs as glyphs
 from math import pi, radians, cos, sin
-from ui.helpers import _object_name_to_code as objcode
+from ui.helpers import _object_name_to_code as objcode, _relative_speed
 from sweph.constants import (
     TERMS,
     DRAW_ORDER_REVERSE,
     PLANETARY_ORDER,
 )
 from user.settings import OBJECTS
-import gi
-
-gi.require_version("Gtk", "4.0")
-from gi.repository import Gtk  # type: ignore
+# import gi
+# gi.require_version("Gtk", "4.0")
+# from gi.repository import Gtk  # type: ignore
 
 
 class Rings:
@@ -36,9 +35,12 @@ class Rings:
         "solar return": (0.6686, 0.6569, 0.5392, 1),  # (0.1686, 0.1569, 0.0392, 1),
         "signs": (0.15, 0.15, 0.15, 1),
         "event": (0.0776, 0.0, 0.0, 1.0),  # (0.15, 0.15, 0.15, 1),
+        "lots": (0.1, 0.8, 0.9, 0.8),  # need darkgreen
         "harmonic": (0.1, 0.1, 0.1, 1),  # (0.0776, 0.0, 0.0, 1.0),
         "info": (0.15, 0.15, 0.15, 1),  # (0.1, 0.1, 0.1, 1),
-        "info_movie": (0.5, 0.5, 0.5, 1),  # (0.1, 0.1, 0.1, 1),
+        "info movie": (0.5, 0.5, 0.5, 1),  # (0.1, 0.1, 0.1, 1),
+        "border light": (0.8, 0.8, 0.8, 0.8),
+        "border dark": (0.3, 0.3, 0.3, 0.8),
         "default": (0.5, 0.5, 0.5, 0.5),
     }
 
@@ -87,8 +89,7 @@ class Rings:
             positions = ring_entry.get("positions", [])
         else:
             positions = ring_entry
-        outer_r, mid_r, inner_r = self.get_ring_bounds(ring)
-        # todo unpack properly
+        _, mid_r, _ = self.get_ring_bounds(ring)
         print(f"ringsnew : positions={positions}")
         # create dict for name lookup
         object_by_name = {}
@@ -163,9 +164,11 @@ class Rings:
             else:
                 obj.draw(cr, self.cx, self.cy, mid_r, obj_scale)
 
-    def draw_sign_borders(self, cr, color=(1, 1, 1, 0.5), line_width=1):
+    def draw_sign_borders(
+        self, cr, ring="signs", color=RING_COLORS["border light"], line_width=1
+    ):
         # draw 12 signs borders
-        outer_r, _, inner_r = self.get_ring_bounds("signs")
+        outer_r, _, inner_r = self.get_ring_bounds(ring)
         segment_angle = 2 * pi / 12
         cr.save()
         cr.set_source_rgba(*color)
@@ -351,7 +354,7 @@ class Rings:
     # inner rings in order from outer-most to central
     def draw_signs_ring(self, cr):
         ring = "signs"
-        outer_r, _, inner_r = self.get_ring_bounds(ring)
+        outer_r, _, _ = self.get_ring_bounds(ring)
         cr.arc(self.cx, self.cy, outer_r, 0, 2 * pi)
         cr.set_source_rgba(*self.get_ring_color(ring))
         # cr.set_source_rgba(0.15, 0.15, 0.15, 1)
@@ -361,18 +364,8 @@ class Rings:
         cr.stroke()
         segment_angle = 2 * pi / 12
         offset = segment_angle / 2
-        # sign borders
-        for j in range(12):
-            angle = pi - j * segment_angle  # start at left
-            x1 = self.cx + inner_r * cos(angle)
-            y1 = self.cy + inner_r * sin(angle)
-            x2 = self.cx + outer_r * cos(angle)
-            y2 = self.cy + outer_r * sin(angle)
-            cr.move_to(x1, y1)
-            cr.line_to(x2, y2)
-            cr.set_source_rgba(1, 1, 1, 0.5)
-            cr.set_line_width(1)
-            cr.stroke()
+        # sign borders todo replace with helper
+        self.draw_sign_borders(cr, ring, self.RING_COLORS["border light"])
         # glyphs
         self.set_custom_font(cr, self.font_size)
         for i, (_, (glyph, _, _)) in enumerate(glyphs.SIGNS.items()):
@@ -386,8 +379,8 @@ class Rings:
         # draw stars circle
         stars_diameter = 7.2
         stars = self.data.get("stars", {})
-        # lon=stars.get("lon", "")
         if stars:
+            # todo unpack all attributes > pack into snap targets
             for _, (lon, _) in stars.items():
                 angle = pi - radians(lon)
                 x = self.cx + outer_r * 0.97 * cos(angle)
@@ -495,7 +488,7 @@ class Rings:
             )
             lat = obj.data.get("lat", 0)
             name = obj.data.get("name", "")
-            # compute  drawing radius
+            # compute  drawing radius with latitude
             radius = self.get_object_radius_lat(
                 name,
                 lat,
@@ -547,37 +540,35 @@ class Rings:
                     self.cy,
                     radius,
                     self.font_size,
-                    color=(1, 1, 1, 0.7),
+                    color=self.RING_COLORS["lots"],
                     scale=0.7,
                 )
-                # if enable glyphs > draw glyphs
-                if self.chart_settings.get("enable glyphs", True):
-                    glyph = glyphs.get_lot_glyph(name)
-                    if glyph:
-                        angle = pi - radians(lot.data.get("lon", 0))
-                        x = self.cx + radius * cos(angle)
-                        y = self.cy + radius * sin(angle)
-                        cr.save()
-                        # rotate chart so ascendant is horizon
-                        if self.chart_settings.get("fixed asc", False) and ascmc:
-                            cr.translate(x, y)
-                            cr.rotate(-radians(ascmc[0]))
-                            te = cr.text_extents(glyph)
-                            tx = -(te.width / 2 + te.x_bearing)
-                            ty = -(te.height / 2 + te.y_bearing)
-                            cr.set_source_rgba(0, 0, 0, 1)
-                            cr.move_to(tx, ty)
-                            cr.show_text(glyph)
-                            cr.new_path()
-                        else:
-                            te = cr.text_extents(glyph)
-                            tx = x - (te.width / 2 + te.x_bearing)
-                            ty = y - (te.height / 2 + te.y_bearing)
-                            cr.set_source_rgba(0, 0, 0, 1)
-                            cr.move_to(tx, ty)
-                            cr.show_text(glyph)
-                            cr.new_path()
-                        cr.restore()
+                glyph = glyphs.get_lot_glyph(name)
+                if glyph:
+                    angle = pi - radians(lot.data.get("lon", 0))
+                    x = self.cx + radius * cos(angle)
+                    y = self.cy + radius * sin(angle)
+                    cr.save()
+                    # rotate chart so ascendant is horizon
+                    if self.chart_settings.get("fixed asc", False) and ascmc:
+                        cr.translate(x, y)
+                        cr.rotate(-radians(ascmc[0]))
+                        te = cr.text_extents(glyph)
+                        tx = -(te.width / 2 + te.x_bearing)
+                        ty = -(te.height / 2 + te.y_bearing)
+                        cr.set_source_rgba(0, 0, 0, 1)
+                        cr.move_to(tx, ty)
+                        cr.show_text(glyph)
+                        cr.new_path()
+                    else:
+                        te = cr.text_extents(glyph)
+                        tx = x - (te.width / 2 + te.x_bearing)
+                        ty = y - (te.height / 2 + te.y_bearing)
+                        cr.set_source_rgba(0, 0, 0, 1)
+                        cr.move_to(tx, ty)
+                        cr.show_text(glyph)
+                        cr.new_path()
+                    cr.restore()
         eclipses = self.data.get("eclipses")
         if eclipses:
             for eclipse in eclipses:
@@ -595,38 +586,36 @@ class Rings:
                     color=(1, 1, 1, 0.7) if name == "lun" else (1, 1, 0, 0.5),
                     scale=0.7,
                 )
-                # if 'enable glyphs' > draw glyphs
-                if self.chart_settings.get("enable glyphs", True):
-                    glyph = glyphs.get_eclipse_glyph(name)
-                    if glyph:
-                        angle = pi - radians(eclipse.data.get("lon", 0))
-                        x = self.cx + radius * cos(angle)
-                        y = self.cy + radius * sin(angle)
-                        cr.save()
-                        # rotate chart so ascendant is horizon
-                        if self.chart_settings.get("fixed asc", False) and ascmc:
-                            cr.translate(x, y)
-                            cr.rotate(-radians(ascmc[0]))
-                            te = cr.text_extents(glyph)
-                            tx = -(te.width / 2 + te.x_bearing)
-                            ty = -(te.height / 2 + te.y_bearing)
-                            cr.set_source_rgba(0, 0, 0, 1)
-                            cr.move_to(tx, ty)
-                            cr.show_text(glyph)
-                            cr.new_path()
-                        else:
-                            te = cr.text_extents(glyph)
-                            tx = x - (te.width / 2 + te.x_bearing)
-                            ty = y - (te.height / 2 + te.y_bearing)
-                            cr.set_source_rgba(0, 0, 0, 1)
-                            cr.move_to(tx, ty)
-                            cr.show_text(glyph)
-                            cr.new_path()
-                        cr.restore()
+                glyph = glyphs.get_eclipse_glyph(name)
+                if glyph:
+                    angle = pi - radians(eclipse.data.get("lon", 0))
+                    x = self.cx + radius * cos(angle)
+                    y = self.cy + radius * sin(angle)
+                    cr.save()
+                    # rotate chart so ascendant is horizon
+                    if self.chart_settings.get("fixed asc", False) and ascmc:
+                        cr.translate(x, y)
+                        cr.rotate(-radians(ascmc[0]))
+                        te = cr.text_extents(glyph)
+                        tx = -(te.width / 2 + te.x_bearing)
+                        ty = -(te.height / 2 + te.y_bearing)
+                        cr.set_source_rgba(0, 0, 0, 1)
+                        cr.move_to(tx, ty)
+                        cr.show_text(glyph)
+                        cr.new_path()
+                    else:
+                        te = cr.text_extents(glyph)
+                        tx = x - (te.width / 2 + te.x_bearing)
+                        ty = y - (te.height / 2 + te.y_bearing)
+                        cr.set_source_rgba(0, 0, 0, 1)
+                        cr.move_to(tx, ty)
+                        cr.show_text(glyph)
+                        cr.new_path()
+                    cr.restore()
         syzygy = self.data.get("syzygy", [])
         if syzygy:
             for lun in syzygy:
-                # skip event attribute
+                # ultra smart check
                 if lun.data.get("name") is None:
                     continue
                 name = lun.data.get("name", "")
@@ -640,36 +629,34 @@ class Rings:
                     color=(1, 1, 1, 0.5),
                     scale=0.5,
                 )
-                # if 'enable glyphs' > draw glyphs
-                if self.chart_settings.get("enable glyphs", True):
-                    glyph = glyphs.get_syzygy_glyph(name)
-                    if glyph:
-                        angle = pi - radians(lun.data.get("lon", 0))
-                        # print(f"rings : eventdraw : lon : {lun.data.get('lon', 0)}")
-                        x = self.cx + radius * cos(angle)
-                        y = self.cy + radius * sin(angle)
-                        cr.save()
-                        # rotate chart so ascendant is horizon
-                        if self.chart_settings.get("fixed asc", False) and ascmc:
-                            self.set_custom_font(cr, font_size=20)
-                            cr.translate(x, y)
-                            cr.rotate(-radians(ascmc[0]))
-                            te = cr.text_extents(glyph)
-                            tx = -(te.width / 2 + te.x_bearing)
-                            ty = -(te.height / 2 + te.y_bearing)
-                            cr.set_source_rgba(0, 0, 0, 0.7)
-                            cr.move_to(tx, ty)
-                            cr.show_text(glyph)
-                            cr.new_path()
-                        else:
-                            te = cr.text_extents(glyph)
-                            tx = x - (te.width / 2 + te.x_bearing)
-                            ty = y - (te.height / 2 + te.y_bearing)
-                            cr.set_source_rgba(0, 0, 0, 1)
-                            cr.move_to(tx, ty)
-                            cr.show_text(glyph)
-                            cr.new_path()
-                        cr.restore()
+                glyph = glyphs.get_syzygy_glyph(name)
+                if glyph:
+                    angle = pi - radians(lun.data.get("lon", 0))
+                    # print(f"rings : eventdraw : lon : {lun.data.get('lon', 0)}")
+                    x = self.cx + radius * cos(angle)
+                    y = self.cy + radius * sin(angle)
+                    cr.save()
+                    # rotate chart so ascendant is horizon
+                    if self.chart_settings.get("fixed asc", False) and ascmc:
+                        self.set_custom_font(cr, font_size=20)
+                        cr.translate(x, y)
+                        cr.rotate(-radians(ascmc[0]))
+                        te = cr.text_extents(glyph)
+                        tx = -(te.width / 2 + te.x_bearing)
+                        ty = -(te.height / 2 + te.y_bearing)
+                        cr.set_source_rgba(0, 0, 0, 0.7)
+                        cr.move_to(tx, ty)
+                        cr.show_text(glyph)
+                        cr.new_path()
+                    else:
+                        te = cr.text_extents(glyph)
+                        tx = x - (te.width / 2 + te.x_bearing)
+                        ty = y - (te.height / 2 + te.y_bearing)
+                        cr.set_source_rgba(0, 0, 0, 1)
+                        cr.move_to(tx, ty)
+                        cr.show_text(glyph)
+                        cr.new_path()
+                    cr.restore()
 
     def draw_info_ring(self, cr):
         # center circle with event 1 info text
@@ -678,14 +665,17 @@ class Rings:
         movie_mode = self.chart_settings.get("movie_mode", False)
         movie_info = self.chart_settings.get("movie_info", "")
         use_mean_node = self.chart_settings.get("use_mean_node", False)
-        event = self.data.get("event", "e1")
+        event = self.data.get("event", {})
+        extra_info = self.data.get("extra info", {})
         cr.arc(self.cx, self.cy, outer_r, 0, 2 * pi)
         if movie_mode:
             # print("rings:draw : moviemodeon")
-            cr.set_source_rgba(0.05, 0.05, 0.05, 1)
+            cr.set_source_rgba(*self.get_ring_color("info movie"))
+            # cr.set_source_rgba(0.05, 0.05, 0.05, 1)
         else:
             # default background
-            cr.set_source_rgba(0.15, 0.15, 0.15, 1)
+            cr.set_source_rgba(*self.get_ring_color("info"))
+            # cr.set_source_rgba(0.15, 0.15, 0.15, 1)
         cr.fill_preserve()
         # circle border
         cr.set_source_rgba(1, 1, 1, 1)
@@ -699,7 +689,6 @@ class Rings:
         # event 1 default chart info string (format)
         fmt_basic = self.chart_settings.get(
             "chart info string",
-            # fallback
             "{name}\n{date}\n{wday} {time_short}\n{city} @ {country}\n{lat}\n{lon}",
         )
         fmt_extra = self.chart_settings.get(
@@ -733,9 +722,9 @@ class Rings:
                         idx_str = "--"
                     speed = data.get("lon speed", 0.0)
                     if code:
-                        speed_rel = _speed_relative(code, speed)  # if code else None
+                        speed_rel = _relative_speed(code, speed)  # if code else None
                     # glyph
-                    glyph = get_glyph(name, False) or name
+                    glyph = glyphs.get_glyph(name, False) or name
                     if speed_rel:
                         speed_str = f"{speed_rel:+04d}"
                     rows.append(f"{glyph} {idx_str} {speed_str}")
@@ -767,37 +756,24 @@ class Rings:
                         y += line_h
                     # done drawing
                     return
-            except Exception as e:
-                # falback to regular
-                self.notify.debug(
-                    f"movie info drawing failed\nerror : {e}",
-                    source="rings",
-                    route=["terminal"],
-                )
+            except Exception:
+                pass
         else:
-            if "hora" in fmt_basic:
+            if "hora" in fmt_basic and "hora" in data:
                 # print("rings : hora found in info string ")
-                data["hora"] = get_glyph(data["hora"], False)
+                data["hora"] = glyphs.get_glyph(data["hora"], False)
             fmt_extra = fmt_extra.replace(r"\n", "\n")
             try:
                 info_text = (
-                    fmt_basic.format(**data)
-                    + "\n"
-                    + fmt_extra.format(**self.extra_info)
+                    fmt_basic.format(**data) + "\n" + fmt_extra.format(**extra_info)
                 )
-                self.notify.debug(
+                self.logger.debug(
                     f"circleinfo : infotext :\n{info_text}",
-                    source="rings",
-                    route=[""],
+                    extra={"source": "rings", "route": ["terminal"]},
                 )
             except Exception as e:
                 # fallback to default info string
-                info_text = f"{self.event_data.get('name', '')}"
-                self.notify.error(
-                    f"circleinfo : error :\n\t{e}",
-                    source="rings",
-                    route=["terminal"],
-                )
+                info_text = f"{event.get('name', '')} : {e}"
             lines = info_text.split("\n")
             line_spacing = self.font_size * 1.2
             total_height = (len(lines) - 1) * self.font_size
@@ -810,6 +786,137 @@ class Rings:
                 cr.show_text(line)
                 cr.new_path()  # clear drawn path
                 y += line_spacing
+
+    def draw_naksatras_ring(self, cr):
+        # draw naksatras circle
+        ring = "naksatras"
+        outer_r, mid_r, _ = self.get_ring_bounds(ring)
+        naksatras = self.data.get("naksatras", {})
+        naks_num = naksatras.get("count", 28)
+        first_nak = naksatras.get("first", 1)
+        cr.arc(self.cx, self.cy, outer_r, 0, 2 * pi)
+        cr.set_source_rgba(*self.get_ring_color(ring))
+        # cr.set_source_rgba(0.2, 0.2, 0.2, 1)
+        cr.fill_preserve()
+        cr.set_source_rgba(0.5, 0.5, 0.5, 0.7)
+        cr.set_line_width(1)
+        cr.stroke()
+        # divide circle into segments
+        cr.set_source_rgba(0.9, 0.9, 0.9, 0.7)
+        seg_angle = 2 * pi / naks_num
+        for i in range(naks_num):
+            angle = pi - (i * seg_angle)
+            x = self.cx + outer_r * cos(angle)
+            y = self.cy + outer_r * sin(angle)
+            cr.move_to(self.cx, self.cy)
+            cr.line_to(x, y)
+            cr.stroke()
+        # labels
+        self.set_custom_font(cr, self.font_size)
+        for i in range(naks_num):
+            angle = pi - ((i + 0.5) * seg_angle)
+            label = str((first_nak + i - 1) % naks_num + 1)
+            te = cr.text_extents(label)
+            x = self.cx + mid_r * cos(angle)
+            y = self.cy + mid_r * sin(angle)
+            cr.save()
+            cr.translate(x, y)
+            cr.rotate(angle + pi / 2)
+            cr.move_to(-te.width / 2, te.height / 2)
+            cr.show_text(label)
+            cr.restore()
+            cr.new_path()
+
+    def draw_harmonic_ring(self, cr):
+        # draw circle
+        ring = "harmonic"
+        outer_r, mid_r, inner_r = self.get_ring_bounds(ring)
+        harmonic = self.data.get("harmonic", [])
+        harmonic_info = self.data.get("harmonic info", {})
+        division = harmonic_info.get("division", 1)
+        cr.arc(self.cx, self.cy, outer_r, 0, 2 * pi)
+        # background color : dark
+        cr.set_source_rgba(*self.get_ring_color(ring))
+        # cr.set_source_rgba(0.1, 0.1, 0.1, 1)
+        cr.fill_preserve()
+        cr.set_source_rgba(1, 1, 1, 0.7)
+        cr.set_line_width(1)
+        cr.stroke()
+        # (egyptian) terms (aka bounds) if division 1
+        if division == 1:
+            terms_sorted = sorted(TERMS.items())
+            terms_num = len(terms_sorted)
+            self.set_custom_font(cr, self.font_size)
+            for i, (deg, ruler) in enumerate(terms_sorted):
+                # start angle
+                angle = pi - (deg * pi / 180)
+                x1 = self.cx + inner_r * cos(angle)
+                y1 = self.cy + inner_r * sin(angle)
+                x2 = self.cx + outer_r * cos(angle)
+                y2 = self.cy + outer_r * sin(angle)
+                cr.move_to(x1, y1)
+                cr.line_to(x2, y2)
+                cr.set_source_rgba(1, 1, 1, 0.5)
+                cr.stroke()
+                # glyphs : next border for mid term position
+                next_deg = (
+                    360 if i == terms_num - 1 else terms_sorted[(i + 1) % terms_num][0]
+                )
+                angle_next = pi - (next_deg * pi / 180)
+                # handle wrap-around
+                mid_angle = (angle + angle_next) / 2
+                # position glyph at ring middle
+                glyph_fix = 1.008
+                xg = self.cx + mid_r * glyph_fix * cos(mid_angle)
+                yg = self.cy + mid_r * glyph_fix * sin(mid_angle)
+                glyph = glyphs.get_glyph(ruler, False)
+                self.draw_rotated_text(cr, glyph, xg, yg, mid_angle)
+        elif division > 1 and harmonic is not None:
+            # prepare data for the draw order lookup
+            object_by_name = {obj.data.get("name", ""): obj for obj in harmonic}
+            # clean sign borders
+            self.draw_sign_borders(cr)
+            # draw objects
+            for name in DRAW_ORDER_REVERSE:
+                obj = object_by_name.get(name)
+                if not obj or obj.data.get("name") is None:
+                    continue
+                lon = obj.data.get("lon", 0.0)
+                # print(f"{name} : lon={lon} ({decsigndms(lon, use_glyph=False)}) ")
+                # radius = mid_r
+                angle = pi - radians(lon)
+                x = self.cx + mid_r * cos(angle)
+                y = self.cy + mid_r * sin(angle)
+                # asc & mc of harmonic ring
+                marker_size = 0.6
+                if name == "asc":
+                    self.draw_marker(
+                        cr,
+                        x,
+                        y,
+                        angle,
+                        self.scaled_marker_size() * marker_size,
+                        (1, 1, 1, 0.5),
+                        self.draw_triangle,
+                    )
+                elif name == "mc":
+                    self.draw_marker(
+                        cr,
+                        x,
+                        y,
+                        angle,
+                        self.scaled_marker_size() * marker_size,
+                        (1, 1, 1, 0.5),
+                        self.draw_diamond,
+                    )
+                else:
+                    obj.draw(
+                        cr,
+                        self.cx,
+                        self.cy,
+                        mid_r,
+                        self.font_size * 0.6,
+                    )
 
     def draw(self, cr):
         # unpack & iterate outer_rings, call draw_x function for each item
@@ -825,33 +932,25 @@ class Rings:
             "solar return": self.draw_solar_return_ring,
         }
         cr.save()
-        if self.chart_settings.get("fixed asc", False) and getattr(self, "ascmc", None):
-            ring_data = self.data.get("houses")
-            if ring_data is not None:
-                ascmc = ring_data.get("ascmc", "")
-                asc_angle = radians(ascmc[0])
-                cr.translate(self.cx, self.cy)
-                cr.rotate(asc_angle)
-                cr.translate(-self.cx, -self.cy)
-
+        houses = self.data.get("houses", {})
+        ascmc = houses.get("ascmc", [])
+        if self.chart_settings.get("fixed asc", False) and ascmc:
+            asc_angle = radians(ascmc[0])
+            cr.translate(self.cx, self.cy)
+            cr.rotate(asc_angle)
+            cr.translate(-self.cx, -self.cy)
         for ring in self.outer_rings:
             func = outer_rings_map.get(ring)
             if func:
-                bounds = self.get_ring_bounds(ring)  # bounds not accessed
                 func(cr)
 
         if self.chart_settings.get("naksatras ring", ""):
-            bounds = self.get_ring_bounds("naksatras")
             self.draw_naksatras_ring(cr)
         if self.chart_settings.get("harmonic ring", ""):
-            bounds = self.get_ring_bounds("harmonic")
             self.draw_harmonic_ring(cr)
-        signs_bounds = self.get_ring_bounds("signs")
         self.draw_signs_ring(cr)
-        event_bounds = self.get_ring_bounds("event")
         self.draw_event_ring(cr)
         cr.restore()
-        info_bounds = self.get_ring_bounds("info")
         self.draw_info_ring(cr)
 
     def get_object_radius_lat(
@@ -860,8 +959,7 @@ class Rings:
         # sun always 0 lat
         if name == "su":
             return mid_r
-        # compute  drawing radius
-        # pluto has max lat range of them all
+        # compute  drawing radius : pluto has max lat range of them all
         max_val = 18.0 if name == "pl" else 8.0
         ratio = max(-1.0, min(1.0, lat / max_val))
         if lat >= 0:
@@ -870,8 +968,7 @@ class Rings:
 
     def scaled_marker_size(self):
         # scale marker size so it is constant relative to chart
-        outer_ring = self.max_radius
-        return 0.03 * outer_ring
+        return 0.03 * self.max_radius
 
     def scaled_obj_scale(self):
         # scale object size so it is constant relative to chart
@@ -919,135 +1016,3 @@ class Rings:
         cr.show_text(text)
         cr.new_path()
         cr.restore()
-
-    def draw_naksatras_ring(self, cr):
-        """draw outer circle"""
-        cr.arc(self.cx, self.cy, self.radius, 0, 2 * pi)
-        cr.set_source_rgba(0.2, 0.2, 0.2, 1)
-        cr.fill_preserve()
-        cr.set_source_rgba(0.5, 0.5, 0.5, 0.7)
-        cr.set_line_width(1)
-        cr.stroke()
-        # divide circle into segments
-        cr.set_source_rgba(0.9, 0.9, 0.9, 0.7)
-        seg_angle = 2 * pi / self.naks_num
-        for i in range(self.naks_num):
-            angle = pi - (i * seg_angle)
-            x = self.cx + self.radius * cos(angle)
-            y = self.cy + self.radius * sin(angle)
-            cr.move_to(self.cx, self.cy)
-            cr.line_to(x, y)
-            cr.stroke()
-        # labels
-        self.set_custom_font(cr, self.font_size)
-        for i in range(self.naks_num):
-            angle = pi - ((i + 0.5) * seg_angle)
-            label = str((self.first_nak + i - 1) % self.naks_num + 1)
-            te = cr.text_extents(label)
-            x = self.cx + self.mid_ring * cos(angle)
-            y = self.cy + self.mid_ring * sin(angle)
-            cr.save()
-            cr.translate(x, y)
-            cr.rotate(angle + pi / 2)
-            cr.move_to(-te.width / 2, te.height / 2)
-            cr.show_text(label)
-            cr.restore()
-            cr.new_path()
-
-    def draw_harmonic_ring(self, cr):
-        # draw circle
-        cr.arc(self.cx, self.cy, self.radius, 0, 2 * math.pi)
-        # background color : dark
-        cr.set_source_rgba(0.1, 0.1, 0.1, 1)
-        cr.fill_preserve()
-        cr.set_source_rgba(1, 1, 1, 0.7)
-        cr.set_line_width(1)
-        cr.stroke()
-        # (egyptian) terms (aka bounds) if division 1
-        if self.division == 1:
-            terms_sorted = sorted(TERMS.items())
-            terms_num = len(terms_sorted)
-            self.set_custom_font(cr, self.font_size)
-            for i, (deg, ruler) in enumerate(terms_sorted):
-                # start angle
-                angle = pi - (deg * pi / 180)
-                x1 = self.cx + self.inner_r * cos(angle)
-                y1 = self.cy + self.inner_r * sin(angle)
-                x2 = self.cx + self.radius * cos(angle)
-                y2 = self.cy + self.radius * sin(angle)
-                cr.move_to(x1, y1)
-                cr.line_to(x2, y2)
-                cr.set_source_rgba(1, 1, 1, 0.5)
-                cr.stroke()
-                # glyphs : next border for mid term position
-                next_deg = (
-                    360 if i == terms_num - 1 else terms_sorted[(i + 1) % terms_num][0]
-                )
-                angle_next = pi - (next_deg * pi / 180)
-                # handle wrap-around
-                mid_angle = (angle + angle_next) / 2
-                # position glyph at ring middle
-                glyph_fix = 1.008
-                xg = self.cx + self.mid_ring * glyph_fix * cos(mid_angle)
-                yg = self.cy + self.mid_ring * glyph_fix * sin(mid_angle)
-                glyph = get_glyph(ruler, False)
-                self.draw_rotated_text(cr, glyph, xg, yg, mid_angle)
-        elif self.division > 1 and self.harmonic_data is not None:
-            # prepare data for the draw order lookup
-            object_by_name = {
-                obj.data.get("name", "").lower(): obj for obj in self.harmonic_data
-            }
-            # clean sign borders
-            self.draw_sign_borders(cr)
-            # draw objects
-            for name in self.draw_order:
-                obj = object_by_name.get(name)
-                if not obj or obj.data.get("name") is None or self.event != "e1":
-                    continue
-                # print(f"rings : lot : {lot.data}")
-                # if self.event != "e1":
-                #     return
-                # skip event attribute
-                # if obj.data.get("name") is None:
-                #     continue
-                name = obj.data.get("name", "").lower()
-                lon = obj.data.get("lon", 0.0)
-                # print(f"{name} : lon={lon} ({decsigndms(lon, use_glyph=False)}) ")
-                radius = self.mid_ring
-                angle = pi - radians(lon)
-                x = self.cx + radius * cos(angle)
-                y = self.cy + radius * sin(angle)
-                # asc & mc of harmonic ring
-                marker_size = 0.6
-                if name == "asc":
-                    # explicitly dont draw asc
-                    # continue
-                    self.draw_marker(
-                        cr,
-                        x,
-                        y,
-                        angle,
-                        self.scaled_marker_size() * marker_size,
-                        (1, 1, 1, 0.5),
-                        self.draw_triangle,
-                    )
-                elif name == "mc":
-                    # explicitly dont draw mc
-                    # continue
-                    self.draw_marker(
-                        cr,
-                        x,
-                        y,
-                        angle,
-                        self.scaled_marker_size() * marker_size,
-                        (1, 1, 1, 0.5),
-                        self.draw_diamond,
-                    )
-                else:
-                    obj.draw(
-                        cr,
-                        self.cx,
-                        self.cy,
-                        radius,
-                        self.font_size * 0.6,
-                    )

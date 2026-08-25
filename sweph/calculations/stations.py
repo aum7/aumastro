@@ -1,44 +1,43 @@
-# sweph/calculations/retro.py
+# sweph/calculations/stations.py
 # ruff: noqa: E402, E701
-import swisseph as swe  # type:ignore
+import swisseph as swe
 from ui.helpers import _object_name_to_code as objcode
 from sweph.constants import STATION_SPEED, RETRO_DAYS
 
 last_stations = {}
 
 
-def get_retro_phases(body, jd_ut, sweph_flag):
+def get_retro_phases(body, jd_ut, flags):
     if body in (0, 1):
         return " "
-    curr_speed = lon_speed(body, jd_ut, sweph_flag)
+    curr_speed = lon_speed(body, jd_ut, flags)
     if body in (10, 11):
         return "r" if curr_speed < 0 else " "
     # used in positions.py & tables todo ???
     treshold = STATION_SPEED.get(body, 0)
     if abs(curr_speed) < treshold:
-        speed_next = lon_speed(body, jd_ut + 0.1, sweph_flag)
+        speed_next = lon_speed(body, jd_ut + 0.1, flags)
         if speed_next < curr_speed:
             return "sr"
         return "sd"
     return "r" if curr_speed < 0 else " "
 
 
-def lon_speed(body, jd_ut, sweph_flag):
-    # calculate lon speed in degree/day
-    result = swe.calc_ut(jd_ut, body, sweph_flag)
-    # longitude speed
+def lon_speed(body, jd_ut, flags):
+    # calculate longitude speed in degree/day
+    result = swe.calc_ut(jd_ut, body, flags)
     return result[0][3]
 
 
-def refine_root(body, bracket, sweph_flag):
+def refine_root(body, bracket, flags):
     # fast exact direction change calculation
     a, b = bracket
-    fa = lon_speed(body, a, sweph_flag)
-    fb = lon_speed(body, b, sweph_flag)
+    fa = lon_speed(body, a, flags)
+    fb = lon_speed(body, b, flags)
     # bisect
     for _ in range(10):
         m = 0.5 * (a + b)
-        fm = lon_speed(body, m, sweph_flag)
+        fm = lon_speed(body, m, flags)
         if fa * fm <= 0:
             b, fb = m, fm
         else:
@@ -52,7 +51,7 @@ def refine_root(body, bracket, sweph_flag):
         m = (a * fb - b * fa) / denom
         if not (a < m < b):
             break
-        fm = lon_speed(body, m, sweph_flag)
+        fm = lon_speed(body, m, flags)
         if fa * fm <= 0:
             b, fb = m, fm
         else:
@@ -60,27 +59,27 @@ def refine_root(body, bracket, sweph_flag):
     return 0.5 * (a + b)
 
 
-def find_closest_station(body, start_jd, step, sweph_flag):
+def find_closest_station(body, start_jd, step, flags):
     # iterative search for nearest station
     eps = 1e-7
     t = start_jd + (eps * (1 if step > 0 else -1))
-    s0 = lon_speed(body, t, sweph_flag)
+    s0 = lon_speed(body, t, flags)
     max_iter = int(365.25 * 3 / abs(step))
     for _ in range(max_iter):
         t += step
-        s = lon_speed(body, t, sweph_flag)
+        s = lon_speed(body, t, flags)
         # sign change = station
         if s0 * s <= 0:
-            return refine_root(body, (t - step, t), sweph_flag)
+            return refine_root(body, (t - step, t), flags)
         s0 = s
     return None
 
 
-def find_stations(body, jd, sweph_flag):
+def find_stations(body, jd, flags):
     # find previous & next station, use cache to avoid recalculation
     jd_rounded = round(jd * 86400) / 86400
     cache_key = (body, round(jd, 2))
-    curr_dir = get_retro_phases(body, jd, sweph_flag)
+    curr_dir = get_retro_phases(body, jd, flags)
     old_prev_s, old_next_s = last_stations.get(cache_key, (None, None))
     # cached results first
     old_prev_s, old_next_s = last_stations.get(body, (None, None))
@@ -90,26 +89,29 @@ def find_stations(body, jd, sweph_flag):
     retro_length = RETRO_DAYS.get(body, 180.0)
     step = min(retro_length / 20.0, 0.5)
     # find previous & next station
-    s_prev = find_closest_station(body, jd_rounded, -step, sweph_flag)
-    s_next = find_closest_station(body, jd_rounded, step, sweph_flag)
+    s_prev = find_closest_station(body, jd_rounded, -step, flags)
+    s_next = find_closest_station(body, jd_rounded, step, flags)
     last_stations[cache_key] = (s_prev, s_next)
 
     return s_prev, s_next, curr_dir
 
 
-def calculate_stations(jd_ut, sweph_flag, objs, use_mean_node):
+def calculate_stations(jd_ut, geo=(), objs=(), flags=0, params=None):
     """calculate retro stations & direction for event"""
     # calculate direction & stations
+    if jd_ut is None:
+        return {"status": "error", "data": [], "error": "invalid jd_ut"}
+    p = params or {}
+    use_mean_node = p.get("use_mean_node", False)
+    if (flags & swe.FLG_TOPOCTR) and geo and len(geo) == 3:
+        swe.set_topo(geo[0], geo[1], geo[2])
     stations = []
-    if not jd_ut:
-        return stations
-
     for obj in objs:
         code, name = objcode(obj, use_mean_node)
         if code not in STATION_SPEED:
             continue
         # station previous & next + current direction
-        s_prev, s_next, direction = find_stations(code, jd_ut, sweph_flag)
+        s_prev, s_next, direction = find_stations(code, jd_ut, flags)
         if s_prev is None or s_next is None:
             continue
         stations.append({
@@ -118,4 +120,8 @@ def calculate_stations(jd_ut, sweph_flag, objs, use_mean_node):
             "nextstation": s_next,
             "direction": direction,
         })
-    return stations
+    return {
+        "status": "ok",
+        "data": stations,
+        "error": None,
+    }

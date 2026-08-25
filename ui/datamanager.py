@@ -1,14 +1,14 @@
 # datamanager.py
 # gather event 1 & 2 data, calculate astro data, serve to interested parties
 # ruff: noqa: E402
-import logging
+import logging as log
 
 
 class DataManager:
     def __init__(self):
-        self.logger = logging.getLogger("datamanager")
+        self.logger = log.getLogger(__name__)
         self.astro_data = {
-            "e1_pos": [],
+            "e1 pos": [],
             "houses": {"ascmc": [], "cusps": []},
             "stars": {},
             "lots": [],
@@ -17,7 +17,7 @@ class DataManager:
             "harmonic": [],
             "naksatras": {},
             "e1": {},
-            "extra_info": {},
+            "extra info": {},
         }
 
     def set_e1(self, e1: object):
@@ -27,7 +27,7 @@ class DataManager:
                 extra={"source": "datamanager", "route": ["terminal"]},
             )
             return
-        self.astro_data["e1_pos"] = e1.get("positions", e1.get("e1_pos", []))
+        self.astro_data["e1 pos"] = e1.get("positions", e1.get("e1 pos", []))
         self.astro_data["houses"] = {
             "ascmc": e1.get("ascmc", []),
             "cusps": e1.get("cusps", []),
@@ -37,10 +37,10 @@ class DataManager:
         self.astro_data["eclipses"] = e1.get("eclipses", [])
         self.astro_data["syzygy"] = e1.get("syzygy", [])
         self.astro_data["e1"] = e1.get("e1", e1)
-        self.astro_data["extra_info"] = e1.get("extra_info", {})
+        self.astro_data["extra info"] = e1.get("extra_info", {})
         # debug
         self.logger.debug(
-            f"e1 unpacked :\npos : {len(self.astro_data['e1_pos'])}"
+            f"e1 unpacked :\npos : {len(self.astro_data['e1 pos'])}"
             f"\nlots : {len(self.astro_data['lots'])}"
             f"\nstars : {len(self.astro_data['stars'])}",
         )
@@ -49,8 +49,8 @@ class DataManager:
         if not isinstance(raw_data, dict):
             raw_data = {}
         self.astro_data[ring] = {
-            "positions": raw_data.get("positions", raw_data.get("e2_pos", [])),
-            "cusps": raw_data.get("cusps", raw_data.get("e2_cusps", [])),
+            "positions": raw_data.get("positions", raw_data.get("e2 pos", [])),
+            "cusps": raw_data.get("cusps", raw_data.get("e2 cusps", [])),
         }
 
     def set_harmonic(self, harmonic_data):

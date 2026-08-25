@@ -9,6 +9,31 @@ from math import modf
 from swisseph import contrib as swh
 from ui.fonts.glyphs import SIGNS
 from user.settings import OBJECTS
+from sweph.constants import AVG_SPEEDS
+
+
+def _house_for_lon(lon, cusps):
+    if not cusps:
+        return ""
+    cusp_list = [(c, i + 1) for i, c in enumerate(cusps)]
+    n = len(cusp_list)
+    for i in range(n):
+        c0, h0 = cusp_list[i]
+        c1, _ = cusp_list[(i + 1) % n]
+        if c0 <= c1:
+            if c0 <= lon < c1:
+                return f"{h0:2d}"
+        else:
+            if lon >= c0 or lon < c1:
+                return f"{h0:2d}"
+    return ""
+
+
+def _relative_speed(code: int, speed: float):
+    mean = AVG_SPEEDS.get(code, 1.0)
+    if not mean:
+        return 0
+    return int(round((speed / mean) * 100))
 
 
 def _buttons_from_dict(
@@ -107,7 +132,7 @@ def _update_main_title(manager, change_time=None):
     # todo remove e2 if e2 not active - do we have existing signal ?
     e2_active = getattr(manager.app, "e2_active", False)
     if e2_active:
-        pass # remove e2
+        pass  # remove e2
     mainwindow = next(
         (w for w in manager.app.get_windows() if isinstance(w, Gtk.ApplicationWindow)),
         None,

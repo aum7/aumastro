@@ -15,20 +15,6 @@ from ui.mainpanes.tables import Tables
 from ui.mainpanes.chart.astrochart import AstroChart
 from ui.mainpanes.datagraph import DataGraph
 
-# from sweph.calculations.positions import connect_signals_positions
-from sweph.calculations.houses import connect_signals_houses
-from sweph.calculations.stars import connect_signals_stars
-from sweph.calculations.aspects import connect_signals_aspects
-from sweph.calculations.vimsottari import connect_signals_vimsottari
-from sweph.calculations.d1 import connect_signals_d1
-from sweph.calculations.p2 import connect_signals_p2
-from sweph.calculations.p3 import connect_signals_p3
-from sweph.calculations.p3m import connect_signals_p3m
-from sweph.calculations.returnsolar import connect_signals_solarreturn
-from sweph.calculations.returnlunar import connect_signals_lunarreturn
-from sweph.calculations.transit import connect_signals_transit
-from sweph.calculations.varga import connect_signals_varga
-
 # 1-time printscreen sequence generation
 from .data_printscreen import DataPrintscreen
 
@@ -64,20 +50,6 @@ class MainWindow(
         self.setup_hotkeys()
         # intercept toggle pane button
         self.hotkeys.intercept_button_controller(self.btn_toggle_pane, "toggle_pane")
-        # connect signals
-        # connect_signals_positions(self.app.signal_manager)
-        connect_signals_houses(self.app.signal_manager)
-        connect_signals_stars(self.app.signal_manager)
-        connect_signals_aspects(self.app.signal_manager)
-        connect_signals_vimsottari(self.app.signal_manager)
-        connect_signals_transit(self.app.signal_manager)
-        connect_signals_varga(self.app.signal_manager)
-        connect_signals_p2(self.app.signal_manager)
-        connect_signals_p3(self.app.signal_manager)
-        connect_signals_p3m(self.app.signal_manager)
-        connect_signals_d1(self.app.signal_manager)
-        connect_signals_solarreturn(self.app.signal_manager)
-        connect_signals_lunarreturn(self.app.signal_manager)
         # 4 main panes
         self.astro_chart = AstroChart()
         self.tables = Tables()

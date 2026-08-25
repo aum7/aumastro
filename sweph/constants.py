@@ -69,7 +69,7 @@ STATION_SPEED = {  # stationary speed
 # average planet speeds
 AVG_SPEEDS = {
     0: 0.9856,  # sun
-    1: 13.176,  # moon
+    1: 13.1764,  # moon
     2: 1.607,  # mercury
     3: 1.174,  # venus
     4: 0.524,  # mars

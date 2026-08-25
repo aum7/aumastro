@@ -13,24 +13,23 @@ if &shortmess =~ 'A'
 else
   set shortmess=aoO
 endif
-badd +75 ~/dev/venaumastro/aumastro/ui/mainpanes/chart/astrochart.py
-badd +5 ~/dev/venaumastro/aumastro/ui/mainpanes/chart/rings.py
-badd +26 ~/dev/venaumastro/aumastro/ui/mainpanes/chart/ringsouter.py
-badd +1211 ~/dev/venaumastro/aumastro/ui/mainpanes/chart/ringsinner.py
+badd +1 ~/dev/venaumastro/aumastro/sweph/helpers.py
+badd +19 ~/dev/venaumastro/aumastro/ui/datamanager.py
+badd +8 ~/dev/venaumastro/aumastro/sweph/calculations/lots.py
 argglobal
 %argdel
-edit ~/dev/venaumastro/aumastro/ui/mainpanes/chart/rings.py
+edit ~/dev/venaumastro/aumastro/sweph/calculations/lots.py
 argglobal
-balt ~/dev/venaumastro/aumastro/ui/mainpanes/chart/ringsouter.py
+balt ~/dev/venaumastro/aumastro/ui/datamanager.py
 let s:cpo_save=&cpo
 set cpo&vim
 inoremap <buffer> <M-e> l<Cmd>lua require('nvim-autopairs.fastwrap').show()
 nnoremap <buffer> <silent> K <Cmd>lua vim.lsp.buf.hover()
 nnoremap <buffer> <silent> gs <Cmd>lua vim.lsp.buf.signature_help()
+nnoremap <buffer> <silent> gI <Cmd>lua vim.lsp.buf.implementation()
 nnoremap <buffer> <silent> gr <Cmd>lua vim.lsp.buf.references()
 nnoremap <buffer> <silent> gD <Cmd>lua vim.lsp.buf.declaration()
 nnoremap <buffer> <silent> gd <Cmd>lua vim.lsp.buf.definition()
-nnoremap <buffer> <silent> gI <Cmd>lua vim.lsp.buf.implementation()
 let &cpo=s:cpo_save
 unlet s:cpo_save
 setlocal keymap=
@@ -133,7 +132,7 @@ setlocal spellfile=
 setlocal spelllang=en,cjk
 setlocal spelloptions=noplainbuffer
 setlocal statuscolumn=
-setlocal statusline=%#lualine_a_3_command#\ ����\ %#lualine_b_4_command#%#SLGitIcon#\ %*%#SLBranchName#\ angleruler\ %<%#lualine_c_diff_added_command#\ \ \ 903\ %#lualine_c_diff_modified_command#\ 463\ %#lualine_c_diff_removed_command#\ 752\ %#lualine_c_normal#%=%#lualine_x_diagnostics_error_command#\ \ 28\ %#lualine_x_diagnostics_warn_command#\ 9\ %#lualine_x_diagnostics_hint_command#\ 9\ %#lualine_c_normal#%#lualine_c_normal#\ 󰌒\ 4\ %#lualine_x_filetype_DevIconPy_command#\ \ %#lualine_c_normal#python\ %#lualine_b_command#\ \ 17:1\ \ %#lualine_z_progress_command#\ %P/%L\ 
+setlocal statusline=%#lualine_a_10_command#\ ����\ %#lualine_b_11_command#%#SLGitIcon#\ %*%#SLBranchName#\ angleruler\ %<%#lualine_c_diff_added_command#\ \ \ 10\ %#lualine_c_diff_modified_command#\ 32\ %#lualine_c_diff_removed_command#\ 7\ %#lualine_c_normal#%=%#lualine_x_diagnostics_hint_command#\ \ 3\ %#lualine_c_normal#%#lualine_c_normal#\ 󰌒\ 4\ %#lualine_x_filetype_DevIconPy_command#\ \ %#lualine_c_normal#python\ %#lualine_b_command#\ \ \ 5:1\ \ %#lualine_z_progress_command#\ %P/%L\ 
 setlocal suffixesadd=.py
 setlocal noswapfile
 setlocal synmaxcol=3000
@@ -152,98 +151,60 @@ setlocal undolevels=-123456
 setlocal varsofttabstop=
 setlocal vartabstop=
 setlocal virtualedit=
-setlocal winbar=\ %#DevIconPy#%*\ %#Winbar#rings.py%*\ 
+setlocal winbar=\ %#DevIconPy#%*\ %#Winbar#lots.py%*\ 
 setlocal winblend=0
 setlocal winhighlight=
 setlocal nowinfixheight
 setlocal nowinfixwidth
 setlocal wrap
 setlocal wrapmargin=0
-37
+8
 normal! zo
-40
+11
 normal! zo
-55
+15
 normal! zo
-61
+19
 normal! zo
-68
+21
 normal! zo
-69
+23
 normal! zo
-71
+25
 normal! zo
-76
+28
 normal! zo
-80
+29
 normal! zo
-82
+30
 normal! zo
-87
+32
 normal! zo
-89
+34
 normal! zo
-94
+35
 normal! zo
-96
+36
 normal! zo
-101
+38
 normal! zo
-103
+41
 normal! zo
-108
+42
 normal! zo
-110
+45
 normal! zo
-114
+47
 normal! zo
-116
+49
 normal! zo
-120
+53
 normal! zo
-122
-normal! zo
-124
-normal! zo
-130
-normal! zo
-132
-normal! zo
-133
-normal! zo
-140
-normal! zo
-141
-normal! zo
-144
-normal! zo
-150
-normal! zo
-153
-normal! zo
-156
-normal! zo
-162
-normal! zo
-165
-normal! zo
-169
-normal! zo
-182
-normal! zo
-185
-normal! zo
-188
-normal! zo
-191
-normal! zo
-203
-normal! zo
-let s:l = 17 - ((8 * winheight(0) + 17) / 34)
+let s:l = 5 - ((4 * winheight(0) + 17) / 34)
 if s:l < 1 | let s:l = 1 | endif
 keepjumps exe s:l
 normal! zt
-keepjumps 17
+keepjumps 5
 normal! 0
 tabnext 1
 if exists('s:wipebuf') && len(win_findbuf(s:wipebuf)) == 0 && getbufvar(s:wipebuf, '&buftype') isnot# 'terminal'
