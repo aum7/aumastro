@@ -1,4 +1,4 @@
-# datamanager.py
+# ui/datamanager.py
 # gather event 1 & 2 data, calculate astro data, serve to interested parties
 # ruff: noqa: E402
 import logging as log
@@ -6,6 +6,7 @@ import logging as log
 from ui.helpers import _decimal_to_ymd  # _update_main_title
 from sweph.calculations.positions import calculate_positions
 from sweph.calculations.houses import calculate_houses
+from sweph.calculations.vimsottari import calculate_vimsottari
 from sweph.calculations.horas import calculate_horas
 from user.fixedstars import FIXEDSTARS
 from user.settings import (
@@ -44,9 +45,6 @@ class DataManager:
         self.log = log.getLogger(__name__)
         self.app = app
         self.signal = app.signal_manager
-        # store events on datamanager : they be happy here
-        self.EVENT_ONE = None
-        self.EVENT_TWO = None
         self.astro_data = {"e1": {}, "e2": {}}
         # pick existing settings in user/settings.py
         self.chart_settings = {
@@ -93,17 +91,22 @@ class DataManager:
             "ascmc": dataset.get("ascmc", []),
             "cusps": dataset.get("cusps", []),
         }
-        if getattr(self.chart_settings, "stars", "custom"):
-            self.astro_data[event_id] = dataset.get("stars", {})
-        if getattr(self.chart_settings, "lots", {}):
-            self.astro_data[event_id] = dataset.get("lots", {})
-        # nested : PRENATAL["eclipses"]
-        if getattr(self.chart_settings, "eclipses", False):
-            self.astro_data[event_id] = dataset.get("eclipses", {})
-        if getattr(self.chart_settings, "syzygy", False):
-            self.astro_data[event_id] = dataset.get("syzygy", False)
-        if getattr(self.chart_settings, "extra info", ""):  # todo data type
-            self.astro_data["extra info"] = dataset.get("extra info", "")
+        # self.astro_data[event_id]["stars"] =dataset.get("stars",{})
+        # should check here which ...
+        # or if star setting active > do magick
+        if event_id == "e1":
+            if getattr(self.astro_data[event_id], "stars", "custom"):
+                self.astro_data[event_id] = dataset.get("stars", {})
+            if getattr(self.astro_data[event_id], "lots", {}):
+                self.astro_data[event_id] = dataset.get("lots", {})
+            # nested : PRENATAL["eclipses"]
+            if getattr(self.astro_data[event_id], "eclipses", False):
+                self.astro_data[event_id] = dataset.get("eclipses", {})
+            if getattr(self.astro_data[event_id], "syzygy", False):
+                self.astro_data[event_id] = dataset.get("syzygy", False)
+            # todo figure where this belongs - can we (yesss!) pick it here ???
+            if getattr(self.astro_data[event_id], "extra info", ""):  # todo data type
+                self.astro_data["extra info"] = dataset.get("extra info", "")
         # debug
         self.log.debug(
             f"e1 unpacked :\npos : {len(self.astro_data['e1 pos'])}"
@@ -123,8 +126,8 @@ class DataManager:
     def on_e2_clear(self):
         # lets try handle e2 removal close to
         self.astro_data["e2"] = {}
-        self.e2_active = False
         self.update_titlebar()
+        self.e2_active = False
 
     def recalculate(self, event_id):
         # on event or settings change > recalculate astodata
@@ -156,7 +159,7 @@ class DataManager:
             # calculate all-day horas :from sunrise to sunset | wall clock new day 00:00
             # def calculate_horas(jd_ut=None, geo=(), objs=(), flag=0, params=None):
             self.astro_data["e1"]["chart"]["horas"] = calculate_horas(
-                jd_ut=jdut, geo=(lon, lat, alt), flag=flag
+                jd_ut=jdut, geo=(lon, lat, alt), flag=flag, params={33, 14}
             )
             # after getting daily horas extract current hora if needed
             # curr_hora1 = self.astro_data["e1"]["chart"]["horas"]["current hora"]
@@ -164,9 +167,9 @@ class DataManager:
             # def calculate_positions(jd_ut=None,geo=(),objs=(),flag=0, params=None,):
             # needs : use_mean_node use_28_naks first_nak division
             pos_params = {
-                "use_mean_node": getattr(self.chart_settings, "use_mean_node", False),
-                "use_28_naks": getattr(self.chart_settings, "use_28_naks", False),
-                "first_nak": getattr(self.chart_settings, "first_nak", 1),
+                "use mean node": getattr(self.chart_settings, "use mean node", False),
+                "use 28 naks": getattr(self.chart_settings, "use 28 naks", False),
+                "first naksatra": getattr(self.chart_settings, "first nak", 1),
                 "division": getattr(self.chart_settings, "division", 9),
             }
             pos_calc = calculate_positions(jd_ut=jdut, flag=flag, params=pos_params)
@@ -190,7 +193,7 @@ class DataManager:
         age_y = getattr(self.chart_settings, "age_y", 0.0)
         age_m = getattr(self.chart_settings, "age_m", 0.0)
         sel_year = getattr(
-            self.chart_settings, "selected_year_period", (365.2425, "gregorian")
+            self.chart_settings, "selected year period", (365.2425, "gregorian")
         )
         year_length = sel_year[0]
         if event and dt:
@@ -226,110 +229,3 @@ class DataManager:
                 f"{event_name} selected",
                 extra=self.notify_new,
             )
-            # if self.chart_settings.selected_event == "e1":
-            #     # clp - ColLapsablePanel : below code needs revise & update
-            #     # relevant file attached - sidepane.py
-            #     clp = manager.clp_event_one
-            #     other_clp = manager.clp_event_two
-            # if manager.app.selected_event == "e2":
-            #     clp = manager.clp_event_two
-            #     other_clp = manager.clp_event_one
-            # other_clp.remove_title_css_class("label-event-selected")  # type:ignore
-            # clp.add_title_css_class("label-event-selected")  # type:ignore
-            # change_time = getattr(self.app_settings, "selected_change_time_str", "1 D")
-            # self.update_titlebar(manager, change_time)
-            # log.debug(
-            #     f"{self.chart_settings.selected_event} selected",
-            #     extra=self.notify_new,
-            # )
-        # todo remove e2 if e2 not active - do we have existing signal ?
-        # if self.e2_active:
-        #     pass  # remove e2
-        # mainwindow = next(
-        #     (w for w in self.app.get_windows() if isinstance(w, Gtk.ApplicationWindow)),
-        #     None,
-        # )
-        # if mainwindow is not None:
-        #     mainwindow.title_label.set_text(title)
-
-    # def set_harmonic(self, harmonic_data):
-    #     if isinstance(harmonic_data, dict):
-    #         self.astro_data["harmonic"] = harmonic_data.get("positions", [])
-    #         self.astro_data["harmonic info"] = harmonic_data.get("info", {})
-    #     elif isinstance(harmonic_data, list):
-    #         self.astro_data["harmonic"] = harmonic_data
-    #     self.log.debug(
-    #         f"harmonic unpacked :\n{len(self.astro_data['harmonic'])}",
-    #         extra=self.notify_new,
-    #     )
-
-    # def set_naksatras(self, naksatras: dict):
-    #     if isinstance(naksatras, dict):
-    #         self.astro_data["naksatras"] = naksatras
-    #     self.log.debug(
-    #         f"naksatras unpacked :\n{self.astro_data['naksatras']}",
-    #         extra={"source": self.source, "route": self.route},
-    #     )
-
-    # def set_ring_data(self, ring: str, raw_data: object):
-    #     if not isinstance(raw_data, dict):
-    #         raw_data = {}
-    #     self.astro_data[ring] = {
-    #         "positions": raw_data.get("positions", raw_data.get("e2 pos", [])),
-    #         "cusps": raw_data.get("cusps", raw_data.get("e2 cusps", [])),
-    #     }
-
-    # def get_astro_data(self):
-    #     # report / debug
-    #     self.log.debug(
-    #         f"compiled astrodata keys : {list(self.astro_data.keys())}",
-    #         extra=self.notify_new,
-    #     )
-    #     return self.astro_data
-
-    # def update_main_title(self):
-    # def update_main_title(self, change_time=None, e2_active=False):
-    # show selected event, its datetime, & age in main titlebar
-    # age = (e2 - e1) / 2 : time elapsed from e1 to e2
-    # self.chart_settings should hold needed values
-    # event = self.app_settings.selected_event
-    # print(f"mainwindow.update_main_title : event : {event}")
-    # calculated in sweph calculations : lunar solar return progressions
-    # only need be calculated once - merge
-    # age_y = getattr(self.chart_settings, "age_y", 0.0)
-    # age_m = getattr(self.chart_settings, "age_m", 0.0)
-    # sel_year = getattr(
-    #     self.chart_settings, "selected_year_period", (365.2425, "gregorian")
-    # )
-    # year_length = sel_year[0]
-    # dt = None
-    # if event == "e1":
-    #     dt = self.astro_data["e1"]["chart"]["datetime"]  # e1_chart.get("datetime")
-    # elif event == "e2":
-    #     dt = self.astro_data["e2"]["chart"]["datetime"]
-    # title = "aumastro"
-    # if event and dt:
-    #     title += f" | {event} : {dt}"
-    # elif event:
-    #     title += f" | {event} : no date"
-    # if age_y:
-    #     age_y = _decimal_to_ymd(age_y, year_length)
-    #     # remove spaces to save titlebar space
-    #     age_y = age_y.replace(" ", "")
-    #     title += f" | age : {age_y}"
-    # if age_m:
-    #     title += f" - lun : {age_m:.2f}m"
-    # if change_time:
-    #     title += f" | ct : {change_time}"
-    # elif change_time is None:
-    #     title += " | ct : 1 D"
-    # # todo remove e2 if e2 not active - do we have existing signal ?
-    # # e2_active = getattr(manager.app, "e2_active", False)
-    # if self.e2_active:
-    #     pass  # remove e2
-    # mainwindow = next(
-    #     (w for w in self.app.get_windows() if isinstance(w, Gtk.ApplicationWindow)),
-    #     None,
-    # )
-    # if mainwindow is not None:
-    #     mainwindow.title_label.set_text(title)

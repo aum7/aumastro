@@ -10,10 +10,6 @@ from .sidepane.sidepane import SidepaneManager
 from .sidepane.settings import update_chart_setting_checkbox
 from .uisetup import UISetup
 from .hotkeymanager import HotkeyManager
-
-# moved to eventdata
-# from ui.helpers import _event_selection
-from .datamanager import event_selection
 from ui.mainpanes.tables import Tables
 from ui.mainpanes.chart.astrochart import AstroChart
 from ui.mainpanes.datagraph import DataGraph
@@ -68,6 +64,9 @@ class MainWindow(
         self.orig_top_right_child = None  # datagraph to be overlaid
         # initialize panes layout todo ko
         self.connect("realize", lambda w: self.panes_double())
+        # todo : adjust panes for horizontal app orientation : currently vertical
+        # orientation is only considered
+        self.orientation = getattr(self, "orientation", "vertical")
 
     def close_request(self, window) -> bool:
         # print("mainwindow : close_request called : quiting app ...")
@@ -112,13 +111,10 @@ class MainWindow(
         # toggle selected event
         self.hotkeys.register_hotkey(
             "ctrl+e",
-            lambda g, n, x, y: event_selection(
-                self,
-                g,
-                n,
-                x,
-                y,
-                "e1" if self.app.selected_event == "e2" else "e2",
+            lambda: self.app.datamanager.event_selection(
+                "e2"
+                if self.app.datamanager.app_settings.get("selected event") == "e1"
+                else "e2"
             ),
         )
         # astro chart drawing
@@ -242,16 +238,15 @@ class MainWindow(
             if frame:
                 frame.set_child(v)
 
-    # todo : adjust panes for horizontal app orientation : currently vertical
-    # orientation is only considered
     # panes show single
     def panes_single(self) -> None:
         """show single pane : bottom left
         shift+single-click / shift+1"""
-        if hasattr(self, "pnd_main") and hasattr(self, "pnd_btm"):
-            # separator position in pixels, from top-left | -ve = unset | default 0
-            self.pnd_main.set_position(0)
-            self.pnd_btm.set_position(0)
+        if hasattr(self, "orientation"):
+            if hasattr(self, "pnd_main") and hasattr(self, "pnd_btm"):
+                # separator position in pixels, from top-left | -ve = unset | default 0
+                self.pnd_main.set_position(0)
+                self.pnd_btm.set_position(0)
 
     # panes show 2
     def panes_double(self) -> None:

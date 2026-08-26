@@ -1,28 +1,43 @@
 # ui/signalmanager.py
 # ruff: noqa: E402
-import gi
+import logging as log
 
-gi.require_version("Gtk", "4.0")
-from gi.repository import Gtk  # type: ignore
+source = "signalmanager"
+route = ["terminal"]
+routing = {"source": source, "route": route}
 
 
 class SignalManager:
-    def __init__(self, app=None):
+    def __init__(self):
         # store handlers
-        self.app = app or Gtk.Application.get_default()
         self.handlers = {}
+        # log & notify
+        self.log = log.getLogger(__name__)
 
-    def _emit(self, signal_name, *args):
-        # print(f"signalmanager : emitting signal : {signal_name}")
-        for handler in self.handlers.get(signal_name, []):
-            handler(*args)
-
-    def _connect(self, signal_name, handler):
-        # print(f"signalmanager : connecting signal : {signal_name}")
+    def connect(self, signal_name, handler):
+        log.debug(
+            f"connecting signal : {signal_name}",
+            extra=routing,
+        )
         if signal_name not in self.handlers:
             self.handlers[signal_name] = []
-        self.handlers[signal_name].append(handler)
+        if handler not in self.handlers[signal_name]:
+            self.handlers[signal_name].append(handler)
 
-    def _disconnect(self, signal_name, handler):
+    def disconnect(self, signal_name, handler):
         if signal_name in self.handlers and handler in self.handlers[signal_name]:
             self.handlers[signal_name].remove(handler)
+
+    def emit(self, signal_name, *args, **kwargs):
+        log.debug(
+            f"emitting signal : {signal_name}",
+            extra=routing,
+        )
+        for handler in self.handlers.get(signal_name, []):
+            try:
+                handler(*args, **kwargs)
+            except Exception as e:
+                log.error(
+                    f"error emitting signal {signal_name} : {e}",
+                    extra=routing,
+                )

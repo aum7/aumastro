@@ -22,15 +22,12 @@ class AumastroApp(Gtk.Application):
             application_id="aum.aumastro.app",
         )
         # initialize attributes first
-        # self.selected_event: str = "e1"
-        # movie mode flag
-        # self.movie_mode: bool = False
-        # self.EVENT_ONE = None
-        # self.EVENT_TWO = None
-        # managers
+        self.EVENT_ONE = None
+        self.EVENT_TWO = None
+        # then managers
         self.signal_manager = SignalManager(self)
         self.notify_manager = NotifyManager(self)
-        # initialize sweph
+        # last initialize sweph
         ephemeris_path = os.path.join(os.path.dirname(__file__), "sweph/ephe")
         swe.set_ephe_path(ephemeris_path)
         # early initialize chart_settings if used before being set by panelsettings
