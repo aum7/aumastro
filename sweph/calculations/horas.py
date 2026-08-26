@@ -176,7 +176,7 @@ def get_day_horas(jd_ut, lon, lat, alt=0.0, flag=0, tz_name=None):
     return horas
 
 
-def calculate_horas(jd_ut, geo=(), objs=(), flag=0, params=None):
+def calculate_horas(jd_ut=None, geo=(), objs=(), flag=0, params=None):
     # calculate list of horas & current hora from sunrise, sunset, next sunrise
     if jd_ut is None or len(geo) < 2:
         return err("invalid jd_ut or geo coordinates")

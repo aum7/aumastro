@@ -10,6 +10,9 @@
 # main application panes orientation : horizontal vs vertical
 # see uisetup.py > setup_paned_widgets
 # todo not fully implemented : mainwindow.py > panes_x all need love
+# app has 4 panes that can be resized - 2 (top/bottom) x 2  (left/right) -
+# orientation can be top/bottom as main & left/right as children or vice-versa
+# run app > grab left pane border & drag right ->, similar for top/bottom
 APP_ORIENTATION = "vertical"
 # change objects color & names below
 OBJECTS = {  # one-but-last = color ; last = size scale = drawing order
@@ -31,17 +34,17 @@ OBJECTS = {  # one-but-last = color ; last = size scale = drawing order
 }
 # selected objects for event 2
 OBJECTS_2 = {
-    "sun",
-    "moon",
-    "mercury",
-    "venus",
-    "mars",
-    "jupiter",
-    "saturn",
-    "uranus",
-    "neptune",
-    "pluto",
-    "true node",
+    "su",
+    "mo",
+    "me",
+    "ve",
+    "ma",
+    "ju",
+    "sa",
+    "ur",
+    "ne",
+    "pl",
+    "ra",
 }
 LOTS = {  # 7 hermetic lots : many different definitions for lots exist
     # add your definitions & also update calculations in
@@ -95,7 +98,7 @@ PRENATAL = {
             "\nnote : syzygy might overlap with eclipses (below)"
         ),
     },
-    "eclipse": {
+    "eclipses": {
         "enable": True,
         "tooltip": (
             "last solar & lunar eclipse before event 1"
@@ -151,7 +154,7 @@ if checked also select ayanamsa below""",
     # --- return equatorial positions (right ascension & declination)
     # else return ecliptic (default, latitude & longitude) positions
     # FLG_EQUATORIAL
-    # "equatorial": (False, "return equatorial (vs ecliptic) positions"),
+    "equatorial": (False, "return equatorial (vs ecliptic) positions"),
     # --- return cartesian (x, y, z) else polar (default) coordinates
     # FLG_XYZ
     # "cartesian": (False, "return cartesian (x, y, z vs polar degrees) coordinates"),
@@ -174,9 +177,26 @@ HOUSE_SYSTEMS = [
     ("C", "cmp : campanus", "cmp"),
     ("K", "kch : koch", "kch"),
 ]
+# --- time constants ---
+# (solar) year lengths in days : top is default
+SOLAR_YEAR = {
+    "sid": (365.256363, "sidereal"),
+    "gre": (365.2425, "gregorian"),
+    "jul": (365.25, "julian"),
+    "trp": (365.24219, "tropical"),
+    "lun": (354.37, "lunar"),  # 12 * synodic lunar month
+}
+# lunar month lengths : top is default
+LUNAR_MONTH = {
+    "sid": (27.321661, "sidereal\t\tfixed star"),
+    "syn": (29.53059, "synodic\t\tnew moons"),
+    "trp": (27.321582, "tropical\t\t0 ari"),  # houck
+    "anm": (27.554551, "anomalistic\tperigee-apogee"),
+    "drc": (27.21222, "draconic\tlunar nodes"),
+}
 CHART_SETTINGS = {
     # --- use mean node else true node
-    "mean node": (
+    "use mean node": (
         False,
         "calculate mean node (vs default true node)",
     ),
@@ -232,7 +252,7 @@ can be changed in
 sweph / constants.py""",
     ),
     # --- start naksatras ring with which naksatra
-    "1st naksatra": (
+    "first naksatra": (
         1,
         "start naksatras ring with any naksatra\nrotate relative to 0° aries\n1 = asvini (standard)\n19 = mula\n22 = abhijit if 28 naksatras etc",
     ),
@@ -275,7 +295,7 @@ sweph / constants.py""",
     # --- use varga positions for aspects
     # ctrl+v hotkey was 1st choice, but that defaults now for text paste
     # todo change to use harmonic aspect : also
-    "use varga aspect": (
+    "use varga aspects": (
         True,
         "use *simple* varga / harmonic positions for aspects matrix calculation\nsort of 'harmonic aspectarian', in tables window\nhk : ctrl+h (toggle h1 <> hX)",
     ),
@@ -337,23 +357,6 @@ example : {name}\n{date}\n{wday} {time_short}\n{city} @ {country}\n{lat}\n{lon}"
 \n = new line
 example : {hsys} | {zod}\n{aynm}""",
     ),
-}
-# --- time constants ---
-# (solar) year lengths in days
-SOLAR_YEAR = {
-    "sid": (365.256363, "sidereal"),
-    "gre": (365.2425, "gregorian"),
-    "jul": (365.25, "julian"),
-    "trp": (365.24219, "tropical"),
-    "lun": (354.37, "lunar"),  # 12 * synodic lunar month
-}
-# lunar month lengths
-LUNAR_MONTH = {
-    "sid": (27.321661, "sidereal\t\tfixed star"),
-    "syn": (29.53059, "synodic\t\tnew moons"),
-    "trp": (27.321582, "tropical\t\t0 ari"),  # houck
-    "anm": (27.554551, "anomalistic\tperigee-apogee"),
-    "drc": (27.21222, "draconic\tlunar nodes"),
 }
 # !!! UNCOMMENT ANY AYANAMSA THAT YOU NEED !!!
 # uncomment > delete '# ', indent properly, and save file

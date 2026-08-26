@@ -18,7 +18,7 @@
 # canis major | corvus | lupus | canis minor | crater | orion | centaurus |
 # eridanus | piscis australis
 
-fixedstars = {
+FIXEDSTARS = {
     "custom": [
         ("alCMa", "sirius", "096 sirius"),  # 6/27
         # ("bePer", "algol", "01. algol"),  # 3/27

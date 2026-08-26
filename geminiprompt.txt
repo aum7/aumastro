@@ -27,7 +27,9 @@ emits a single data_calculated signal with the complete payload. < yes - for sin
 
 astrochart and rings rendering
 astrochart receives data_calculated and passes the unified astro_data straight to rings.
-rings renders inner mandatory rings for e1. < not really - astrochart sets up gtk containers & cairo canvas > sends to rings with required (received) dataset
-rings evaluates the active e2 keys in the payload to render outer optional rings.
+rings renders inner mandatory rings for e1. < actually - astrochart sets up gtk containers & cairo canvas > sends to rings with required (received) dataset for drawing
 
-move stars to signs ring, they currently be drawn in event ring, visually they be in signs
+rings evaluates the active e2 keys in the payload to render outer optional rings. < datamanager will only send outer rings dataset if datetime2 (e2) exists, else datamanager clears e2 from app
+
+also need move stars to signs ring, they currently be drawn in event ring, visually they be in signs
+

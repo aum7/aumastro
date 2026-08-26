@@ -21,7 +21,7 @@ class SidepaneManager:
 
     _update_main_title: Callable
 
-    CHANGE_TIME_BUTTONS: Dict[str, str] = {
+    CHANGE_TIME_BUTTONS: dict[str, str] = {
         "arrow_l": "move time backward\n(hk : arrow left)",
         "arrow_r": "move time forward\n(hk : arrow right)",
         "time_now": "time now (hk : n)\nset time now for selected event",
@@ -67,7 +67,7 @@ class SidepaneManager:
         # create & put collapse panels into box
         self.clp_change_time = self.setup_change_time()
         # 2 events : True/False = set expanded on/off on init
-        self.clp_event_one = setup_event(self, "e1", True)  # todo
+        self.clp_event_one = setup_event(self, "e1", True) 
         self.clp_event_two = setup_event(self, "e2", False)
         if self.app.selected_event == "e1":
             self.clp_event_one.add_title_css_class("label-event-selected")
@@ -125,7 +125,7 @@ recommended workflow if you use manual input :
     delete it & enter desired one
 
 this text can be changed in
-ui / sidepane / sidepane.py"""
+ui/sidepane/sidepane.py"""
         )
         # horizontal box for time navigation icons
         box_time_icons = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)

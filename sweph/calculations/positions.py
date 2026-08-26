@@ -5,7 +5,7 @@ from sweph.helpers import ok, err
 import swisseph as swe
 from ui.helpers import _object_name_to_code as objcode, _relative_speed
 from sweph.calculations.naksatras import calculate_naksatras
-from sweph.calculations.varga import get_varga_lon
+from sweph.calculations.transitvarga import get_varga_lon
 
 
 source = "positions"
@@ -13,7 +13,7 @@ route = ["terminal"]
 
 
 def calculate_positions(
-    jd_ut,
+    jd_ut=None,
     geo=(),
     objs=(),
     flag=0,
