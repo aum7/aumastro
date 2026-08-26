@@ -10,7 +10,10 @@ from .sidepane.sidepane import SidepaneManager
 from .sidepane.settings import update_chart_setting_checkbox
 from .uisetup import UISetup
 from .hotkeymanager import HotkeyManager
-from ui.helpers import _event_selection
+
+# moved to eventdata
+# from ui.helpers import _event_selection
+from .datamanager import event_selection
 from ui.mainpanes.tables import Tables
 from ui.mainpanes.chart.astrochart import AstroChart
 from ui.mainpanes.datagraph import DataGraph
@@ -109,7 +112,7 @@ class MainWindow(
         # toggle selected event
         self.hotkeys.register_hotkey(
             "ctrl+e",
-            lambda g, n, x, y: _event_selection(
+            lambda g, n, x, y: event_selection(
                 self,
                 g,
                 n,

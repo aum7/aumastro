@@ -346,9 +346,8 @@ class Rings:
             cr.set_line_width(2)
             cr.set_source_rgba(1, 1, 0.6, 0.7)
             cr.stroke()
-        # sign borders
+        # sign borders & objects
         self.draw_sign_borders(cr, ring)
-        # draw planets
         self.draw_objects(cr, ring)
 
     # inner rings in order from outer-most to central

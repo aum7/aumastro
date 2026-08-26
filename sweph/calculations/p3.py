@@ -2,12 +2,13 @@
 # ruff: noqa: E402
 # tertiary progression (day for a month - earth-moon) (houck)
 # 13.369 ratio
-import swisseph as swe  # type:ignore
-import gi
-
-gi.require_version("Gtk", "4.0")
-from gi.repository import Gtk  # type: ignore
+import logging as log
+from sweph.helpers import ok, err
+import swisseph as swe
 from ui.helpers import _object_name_to_code as objcode, _decimal_to_hms as dectohms
+
+source = "p3"
+route = ["terminal"]
 
 
 def tuple_to_iso(jd):
@@ -17,204 +18,91 @@ def tuple_to_iso(jd):
     return f"{y}-{m:02}-{d:02} {H:02}:{M:02}:{S:02}"
 
 
-def calculate_p3(event: str):
+def calculate_p3(jd_ut=None, geo=(), objs=(), flag=0, params=None):
     # calculate lunar returns before and after e2 (gives exact lunar month)
-    app = Gtk.Application.get_default()
-    notify = app.notify_manager
-    msg = f"event {event}\n"
-    # event 1 & 2 data is mandatory : natal / event & progression chart
-    # check against lumies since e1_sweph can have 0 objects (user-selectable)
-    if not app.e1_sweph.get("jd_ut") or not app.e2_sweph.get("jd_ut"):
-        notify.error(
-            "missing event 1 or 2 data : exiting ...",
-            source="p3",
-            route=[""],
-        )
-        return
-    # gather data
-    e1_sweph = getattr(app, "e1_sweph", None)
-    e2_sweph = getattr(app, "e2_sweph", None)
-    chart_sett = getattr(app, "chart_settings")
-    use_mean_node = chart_sett.get("mean node")
-    objs = getattr(app, "selected_objects_e2", None)
-    e1_pos = getattr(app, "e1_positions", None)
-    e2_pos = getattr(app, "e2_positions", None)
-    exact_lunar_month = chart_sett.get("exact lunar month", False)
-    e1_houses = getattr(app, "e1_houses", None)
-    # definitions to shush editor
-    e1_jd = 0.0
-    e2_jd = 0.0
-    e1_su = None
-    e2_mo = None
-    # age_years = 0.0
-    # age_months = 0.0
-    period = 0.0
-    e1_asc = 0.0
-    e1_mc = 0.0
-    e1_asc_arc = 0.0
-    e1_mc_arc = 0.0
-    # msg += f"e2objs : {objs}\n"
-    if e1_pos:
-        # get natal sun for p3 asc & mc arc calculation
-        e1_su = next(
-            (
-                v["lon"]
-                for v in e1_pos.values()
-                if isinstance(v, dict) and v.get("name") == "su"
-            )
-        )
-    if e2_pos:
-        # get natal moon for lunar returns
-        e2_mo = next(
-            (
-                v["lon"]
-                for v in e2_pos.values()
-                if isinstance(v, dict) and v.get("name") == "mo"
-            ),
-            None,
-        )
-    if e1_houses:
-        # get ascendant & midheaven
-        e1_asc = e1_houses[1][0]
-        e1_mc = e1_houses[1][1]
-    if e1_su:
-        if e1_mc:
-            e1_mc_arc = (e1_mc - e1_su) % 360
-        if e1_asc:
-            e1_asc_arc = (e1_asc - e1_su) % 360
-    # msg += (
-    # f"e1mo : {e1_mo} | e1su : {e1_su} | "
-    # f"e1ascarc : {e1_asc_arc} | e1mcarc : {e1_mc_arc}\n"
-    # )
-    if e1_sweph:
-        e1_jd = e1_sweph.get("jd_ut")
-    if e2_sweph:
-        e2_jd = e2_sweph.get("jd_ut")
-    # sel_year = getattr(app, "selected_year_period", (365.2425, "gregorian"))
-    # substitute with exact lunar return calculations : before & after e2 datetime
-    sel_month = getattr(app, "selected_month_period", (27.321661, "sidereal"))
-    # YEARLENGTH = sel_year[0]
-    MONTHLENGTH = sel_month[0]
-    if e1_jd and e2_jd:
+    if jd_ut is None:
+        return err("invalid jd_ut")
+    p = params or {}
+    e2_jd = p.get("e1_jd")
+    if e2_jd is None:
+        return err("missing e2_jd")
+    e1_jd = jd_ut
+    e1_su = p.get("e1_su")
+    e2_mo = p.get("e2_mo")
+    e1_asc = p.get("e1_asc", 0.0)
+    e1_mc = p.get("e1_mc", 0.0)
+    exact_lunar_month = p.get("exact_lunar_month", False)
+    month_length = p.get("month_length", 27.321661)
+    hsys = p.get("hsys", "P")
+    use_mean_node = p.get("use_mean_node", False)
+    if e1_su is None:
+        return err("missing natal sun position")
+    try:
         # period elapsed from birth in years : needs event 2 datetime
         period = e2_jd - e1_jd
-        # age_years = period / YEARLENGTH  # unused
-        # app.age_y = age_years
-        # how many lunar months
-        # age_months = period / MONTHLENGTH
-        # app.age_m = age_months # already set in p2 ?
-        # print(f"deltayears : {delta_years}")
-    if exact_lunar_month and e2_mo:
-        # print("p3 : using exact lunar month length")
-        # lunar returns : search x days range
-        lr_prev_jd = swe.mooncross_ut(e2_mo, e2_jd - 27.5, app.sweph_flag)
-        lr_next_jd = swe.mooncross_ut(e2_mo, e2_jd + 0.1, app.sweph_flag)
-        # lr_next_jd = swe.mooncross_ut(e2_mo, e2_jd, app.sweph_flag)
-        # calculate lunar month length
-        lr_month = lr_next_jd - lr_prev_jd
-        # print(f"calculatep3 : lrmonth={lr_month}")
-        # completed returns for mark pottenger / houck exact calculation
-        # last lunar return before e2 - birth jd
-        completed_returns = round((lr_prev_jd - e1_jd) / MONTHLENGTH)
-        cycle_fraction = (e2_jd - lr_prev_jd) / lr_month
-        total_lunar_months = completed_returns + cycle_fraction
-        # print(f"calculatep3 : totallunarmonths={total_lunar_months}")
-        p3_diff = total_lunar_months
-    else:
-        # print("p3 : using average lunar month length")
-        p3_diff = period / MONTHLENGTH
-    # main calculation of progress in days
-    p3_jd = e1_jd + p3_diff
-    p3_date = tuple_to_iso(p3_jd)
-    # msg += p3_date
-    p3_data = [{"p3jdut": p3_jd}, {"p3date": p3_date}]
-    try:
-        result, e = swe.calc_ut(p3_jd, swe.SUN, app.sweph_flag)  # su lon
-    except Exception as e:
-        raise ValueError(f"p3 : sun position calculation failed\n\terror :\n\t{e}")
-    p3_su = result[0]
-    # msg += f"p3su : {p3_su}\n"
-    # true asc & mc : experimental
-    hsys = app.selected_house_sys
-    if e1_sweph:
-        try:
-            _, ascmc = swe.houses_ex(
-                p3_jd,
-                e1_sweph["lat"],
-                e1_sweph["lon"],
-                hsys.encode("ascii"),
-                app.sweph_flag,
-            )
-        except swe.Error as e:
-            notify.error(
-                f"cross points calculation failed\n\tswe error\n\t{e}",
-                source="p3",
-                route=["terminal"],
-            )
-    p3_tasc = ascmc[0]  # type:ignore
-    p3_tmc = ascmc[1]  # type:ignore
-    p3_data.append({"name": "tas", "lon": p3_tasc})
-    p3_data.append({"name": "tmc", "lon": p3_tmc})
-    # todo asc by tables of houses ???
-    p3_asc = p3_su + e1_asc_arc
-    # progress mc by solar arc : p3-su + (Nsu - Nmc)
-    p3_mc = p3_su + e1_mc_arc
-    # insert ascendant & midheaven with p3 solarc
-    p3_data.append({"name": "asc", "lon": p3_asc})
-    p3_data.append({"name": "mc", "lon": p3_mc})
-    # find positions on p3 date
-    if objs:
+        if exact_lunar_month and e2_mo is not None:
+            # lunar returns : search x days range
+            lr_prev_jd = swe.mooncross_ut(e2_mo, e2_jd - 27.5, flag)
+            lr_next_jd = swe.mooncross_ut(e2_mo, e2_jd + 0.1, flag)
+            # calculate lunar month length
+            lr_month = lr_next_jd - lr_prev_jd
+            # completed returns for mark pottenger / houck exact calculation
+            # last lunar return before e2 - birth jd
+            completed_returns = round((lr_prev_jd - e1_jd) / month_length)
+            cycle_fraction = (e2_jd - lr_prev_jd) / lr_month
+            p3_diff = completed_returns + cycle_fraction
+        else:
+            # print("p3 : using average lunar month length")
+            p3_diff = period / month_length
+        # main calculation of progress in days
+        p3_jd = e1_jd + p3_diff
+        p3_date = tuple_to_iso(p3_jd)
+        # msg += p3_date
+        p3 = [
+            {"p3jdut": p3_jd},
+            {"p3date": p3_date},
+        ]
+        res, e = swe.calc_ut(p3_jd, swe.SUN, flag)  # su lon
+        p3_su = res[0]
+        if len(geo) >= 2:
+            lat, lon = geo[0], geo[1]
+            try:
+                _, ascmc = swe.houses_ex(
+                    p3_jd,
+                    lat,
+                    lon,
+                    hsys.encode("ascii"),
+                    flag,
+                )
+                p3.append({"name": "tas", "lon": ascmc[0]})
+                p3.append({"name": "tmc", "lon": ascmc[1]})
+            except swe.Error as e:
+                log.error(
+                    f"p3 sweph houses calculation error : {e}",
+                    extra={"source": source, "route": route},
+                )
+        e1_mc_arc = (e1_mc - e1_su) % 360.0 if e1_mc else 0.0
+        e1_asc_arc = (e1_asc - e1_su) % 360.0 if e1_asc else 0.0
+        p3_asc = (p3_su + e1_asc_arc) % 360.0
+        p3_mc = (p3_su + e1_mc_arc) % 360.0
+        p3.append({"name": "asc", "lon": p3_asc})
+        p3.append({"name": "mc", "lon": p3_mc})
         for obj in objs:
             code, name = objcode(obj, use_mean_node)
             if code is None:
                 continue
-            # calc_ut() returns array of 6 floats [0] + error string [1]:
-            # longitude, latitude, distance, lon speed, lat speed, dist speed
-            try:
-                result = swe.calc_ut(p3_jd, code, app.sweph_flag)
-                # print(f"positions with speeds & flag used : {result}")
-                data = result[0] if isinstance(result, tuple) else result
-                # print(f"name : {name} | lon : {data[0]}")
-                p3_data.append({
-                    "name": name,
-                    "lon": data[0],
-                    "lon speed": data[3],
-                })
-            except swe.Error as e:
-                notify.error(
-                    f"p3 positions calculation failed\n\tdata {p3_data[code]}\n\tswe error :\n\t{e}",
-                    source="p3",
-                    route=["terminal"],
-                )
-    for obj in p3_data:
-        name = obj.get("name")
-        if name in ("su", "mo", "asc", "mc", "p3jdut", "p3date"):
-            continue
-        if name:
-            speed = obj.get("lon speed")
-            msg += f"{name} : {speed}\n"
-    # msg += f"p3data : {p3_data}\n"
-    app.p3_pos = p3_data
-    # emit signal
-    app.signal_manager._emit("p3_changed", event)
-    notify.debug(
-        msg,
-        source="p3",
-        route=[""],
-    )
-
-
-def e2_cleared(event):
-    # todo clear all event 2 data
-    if event == "e2":
-        return "e2 was cleared : todo\n"
-
-
-def connect_signals_p3(signal_manager):
-    # update progressions when data used changes
-    signal_manager._connect("event_changed", calculate_p3)
-    signal_manager._connect("settings_changed", calculate_p3)
-    signal_manager._connect("e2_cleared", e2_cleared)
+            res = swe.calculate(p3_jd, code, flag)
+            data = res[0] if isinstance(res, tuple) else res
+            p3.append({
+                "name": name,
+                "lon": data[0],
+                "lon speed": data[3],
+            })
+        return ok(p3)
+    except swe.Error as e:
+        return err(e)
+    except Exception as e:
+        return err(e)
 
 
 # tertiary progression
@@ -237,7 +125,7 @@ def connect_signals_p3(signal_manager):
 # 2. an approximate correlation between current Dasa (or Bhukti) planet and a
 # p3 planetary station : often signal death if subsidiary factors confirm
 # 3. expect apx p3 angle & planet hits in exact 4th harmonic to current maraka
-# chart sensible to prenatal and p3 eclipses : any point in a chart ( planet or
+# chart sensible to prenatal and p3 eclipses : any point in a chart (planet or
 # angle) becomes extremely sensitized if hit directly by one of these eclipses
 # ancient astrologers considered eclipses evil : interrupted luminaries
 # 1 degree exact ; jyotisa rules for aspects : ma 4/8 ju 5/9 sa 3/10

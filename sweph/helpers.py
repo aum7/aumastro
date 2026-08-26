@@ -1,15 +1,10 @@
 # sweph/helpers.py
-import logging as log
+# simplify message reply to datamanager
+def ok(data=None):
+    # datamanager = caller expects below format
+    return {"status": "ok", "data": data, "error": None}
 
 
-none = None
-
-
-# simplify message sending
-def ok(data=none):
-    return {"status": "ok", "data": data, "error": none}
-
-
-def err(msg):
-    log.error(f"[sweph] {msg}")
-    return {"status": "error", "data": none, "error": str(msg)}
+def err(e):
+    # datamanager = caller expects below format
+    return {"status": "error", "data": None, "error": str(e)}

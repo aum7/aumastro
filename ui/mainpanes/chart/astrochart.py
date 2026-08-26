@@ -29,28 +29,31 @@ class AstroChart(Gtk.Box):
         # subscribe to signals
         signal = self.app.signal_manager
         signal._connect("data_calculated", self.data_calculated)
-        signal._connect("settings_changed", self.settings_changed)
+        # if settings change > data changes > datamanager recalculates & adjusts
+        # signal._connect("settings_changed", self.settings_changed)
         self.inspector = ChartInspector(self)
 
-    def data_calculated(self, event: str, data: dict):
-        if event not in ("e1", "e2"):
-            return
+    # todo datamanager takes below code & settings_changed
+    # on data received : ...queue_draw()
+    # def data_calculated(self, event: str, data: dict):
+    #     if event not in ("e1", "e2"):
+    #         return
 
-        if not data and event in self.events_data:
-            del self.events_data[event]
-        else:
-            self.events_data[event] = data
-        self.extra_info["hsys"] = getattr(self.app, "selected_house_sys_str", "")
-        self.extra_info["zod"] = (
-            "sid" if getattr(self.app, "is_sidereal", False) else "tro"
-        )
-        self.extra_info["aynm"] = getattr(self.app, "selected_ayan_str", "-") or "-"
-        self.drawing_area.queue_draw()
+    #     if not data and event in self.events_data:
+    #         del self.events_data[event]
+    #     else:
+    #         self.events_data[event] = data
+    #     self.extra_info["hsys"] = getattr(self.app, "selected_house_sys_str", "")
+    #     self.extra_info["zod"] = (
+    #         "sid" if getattr(self.app, "is_sidereal", False) else "tro"
+    #     )
+    #     self.extra_info["aynm"] = getattr(self.app, "selected_ayan_str", "-") or "-"
+    #     self.drawing_area.queue_draw()
 
-    def settings_changed(self, arg):
-        # grab data & redraw
-        self.chart_settings = getattr(self.app, "chart_settings", {})
-        self.drawing_area.queue_draw()
+    # def settings_changed(self, arg):
+    #     # grab data & redraw
+    #     self.chart_settings = getattr(self.app, "chart_settings", {})
+    #     self.drawing_area.queue_draw()
 
     def draw(self, area, cr, width, height):
         # get center and base radius
@@ -128,10 +131,12 @@ class AstroChart(Gtk.Box):
             "notify": self.notify,
             "movie_mode": getattr(self.app, "movie_mode", False),
         }
+        # repeated code : above = already sent via ctx
         self.max_radius = max_radius
         self.radius_dict = radius_dict
         rings = Rings(ctx, self.events_data)  # or we draw in rings.py
         rings.draw(cr)
+        # todo snap targets calculated in rings ???
         # self.snap_targets = getattr(rings, "snap_targets", [])
         # inspector toggled with hotkey
         # self.inspector.draw(cr, cx, cy, max_radius)

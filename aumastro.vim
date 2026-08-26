@@ -13,23 +13,22 @@ if &shortmess =~ 'A'
 else
   set shortmess=aoO
 endif
-badd +1 ~/dev/venaumastro/aumastro/sweph/helpers.py
-badd +19 ~/dev/venaumastro/aumastro/ui/datamanager.py
-badd +8 ~/dev/venaumastro/aumastro/sweph/calculations/lots.py
+badd +119 ~/dev/venaumastro/aumastro/ui/datamanager.py
+badd +16 ~/dev/venaumastro/aumastro/ui/mainwindow.py
 argglobal
 %argdel
-edit ~/dev/venaumastro/aumastro/sweph/calculations/lots.py
+edit ~/dev/venaumastro/aumastro/ui/mainwindow.py
 argglobal
 balt ~/dev/venaumastro/aumastro/ui/datamanager.py
 let s:cpo_save=&cpo
 set cpo&vim
 inoremap <buffer> <M-e> l<Cmd>lua require('nvim-autopairs.fastwrap').show()
 nnoremap <buffer> <silent> K <Cmd>lua vim.lsp.buf.hover()
+nnoremap <buffer> <silent> gD <Cmd>lua vim.lsp.buf.declaration()
+nnoremap <buffer> <silent> gd <Cmd>lua vim.lsp.buf.definition()
 nnoremap <buffer> <silent> gs <Cmd>lua vim.lsp.buf.signature_help()
 nnoremap <buffer> <silent> gI <Cmd>lua vim.lsp.buf.implementation()
 nnoremap <buffer> <silent> gr <Cmd>lua vim.lsp.buf.references()
-nnoremap <buffer> <silent> gD <Cmd>lua vim.lsp.buf.declaration()
-nnoremap <buffer> <silent> gd <Cmd>lua vim.lsp.buf.definition()
 let &cpo=s:cpo_save
 unlet s:cpo_save
 setlocal keymap=
@@ -132,7 +131,7 @@ setlocal spellfile=
 setlocal spelllang=en,cjk
 setlocal spelloptions=noplainbuffer
 setlocal statuscolumn=
-setlocal statusline=%#lualine_a_10_command#\ ����\ %#lualine_b_11_command#%#SLGitIcon#\ %*%#SLBranchName#\ angleruler\ %<%#lualine_c_diff_added_command#\ \ \ 10\ %#lualine_c_diff_modified_command#\ 32\ %#lualine_c_diff_removed_command#\ 7\ %#lualine_c_normal#%=%#lualine_x_diagnostics_hint_command#\ \ 3\ %#lualine_c_normal#%#lualine_c_normal#\ 󰌒\ 4\ %#lualine_x_filetype_DevIconPy_command#\ \ %#lualine_c_normal#python\ %#lualine_b_command#\ \ \ 5:1\ \ %#lualine_z_progress_command#\ %P/%L\ 
+setlocal statusline=%#lualine_a_8_command#\ ����\ %#lualine_b_9_command#%#SLGitIcon#\ %*%#SLBranchName#\ angleruler\ %<%#lualine_c_diff_added_command#\ \ \ 3\ %#lualine_c_diff_modified_command#\ 2\ %#lualine_c_normal#%=%#lualine_x_diagnostics_error_command#\ \ 1\ %#lualine_x_diagnostics_hint_command#\ 3\ %#lualine_c_normal#%#lualine_c_normal#\ 󰌒\ 4\ %#lualine_x_filetype_DevIconPy_command#\ \ %#lualine_c_normal#python\ %#lualine_b_command#\ \ 16:40\ %#lualine_z_progress_command#\ %P/%L\ 
 setlocal suffixesadd=.py
 setlocal noswapfile
 setlocal synmaxcol=3000
@@ -151,61 +150,27 @@ setlocal undolevels=-123456
 setlocal varsofttabstop=
 setlocal vartabstop=
 setlocal virtualedit=
-setlocal winbar=\ %#DevIconPy#%*\ %#Winbar#lots.py%*\ 
+setlocal winbar=\ %#DevIconPy#%*\ %#Winbar#mainwindow.py%*\ 
 setlocal winblend=0
 setlocal winhighlight=
 setlocal nowinfixheight
 setlocal nowinfixwidth
 setlocal wrap
 setlocal wrapmargin=0
-8
-normal! zo
-11
-normal! zo
-15
-normal! zo
-19
-normal! zo
-21
-normal! zo
-23
-normal! zo
-25
-normal! zo
-28
-normal! zo
-29
-normal! zo
 30
 normal! zo
-32
+33
 normal! zo
-34
+88
 normal! zo
-35
+114
 normal! zo
-36
-normal! zo
-38
-normal! zo
-41
-normal! zo
-42
-normal! zo
-45
-normal! zo
-47
-normal! zo
-49
-normal! zo
-53
-normal! zo
-let s:l = 5 - ((4 * winheight(0) + 17) / 34)
+let s:l = 16 - ((15 * winheight(0) + 17) / 34)
 if s:l < 1 | let s:l = 1 | endif
 keepjumps exe s:l
 normal! zt
-keepjumps 5
-normal! 0
+keepjumps 16
+normal! 040|
 tabnext 1
 if exists('s:wipebuf') && len(win_findbuf(s:wipebuf)) == 0 && getbufvar(s:wipebuf, '&buftype') isnot# 'terminal'
   silent exe 'bwipe ' . s:wipebuf

@@ -1,18 +1,17 @@
 # sweph/calculations/aspects.py
 # ruff: noqa: E402, E701
+# import logging as log
+from sweph.helpers import ok, err
 import math
-import gi
-
-gi.require_version("Gtk", "4.0")
-from gi.repository import Gtk  # type: ignore
-from typing import List
 from ui.fonts.glyphs import ASPECTS
 
+source = "aspects"
+route = ["terminal"]
 
-def angle_diff(a: float, b: float) -> float:
+
+def angle_diff(a, b):
     # shortest angle difference, range -180..+180
     diff = (b - a) % 360.0
-    # diff = (a - b) % 360.0 # for am2, also change line there
     if diff > 180.0:
         diff -= 360.0
     return diff
@@ -26,14 +25,15 @@ def normalize_deg(a):
 
 
 def is_applying(lon1, speed1, lon2, speed2, angle):
+    # is applying vs separating aspect
     diff = angle_diff(lon1, lon2)
     orb = diff - angle
     delta_speed = speed2 - speed1
     return orb * delta_speed < 0
 
 
-def nearest_major_aspect(angle: float, orb: float):
-    """get major aspects within defined orb"""
+def nearest_major_aspect(angle, orb):
+    # get major aspects within defined orb
     for aspect_angle, (glyph, aspect_name) in ASPECTS.items():
         diff = min(abs(angle - aspect_angle), abs(360 - abs(angle - aspect_angle)))
         if diff <= orb:
@@ -41,7 +41,7 @@ def nearest_major_aspect(angle: float, orb: float):
     return None
 
 
-def aspects_matrix(objs_map: list[str], pos_map: dict, orb: float):
+def aspects_matrix(objs_map, pos_map, orb):
     num = len(objs_map)
     matrix = []
     for i in range(num):
@@ -97,77 +97,42 @@ def aspects_matrix(objs_map: list[str], pos_map: dict, orb: float):
     return objs_map, matrix, speeds
 
 
-def calculate_aspects(event: str):
-    """calculate aspectarian for one or both events"""
-    app = Gtk.Application.get_default()
-    notify = app.notify_manager
-    msg = "event {event}\n"
-    # print flags
-    print_am = False
-    do_filter = False
-    use_varga_aspect = app.chart_settings.get("use varga aspect")
-    pos = {}
-    # event 1 data is mandatory
-    if not app.e1_sweph.get("jd_ut"):
-        notify.error(
-            "missing event one data : exiting ...",
-            source="aspects",
-            route=["terminal", "user"],
-        )
-        return
-    events: List[str] = [event] if event else ["e1", "e2"]
-    if "e2" in events and not app.e2_sweph.get("jd_ut"):
-        # skip e2 if no julian day 2 utc set = user not interested in e2
-        events.remove("e2")
-        msg += "e2 removed\n"
-    if event == "e1":
-        pos = getattr(app, "e1_positions", None)
-    elif event == "e2":
-        pos = getattr(app, "e2_positions", None)
+def calculate_aspects(jd_ut=None, geo=(), objs=(), flag=0, params=None):
+    # calculate aspectarian for one or both events
+    p = params or {}
+    pos = p.get("positions")
+    if not pos:
+        return err("missing positions data")
+    orb = p.get("orb", 1.5)
+    use_varga_aspect = p.get("use varga aspect", False)
     draw_order = ["mo", "me", "ve", "su", "ma", "ju", "sa", "ur", "ne", "pl", "ra"]
-    pos_map = {}
-    objs_map = []
-    if pos:
-        # get objects positions by name
-        pos_map = {v["name"]: v for k, v in pos.items() if isinstance(k, int)}
-        objs_map = [name for name in draw_order if name in pos_map]
-    msg = f"objsmap : {objs_map} | posmap : {pos_map}"
-    # msg += f"posmap : {pos_map}"
-    orb = 1.5
+    objs_map = [name for name in draw_order if name in pos]
+    if not objs_map:
+        return err("no matching objects found for aspects")
     if use_varga_aspect:
         varga_map = {}
-        for k, v in pos_map.items():
+        for k, v in pos.items():
             varga_map[k] = v.copy()
             varga_map[k]["lon"] = v.get("varga", v["lon"])
         obj_names, aspect_matrix, speeds = aspects_matrix(objs_map, varga_map, orb)
     else:
-        obj_names, aspect_matrix, speeds = aspects_matrix(objs_map, pos_map, orb)
-    aspects_data = {
+        obj_names, aspect_matrix, speeds = aspects_matrix(objs_map, pos, orb)
+    return ok({
         "obj names": obj_names,
         "aspects": aspect_matrix,
         "speeds": speeds,
-    }
-
-    if print_am:
-        print("--- am ---")
-        for row in aspect_matrix:
-            for cell in row:
-                if not do_filter or cell.get("major"):
-                    print(
-                        f"{cell['obj1']}->{cell['obj2']} | {cell['aspect']} | "
-                        f"applying={'a' if cell['applying'] else 's'} "
-                    )
-        print("--- am end ---")
-    # --- new code end
-    app.signal_manager._emit("aspects_changed", event, aspects_data)
-    notify.debug(
-        msg,
-        source="aspects",
-        route=[""],
-    )
+    })
 
 
-def connect_signals_aspects(signal_manager):
-    """update aspects when positions change"""
-    signal_manager._connect("positions_changed", calculate_aspects)
-    signal_manager._connect("settings_changed", calculate_aspects)
+# region terminal print
+#     if print_am:
+#         print("--- am ---")
+#         for row in aspect_matrix:
+#             for cell in row:
+#                 if not do_filter or cell.get("major"):
+#                     print(
+#                         f"{cell['obj1']}->{cell['obj2']} | {cell['aspect']} | "
+#                         f"applying={'a' if cell['applying'] else 's'} "
+#                     )
+#         print("--- am end ---")
+# endregion terminal print

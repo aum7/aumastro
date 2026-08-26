@@ -1,4 +1,4 @@
-# ui/sidepane/panelevents.py
+# ui/sidepane/events.py
 # ruff: noqa: E402
 import gi
 

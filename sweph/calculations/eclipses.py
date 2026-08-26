@@ -5,8 +5,12 @@ import swisseph as swe
 from sweph.helpers import ok, err
 
 
+source = "eclipses"
+route = ["terminal"]
+
+
 def format_eclipse_type(eclflag):
-    """convert eclipse flag to human-readable"""
+    # convert eclipse flag to human-readable
     # definitions
     ECL_CENTRAL = 1
     ECL_NONCENTRAL = 2
@@ -37,18 +41,18 @@ def format_eclipse_type(eclflag):
     return " - ".join(types) if types else f"unknown flag : {eclflag}"
 
 
-def find_solar_eclipse(jd_ut, flags, search="next"):
+def find_solar_eclipse(jd_ut, flag, search="prev"):
     backwards = search == "prev"
     try:
         # find time of any global eclipse
         any_ecl_type = 0  # any eclipse type
         ecl_type, result = swe.sol_eclipse_when_glob(
-            jd_ut, flags, any_ecl_type, backwards
+            jd_ut, flag, any_ecl_type, backwards
         )
         # time of eclipse maximum
         jd_max_ecl = result[0]
         # get sun on max eclipse julian day
-        su, _ = swe.calc_ut(jd_max_ecl, 0, flags)
+        su, _ = swe.calc_ut(jd_max_ecl, 0, flag)
         su_lon = su[0]
         return {
             "name": "sol",
@@ -58,22 +62,23 @@ def find_solar_eclipse(jd_ut, flags, search="next"):
         }
     except swe.Error as e:
         log.error(
-            f"solar eclipse error :\n\t{e}\nexiting ...",
+            f"solar eclipse error : {e}",
+            extra={"source": source, "route": route},
         )
         return None
 
 
-def find_lunar_eclipse(jd_ut, flags, search="prev"):
+def find_lunar_eclipse(jd_ut, flag, search="prev"):
     backwards = search == "prev"
     try:
         # find 1st global occurence of lunar eclipse
         find_type = 0  # any eclipse type
         # swe_lun_eclipse_when_loc
-        ecl_type, result = swe.lun_eclipse_when(jd_ut, flags, find_type, backwards)
+        ecl_type, result = swe.lun_eclipse_when(jd_ut, flag, find_type, backwards)
         # julian day of maximum eclipse
         jd_max_ecl = result[0]
         # get moon on max eclipse julian day
-        mo, _ = swe.calc_ut(jd_max_ecl, 1, flags)
+        mo, _ = swe.calc_ut(jd_max_ecl, 1, flag)
         return {
             "name": "lun",
             "jd": jd_max_ecl,
@@ -82,12 +87,13 @@ def find_lunar_eclipse(jd_ut, flags, search="prev"):
         }
     except swe.Error as e:
         log.error(
-            f"lunar eclipse error :\n\t{e}\nexiting ...",
+            f"lunar eclipse error : {e}",
+            extra={"source": source, "route": route},
         )
         return None
 
 
-def calculate_eclipses(jd_ut, geo=(), objs=(), flags=0, params=None):
+def calculate_eclipses(jd_ut, geo=(), objs=(), flag=0, params=None):
     """calculate (prenatal) solar & lunar eclipses"""
     if jd_ut is None:
         return err("invalid jd_ut")
@@ -95,11 +101,11 @@ def calculate_eclipses(jd_ut, geo=(), objs=(), flags=0, params=None):
     search = p.get("search", "prev")
     eclipses_data = []
     # get last solar eclipse before event
-    solar = find_solar_eclipse(jd_ut, flags, search=search)
+    solar = find_solar_eclipse(jd_ut, flag, search=search)
     if solar:
         eclipses_data.append(solar)
     # get last lunar eclipse
-    lunar = find_lunar_eclipse(jd_ut, flags, search=search)
+    lunar = find_lunar_eclipse(jd_ut, flag, search=search)
     if lunar:
         eclipses_data.append(lunar)
 

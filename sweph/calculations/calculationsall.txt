@@ -1,0 +1,1375 @@
+- move chart setting to datamanager
+- merge duplicated funcs if applicable
+--- aspects
+def angle_diff(a, b):
+    # shortest angle difference, range -180..+180
+    diff = (b - a) % 360.0
+    if diff > 180.0:
+        diff -= 360.0
+    return diff
+
+
+def normalize_deg(a):
+    # normalize to 0..360, allow tuple input
+    if isinstance(a, tuple):
+        a = a[0]
+    return a % 360.0
+
+
+def is_applying(lon1, speed1, lon2, speed2, angle):
+    # is applying vs separating aspect
+    diff = angle_diff(lon1, lon2)
+    orb = diff - angle
+    delta_speed = speed2 - speed1
+    return orb * delta_speed < 0
+
+
+def nearest_major_aspect(angle, orb):
+    # get major aspects within defined orb
+    for aspect_angle, (glyph, aspect_name) in ASPECTS.items():
+        diff = min(abs(angle - aspect_angle), abs(360 - abs(angle - aspect_angle)))
+        if diff <= orb:
+            return aspect_angle, glyph, aspect_name, diff
+    return None
+
+
+def aspects_matrix(objs_map, pos_map, orb):
+    num = len(objs_map)
+    matrix = []
+    for i in range(num):
+        row = []
+        obj1_name = objs_map[i]
+        obj1 = pos_map[obj1_name]
+        for j in range(num):
+            obj2_name = objs_map[j]
+            obj2 = pos_map[obj2_name]
+            if i == j:
+                # both obj are same planet : needed for matrix consistency only
+                row.append({
+                    "obj1": obj1_name,
+                    "obj2": obj2_name,
+                    "speed1": None,
+                    "angle": None,
+                    "major": False,
+                    "aspect": None,
+                    "aspect angle": None,
+                    "glyph": "",
+                    "orb": None,
+                    "applying": None,
+                })
+                continue
+            lon1, lon2 = obj1["lon"], obj2["lon"]
+            speed1, speed2 = obj1["lon speed"], obj2["lon speed"]
+            angle = angle_diff(lon1, lon2)
+            applying = None
+            asp_angle, glyph, asp_name, orb_actual = None, "", "", None
+            major = False
+            maj = nearest_major_aspect(abs(angle), orb)
+            if maj:
+                asp_angle, glyph, asp_name, orb_actual = maj
+                signed_asp_angle = math.copysign(asp_angle, angle)
+                applying = is_applying(lon1, speed1, lon2, speed2, signed_asp_angle)
+                major = True
+            row.append({
+                "obj1": obj1["name"],
+                "obj2": obj2["name"],
+                "angle": round(angle, 2),
+                "major": major,
+                "aspect": asp_name if major else None,
+                "aspect angle": asp_angle if major else None,
+                "glyph": glyph if major else "",
+                "orb": round(orb_actual, 1)
+                if orb_actual is not None and major
+                else None,
+                "applying": applying if major else None,
+            })
+        matrix.append(row)
+    # collect speed for retro character in panetables.py
+    speeds = {name: pos_map[name]["lon speed"] for name in objs_map}
+    return objs_map, matrix, speeds
+
+
+def calculate_aspects(jd_ut=None, geo=(), objs=(), flag=0, params=None):
+    # calculate aspectarian for one or both events
+    p = params or {}
+    pos = p.get("positions")
+    if not pos:
+        return err("missing positions data")
+    orb = p.get("orb", 1.5)
+    use_varga_aspect = p.get("use varga aspect", False)
+    draw_order = ["mo", "me", "ve", "su", "ma", "ju", "sa", "ur", "ne", "pl", "ra"]
+    objs_map = [name for name in draw_order if name in pos]
+    if not objs_map:
+        return err("no matching objects found for aspects")
+    if use_varga_aspect:
+        varga_map = {}
+        for k, v in pos.items():
+            varga_map[k] = v.copy()
+            varga_map[k]["lon"] = v.get("varga", v["lon"])
+        obj_names, aspect_matrix, speeds = aspects_matrix(objs_map, varga_map, orb)
+    else:
+        obj_names, aspect_matrix, speeds = aspects_matrix(objs_map, pos, orb)
+    return ok({
+        "obj names": obj_names,
+        "aspects": aspect_matrix,
+        "speeds": speeds,
+    })
+--- d1
+def get_speculum(jd_ut, code, lat, ramc, flag):
+    # gather data for primary direction calculations
+    try:
+        res = swe.calc_ut(jd_ut, code, flag | swe.FLG_EQUATORIAL)
+    except swe.Error as e:
+        log.error(
+            f"speculum error : {e}",
+            extra={"source": source, "route": route},
+        )
+        return None
+    pos = res[0] if isinstance(res, tuple) else res
+    ra = pos[0]
+    dec = pos[1]
+    tan_val = math.tan(math.radians(dec)) * math.tan(math.radians(lat))
+    tan_val = max(-1.0, min(1.0, tan_val))
+    ad = math.degrees(math.asin(tan_val))
+    dsa = 90.0 + ad
+    nsa = 90.0 - ad
+    md_mc = abs((ra - ramc + 180.0) % 360.0 - 180.0)
+    oa = (ra - ad) if lat >= 0 else (ra + ad)
+    oa = oa % 360.0
+    oa_asc = (ramc + 90.0) % 360.0
+    hd = (oa - oa_asc + 180.0) % 360.0 - 180.0
+    is_above = md_mc <= dsa
+    sa = dsa if is_above else nsa
+    md = md_mc if is_above else abs(((ra - (ramc + 180.0)) + 180.0) % 360.0 - 180.0)
+
+    return {
+        "ra": ra,
+        "dec": dec,
+        "ad": ad,
+        "dsa": dsa,
+        "nsa": nsa,
+        "oa": oa,
+        "md": md,
+        "hd": hd,
+        "sa": sa,
+        "is_above": is_above,
+    }
+
+def calculate_d1(jd_ut, geo=(), objs=(), flag=0, params=None):
+    # primary direction calculation
+    if jd_ut is None or len(geo) < 2:
+        return err("invalid jd_ut")
+    p = params or {}
+    lat, lon = geo[0], geo[1]
+    hsys = p.get("house_sys", "P")
+    if isinstance(hsys, str):
+        hsys = hsys.encode("ascii")
+    try:
+        houses = swe.houses(jd_ut, lat, lon, hsys)
+    except swe.Error as e:
+        return err(f"sweph houses error in d1 : {e}")
+    ramc = houses[1][2]
+    oa_asc = (ramc + 90.0) % 360.0
+    use_mean_node = p.get("use_mean_node", False)
+    directions = []
+    # angle directions
+    for obj in objs:
+        code, name = objcode(obj, use_mean_node)
+        if code is None:
+            continue
+        try:
+            spec = get_speculum(jd_ut, code, lat, ramc, flag)
+            if spec is not None:
+                # direction to mc
+                arc_mc = (spec["ra"] - ramc) % 360.0
+                directions.append({
+                    "sig": "mc",
+                    "prom": name,
+                    "type": "direct",
+                    "arc": round(arc_mc, 4),
+                    "age": round(arc_mc, 2),
+                })
+                # directions to asc
+                arc_asc = (spec["oa"] - oa_asc) % 360.0
+                directions.append({
+                    "sig": "asc",
+                    "prom": name,
+                    "type": "direct",
+                    "arc": round(arc_asc, 4),
+                    "age": round(arc_asc, 2),
+                })
+        except Exception as e:
+            log.error(
+                f"speculum error for {obj} : {e}",
+                extra={"source": source, "route": route},
+            )
+            continue
+    # body to body directions (proportional semi-arc)
+    speculums = {}
+    for obj in objs:
+        code, name = objcode(obj, use_mean_node)
+        if code is None:
+            continue
+        try:
+            speculums[code] = (name, get_speculum(jd_ut, code, lat, ramc, flag))
+        except Exception as e:
+            log.error(
+                f"speculums calculation error : {e}",
+                extra={"source": source, "route": route},
+            )
+            continue
+    codes = list(speculums.keys())
+    for i in range(len(codes)):
+        for j in range(i + 1, len(codes)):
+            c1, c2 = codes[i], codes[j]
+            name1, spec1 = speculums[c1]
+            name2, spec2 = speculums[c2]
+            if spec1["sa"] != 0:
+                pd1 = spec1["md"] / spec1["sa"]
+                pp2 = spec2["sa"] * pd1
+                arc = abs(pp2 - spec2["md"])
+                directions.append({
+                    "sig": name1,
+                    "prom": name2,
+                    "type": "direct",
+                    "arc": round(arc, 4),
+                    "age": round(arc, 2),
+                })
+    return ok(directions)
+
+
+if __name__ == "__main__":
+    # lisa presley test : 1968-02-01 17-01 ut, memphis 35.1495 n 90.049 w
+    jd_lmp = swe.julday(1968, 2, 1, 17.016667)
+    geo_lmp = (35.1495, -90.049, 0.0)
+    objs_test = ["su", "mo", "me", "ve", "ma", "ju", "sa"]
+    res = calculate_d1(jd_lmp, geo=geo_lmp, objs=objs_test, flag=swe.FLG_SWIEPH)
+    print("status :", res["status"])
+    print("directions count :", len(res["data"]))
+    for item in res["data"][:5]:
+        print(item)
+--- eclipses
+def format_eclipse_type(eclflag):
+    # convert eclipse flag to human-readable
+    # definitions
+    ECL_CENTRAL = 1
+    ECL_NONCENTRAL = 2
+    ECL_TOTAL = 4
+    ECL_ANNULAR = 8
+    ECL_PARTIAL = 16
+    ECL_ANNULAR_TOTAL = 32  # = ECL_HYBRID
+    ECL_PENUMBRAL = 64
+
+    types = []
+
+    if eclflag & ECL_CENTRAL:
+        types.append("central")
+    elif eclflag & ECL_NONCENTRAL:
+        types.append("non-central")
+    elif eclflag & ECL_TOTAL:
+        types.append("total")
+    elif eclflag & ECL_ANNULAR:
+        types.append("annular")
+    elif eclflag & ECL_PARTIAL:
+        types.append("partial")
+    elif eclflag & ECL_ANNULAR_TOTAL:
+        types.append("annular-total")
+    elif eclflag & ECL_PENUMBRAL:
+        types.append("penumbral")
+
+    # print(f"eclflag : {eclflag}")
+    return " - ".join(types) if types else f"unknown flag : {eclflag}"
+
+
+def find_solar_eclipse(jd_ut, flag, search="prev"):
+    backwards = search == "prev"
+    try:
+        # find time of any global eclipse
+        any_ecl_type = 0  # any eclipse type
+        ecl_type, result = swe.sol_eclipse_when_glob(
+            jd_ut, flag, any_ecl_type, backwards
+        )
+        # time of eclipse maximum
+        jd_max_ecl = result[0]
+        # get sun on max eclipse julian day
+        su, _ = swe.calc_ut(jd_max_ecl, 0, flag)
+        su_lon = su[0]
+        return {
+            "name": "sol",
+            "jd": jd_max_ecl,
+            "lon": su_lon,
+            "type": format_eclipse_type(ecl_type),
+        }
+    except swe.Error as e:
+        log.error(
+            f"solar eclipse error : {e}",
+            extra={"source": source, "route": route},
+        )
+        return None
+
+
+def find_lunar_eclipse(jd_ut, flag, search="prev"):
+    backwards = search == "prev"
+    try:
+        # find 1st global occurence of lunar eclipse
+        find_type = 0  # any eclipse type
+        # swe_lun_eclipse_when_loc
+        ecl_type, result = swe.lun_eclipse_when(jd_ut, flag, find_type, backwards)
+        # julian day of maximum eclipse
+        jd_max_ecl = result[0]
+        # get moon on max eclipse julian day
+        mo, _ = swe.calc_ut(jd_max_ecl, 1, flag)
+        return {
+            "name": "lun",
+            "jd": jd_max_ecl,
+            "lon": mo[0],
+            "type": format_eclipse_type(ecl_type),
+        }
+    except swe.Error as e:
+        log.error(
+            f"lunar eclipse error : {e}",
+            extra={"source": source, "route": route},
+        )
+        return None
+
+
+def calculate_eclipses(jd_ut, geo=(), objs=(), flag=0, params=None):
+    """calculate (prenatal) solar & lunar eclipses"""
+    if jd_ut is None:
+        return err("invalid jd_ut")
+    p = params or {}
+    search = p.get("search", "prev")
+    eclipses_data = []
+    # get last solar eclipse before event
+    solar = find_solar_eclipse(jd_ut, flag, search=search)
+    if solar:
+        eclipses_data.append(solar)
+    # get last lunar eclipse
+    lunar = find_lunar_eclipse(jd_ut, flag, search=search)
+    if lunar:
+        eclipses_data.append(lunar)
+
+    return ok(eclipses_data)
+--- hora
+# weekday number to name
+WEEKDAY = {
+    0: ("mon", "mo"),
+    1: ("tue", "ma"),
+    2: ("wed", "me"),
+    3: ("thu", "ju"),
+    4: ("fri", "ve"),
+    5: ("sat", "sa"),
+    6: ("sun", "su"),
+}
+# order of planetary hours
+ORDER = ["sa", "ju", "ma", "su", "ve", "me", "mo"]
+
+
+def get_current_hora(jd_ut, horas):
+    if not horas:
+        return None
+    for hora in horas:
+        if isinstance(hora, dict) and hora.get("start_jd", 0.0) <= jd_ut < hora.get(
+            "end_jd", 0.0
+        ):
+            return hora.get("lord")
+    return None
+
+
+def jd_to_local_time(jd, lat, lon, tz_name=None):
+    # from utc result to event datetime : timezone
+    utc_dt = datetime.strptime(jdtoiso(jd), "%Y-%m-%d %H:%M:%S")
+    utc_dt = utc_dt.replace(tzinfo=timezone.utc)
+    if tz_name is None:
+        tzf = TimezoneFinder()
+        tz_name = tzf.timezone_at(lat=lat, lng=lon)
+    if tz_name:
+        local_dt = utc_dt.astimezone(ZoneInfo(tz_name))
+    else:
+        local_dt = utc_dt
+    return local_dt
+
+
+def get_day_horas(jd_ut, lon, lat, alt=0.0, flag=0, tz_name=None):
+    # calculate list of all horas of the day
+    if tz_name is None:
+        tzf = TimezoneFinder()
+        tz_name = tzf.timezone_at(lat=lat, lng=lon)
+
+        def to_event_str(jd):
+            dt_event = jd_to_local_time(jd, lat, lon, tz_name)
+            return dt_event.strftime("%Y-%m-%d %H:%M:%S")
+
+    # take start of jd = midnight
+    Y, M, D, _ = swe.revjul(jd_ut)
+    jd_day = swe.julday(Y, M, D, 0.0)
+    # print(f"DBG : getdayhoras :\n\tjdut {jdtoiso(jd_ut)}\n\tjd0.0 {jdtoiso(jd_day)}")
+    try:
+        # calculate sunrise
+        _, data = swe.rise_trans(
+            jd_day,
+            # jd_ut,
+            swe.SUN,
+            swe.CALC_RISE,
+            (lon, lat, alt),
+            atpress=0.0,
+            attemp=0.0,
+            flag=flag,
+        )
+        srise = data[0]
+        # ensure proper sunrise
+        if srise > jd_ut:
+            # re-calculate sunrise
+            jd_day -= 1.0  # start 1 day back
+            _, data = swe.rise_trans(
+                jd_day,
+                # jd_ut,
+                swe.SUN,
+                swe.CALC_RISE,
+                (lon, lat, alt),
+                atpress=0.0,
+                attemp=0.0,
+                flag=flag,
+            )
+        srise = data[0]
+
+        # caluculate sunset
+        _, data = swe.rise_trans(
+            srise,
+            swe.SUN,
+            swe.CALC_SET,
+            (lon, lat, alt),
+            atpress=0.0,
+            attemp=0.0,
+            flag=flag,
+        )
+        sset = data[0]
+        _, data = swe.rise_trans(
+            # start next sunrise search 21.6 hours after calculated sunrise,
+            # in case day is getting longer : sunrise is +- 1 minute before
+            # srise + 0.9,
+            sset,
+            swe.SUN,
+            swe.CALC_RISE,
+            (lon, lat, alt),
+            atpress=0.0,
+            attemp=0.0,
+            flag=flag,
+        )
+        srise_next = data[0]
+    except swe.Error as e:
+        log.error(f"sunrise / set calculation failed : {e}")
+        return None
+    except Exception as e:
+        log.error(f"unexpected error in sunrise / set : {e}")
+        return None
+    # validate
+    sunrise = jdtoiso(srise)
+    sunset = jdtoiso(sset)
+    sunrise_next = jdtoiso(srise_next)
+    # print(
+    #     f"DBG : getdayhoras :\nsrise {sunrise} | sset {sunset} | srnext {sunrise_next}\n"
+    # )
+    if not (srise < sset < srise_next):
+        log.error(
+            f"invalid hora calculation :\n"
+            f"\tsunrise : {sunrise}\n"
+            f"\tsunset : {sunset}\n"
+            f"\tnext sunrise : {sunrise_next}\n",
+            extra={"source": source, "route": route},
+        )
+        return None
+    # weekday from sunrise
+    wday = swe.day_of_week(srise)
+    weekday, weekday_lord = WEEKDAY[wday]
+    lord_idx = ORDER.index(weekday_lord)
+    # compute daylight & night length
+    day_length = sset - srise
+    night_length = srise_next - sset
+    day_hour = day_length / 12.0
+    night_hour = night_length / 12.0
+    horas: list[dict] = [
+        {
+            "weekday": weekday,
+            "sunrise": sunrise,
+            "sunset": sunset,
+            "sunrise_next": sunrise_next,
+        }
+    ]
+    for i in range(24):
+        if i < 12:
+            start = srise + i * day_hour
+            end = start + day_hour
+        else:
+            start = sset + (i - 12) * night_hour
+            end = start + night_hour
+        lord = ORDER[(lord_idx + i) % 7]
+        horas.append({
+            "hour": i + 1,
+            "lord": lord,
+            "start_jd": start,
+            "end_jd": end,
+            "start_e": to_event_str(start),  # type:ignore
+            "end_e": to_event_str(end),  # type:ignore
+        })
+    # print(f"DBG : getdayhoras : horas :\n{horas}")
+    return horas
+
+
+def calculate_hora(jd_ut, geo=(), objs=(), flag=0, params=None):
+    # calculate list of horas & current hora from sunrise, sunset, next sunrise
+    if jd_ut is None or len(geo) < 2:
+        return err("invalid jd_ut or geo coordinates")
+    lon, lat = geo[0], geo[1]
+    alt = geo[2] if len(geo) > 2 else 0.0
+    horas = get_day_horas(jd_ut, lon, lat, alt, flag=flag)
+    if not horas:
+        return err("failed to calculate hora data")
+    curr_hora = get_current_hora(jd_ut, horas[1:])
+    return ok({"horas": horas, "current hora": curr_hora})
+--- houses
+def calculate_houses(jd_ut, geo=(), objs=(), flag=0, params=None):
+    """calculate houses & ascendant & midheaven + planet sign"""
+    # ascmc : 0 asc 1 mc 2 armc 3 vertex 4 equ. asc
+    # 5 co-asc koch 6 co-asc munkasey 7 polar asc munkasey
+    # event 1 data is manadatory
+    if jd_ut is None or len(geo) < 2:
+        return err("invalid jd_ut or geo coordinates")
+    lat, lon = geo[0], geo[1]
+    p = params or {}
+    hsys = p.get("house_sys", "P")
+    if isinstance(hsys, str):
+        hsys = hsys.encode("ascii")
+    try:
+        cusps, ascmc = swe.houses_ex(jd_ut, lat, lon, hsys, flag)
+        return ok({
+            "cusps": list(cusps),
+            "ascmc": list(ascmc),
+        })
+    except swe.Error as e:
+        log.error(
+            f"houses calculations failed : {e}",
+            extra={"source": source, "route": route},
+        )
+        return err(e)
+--- lots
+def calculate_lots(jd_ut, geo=(), objs=(), flag=0, params=None):
+    # calculate arabic parts aka hermetic lots for event
+    if jd_ut is None:
+        return err("invalid jd_ut")
+    # grab existing positions with lon
+    p = params or {}
+    lots_def = p.get("lots_def", p.get("lots", {}))
+    if not lots_def:
+        return err("missing lots definitions")
+    is_day = p.get("is_day", True)
+    calc_data = {}
+    if "calc_data" in p:
+        calc_data = p["calc_data"]
+    else:
+        ascmc = p.get("ascmc", [])
+        if len(ascmc) > 0:
+            calc_data["asc"] = ascmc[0]
+        if len(ascmc) > 1:
+            calc_data["mc"] = ascmc[1]
+        positions = p.get("positions", {})
+        if isinstance(positions, dict):
+            for k, v in positions.items():
+                if isinstance(v, dict) and "lon" in v:
+                    calc_data[k] = v["lon"]
+                elif isinstance(v, (int, float)):
+                    calc_data[k] = float(v)
+        elif isinstance(positions, list):
+            for item in positions:
+                if isinstance(item, dict) and "name" in item and "lon" in item:
+                    calc_data[item["name"]] = item["lon"]
+    if not calc_data:
+        return err("missing calculation data for lots")
+    lots = []
+    for lot, data in lots_def.items():
+        if not isinstance(data, dict):
+            continue
+        # night is not implemented - left to others to play with that
+        formula = data.get("day") if is_day else data.get("night", data.get("day"))
+        if not formula:
+            continue
+        try:
+            lot_lon = eval(formula, {"__builtins__": None}, data) % 360.0
+            lots.append({
+                "name": lot,
+                "lon": lot_lon,
+            })
+        except Exception as e:
+            log.error(
+                f"lot calculation error for {lot} : {e}",
+                extra={"source": source, "route": route},
+            )
+            continue
+
+    return ok(lots)
+--- naksatras
+def get_naksatra(lon, use_28_nak=False, first_nak=1):
+    # calculate naksatras of planets
+    if use_28_nak:
+        naksatras = MANSIONS28
+        span = 360 / 28
+        nak_num = 28
+    else:
+        naksatras = NAKSATRAS27
+        span = 360 / 27
+        nak_num = 27
+    raw_idx = int(lon // span)
+    idx = ((raw_idx + first_nak - 1) % nak_num) + 1
+    nak_data = naksatras.get(idx, ("", ""))
+    ruler = nak_data[0]
+    name = nak_data[1]
+
+    return {"idx": idx, "name": name, "ruler": ruler}
+
+
+def calculate_naksatras(jd_ut=None, geo=(), objs=(), flag=0, params=None):
+    p = params or {}
+    use_28_nak = p.get("use_28_nak", False)
+    first_nak = p.get("first_nak", 1)
+    lon = p.get("lon")
+    pos = p.get("positions")
+    if lon is not None:
+        return ok(get_naksatra(lon, use_28_nak, first_nak))
+    if isinstance(pos, dict):
+        res = {}
+        for k, v in pos.items():
+            p_lon = v.get("lon") if isinstance(v, dict) else v
+            if isinstance(p_lon, (int, float)):
+                res[k] = get_naksatra(p_lon, use_28_nak, first_nak)
+        return ok(res)
+    log.error(
+        "invalid positions : expected dict",
+        extra={"source": source, "route": route},
+    )
+
+    return err("positions must be a dict")
+--- p2
+def tuple_to_iso(jd):
+    date = swe.revjul(jd, swe.GREG_CAL)
+    y, m, d, h = date
+    H, M, S = dectohms(h)
+    return f"{y}-{m:02}-{d:02} {H:02}:{M:02}:{S:02}"
+
+
+def calculate_p2(jd_ut=None, geo=(), objs=(), flag=0, params=None):
+    # calculate lunar returns before and after e2 (gives exact lunar month)
+    # event 1 & 2 data is mandatory : natal / event & progression chart
+    if jd_ut is None:
+        return err("invalid jd_ut")
+    p = params or {}
+    e2_jd = p.get("e2_jd")
+    if e2_jd is None:
+        return err("missing e2_jd")
+    e1_jd = jd_ut
+    e1_su = p.get("e1_su")
+    e1_asc = p.get("e1_asc", 0.0)
+    e1_mc = p.get("e1_mc", 0.0)
+    hsys = p.get("hsys", "P")
+    use_mean_node = p.get("use_mean_node", False)
+    year_length = p.get("year_length", 365.2425)
+    if e1_su is None:
+        return err("missing natal sun position")
+    try:
+        age_years = (e2_jd - e1_jd) / year_length
+        prev_jd = e2_jd - year_length - 0.1  # todo 2.4 h ???
+        sr_prev_jd = swe.solcross_ut(e1_jd, prev_jd, flag)
+        sr_next_jd = swe.solcross_ut(e1_su, e2_jd, flag)
+        sr_year = sr_next_jd - sr_prev_jd
+        p2_diff = (age_years / sr_year) * sr_year
+        p2_jd = e1_jd + p2_diff
+        p2_date = tuple_to_iso(p2_jd)
+        p2 = [
+            {"p2jdut": p2_jd},
+            {"p2date": p2_date},
+        ]
+        res, _ = swe.calc_ut(p2_jd, swe.SUN, flag)
+        p2_su = res[0]
+        if len(geo) >= 2:
+            lat, lon = geo[0], geo[1]
+            try:
+                _, ascmc = swe.houses_ex(
+                    p2_jd,
+                    lat,
+                    lon,
+                    hsys.encode("ascii"),
+                    flag,
+                )
+                p2.append({"name": "tas", "lon": ascmc[0]})
+                p2.append({"name": "tmc", "lon": ascmc[1]})
+            except swe.Error as e:
+                log.error(
+                    f"p2 calculation error : {e}",
+                    extra={"source": source, "route": route},
+                )
+        e1_mc_arc = (e1_mc - e1_su) % 360.0 if e1_mc else 0.0
+        e1_asc_arc = (e1_asc - e1_su) % 360.0 if e1_asc else 0.0
+        p2_asc = (p2_su + e1_asc_arc) % 360.0
+        p2_mc = (p2_su + e1_mc_arc) % 360.0
+        p2.append({"name": "asc", "lon": p2_asc})
+        p2.append({"name": "mc", "lon": p2_mc})
+        for obj in objs:
+            code, name = objcode(obj, use_mean_node)
+            if code is None:
+                continue
+            res = swe.calc_ut(p2_jd, code, flag)
+            data = res[0] if isinstance(res, tuple) else res
+            p2.append({
+                "name": name,
+                "lon": data[0],
+                "lon speed": data[3],
+            })
+        return ok(p2)
+    except swe.Error as e:
+        return err(e)
+    except Exception as e:
+        return err(e)
+--- p3
+def tuple_to_iso(jd):
+    date = swe.revjul(jd, swe.GREG_CAL)
+    y, m, d, h = date
+    H, M, S = dectohms(h)
+    return f"{y}-{m:02}-{d:02} {H:02}:{M:02}:{S:02}"
+
+
+def calculate_p3(jd_ut=None, geo=(), objs=(), flag=0, params=None):
+    # calculate lunar returns before and after e2 (gives exact lunar month)
+    if jd_ut is None:
+        return err("invalid jd_ut")
+    p = params or {}
+    e2_jd = p.get("e1_jd")
+    if e2_jd is None:
+        return err("missing e2_jd")
+    e1_jd = jd_ut
+    e1_su = p.get("e1_su")
+    e2_mo = p.get("e2_mo")
+    e1_asc = p.get("e1_asc", 0.0)
+    e1_mc = p.get("e1_mc", 0.0)
+    exact_lunar_month = p.get("exact_lunar_month", False)
+    month_length = p.get("month_length", 27.321661)
+    hsys = p.get("hsys", "P")
+    use_mean_node = p.get("use_mean_node", False)
+    if e1_su is None:
+        return err("missing natal sun position")
+    try:
+        # period elapsed from birth in years : needs event 2 datetime
+        period = e2_jd - e1_jd
+        if exact_lunar_month and e2_mo is not None:
+            # lunar returns : search x days range
+            lr_prev_jd = swe.mooncross_ut(e2_mo, e2_jd - 27.5, flag)
+            lr_next_jd = swe.mooncross_ut(e2_mo, e2_jd + 0.1, flag)
+            # calculate lunar month length
+            lr_month = lr_next_jd - lr_prev_jd
+            # completed returns for mark pottenger / houck exact calculation
+            # last lunar return before e2 - birth jd
+            completed_returns = round((lr_prev_jd - e1_jd) / month_length)
+            cycle_fraction = (e2_jd - lr_prev_jd) / lr_month
+            p3_diff = completed_returns + cycle_fraction
+        else:
+            # print("p3 : using average lunar month length")
+            p3_diff = period / month_length
+        # main calculation of progress in days
+        p3_jd = e1_jd + p3_diff
+        p3_date = tuple_to_iso(p3_jd)
+        # msg += p3_date
+        p3 = [
+            {"p3jdut": p3_jd},
+            {"p3date": p3_date},
+        ]
+        res, e = swe.calc_ut(p3_jd, swe.SUN, flag)  # su lon
+        p3_su = res[0]
+        if len(geo) >= 2:
+            lat, lon = geo[0], geo[1]
+            try:
+                _, ascmc = swe.houses_ex(
+                    p3_jd,
+                    lat,
+                    lon,
+                    hsys.encode("ascii"),
+                    flag,
+                )
+                p3.append({"name": "tas", "lon": ascmc[0]})
+                p3.append({"name": "tmc", "lon": ascmc[1]})
+            except swe.Error as e:
+                log.error(
+                    f"p3 sweph houses calculation error : {e}",
+                    extra={"source": source, "route": route},
+                )
+        e1_mc_arc = (e1_mc - e1_su) % 360.0 if e1_mc else 0.0
+        e1_asc_arc = (e1_asc - e1_su) % 360.0 if e1_asc else 0.0
+        p3_asc = (p3_su + e1_asc_arc) % 360.0
+        p3_mc = (p3_su + e1_mc_arc) % 360.0
+        p3.append({"name": "asc", "lon": p3_asc})
+        p3.append({"name": "mc", "lon": p3_mc})
+        for obj in objs:
+            code, name = objcode(obj, use_mean_node)
+            if code is None:
+                continue
+            res = swe.calculate(p3_jd, code, flag)
+            data = res[0] if isinstance(res, tuple) else res
+            p3.append({
+                "name": name,
+                "lon": data[0],
+                "lon speed": data[3],
+            })
+        return ok(p3)
+    except swe.Error as e:
+        return err(e)
+    except Exception as e:
+        return err(e)
+--- p3m
+def tuple_to_iso(jd):
+    date = swe.revjul(jd, swe.GREG_CAL)
+    y, m, d, h = date
+    H, M, S = dectohms(h)
+    return f"{y}-{m:02}-{d:02} {H:02}:{M:02}:{S:02}"
+
+
+def calculate_p3m(jd_ut=None, geo=(), objs=(), flag=0, params=None):
+    # calculate lunar returns before and after e2 (gives exact lunar month)
+    # check against lumies since e1_sweph can have 0 objects (user-selectable)
+    if jd_ut is None:
+        return err("invalid jd_ut")
+
+    p = params or {}
+    e2_jd = p.get("e2_jd")
+    if e2_jd is None:
+        return err("missing e2_jd")
+    e1_jd = jd_ut
+    e1_su = p.get("e1_su")
+    e1_mo = p.get("e1_mo")
+    e1_asc = p.get("e1_asc", 0.0)
+    e1_mc = p.get("e1_mc", 0.0)
+    exact_lunar_month = p.get("exact_lunar_month", False)
+    year_length = p.get("year_length", 365.2425)
+    month_length = p.get("month_length", 27.321661)
+    hsys = p.get("hsys", "P")
+    use_mean_node = p.get("use_mean_node", False)
+    if e1_su is None:
+        return err("missing natal sun position")
+
+    try:
+        period = e2_jd - e1_jd
+        age_years = period(year_length)
+        if exact_lunar_month and e1_mo is not None:
+            # weird calculation logic - why e1_mo - why mo at all
+            full_years = int(age_years)
+            fract_year = age_years - full_years
+            search_jd = e1_jd + (full_years * month_length) - 15
+            # find prev lunar return after birth
+            lr_prev_jd = swe.mooncross_ut(e1_mo, search_jd, flag)
+            # find next lunar return
+            lr_next_jd = swe.mooncross_ut(e1_mo, lr_prev_jd + 0.1, flag)
+            cycle_length = lr_next_jd - lr_prev_jd
+            p3m_jd = lr_prev_jd + (fract_year * cycle_length)
+            p3m_diff = p3m_jd - e1_jd
+        else:
+            # print("p3m : using average lunar month length")
+            p3m_diff = age_years * month_length
+        p3m_jd = e1_jd + p3m_diff
+        p3m_date = tuple_to_iso(p3m_jd)
+        p3m = [{"p3mjdut": p3m_jd}, {"p3mdate": p3m_date}]
+        res, _ = swe.calc_ut(p3m_jd, swe.SUN, flag)  # su lon
+        # true asc mc positions on progressed day
+        p3m_su = res[0]
+        if len(geo) >= 2:
+            lat, lon = geo[0], geo[1]
+            try:
+                _, ascmc = swe.houses_ex(
+                    p3m_jd,
+                    lat,
+                    lon,
+                    hsys.encode("ascii"),
+                    flag,
+                )
+                p3m.append({"name": "tas", "lon": ascmc[0]})
+                p3m.append({"name": "tmc", "lon": ascmc[1]})
+            except swe.Error as e:
+                log.error(
+                    f"p3m true asc mc calculation error : {e}",
+                    extra={"source": source, "route": route},
+                )
+        e1_mc_arc = (e1_mc - e1_su) % 360.0 if e1_mc else 0.0
+        e1_asc_arc = (e1_asc - e1_su) % 360.0 if e1_asc else 0.0
+        p3m_asc = (p3m_su + e1_asc_arc) % 360.0
+        p3m_mc = (p3m_su + e1_mc_arc) % 360.0
+        p3m.append({"name": "asc", "lon": p3m_asc})
+        p3m.append({"name": "mc", "lon": p3m_mc})
+        for obj in objs:
+            code, name = objcode(obj, use_mean_node)
+            if code is None:
+                continue
+            res = swe.calc_ut(p3m_jd, code, flag)
+            data = res[0] if isinstance(res, tuple) else res
+            p3m.append({
+                "name": name,
+                "lon": data[0],
+                "lon speed": data[3],
+            })
+        return ok(p3m)
+    except swe.Error as e:
+        return err(e)
+    except Exception as e:
+        return err(e)
+--- positions
+def calculate_positions(
+    jd_ut,
+    geo=(),
+    objs=(),
+    flag=0,
+    params=None,
+):
+    if jd_ut is None:
+        return err("invalid jd_ut")
+
+    p = params or {}
+    use_mean_node = p.get("use_mean_node", False)
+    use_28_naks = p.get("use_28_naks", False)
+    first_nak = p.get("first_nak", 1)
+    division = p.get("division", 1)
+    # check if topocentric flag is set todo in datamanager
+    # if (flag & swe.FLG_TOPOCTR) and geo and len(geo) == 3:
+    #     swe.set_topo(geo[0], geo[1], geo[2])
+    positions = {}
+    for obj in objs:
+        code, name = objcode(obj, use_mean_node)
+        if code is None:
+            continue
+        try:
+            result = swe.calc_ut(jd_ut, code, flag)
+            pos = result[0] if isinstance(result, tuple) else result
+            naksatra = calculate_naksatras(pos[0], use_28_naks, first_nak)
+            varga = get_varga_lon(pos[0], division)
+            varga_nak = calculate_naksatras(varga, use_28_naks, first_nak)
+            positions[code] = {
+                "name": name,
+                "lon": pos[0],
+                "lat": pos[1],
+                "lon speed": pos[3],
+                "naksatra": naksatra,
+                "varga": varga,
+                "varga naksatra": varga_nak,
+                "speed relative": _relative_speed(code, pos[3]),
+            }
+        except swe.Error as e:
+            log.error(
+                f"positions calculations error : {e}",
+                extra={"source": source, "route": route},
+            )
+            continue
+    lumies = {}
+    for lumine in ("su", "mo"):
+        code, name = objcode(lumine, False)
+        if code is None:
+            continue
+        try:
+            result = swe.calc_ut(jd_ut, code, flag)
+            pos = result[0] if isinstance(result, tuple) else result
+            lumies[code] = {
+                "name": name,
+                "lon": pos[0],
+            }
+        except swe.Error as e:
+            log.error(
+                f"lumies calculation error : {e}",
+                extra={"source": source, "route": route},
+            )
+            continue
+
+    return ok({"positions": positions, "lumies": lumies})
+--- return lunar
+def calculate_lr(jd_ut=None, geo=(), objs=(), flag=0, params=None):
+    # calculate lunar return
+    # check against lumies since e1_sweph can have 0 objects (user-selectable)
+    # e1 positions for su / mo longitude crosscheck only
+    if jd_ut is None:
+        return err("invalid jd_ut")
+    p = params or {}
+    e2_jd = p.get("e2_jd")
+    if e2_jd is None:
+        return err("missing e2_jd")
+    e1_mo = p.get("e1_mo")
+    if e1_mo is None:
+        return err("missing natal moon position")
+    month_length = p.get("month_length", 27.321661)
+    hsys = p.get("hsys", "P")
+    use_mean_node = p.get("use_mean_node", False)
+    try:
+        lr_jd = swe.mooncross_ut(e1_mo, e2_jd - month_length, flag)
+        if lr_jd > e2_jd:
+            lr_jd = swe.mooncross_ut(e1_mo, e2_jd - month_length - 2.0, flag)
+        lun_ret = [{"lrjdut": lr_jd}]
+        for obj in objs:
+            code, name = objcode(obj, use_mean_node)
+            if code is None:
+                continue
+            res = swe.calc_ut(lr_jd, code, flag)
+            data = res[0] if isinstance(res, tuple) else res
+            lun_ret.append({
+                "name": name,
+                "lon": data[0],
+            })
+        if len(geo) >= 2:
+            lat, lon = geo[0], geo[1]
+            try:
+                cusps, ascmc = swe.houses_ex(
+                    lr_jd,
+                    lat,
+                    lon,
+                    hsys.encode("ascii"),
+                    flag,
+                )
+                lun_ret.append({"cusps": cusps})
+                lun_ret.append({"name": "asc", "lon": ascmc[0]})
+                lun_ret.append({"name": "mc", "lon": ascmc[1]})
+            except swe.Error as e:
+                log.error(
+                    f"lunar return houses calculation error : {e}",
+                    extra={"source": source, "route": route},
+                )
+        return ok(lun_ret)
+    except swe.Error as e:
+        return err(e)
+    except Exception as e:
+        return err(e)
+--- return solar
+def calculate_sr(jd_ut=None, geo=(), objs=(), flag=0, params=None):
+    # calculate solar return - solcross & mooncros always search forward
+    if jd_ut is None:
+        return err("invalid jd_ut")
+    p = params or {}
+    e2_jd = p.get("e2_jd")
+    if e2_jd is None:
+        return err("missing e2_jd")
+    e1_su = p.get("e1_su")
+    if e1_su is None:
+        return err("missing natal sun position")
+    e1_jd = jd_ut
+    year_length = p.get("year_length", 365.2425)
+    hsys = p.get("hsys", "P")
+    use_mean_node = p.get("use_mean_node", False)
+    try:
+        # period elapsed from birth in years : needs event 2 datetime
+        period = e2_jd - e1_jd
+        delta_years = period / year_length
+        # from period get fraction
+        age_fract = delta_years % 1.0
+        # convert to days
+        frac_days = age_fract * year_length
+        # remove fraction days from e2 julian day
+        frac_jd = e2_jd - frac_days
+        # remove 1 julian day to ensure crossing (fwd search)
+        start_jd = frac_jd - 1.0
+        # search solar crossing
+        sol_ret_jd = swe.solcross_ut(e1_su, start_jd, flag)
+        sol_ret = [{"srjdut": sol_ret_jd}]
+        # calculate positions on solar return
+        for obj in objs:
+            code, name = objcode(obj, use_mean_node)
+            if code is None:
+                continue
+            res = swe.calc_ut(sol_ret_jd, code, flag)
+            data = res[0] if isinstance(res, tuple) else res
+            sol_ret.append(
+                {"name": name, "lon": data[0]},
+            )
+        # calculate houses
+        if len(geo) >= 2:
+            lat, lon = geo[0], geo[1]
+            try:
+                cusps, ascmc = swe.houses_ex(
+                    sol_ret_jd,
+                    lat,
+                    lon,
+                    hsys.encode("ascii"),
+                    flag,
+                )
+                sol_ret.append({"cusps": cusps})
+                sol_ret.append({"name": "asc", "lon": ascmc[0]})
+                sol_ret.append({"name": "mc", "lon": ascmc[1]})
+            except swe.Error as e:
+                log.error(
+                    f"lunar return houses calculation error : {e}",
+                    extra={"source": source, "route": route},
+                )
+        return ok(sol_ret)
+    except swe.Error as e:
+        return err(e)
+    except Exception as e:
+        return err(e)
+--- stars
+def calculate_stars(jd_ut=None, geo=(), objs=(), flag=0, params=None):
+    # calculate positions of stars, listed in user/fixedstars.py
+    if jd_ut is None:
+        return err("invalid jd_ut")
+
+    p = params or {}
+    stars_list = p.get("stars_list")
+    if not stars_list:
+        return err("missing stars list")
+
+    stars = []
+    name, nomencl = None, None
+    for star in stars_list:
+        if isinstance(star, (tuple, list)):
+            nomencl = star[0]
+            name = star[1]
+        try:
+            # search using name
+            pos, _, _ = swe.fixstar2_ut(name, jd_ut, flag)
+            lon = pos[0]
+            stars.append({
+                "name": name,
+                "lon": lon,
+                "nomencl": nomencl,
+            })
+        except swe.Error as e:
+            log.error(
+                f"stars calculation error : {e}",
+                extra={"source": source, "route": route},
+            )
+        except Exception as e:
+            log.error(
+                f"stars calculation exception : {e}",
+                extra={"source": source, "route": route},
+            )
+    return ok(stars)
+--- stations
+def get_retro_phases(body, jd_ut, flag):
+    if body in (0, 1):
+        return " "
+    curr_speed = lon_speed(body, jd_ut, flag)
+    if body in (10, 11):
+        return "r" if curr_speed < 0 else " "
+    # used in positions.py & tables todo ???
+    treshold = STATION_SPEED.get(body, 0)
+    if abs(curr_speed) < treshold:
+        speed_next = lon_speed(body, jd_ut + 0.1, flag)
+        if speed_next < curr_speed:
+            return "sr"
+        return "sd"
+    return "r" if curr_speed < 0 else " "
+
+
+def lon_speed(body, jd_ut, flag):
+    # calculate longitude speed in degree/day
+    result = swe.calc_ut(jd_ut, body, flag)
+    return result[0][3]
+
+
+def refine_root(body, bracket, flag):
+    # fast exact direction change calculation
+    a, b = bracket
+    fa = lon_speed(body, a, flag)
+    fb = lon_speed(body, b, flag)
+    # bisect
+    for _ in range(10):
+        m = 0.5 * (a + b)
+        fm = lon_speed(body, m, flag)
+        if fa * fm <= 0:
+            b, fb = m, fm
+        else:
+            a, fa = m, fm
+
+    # secant
+    for _ in range(5):
+        denom = fb - fa
+        if denom == 0:
+            break
+        m = (a * fb - b * fa) / denom
+        if not (a < m < b):
+            break
+        fm = lon_speed(body, m, flag)
+        if fa * fm <= 0:
+            b, fb = m, fm
+        else:
+            a, fa = m, fm
+    return 0.5 * (a + b)
+
+
+def find_closest_station(body, start_jd, step, flag):
+    # iterative search for nearest station
+    eps = 1e-7
+    t = start_jd + (eps * (1 if step > 0 else -1))
+    s0 = lon_speed(body, t, flag)
+    max_iter = int(365.25 * 3 / abs(step))
+    for _ in range(max_iter):
+        t += step
+        s = lon_speed(body, t, flag)
+        # sign change = station
+        if s0 * s <= 0:
+            return refine_root(body, (t - step, t), flag)
+        s0 = s
+    return None
+
+
+def find_stations(body, jd, flag):
+    # find previous & next station, use cache to avoid recalculation
+    jd_rounded = round(jd * 86400) / 86400
+    cache_key = (body, flag)
+    curr_dir = get_retro_phases(body, jd, flag)
+    old_prev_s, old_next_s = last_stations.get(cache_key, (None, None))
+    # cached results first
+    # old_prev_s, old_next_s = last_stations.get(cache_key, (None, None))
+    # old_prev_s, old_next_s = last_stations.get(body, (None, None))
+    if old_prev_s and old_next_s:
+        if old_prev_s < jd_rounded < old_next_s:
+            return old_prev_s, old_next_s, curr_dir
+    retro_length = RETRO_DAYS.get(body, 180.0)
+    step = min(retro_length / 20.0, 0.5)
+    # find previous & next station
+    s_prev = find_closest_station(body, jd_rounded, -step, flag)
+    s_next = find_closest_station(body, jd_rounded, step, flag)
+    last_stations[cache_key] = (s_prev, s_next)
+
+    return s_prev, s_next, curr_dir
+
+
+def calculate_stations(jd_ut=None, geo=(), objs=(), flag=0, params=None):
+    # calculate retro stations & direction for event
+    if jd_ut is None:
+        return err("invalid jd_ut")
+    p = params or {}
+    use_mean_node = p.get("use_mean_node", False)
+    # if topocentric calculations
+    # if (flag & swe.FLG_TOPOCTR) and geo and len(geo) == 3:
+    #     swe.set_topo(geo[0], geo[1], geo[2])
+    stations = []
+    for obj in objs:
+        code, name = objcode(obj, use_mean_node)
+        if code not in STATION_SPEED:
+            log.error(
+                "code not in stations speed",
+                extra={"source": source, "route": route},
+            )
+            continue
+        # station previous & next + current direction
+        s_prev, s_next, direction = find_stations(code, jd_ut, flag)
+        if s_prev is None or s_next is None:
+            log.error(
+                "missing previous or next station",
+                extra={"source": source, "route": route},
+            )
+            continue
+        stations.append({
+            "name": name,
+            "prevstation": s_prev,
+            "nextstation": s_next,
+            "direction": direction,
+        })
+    return ok(stations)
+--- syzygy
+def calculate_syzygy(jd_ut=None, geo=(), objs=(), flag=0, params=None):
+    # calculate last prenatal full or new moon - syzygy
+    if jd_ut is None:
+        return err("invalid jd_ut")
+    p = params or {}
+    # get sun & moon longitudes
+    su = p.get("su")
+    mo = p.get("mo")
+    if su is None or mo is None:
+        return err("missing su or mo positions")
+    su_lon = su["lon"]
+    mo_lon = mo["lon"]
+    try:
+        # determine if syzygy was new or full moon
+        if su_lon is not None and mo_lon is not None:
+            diff = (mo_lon - su_lon) % 360.0
+            if diff < 180.0:
+                target_angle = 0.0
+                lun_type = "syznew"  # new moon
+                angle_since = diff
+            else:
+                target_angle = 180.0
+                lun_type = "syzful"  # full moon
+                angle_since = diff - 180.0
+            # initial estimate using average sun & moon daily speed
+            average_elongation_speed = 12.19075
+            days_since_syzygy = angle_since / average_elongation_speed
+            syzygy_jd = jd_ut - days_since_syzygy
+            # refine time with newton-raphson iteration
+            for _ in range(4):
+                sun_data, _ = swe.calc_ut(syzygy_jd, 0, flag)
+                moon_data, _ = swe.calc_ut(syzygy_jd, 1, flag)
+                current_separation = moon_data[0] - sun_data[0]
+                angular_error = (current_separation - target_angle) % 360.0
+                if angular_error > 180.0:
+                    angular_error -= 360.0
+                relative_speed = moon_data[3] - sun_data[3]
+                if relative_speed != 0:
+                    syzygy_jd -= angular_error / relative_speed
+            # moon longitude at exact syzygy day
+            final_moon_data, _ = swe.calc_ut(syzygy_jd, 1, flag)
+            syzygy_lon = final_moon_data[0]
+
+            return ok({
+                "name": "syzygy",
+                "lun_type": lun_type,
+                "lon": syzygy_lon,
+                "datetime": jdtoiso(syzygy_jd),
+            })
+    except Exception as e:
+        log.error(
+            f"syzygy calculation error : {e}",
+            extra={"source": source, "route": route},
+        )
+        return err(e)
+--- transitvarga
+def get_varga_lon(lon, division=9):
+    try:
+        division = int(division)
+    except (ValueError, TypeError):
+        return lon
+    # actual division requires integer > 1 todo not needed datamanager cares
+    # if division <= 1:
+    #     return lon
+    sign = int(lon // 30)
+    seg = int((lon % 30) // (30 / division))
+    varga_sign = (sign * division + seg) % 12
+    varga = (varga_sign * 30) + ((lon % (30 / division)) * division)
+    return varga
+
+
+def calculate_transit_varga(jd_ut=None, objs=(), flag=0, params=None):
+    # calculate planetary positions & houses & ascmc in varga chart
+    # jd_ut is not needed if we receive e2 pos division houses from datamanager
+    p = params or {}
+    division = p.get("division")  # harmonic chart[0]
+    if division and int(division) < 2:
+        return err("division too small - dont send me this")
+    pos = p.get("positions")  # they be e2 as this is transit
+    houses = p.get("houses")
+    if division is None or pos is None or houses is None:
+        return err("missing e2 / transit data")
+    cusps = houses.get("cusps")
+    ascmc = houses.get("ascmc")
+    log.debug(
+        f"types : pos={type(pos)} | cusps={type(cusps)} | ascmc={type(ascmc)}",
+        extra={"source": source, "route": route},
+    )
+    transit_varga = []
+    if isinstance(pos, dict):
+        for obj in pos:  # todo fix code
+            name = obj.get("name", "")
+            lon = obj.get("lon", 0.0)
+            varga = get_varga_lon(lon, division)
+            transit_varga.append({"name": name, "lon": varga})
+    # add asc & mc from houses / ascmc
+    if cusps and isinstance(cusps, (list, tuple)):  # todo or dict ???
+        for obj in cusps:  # todo fix code
+            name = obj.get("name", "")
+            lon = obj.get("lon", 0.0)
+            varga = get_varga_lon(lon, division)
+            transit_varga.append({"name": name, "lon": varga})
+    if ascmc and len(ascmc) >= 2:
+        asc = get_varga_lon(ascmc[0], division)
+        mc = get_varga_lon(ascmc[1], division)
+        transit_varga.append({"name": "asc", "lon": asc})
+        transit_varga.append({"name": "mc", "lon": mc})
+
+    return ok(transit_varga)
+--- vimsottari

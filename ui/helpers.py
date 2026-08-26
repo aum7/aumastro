@@ -78,67 +78,26 @@ def _buttons_from_dict(
     return buttons
 
 
-def _event_selection(manager, gesture, n_press, x, y, event_name):
-    """handle event selection"""
-    if manager.app.selected_event != event_name:
-        manager.app.selected_event = event_name
-        if manager.app.selected_event == "e1":
-            clp = manager.clp_event_one
-            other_clp = manager.clp_event_two
-        if manager.app.selected_event == "e2":
-            clp = manager.clp_event_two
-            other_clp = manager.clp_event_one
-        other_clp.remove_title_css_class("label-event-selected")  # type:ignore
-        clp.add_title_css_class("label-event-selected")  # type:ignore
-        change_time = getattr(manager.app, "selected_change_time_str", "1 D")
-        _update_main_title(manager, change_time)
-        manager.notify.debug(
-            f"{manager.app.selected_event} selected",
-            source="helpers",
-            route=[""],
-        )
-
-
-def _update_main_title(manager, change_time=None):
-    """show selected event, its datetime, & age in main titlebar"""
-    # age = (e2 - e1) / 2 : time elapsed from e1 to e2
-    event = manager.app.selected_event
-    # print(f"mainwindow.update_main_title : event : {event}")
-    age_y = getattr(manager.app, "age_y", 0.0)
-    age_m = getattr(manager.app, "age_m", 0.0)
-    sel_year = getattr(manager.app, "selected_year_period", (365.2425, "gregorian"))
-    year_length = sel_year[0]
-    dt = None
-    if event == "e1":
-        dt = manager.app.e1_chart.get("datetime")
-    elif event == "e2":
-        dt = manager.app.e2_chart.get("datetime")
-    title = "aumastro"
-    if event and dt:
-        title += f" | {event} : {dt}"
-    elif event:
-        title += f" | {event} : no date"
-    if age_y:
-        age_y = _decimal_to_ymd(age_y, year_length)
-        # remove spaces to save titlebar space
-        age_y = age_y.replace(" ", "")
-        title += f" | age : {age_y}"
-    if age_m:
-        title += f" - lun : {age_m:.2f}m"
-    if change_time:
-        title += f" | ct : {change_time}"
-    elif change_time is None:
-        title += " | ct : 1 D"
-    # todo remove e2 if e2 not active - do we have existing signal ?
-    e2_active = getattr(manager.app, "e2_active", False)
-    if e2_active:
-        pass  # remove e2
-    mainwindow = next(
-        (w for w in manager.app.get_windows() if isinstance(w, Gtk.ApplicationWindow)),
-        None,
-    )
-    if mainwindow is not None:
-        mainwindow.title_label.set_text(title)
+# moved to datamanager
+# def _event_selection(manager, gesture, n_press, x, y, event_name):
+#     """handle event selection"""
+#     if manager.app.selected_event != event_name:
+#         manager.app.selected_event = event_name
+#         if manager.app.selected_event == "e1":
+#             clp = manager.clp_event_one
+#             other_clp = manager.clp_event_two
+#         if manager.app.selected_event == "e2":
+#             clp = manager.clp_event_two
+#             other_clp = manager.clp_event_one
+#         other_clp.remove_title_css_class("label-event-selected")  # type:ignore
+#         clp.add_title_css_class("label-event-selected")  # type:ignore
+#         change_time = getattr(manager.app, "selected_change_time_str", "1 D")
+#         _update_main_title(manager, change_time)
+#         manager.notify.debug(
+#             f"{manager.app.selected_event} selected",
+#             source="helpers",
+#             route=[""],
+#         )
 
 
 def _decimal_to_ymd(period, year_length):

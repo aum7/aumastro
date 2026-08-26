@@ -6,14 +6,26 @@
 # places in natal chart, unfolding events in years to come; each degree
 # of such motion corresponds to approximately 1 year of life
 import logging as log
-import swisseph as swe
+from sweph.helpers import ok, err
 import math
+import swisseph as swe
 from ui.helpers import _object_name_to_code as objcode
-# from sweph.helpers import ok, err
 
 
-def get_speculum(jd_ut, code, lat, ramc, flags):
-    res = swe.calc_ut(jd_ut, code, flags | swe.FLG_EQUATORIAL)
+source = "d1 direction"
+route = ["terminal"]
+
+
+def get_speculum(jd_ut, code, lat, ramc, flag):
+    # gather data for primary direction calculations
+    try:
+        res = swe.calc_ut(jd_ut, code, flag | swe.FLG_EQUATORIAL)
+    except swe.Error as e:
+        log.error(
+            f"speculum error : {e}",
+            extra={"source": source, "route": route},
+        )
+        return None
     pos = res[0] if isinstance(res, tuple) else res
     ra = pos[0]
     dec = pos[1]
@@ -45,16 +57,19 @@ def get_speculum(jd_ut, code, lat, ramc, flags):
     }
 
 
-def calculate_d1(jd_ut, geo=(), objs=(), flags=0, params=None):
+def calculate_d1(jd_ut, geo=(), objs=(), flag=0, params=None):
     # primary direction calculation
-    # event 1 & 2 data is mandatory : natal / event & progression chart
-    if jd_ut is None:
-        return {"status": "error", "data": [], "error": "invalid jd_ut"}
+    if jd_ut is None or len(geo) < 2:
+        return err("invalid jd_ut")
     p = params or {}
-    lat = geo[0] if geo and len(geo) >= 1 else 0.0
-    lon = geo[1] if geo and len(geo) >= 2 else 0.0
-    hsys = p.get("house_sys", "P").encode("ascii")
-    houses = swe.houses(jd_ut, lat, lon, hsys)
+    lat, lon = geo[0], geo[1]
+    hsys = p.get("house_sys", "P")
+    if isinstance(hsys, str):
+        hsys = hsys.encode("ascii")
+    try:
+        houses = swe.houses(jd_ut, lat, lon, hsys)
+    except swe.Error as e:
+        return err(f"sweph houses error in d1 : {e}")
     ramc = houses[1][2]
     oa_asc = (ramc + 90.0) % 360.0
     use_mean_node = p.get("use_mean_node", False)
@@ -65,27 +80,31 @@ def calculate_d1(jd_ut, geo=(), objs=(), flags=0, params=None):
         if code is None:
             continue
         try:
-            spec = get_speculum(jd_ut, code, lat, ramc, flags)
-            # direction to mc
-            arc_mc = (spec["ra"] - ramc) % 360.0
-            directions.append({
-                "sig": "mc",
-                "prom": name,
-                "type": "direct",
-                "arc": round(arc_mc, 4),
-                "age": round(arc_mc, 2),
-            })
-            # directions to asc
-            arc_asc = (spec["oa"] - oa_asc) % 360.0
-            directions.append({
-                "sig": "asc",
-                "prom": name,
-                "type": "direct",
-                "arc": round(arc_asc, 4),
-                "age": round(arc_asc, 2),
-            })
-        except swe.Error as e:
-            log.error(f"swe error : {e}")
+            spec = get_speculum(jd_ut, code, lat, ramc, flag)
+            if spec is not None:
+                # direction to mc
+                arc_mc = (spec["ra"] - ramc) % 360.0
+                directions.append({
+                    "sig": "mc",
+                    "prom": name,
+                    "type": "direct",
+                    "arc": round(arc_mc, 4),
+                    "age": round(arc_mc, 2),
+                })
+                # directions to asc
+                arc_asc = (spec["oa"] - oa_asc) % 360.0
+                directions.append({
+                    "sig": "asc",
+                    "prom": name,
+                    "type": "direct",
+                    "arc": round(arc_asc, 4),
+                    "age": round(arc_asc, 2),
+                })
+        except Exception as e:
+            log.error(
+                f"speculum error for {obj} : {e}",
+                extra={"source": source, "route": route},
+            )
             continue
     # body to body directions (proportional semi-arc)
     speculums = {}
@@ -94,8 +113,12 @@ def calculate_d1(jd_ut, geo=(), objs=(), flags=0, params=None):
         if code is None:
             continue
         try:
-            speculums[code] = (name, get_speculum(jd_ut, code, lat, ramc, flags))
-        except swe.Error:
+            speculums[code] = (name, get_speculum(jd_ut, code, lat, ramc, flag))
+        except Exception as e:
+            log.error(
+                f"speculums calculation error : {e}",
+                extra={"source": source, "route": route},
+            )
             continue
     codes = list(speculums.keys())
     for i in range(len(codes)):
@@ -114,11 +137,7 @@ def calculate_d1(jd_ut, geo=(), objs=(), flags=0, params=None):
                     "arc": round(arc, 4),
                     "age": round(arc, 2),
                 })
-    return {
-        "status": "ok",
-        "data": directions,
-        "error": None,
-    }
+    return ok(directions)
 
 
 if __name__ == "__main__":
@@ -126,7 +145,7 @@ if __name__ == "__main__":
     jd_lmp = swe.julday(1968, 2, 1, 17.016667)
     geo_lmp = (35.1495, -90.049, 0.0)
     objs_test = ["su", "mo", "me", "ve", "ma", "ju", "sa"]
-    res = calculate_d1(jd_lmp, geo=geo_lmp, objs=objs_test, flags=swe.FLG_SWIEPH)
+    res = calculate_d1(jd_lmp, geo=geo_lmp, objs=objs_test, flag=swe.FLG_SWIEPH)
     print("status :", res["status"])
     print("directions count :", len(res["data"]))
     for item in res["data"][:5]:

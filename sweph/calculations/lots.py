@@ -4,11 +4,15 @@ import logging as log
 from sweph.helpers import ok, err
 
 
-def calculate_lots(jd_ut, geo=(), objs=(), flags=0, params=None):
-    """calculate arabic parts aka hermetic lots for event"""
-    # grab existing positions with lon & calculate positions of lots
+source = "lots"
+route = ["terminal"]
+
+
+def calculate_lots(jd_ut, geo=(), objs=(), flag=0, params=None):
+    # calculate arabic parts aka hermetic lots for event
     if jd_ut is None:
         return err("invalid jd_ut")
+    # grab existing positions with lon
     p = params or {}
     lots_def = p.get("lots_def", p.get("lots", {}))
     if not lots_def:
@@ -40,6 +44,7 @@ def calculate_lots(jd_ut, geo=(), objs=(), flags=0, params=None):
     for lot, data in lots_def.items():
         if not isinstance(data, dict):
             continue
+        # night is not implemented - left to others to play with that
         formula = data.get("day") if is_day else data.get("night", data.get("day"))
         if not formula:
             continue
@@ -50,6 +55,10 @@ def calculate_lots(jd_ut, geo=(), objs=(), flags=0, params=None):
                 "lon": lot_lon,
             })
         except Exception as e:
-            log.error(f"lot calculation error for {lot} : {e}")
+            log.error(
+                f"lot calculation error for {lot} : {e}",
+                extra={"source": source, "route": route},
+            )
             continue
+
     return ok(lots)

@@ -129,7 +129,6 @@ class NotifyManager:
         self._app = app or Gtk.Application.get_default()
         self.toast_overlay = None
         # setup logger
-        # self.logger = NotifyLogger(log_file)
         self._DEFAULT_TIMEOUTS = {
             NotifyLevel.INFO: 3,
             NotifyLevel.SUCCESS: 3,

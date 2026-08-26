@@ -1,0 +1,33 @@
+plan for unified dataflow and eventdata integration
+
+eventdata structure and validation
+
+remove global app injections like self.app.e1_sweph < consider done for sweph calculations files except vimsottari.py
+
+each eventdata instance stores its own self.chart and self.sweph dictionaries based on its id (e1 or e2). < yes but not at same time - see below
+
+processes input locally to compute julian day, utc offset, and hora. < yes, except no for hora - datamanager job, move them there, no hora calculations in eventdata.py
+
+if e2 lacks location or timezone, it falls back to merging missing fields from the app.event_one instance. < yes absolutely - underlying dataflow logic is good, code badly needs upgrade
+
+datamanager handoff
+upon validation, eventdata emits an event_changed signal carrying its id, chart, and sweph dictionaries. < yes - for single event, as per user input (never datatime1/2 change at same time) - event.id, & chart & sweph are sent to datamanager
+
+if e2 datetime is deleted, it resets its local dictionaries and emits e2_cleared.< e2_acive codeflow is not clear currently, but datamanager can also handle that, i believe : on e2_active == false : clear e2 data from mainwindow titlebar (currently eventdata.py - _update_main_title(self, change_time, [remove e2]) & clear / hide outer rings (also logic for that is planed to move to datamanager) & notify user (& terminal)
+
+datamanager acts as the sole listener for these data events. < yes
+
+datamanager centralized processing
+ingests e1 and e2 payloads. < yes - separately, per event 1 or 2
+processes mandatory e1 data like positions and houses. > pos (& houses with cusps + ascmc - they be better in signs ring as now they be drawn from event ring, but they be visibly in signs ring) & optionally : lots & prenatal eclipse & syzygy
+
+processes optional e2 data by checking chart settings to run requested transit, varga, or progression calculations. < no - let datamanager monitor e1 vs e2 & provide proper dataset needed
+compiles everything into a unified astro_data dictionary. < single event : name:id, astro:astro data
+emits a single data_calculated signal with the complete payload. < yes - for single event that changed
+
+astrochart and rings rendering
+astrochart receives data_calculated and passes the unified astro_data straight to rings.
+rings renders inner mandatory rings for e1. < not really - astrochart sets up gtk containers & cairo canvas > sends to rings with required (received) dataset
+rings evaluates the active e2 keys in the payload to render outer optional rings.
+
+move stars to signs ring, they currently be drawn in event ring, visually they be in signs

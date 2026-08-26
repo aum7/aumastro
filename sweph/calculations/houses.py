@@ -1,11 +1,14 @@
 # sweph/calculations/houses.py
 # ruff: noqa: E402, E701
 import logging as log
-import swisseph as swe  # type:ignore
 from sweph.helpers import ok, err
+import swisseph as swe  # type:ignore
+
+source = "houses"
+route = ["terminal"]
 
 
-def calculate_houses(jd_ut, geo=(), objs=(), flags=0, params=None):
+def calculate_houses(jd_ut, geo=(), objs=(), flag=0, params=None):
     """calculate houses & ascendant & midheaven + planet sign"""
     # ascmc : 0 asc 1 mc 2 armc 3 vertex 4 equ. asc
     # 5 co-asc koch 6 co-asc munkasey 7 polar asc munkasey
@@ -18,11 +21,14 @@ def calculate_houses(jd_ut, geo=(), objs=(), flags=0, params=None):
     if isinstance(hsys, str):
         hsys = hsys.encode("ascii")
     try:
-        cusps, ascmc = swe.houses_ex(jd_ut, lat, lon, hsys, flags)
+        cusps, ascmc = swe.houses_ex(jd_ut, lat, lon, hsys, flag)
         return ok({
             "cusps": list(cusps),
             "ascmc": list(ascmc),
         })
     except swe.Error as e:
-        log.error(f"houses calculations failed : {e}")
-        return err(str(e))
+        log.error(
+            f"houses calculations failed : {e}",
+            extra={"source": source, "route": route},
+        )
+        return err(e)
