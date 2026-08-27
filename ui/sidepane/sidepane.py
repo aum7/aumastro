@@ -1,16 +1,18 @@
 # ui/sidepane/sidepane.py
+# collapsible side panel with all user input widgets
 # ruff: noqa: E402
 import re
 import gi
 
 gi.require_version("Gtk", "4.0")
 from gi.repository import Gtk  # type: ignore
-from typing import Dict, Optional, Callable
+from typing import Optional
 from datetime import datetime, timezone
 from ui.collapsepanel import CollapsePanel
-from ui.helpers import _buttons_from_dict, _update_main_title
+
+# from ui.helpers import _buttons_from_dict
 from sweph.swetime import custom_iso_to_jd, jd_to_custom_iso
-from .events import setup_event
+from .eventsinput import setup_event
 from .search import setup_search
 from .settings import setup_settings
 from .cycle import setup_cycle
@@ -18,8 +20,6 @@ from .cycle import setup_cycle
 
 class SidepaneManager:
     """mixin class for managing the side pane"""
-
-    _update_main_title: Callable
 
     CHANGE_TIME_BUTTONS: dict[str, str] = {
         "arrow_l": "move time backward\n(hk : arrow left)",
@@ -48,10 +48,13 @@ class SidepaneManager:
         "0.000012": "1 s",  # 1/86400 of a day
     }
 
-    def __init__(self, app=None, *args, **kwargs):
-        self.app = app or Gtk.Application.get_default()
-        self.notify = self.app.notify_manager
-        self.signal = self.app.signal_manager
+    # def __init__(self, app=None, *args, **kwargs):
+    #     self.app = app or Gtk.Application.get_default()
+    #     self.notify = self.app.notify_manager
+    #     self.signal = self.app.signal_manager
+    # hook to dispatcher
+    # self.dispatcher = self.app.dispatcher
+    def init_sidepane(self):
         # initialize attributes
         self.margin_end = 7
         # intialize panels
@@ -61,13 +64,68 @@ class SidepaneManager:
         self.clp_settings = None
         # self.moon_period = self.app.chart_settings[LUNAR_MONTH]
 
+    def setup_event_binding(event_panel, event_data, signal_manager):
+        # wire gtk entry widgets to eventsdata methods
+        for entry, callback in [
+            (self.name, self.on_name_change),
+            (self.location, self.on_location_change),
+            (self.date_time, self.on_datetime_change),
+        ]:
+            entry.connect("activate", callback)
+            focus_controller = Gtk.EventControllerFocus.new()
+            entry.add_controller(focus_controller)
+            focus_controller.connect(
+                "leave", lambda ctrl, cb=callback: cb(ctrl.get_widget())
+            )
+
+        def on_datetime_change(data):
+            event_id, dt_str = data[0], str(data[1])
+            if event_data.id == event_id:
+                event_panel.entry_datetime.set_text(dt_str)
+                event_data.on_datetime_change(dt_str)
+
+        signaler.connect("datetime_captured", on_datetime_capture)
+
+    def buttons_from_dict(
+        self,
+        buttons_dict=None,
+        icons_path: Optional[str] = None,
+        icon_size: Optional[int] = None,
+    ):
+        # create buttons from dictionary with icon and tooltip
+        icons_folder = "ui/imgs/icons/hicolor/scalable/"
+        icons_path_cpl = icons_folder + icons_path if icons_path else icons_folder
+        buttons = []
+
+        if not buttons_dict:
+            return buttons
+        for button_name, tooltip in buttons_dict.items():
+            button = Gtk.Button()
+            button.add_css_class("button-change-time")
+            button.set_tooltip_text(tooltip)
+            icon = Gtk.Image.new_from_file(f"{icons_path_cpl}{button_name}.svg")
+            if icon_size:
+                icon.set_pixel_size(icon_size)
+            else:
+                icon.set_icon_size(Gtk.IconSize.NORMAL)
+            button.set_child(icon)
+
+            callback_name = f"obc_{button_name}"
+            if hasattr(self, callback_name):
+                button.connect("clicked", getattr(self, callback_name), button_name)
+            else:
+                button.connect("clicked", self.obc_default, button_name)
+
+            buttons.append(button)
+        return buttons
+
     def setup_side_pane(self):
         # main box for widgets
         box_sidepane = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
         # create & put collapse panels into box
         self.clp_change_time = self.setup_change_time()
         # 2 events : True/False = set expanded on/off on init
-        self.clp_event_one = setup_event(self, "e1", True) 
+        self.clp_event_one = setup_event(self, "e1", True)
         self.clp_event_two = setup_event(self, "e2", False)
         if self.app.selected_event == "e1":
             self.clp_event_one.add_title_css_class("label-event-selected")
@@ -104,7 +162,7 @@ class SidepaneManager:
         clp_change_time.set_margin_end(self.margin_end)
         clp_change_time.set_title_tooltip(
             """change time (ct) period for selected event (one or two)
-hotkeys :
+hotkeys (dedicated to app):
 arrow key up / down : select previous / next time period
 arrow key left / right : move time backward / forward
 
@@ -117,8 +175,7 @@ shift + ctrl + left / right arrow : select / deselect elements
 ctrl + a : select all text
 ctrl + c : copy selected text
 ctrl + v : paste text, ie from external source,
-    or event one / two
-(already proper format yuhuuu)
+           or event one / two
 backspace / delete : delete text / character
 recommended workflow if you use manual input :
     select either all text, or its element
@@ -131,8 +188,8 @@ ui/sidepane/sidepane.py"""
         box_time_icons = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
         box_time_icons.set_homogeneous(True)
         # create change time buttons
-        for button in _buttons_from_dict(
-            self, buttons_dict=self.CHANGE_TIME_BUTTONS, icons_path="changetime/"
+        for button in self.buttons_from_dict(
+            buttons_dict=self.CHANGE_TIME_BUTTONS, icons_path="changetime/"
         ):
             box_time_icons.append(button)
         # box for icons & dropdown for selecting time period
@@ -195,7 +252,7 @@ ui/sidepane/sidepane.py"""
             # store selected change time period for main title update
             self.app.selected_change_time_str = new_value
             # update main window title
-            _update_main_title(self, new_value)
+            update_titlebar(self, new_value)
 
     def change_event_time(self, change_delta):
         """adjust selected event time by julian day delta"""
@@ -265,7 +322,7 @@ ui/sidepane/sidepane.py"""
                 self.ddn_time_periods.get_selected()
             ]
             # update main window title
-            _update_main_title(self, change_time_period)
+            update_titlebar(self, change_time_period)
         except Exception as e:
             self.notify.error(
                 f"\n\t{datetime_name}\n\terror\n\t{e}\n",  # type:ignore
@@ -285,7 +342,7 @@ ui/sidepane/sidepane.py"""
             self.app.EVENT_TWO.is_hotkey_now = True
             self.app.EVENT_TWO.on_datetime_change(entry)
 
-    # button handlers
+    # on button click handlers
     def obc_default(self, widget, data):
         self.notify.debug(f"{data} clicked", source="sidepane", route=["terminal"])
 

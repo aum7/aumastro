@@ -5,11 +5,11 @@ import gi
 gi.require_version("Gtk", "4.0")
 from gi.repository import Gtk  # type: ignore
 from ui.collapsepanel import CollapsePanel
-from sweph.eventdata import EventData
+from sweph.eventsdata import EventData
 from sweph.eventlocation import EventLocation
-from ui.helpers import _event_selection
 from user.eventsdb.db import DEFAULT_E1  # default event 1 data
 from user.eventsdb.db import DEFAULT_E2
+# from managers.dispatcher import event_selection
 
 
 def setup_event(manager, event_name: str, expand: bool) -> CollapsePanel:
@@ -58,7 +58,7 @@ user / eventsdb / db.py (database)"""
     gesture = Gtk.GestureClick.new()
     gesture.connect(
         "pressed",
-        lambda g, n, x, y: _event_selection(manager, g, n, x, y, event_name),
+        lambda g, n, x, y: event_selection(manager, g, n, x, y, event_name),
     )
     panel.add_title_controller(gesture)
     # location nested panel

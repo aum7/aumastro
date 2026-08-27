@@ -9,13 +9,12 @@ from typing import Any, Optional
 from .sidepane.sidepane import SidepaneManager
 from .sidepane.settings import update_chart_setting_checkbox
 from .uisetup import UISetup
-from .hotkeymanager import HotkeyManager
+from managers.hotkeyer import Hotkeyer
 from ui.mainpanes.tables import Tables
 from ui.mainpanes.chart.astrochart import AstroChart
 from ui.mainpanes.datagraph import DataGraph
 
-# 1-time printscreen sequence generation
-from .data_printscreen import DataPrintscreen
+from .dataprintscreen import DataPrintscreen  # printscreen sequence generation
 
 
 class MainWindow(
@@ -26,11 +25,15 @@ class MainWindow(
     """main application window, combining ui : sidepane & main panes"""
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
-        """initialize the main window"""
-        Gtk.ApplicationWindow.__init__(self, *args, **kwargs)
-        SidepaneManager.__init__(self, app=self.get_application())
+        """initialize main window"""
+        super().__init__(*args, **kwargs)
+        # store application & core managers centrally
         self.app = self.get_application() or Gtk.Application.get_default()
         self.notify = self.app.notify_manager
+        self.signal = self.app.signal_manager
+        # Gtk.ApplicationWindow.__init__(self, *args, **kwargs)
+        # initialize sidepane ui elements - user input
+        self.init_sidepane()
         # custom info in window title bar
         self.headerbar = Gtk.HeaderBar()
         self.headerbar.set_show_title_buttons(True)
@@ -45,7 +48,7 @@ class MainWindow(
         # 4 resizable panes for charts & tables etc
         self.setup_main_panes()
         # hotkey manager
-        self.hotkeys = HotkeyManager(self)
+        self.hotkeys = Hotkeyer(self)
         self.setup_hotkeys()
         # intercept toggle pane button
         self.hotkeys.intercept_button_controller(self.btn_toggle_pane, "toggle_pane")
@@ -59,14 +62,15 @@ class MainWindow(
         self.data_seq = DataPrintscreen(self.app)
         # movie overlay mode : data graph over astro chart
         self.movie_overlay = None
-        self.overlay_mode = False
+        self.overlay_active = False
         self.orig_target = None
         self.orig_top_right_child = None  # datagraph to be overlaid
-        # initialize panes layout todo ko
+        # initialize panes layout todo doesnt work properly
         self.connect("realize", lambda w: self.panes_double())
         # todo : adjust panes for horizontal app orientation : currently vertical
         # orientation is only considered
         self.orientation = getattr(self, "orientation", "vertical")
+        self.signal.connect("update_titlebar", self.on_update_titlebar)
 
     def close_request(self, window) -> bool:
         # print("mainwindow : close_request called : quiting app ...")
@@ -111,9 +115,9 @@ class MainWindow(
         # toggle selected event
         self.hotkeys.register_hotkey(
             "ctrl+e",
-            lambda: self.app.datamanager.event_selection(
+            lambda: self.app.dispatcher.event_selection(
                 "e2"
-                if self.app.datamanager.app_settings.get("selected event") == "e1"
+                if self.app.dispatcher.app_settings.get("selected event") == "e1"
                 else "e2"
             ),
         )
@@ -204,11 +208,6 @@ class MainWindow(
             timeout=5,
             route=["user"],
         )
-
-    def on_data_seq(self):
-        # run printscreen for data sequence in datagraph
-        if hasattr(self, "data_seq"):
-            self.data_seq.run_seq()
 
     def toggle_chart_setting(self, setting):
         # hotkey callback to toggle chart setting & checkbox
@@ -304,7 +303,7 @@ class MainWindow(
         if not frm_top and not frm_target:
             return
         # enable overlay : create & re-parent widgets
-        if not self.overlay_mode:
+        if not self.overlay_active:
             # store original children so we can restore later
             self.orig_target = frm_target.get_child() if frm_target else None
             # print(f"origtarget : {self.orig_target}")
@@ -332,7 +331,7 @@ class MainWindow(
             # if target_frame:
             #     target_frame.set_child(overlay)
             self.movie_overlay = overlay
-            self.overlay_mode = True
+            self.overlay_active = True
             self.notify.info(
                 "movie mode enabled",
                 source="mainwindow",
@@ -340,7 +339,7 @@ class MainWindow(
             )
             return
         # disable overlay & restore original layout
-        if self.overlay_mode and self.movie_overlay:
+        if self.overlay_active and self.movie_overlay:
             overlay = self.movie_overlay
             # detach overlay from frame
             if frm_target and frm_target.get_child() is overlay:
@@ -374,7 +373,7 @@ class MainWindow(
             self.datagraph.set_opacity(1.0)
             # clean up
             self.movie_overlay = None
-            self.overlay_mode = False
+            self.overlay_active = False
             self.orig_target = None
             self.orig_top_right_child = None
             self.notify.info(
@@ -383,3 +382,13 @@ class MainWindow(
                 route=["terminal"],
             )
             # return
+
+    def on_update_titlebar(self, data: dict[str, Any]) -> None:
+        # todo careful here
+        if title := data.get("title"):
+            self.title_label.set_text(title)
+
+    def on_data_seq(self):
+        # run printscreen for data sequence in datagraph
+        if hasattr(self, "data_seq"):
+            self.data_seq.run_seq()

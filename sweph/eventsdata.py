@@ -1,5 +1,4 @@
-# sweph/eventdata.py
-# todo detect event 1 or 2 & only calculate once
+# sweph/eventsdata.py
 # ruff: noqa: E402
 # import re
 import logging as log
@@ -10,7 +9,7 @@ from gi.repository import Gtk  # type: ignore
 from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
 from timezonefinder import TimezoneFinder
-from ui.helpers import _decimal_to_dms  # , _update_main_title todo goes to datamanager
+from helpers import _decimal_to_dms
 from sweph.swetime import validate_datetime, naive_to_utc, utc_to_jd
 
 
@@ -42,27 +41,14 @@ class EventData:
         self.old_date_time = ""
         self.old_location = ""
         # logging helper
-        self.source = "eventdata"
-        self.route = ["terminal"]
-        self.notify_new = {"source": self.source, "route": self.route}
+        source = "eventdata"
+        route = ["terminal"]
+        self.notify = {"source": source, "route": route}
         # data from calculation
         self.chart = {}
         self.sweph = {}
-        # todo move to view or windows class that creates & manages widgets
-        # ui/sidepane/settings.py
-        for widget, callback in [
-            (self.name, self.on_name_change),
-            (self.location, self.on_location_change),
-            (self.date_time, self.on_datetime_change),
-        ]:
-            widget.connect("activate", callback)
-            focus_controller = Gtk.EventControllerFocus.new()
-            widget.add_controller(focus_controller)
-            focus_controller.connect(
-                "leave", lambda ctrl, cb=callback: cb(ctrl.get_widget())
-            )
         signal = self.app.signal_manager
-        signal._connect("datetime_captured", self.datetime_captured)
+        signal.connect("datetime_captured", self.datetime_captured)
         # todo end
 
     def datetime_captured(self, data):
@@ -83,7 +69,7 @@ class EventData:
             if self.id == "e1":
                 log.warning(
                     f"mandatory data missing : {location_name}",
-                    extra=self.notify_new,
+                    extra=self.notify,
                 )
                 # self.notify.warning(
                 #     f"\n\tmandatory data missing : {location_name}",
@@ -208,7 +194,7 @@ class EventData:
         except Exception as e:
             log.error(
                 f"location calculation failed : {e}",
-                extra=self.notify_new,
+                extra=self.notify,
             )
             # self.notify.error(
             #     f"{location_name} invalid format",
@@ -258,7 +244,7 @@ class EventData:
         # todo debug
         log.info(
             "location change processed",
-            extra=self.notify_new,
+            extra=self.notify,
         )
         return
 
@@ -269,7 +255,7 @@ class EventData:
         if self.id == "e1" and not name:
             log.error(
                 f"mandatory data missing : {name_name}",
-                extra=self.notify_new,
+                extra=self.notify,
             )
             # self.notify.warning(
             #     f"\n\tmandatory data missing : {name_name}",
@@ -282,7 +268,7 @@ class EventData:
         if len(name) > 30:
             log.warning(
                 f"{name_name} too long : max 30 characters",
-                extra=self.notify_new,
+                extra=self.notify,
             )
             # self.notify.warning(
             #     f"\n\t{name_name} too long : max 30 characters",
@@ -295,7 +281,7 @@ class EventData:
         self.chart["name"] = name
         log.info(
             "name change processed",
-            extra=self.notify_new,
+            extra=self.notify,
         )
         return
 
@@ -307,7 +293,7 @@ class EventData:
             if not self.sweph.get("lon"):
                 log.warning(
                     "event one : set location first",
-                    extra=self.notify_new,
+                    extra=self.notify,
                 )
                 # self.notify.warning(
                 #     "event one : set location first",
@@ -320,7 +306,7 @@ class EventData:
             if not e1 or e1.chart.get("location") is None:
                 log.warning(
                     "event two : event one must be set first",
-                    extra=self.notify_new,
+                    extra=self.notify,
                 )
                 # self.notify.warning(
                 #     "event two : event one must be set first",
@@ -368,7 +354,7 @@ class EventData:
             except Exception as e:
                 log.error(
                     f"{datetime_name} time now failed : {e}",
-                    extra=self.notify_new,
+                    extra=self.notify,
                 )
                 # self.notify.error(
                 #     f"{datetime_name} time now failed",
@@ -383,7 +369,7 @@ class EventData:
                 if self.id == "e1":
                     log.warning(
                         f"mandatory data missing for {datetime_name}",
-                        extra=self.notify_new,
+                        extra=self.notify,
                     )
                     # self.notify.warning(
                     #     f"\n\tmandatory data missing : {datetime_name}",
@@ -400,7 +386,7 @@ class EventData:
                         self.app.signal_manager._emit("e2_cleared", "e2")
                         log.info(
                             "event 2 cleared",
-                            extra=self.notify_new,
+                            extra=self.notify,
                         )
                         return
 
@@ -441,7 +427,7 @@ class EventData:
             except Exception as e:
                 log.error(
                     f"{datetime_name} error : {e}",
-                    extra=self.notify_new,
+                    extra=self.notify,
                 )
                 # self.notify.warning(
                 #     f"{datetime_name} error",
@@ -453,7 +439,7 @@ class EventData:
         if not jd_ut:
             log.error(
                 "jd_ut is missing",
-                extra=self.notify_new,
+                extra=self.notify,
             )
             return
 
@@ -491,7 +477,5 @@ class EventData:
 
         dataset = {"id": self.id, "chart": self.chart, "sweph": self.sweph}
         self.app.signal_manager._emit("event_changed", dataset)
-        # moved to datamanager
-        # change_time = getattr(self.app, "selected_change_time_str", "1 D")
-        # _update_main_title(self, change_time)
+
         return

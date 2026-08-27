@@ -5,7 +5,7 @@ import logging
 import cairo
 import ui.fonts.glyphs as glyphs
 from math import pi, radians, cos, sin
-from ui.helpers import _object_name_to_code as objcode, _relative_speed
+from helpers import _object_name_to_code as objcode, _relative_speed
 from sweph.constants import (
     TERMS,
     DRAW_ORDER_REVERSE,
@@ -47,7 +47,7 @@ class Rings:
     def __init__(self, ctx: dict, data: dict):
         self.logger = logging.getLogger("rings")
         self.ctx = ctx
-        # datamanager takes care of correct amount of data per ring
+        # dispatcher takes care of correct amount of data per ring
         self.data = data or {}
         self.cx = ctx.get("cx", 0.0)
         self.cy = ctx.get("cy", 0.0)

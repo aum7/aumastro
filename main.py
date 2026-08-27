@@ -50,7 +50,7 @@ class AumastroApp(Gtk.Application):
         self.notify_manager.toast_overlay = toast_overlay
         # notification : code specific to this file
         self.notify_manager.notify(
-            "press [h] for help | [esc] to discard this message",
+            "press [ctrl+h] for help | [esc] to discard this message",
             source="olo",
             timeout=5,
         )

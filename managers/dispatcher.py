@@ -1,9 +1,9 @@
-# ui/datamanager.py
+# managers/dispatcher.py
 # gather event 1 & 2 data, calculate astro data, serve to interested parties
 # ruff: noqa: E402
 import logging as log
 
-from ui.helpers import _decimal_to_ymd  # _update_main_title
+from helpers import _decimal_to_ymd  # _update_main_title
 from sweph.calculations.positions import calculate_positions
 from sweph.calculations.houses import calculate_houses
 from sweph.calculations.vimsottari import calculate_vimsottari
@@ -40,7 +40,7 @@ from user.settings import (
 )
 
 
-class DataManager:
+class Dispatcher:
     def __init__(self, app):
         self.log = log.getLogger(__name__)
         self.app = app
@@ -59,15 +59,15 @@ class DataManager:
         }
         self.e2_active = False
         # messages sent from where & to which recipients
-        self.source = "datamanager"
-        self.route = ["terminal"]
+        source = "datamanager"
+        route = ["terminal"]
         # logging
-        self.notify_new = {"source": self.source, "route": self.route}
+        self.notify = {"source": source, "route": route}
         # signals
-        self.signal._connect("event_changed", self.on_event_change)
-        self.signal._connect("e2_cleared", self.on_e2_clear)
-        self.signal._connect("chart_settings_changed", self.on_chart_settings_change)
-        self.signal._connect("app_settings_changed", self.on_app_settings_change)
+        self.signal.connect("event_changed", self.on_event_change)
+        self.signal.connect("e2_cleared", self.on_e2_clear)
+        self.signal.connect("chart_settings_changed", self.on_chart_settings_change)
+        self.signal.connect("app_settings_changed", self.on_app_settings_change)
 
     # check if topocentric flag is set
     # if (flag & swe.FLG_TOPOCTR) and geo and len(geo) == 3:
@@ -112,7 +112,7 @@ class DataManager:
             f"e1 unpacked :\npos : {len(self.astro_data['e1 pos'])}"
             f"\nlots : {len(self.astro_data['lots'])}"
             f"\nstars : {len(self.astro_data['stars'])}",
-            extra=self.notify_new,
+            extra=self.notify,
         )
 
     def on_chart_settings_change(self, settings):
@@ -138,7 +138,7 @@ class DataManager:
                 log.debug(
                     "recalculate : received eid='e2' but e2_active is false "
                     "> investigate",
-                    extra=self.notify_new,
+                    extra=self.notify,
                 )
                 continue
             sweph = self.astro_data.get(eid, {}).get("sweph", {})
@@ -149,7 +149,7 @@ class DataManager:
             # if not e1_sweph.get("jd_ut") or not e1_astro.get("jd_ut"):
             #     log.error(
             #         "recalculation failed : missing jd_ut for e1 (sweph or astro)",
-            #         extra=self.notify_new,
+            #         extra=self.notify,
             #     )
             jdut = sweph["jd_ut"]
             lat = sweph["lat"]
@@ -213,8 +213,8 @@ class DataManager:
             title += f" | ct : {change_time}"
         elif change_time is None:
             title += " | ct : 1 D"
-            # emit signal & subscribe in mainwindow ???
-        self.signal._emit(
+            # emit signal & subscribe in mainwindow
+        self.signal.emit(
             "update_titlebar", {"title": title, "e2_active": self.e2_active}
         )
 
@@ -227,5 +227,5 @@ class DataManager:
             self.update_titlebar()
             self.log.debug(
                 f"{event_name} selected",
-                extra=self.notify_new,
+                extra=self.notify,
             )

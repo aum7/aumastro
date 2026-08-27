@@ -1,3 +1,4 @@
+# managers/notifier.py
 # ruff: noqa: E402
 # import os
 import logging
@@ -122,7 +123,7 @@ class GtkNotificationHandler(logging.Handler):
             self.handleError(record)
 
 
-class NotifyManager:
+class Notifier:
     """notification manager with level-specific toasts"""
 
     def __init__(self, app=None, log_file=None):

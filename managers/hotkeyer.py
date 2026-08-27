@@ -1,4 +1,4 @@
-# hotkeymanager.py
+# managers/hotkeyer.py
 # ruff: noqa: E402
 import inspect
 import gi
@@ -9,7 +9,7 @@ from gi.repository import Gtk, Gdk  # type: ignore
 from typing import Dict, Callable
 
 
-class HotkeyManager:
+class Hotkeyer:
     """global hotkeys manager for keyboard + mouse combinations"""
 
     action_func: Callable

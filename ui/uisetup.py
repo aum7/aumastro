@@ -54,9 +54,7 @@ class UISetup:
     def setup_main_panes(self):
         """setup main panes for charts & tables etc"""
         self.setup_menu_button()
-        # self.setup_labels()
         self.setup_menu_overlay()
-        # self.setup_overlays()
         self.setup_frames()
         self.setup_paned_widgets()
         self.setup_grid()
@@ -91,11 +89,11 @@ class UISetup:
         self.btn_toggle_pane.set_halign(Gtk.Align.START)
         self.btn_toggle_pane.set_valign(Gtk.Align.START)
         self.btn_toggle_pane.set_tooltip_text(
-            """toggle side pane (hk : s)
-[shift+click] : single pane (hk : shift+1)
-[shift+double-click] : double panes (hk : shift+2)
-[shift+triple-click] : triple panes (hk : shift+3)
-[shift+quadruple-click] : all panes (hk : shift+4)"""
+            """toggle side pane (hk : ctrl+s)
+[shift+1-click] : single pane (hk : shift+1)
+[shift+2-click] : double panes (hk : shift+2)
+[shift+3-click] : triple panes (hk : shift+3)
+[shift+4-click] : all panes (hk : shift+4)"""
         )
         self.btn_toggle_pane.connect("clicked", self.on_toggle_sidepane)
 
@@ -164,8 +162,8 @@ class UISetup:
         self.ovl_menu.add_overlay(self.btn_toggle_pane)
 
     def setup_grid(self):
+        # sidepane & overlay / 4 panes
         self.grid = Gtk.Grid()
-        # todo
         self.grid.add_css_class("panes")
         self.grid.attach(self.rvl_side_pane, 0, 0, 1, 1)
         self.grid.attach(self.ovl_menu, 1, 0, 1, 1)

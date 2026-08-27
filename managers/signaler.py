@@ -1,14 +1,15 @@
-# ui/signalmanager.py
+# managers/signaler.py
 # ruff: noqa: E402
 import logging as log
 
-source = "signalmanager"
+source = "signaler"
 route = ["terminal"]
 routing = {"source": source, "route": route}
 
 
-class SignalManager:
-    def __init__(self):
+class Signaler:
+    def __init__(self, app=None):
+        self.app = app
         # store handlers
         self.handlers = {}
         # log & notify
