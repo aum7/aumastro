@@ -13,23 +13,24 @@ if &shortmess =~ 'A'
 else
   set shortmess=aoO
 endif
-badd +11 ~/dev/venaumastro/aumastro/ui/sidepane/sidepanesettings.py
-badd +105 ui/sidepane/sidepane.py
-badd +99 ~/dev/venaumastro/aumastro/ui/sidepane/sidepanehelpers.py
+badd +43 ~/dev/venaumastro/aumastro/ui/sidepane/sidepanesettings.py
+badd +24 ui/sidepane/sidepane.py
+badd +63 ~/dev/venaumastro/aumastro/managers/dispatcher.py
+badd +49 ~/dev/venaumastro/aumastro/user/usersettings.py
 argglobal
 %argdel
 edit ~/dev/venaumastro/aumastro/ui/sidepane/sidepanesettings.py
 argglobal
-balt ~/dev/venaumastro/aumastro/ui/sidepane/sidepanehelpers.py
+balt ui/sidepane/sidepane.py
 let s:cpo_save=&cpo
 set cpo&vim
 inoremap <buffer> <M-e> l<Cmd>lua require('nvim-autopairs.fastwrap').show()
 nnoremap <buffer> <silent> K <Cmd>lua vim.lsp.buf.hover()
-nnoremap <buffer> <silent> gI <Cmd>lua vim.lsp.buf.implementation()
-nnoremap <buffer> <silent> gD <Cmd>lua vim.lsp.buf.declaration()
-nnoremap <buffer> <silent> gd <Cmd>lua vim.lsp.buf.definition()
-nnoremap <buffer> <silent> gs <Cmd>lua vim.lsp.buf.signature_help()
 nnoremap <buffer> <silent> gr <Cmd>lua vim.lsp.buf.references()
+nnoremap <buffer> <silent> gs <Cmd>lua vim.lsp.buf.signature_help()
+nnoremap <buffer> <silent> gd <Cmd>lua vim.lsp.buf.definition()
+nnoremap <buffer> <silent> gD <Cmd>lua vim.lsp.buf.declaration()
+nnoremap <buffer> <silent> gI <Cmd>lua vim.lsp.buf.implementation()
 let &cpo=s:cpo_save
 unlet s:cpo_save
 setlocal keymap=
@@ -74,7 +75,7 @@ setlocal foldcolumn=0
 setlocal foldenable
 setlocal foldexpr=
 setlocal foldignore=#
-setlocal foldlevel=4
+setlocal foldlevel=5
 setlocal foldmarker={{{,}}}
 setlocal foldmethod=indent
 setlocal foldminlines=1
@@ -132,7 +133,7 @@ setlocal spellfile=
 setlocal spelllang=en,cjk
 setlocal spelloptions=noplainbuffer
 setlocal statuscolumn=
-setlocal statusline=%#lualine_a_10_command#\ ����\ %#lualine_b_11_command#%#SLGitIcon#\ %*%#SLBranchName#\ majorupgrade\ %<%#lualine_c_diff_added_command#\ \ \ 878\ %#lualine_c_normal#%=%#lualine_x_diagnostics_error_command#\ \ 92\ %#lualine_x_diagnostics_hint_command#\ 3\ %#lualine_c_normal#%#lualine_c_normal#\ 󰌒\ 4\ %#lualine_x_filetype_DevIconPy_command#\ \ %#lualine_c_normal#python\ %#lualine_b_command#\ \ 22:52\ %#lualine_z_progress_command#\ %P/%L\ 
+setlocal statusline=%#lualine_a_3_command#\ ����\ %#lualine_b_4_command#%#SLGitIcon#\ %*%#SLBranchName#\ majorupgrade\ %<%#lualine_c_diff_added_command#\ \ \ 2\ %#lualine_c_diff_modified_command#\ 8\ %#lualine_c_diff_removed_command#\ 5\ %#lualine_c_normal#%=%#lualine_c_normal#\ 󰌒\ 4\ %#lualine_x_filetype_DevIconPy_command#\ \ %#lualine_c_normal#python\ %#lualine_b_command#\ \ 43:13\ %#lualine_z_progress_command#\ %P/%L\ 
 setlocal suffixesadd=.py
 setlocal noswapfile
 setlocal synmaxcol=3000
@@ -151,53 +152,51 @@ setlocal undolevels=-123456
 setlocal varsofttabstop=
 setlocal vartabstop=
 setlocal virtualedit=
-setlocal winbar=\ %#DevIconPy#%*\ %#Winbar#sidepanesettings.py%*\ 
+setlocal winbar=\ %#DevIconPy#%*\ %#Winbar#sidepanesettings.py%*\ %#NavicSeparator#%*\ %#NavicIconsClass#\ %*%#NavicText#SidepaneSettings%*
 setlocal winblend=0
 setlocal winhighlight=
 setlocal nowinfixheight
 setlocal nowinfixwidth
 setlocal wrap
 setlocal wrapmargin=0
-38
+17
 normal! zo
-46
+24
 normal! zo
-63
+26
 normal! zo
-75
+34
 normal! zo
-201
+35
 normal! zo
-246
+68
+normal! zo
+102
+normal! zo
+153
+normal! zo
+166
+normal! zo
+179
+normal! zo
+197
+normal! zo
+262
 normal! zo
 272
 normal! zo
-293
+285
 normal! zo
-495
+312
 normal! zo
-571
+353
 normal! zo
-629
-normal! zo
-642
-normal! zo
-653
-normal! zo
-654
-normal! zo
-806
-normal! zo
-826
-normal! zo
-851
-normal! zo
-let s:l = 22 - ((21 * winheight(0) + 17) / 34)
+let s:l = 43 - ((16 * winheight(0) + 17) / 34)
 if s:l < 1 | let s:l = 1 | endif
 keepjumps exe s:l
 normal! zt
-keepjumps 22
-normal! 052|
+keepjumps 43
+normal! 013|
 tabnext 1
 if exists('s:wipebuf') && len(win_findbuf(s:wipebuf)) == 0 && getbufvar(s:wipebuf, '&buftype') isnot# 'terminal'
   silent exe 'bwipe ' . s:wipebuf

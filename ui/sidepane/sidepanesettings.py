@@ -94,20 +94,17 @@ class SidepaneSettings(CollapsePanel):
         # main objects list from dispatcher
         lbx_objects = Gtk.ListBox()
         lbx_objects.set_selection_mode(Gtk.SelectionMode.NONE)
-        # selected_objects_event = self.dispatcher.chart_settings[
-        #     "selected objects event"
-        # ]
-        # self.lbx_objects = lbx_objects
-        # if self.lbx_objects:
-        # lbx_objects = Gtk.ListBox()
-        # .lbx_objects.set_selection_mode(Gtk.SelectionMode.NONE)
-        objects_data = self.dispatcher.chart_settings["objects"]
+        # testing ground
+        # objects_data = self.dispatcher.chart_settings["objects"]
+        lots_data = self.dispatcher.chart_settings.get("lots", {})
         # debug
         log.debug(
-            f"\nobjectsdata={type(objects_data)}"
-            f"\nsample : {list(objects_data.items())[0][1]}",
+            f"\nlotsdata={type(lots_data)}"
+            f"\n\t{lots_data}"
+            f"\n\tWE ARE TRANSMITING ON CLEAR AIR - NO EXTRA ATTRS NEEDED",
         )
-        for _, obj_data in objects_data.items():
+        # loop start
+        for _, obj_data in lots_data.items():
             row = Gtk.ListBoxRow()
             name = obj_data[1]
             row.set_tooltip_text(obj_data[3])
@@ -128,8 +125,8 @@ class SidepaneSettings(CollapsePanel):
             check.set_active(obj_data["enable"])
             check.connect("toggled", help.lots_toggled, name, self.sidepane)
             row.set_child(check)
-            self.lbx_lots.append(row)
-        subsub_lots.add_widget(self.lbx_lots)
+            lbx_lots.append(row)
+        subsub_lots.add_widget(lbx_lots)
         # sub-sub-panel: prenatal
         subsub_prenatal = CollapsePanel(title="prenatal", indent=21, expanded=False)
         lbx_prenatal = Gtk.ListBox()

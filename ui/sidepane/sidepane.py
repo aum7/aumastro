@@ -1,6 +1,5 @@
 # ui/sidepane/sidepane.py
-# collapsible side pa
-# also sidepane, since we removed __init__, does not recognize self anymore with all user input widgets
+# collapsible side panel
 # ruff: noqa: E402
 import re
 import gi

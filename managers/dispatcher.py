@@ -8,13 +8,12 @@ log = logging.getLogger(__name__)
 import swisseph as swe
 from helpers import _decimal_to_ymd
 from sweph.calculations.positions import calculate_positions
-
+from sweph.calculations.horas import calculate_horas
+import user.usersettings as usersett
+import user.eventsdb.db as eventsdb
 # from sweph.calculations.houses import calculate_houses
 # from sweph.calculations.vimsottari import calculate_vimsottari
-from sweph.calculations.horas import calculate_horas
-
 # from user.fixedstars import FIXEDSTARS
-import user.usersettings as usersett
 
 # map string settings to sweph flag
 SWEPH_FLAG_MAP = {
@@ -39,78 +38,113 @@ class Dispatcher:
         if app is not None:
             self.app = app
         self.astro_data = {"e1": {}, "e2": {}}
-        self.e2_active = False
         # logging : messages sent from where & to which recipients
         self.extra = {"source": "dispatcher", "route": ["terminal"]}
+        # explicit selected event : the one arrived
+        self.selected_event = "e1"
+        self.e2_active = False
         # pick existing settings in user/settings.py
         self.chart_settings = {}
         self.app_settings = {}
         self.sweph_settings = {}
-        self.load_user_settings()
+        self.load_init_settings()
         # signals
         self.app.signaler.connect("event changed", self.on_event_change)
         self.app.signaler.connect("e2 cleared", self.on_e2_clear)
-        self.app.signaler.connect(
-            "chart settings changed", self.on_chart_settings_change
-        )
-        self.app.signaler.connect("app settings changed", self.on_app_settings_change)
+        # self.app.signaler.connect(
+        #     "chart settings changed", self.on_chart_settings_change
+        # )
+        # self.app.signaler.connect("app settings changed", self.on_app_settings_change)
         # intermediate code : repeated somewhere below in code
         objects_dict = dict(usersett.OBJECTS)
         all_short_names = [data[0] for data in objects_dict.values()]
         self.chart_settings["selected objects event"] = {1: list(all_short_names)}
 
-    def load_user_settings(self):
-        # extract & parse defaults from usersettings
+    def load_init_settings(self):
+        # extract & parse defaults from usersettings & co
+        # default events data
+        self.events = {
+            "e1": dict(getattr(eventsdb, "DEFAULT_E1")),
+            "e2": dict(getattr(eventsdb, "DEFAULT_E2")),
+        }
+        # sweph settings : calculation rules
+        self.sweph_settings = {
+            "swe flag": getattr(usersett, "SWE_FLAG", {}),
+            "main flags": MAIN_FLAGS,
+            "custom ayanamsa": getattr(usersett, "AYANAMSA", {}),
+            "use varga aspects": usersett.CHART_SETTINGS.get("use varga aspects"),
+        }
+        # application settings
         self.app_settings = {
             "orientation": getattr(usersett, "APP_ORIENTATION", "vertical"),
-            "selected event": "e1",
+            # "selected event": "e1",
             "movie mode": False,
             "selected change time str": "1 D",
+            "snap tolerance": usersett.CHART_SETTINGS.get("snap tolerance", 9.9),
+            "files": dict(getattr(usersett, "FILES")),
+            "chart info extra": dict(getattr(usersett, "FILES")),
         }
-
-        def unpack(value):
-            if isinstance(value, tuple) and len(value) == 2:
-                return value[0]
-            return value
-
-        # parse user chart settings
-        parsed_chart_sett = {}
-        for key, val in usersett.CHART_SETTINGS.items():
-            if isinstance(val, dict):
-                parsed_chart_sett[key] = {
-                    sub_k: unpack(sub_k) for sub_k, sub_v in val.items()
-                }
-            else:
-                parsed_chart_sett[key] = unpack(val)
-        # build initial set of flags
-        selected_flags = {
-            flag_name
-            for flag_name, flag_data in usersett.SWE_FLAG.items()
-            if unpack(flag_data) is True
-        }
-        # resolve primary list defaults : top item = default
-        default_house = list(usersett.HOUSE_SYSTEMS[0][0])
-        default_year_period = list(usersett.SOLAR_YEAR.keys())[0]
-        default_lunar_period = list(usersett.LUNAR_MONTH.keys())[0]
-        default_ayanamsa = list(usersett.AYANAMSA.keys())[0]
-        # consolidate into chart
+        # events separated
+        e1_objects = dict(getattr(usersett, "OBJECTS", {}))
+        e2_objects = dict(getattr(usersett, "OBJECTS_2", {}))
+        #
         self.chart_settings = {
-            "objects": dict(usersett.OBJECTS),
-            "objects_2": set(usersett.OBJECTS_2),
-            "lots": {k: v.get("enable", False) for k, v in usersett.LOTS.items()},
-            "prenatal": {
-                k: v.get("enable", False) for k, v in usersett.PRENATAL.items()
+            "e1": {
+                "objects": e1_objects,
+                "lots": dict(getattr(usersett, "LOTS", {})),
+                "prenatal": dict(getattr(usersett, "PRENATAL", {})),
+                "fixed_asc": usersett.CHART_SETTINGS.get("fixed asc", (False, ""))[0],
+                "naksatras_ring": usersett.CHART_SETTINGS.get(
+                    "naksatras ring", (False, "")
+                )[0],
+                "28_mansions": usersett.CHART_SETTINGS.get("28 mansions", (False, ""))[
+                    0
+                ],
+                "first_naksatra": usersett.CHART_SETTINGS.get(
+                    "first naksatra", (1, "")
+                )[0],
+                "harmonic_ring": usersett.CHART_SETTINGS.get("harmonic ring", (1, ""))[
+                    0
+                ],
+                "fixed_stars": usersett.CHART_SETTINGS.get("fixed stars", (False, ""))[
+                    0
+                ],
+                "chart_info": usersett.CHART_SETTINGS.get(
+                    "chart info string", ("", "")
+                )[0],
             },
-            "selected flags": selected_flags,
-            "sweph flag": self.compute_sweph_flag(selected_flags),
-            "house system": default_house,
-            "house systems list": list(usersett.HOUSE_SYSTEMS),
-            "selected year period": default_year_period,
-            "selected lunar period": default_lunar_period,
-            "default ayanamsa": default_ayanamsa,
-            "custom ayanamsa": dict(usersett.CUSTOM_AYANAMSA),
-            "files": {k: unpack(v) for k, v in usersett.FILES.items()},
-            **parsed_chart_sett,
+            "e2": {
+                "objects": e2_objects,
+                "event_2_rings": usersett.CHART_SETTINGS.get(
+                    "event 2 rings", (True, "")
+                )[0],
+                "transit varga": usersett.CHART_SETTINGS.get("transit varga", (1, ""))[
+                    0
+                ],
+                "p2 progress": usersett.CHART_SETTINGS.get("p2 progress", (False, ""))[
+                    0
+                ],
+                "p3 progress": usersett.CHART_SETTINGS.get("p3 progress", (False, ""))[
+                    0
+                ],
+                "p3m progress": usersett.CHART_SETTINGS.get(
+                    "p3m progress", (False, "")
+                )[0],
+                "d1 direction": usersett.CHART_SETTINGS.get(
+                    "d1 direction", (False, "")
+                )[0],
+                "lunar return": usersett.CHART_SETTINGS.get(
+                    "lunar return", (False, "")
+                )[0],
+                "solar return": usersett.CHART_SETTINGS.get(
+                    "solar return", (False, "")
+                )[0],
+            },
+            # Active selected short names cache
+            "selected objects event": {
+                1: [data[0] for data in e1_objects.values()],
+                2: [data[0] for data in e2_objects.values()],
+            },
         }
 
     def compute_sweph_flag(self, selected_flags):

@@ -102,7 +102,7 @@ PRENATAL = {
         "enable": True,
         "tooltip": (
             "last solar & lunar eclipse before event 1"
-            "\nnote : eclipses might overlap with lunation (above)"
+            "\nnote : eclipses might overlap with syzygy (above)"
         ),
     },
 }
