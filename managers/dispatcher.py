@@ -30,6 +30,7 @@ SWEPH_FLAG_MAP = {
     # "cartesian": swe.FLG_XYZ,
     # "radians": swe.FLG_RADIANS,
 }
+# todo use this for default
 MAIN_FLAGS = ["sidereal zodiac", "true positions", "topocentric"]
 
 
@@ -44,6 +45,7 @@ class Dispatcher:
         # pick existing settings in user/settings.py
         self.chart_settings = {}
         self.app_settings = {}
+        self.sweph_settings = {}
         self.load_user_settings()
         # signals
         self.app.signaler.connect("event changed", self.on_event_change)
@@ -52,6 +54,10 @@ class Dispatcher:
             "chart settings changed", self.on_chart_settings_change
         )
         self.app.signaler.connect("app settings changed", self.on_app_settings_change)
+        # intermediate code : repeated somewhere below in code
+        objects_dict = dict(usersett.OBJECTS)
+        all_short_names = [data[0] for data in objects_dict.values()]
+        self.chart_settings["selected objects event"] = {1: list(all_short_names)}
 
     def load_user_settings(self):
         # extract & parse defaults from usersettings
@@ -121,8 +127,8 @@ class Dispatcher:
         return "topocentric" in self.chart_settings["selected flags"]
 
     def on_chart_settings_change(self, sett_data: dict):
-        if not isinstance(sett_data, dict):
-            return
+        # if not isinstance(sett_data, dict): # < code is unreachable
+        #     return
         # handle flag toggling deltas
         if "toggle flag" in sett_data:
             flag_name, is_active = sett_data.pop("toggle flag")

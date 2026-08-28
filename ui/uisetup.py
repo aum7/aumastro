@@ -7,7 +7,7 @@ gi.require_version("Gdk", "4.0")
 gi.require_version("Adw", "1")
 from gi.repository import Gtk, Adw, Gdk  # type: ignore
 from typing import Callable
-from user.settings import APP_ORIENTATION
+from user.usersettings import APP_ORIENTATION
 
 
 class UISetup:

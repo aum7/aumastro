@@ -11,7 +11,7 @@ from sweph.constants import (
     DRAW_ORDER_REVERSE,
     PLANETARY_ORDER,
 )
-from user.settings import OBJECTS
+from user.usersettings import OBJECTS
 # import gi
 # gi.require_version("Gtk", "4.0")
 # from gi.repository import Gtk  # type: ignore
