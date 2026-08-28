@@ -5,11 +5,10 @@ import gi
 gi.require_version("Gtk", "4.0")
 from gi.repository import Gtk  # type: ignore
 from ui.collapsepanel import CollapsePanel
-from sweph.eventsdata import EventData
+from sweph.eventsdata import EventsData
 from sweph.eventlocation import EventLocation
 from user.eventsdb.db import DEFAULT_E1  # default event 1 data
 from user.eventsdb.db import DEFAULT_E2
-# from managers.dispatcher import event_selection
 
 
 def setup_event(manager, event_name: str, expand: bool) -> CollapsePanel:
@@ -252,9 +251,9 @@ only use [space] as separator
     )
     # put widgets into sub-panel
     subpnl_datetime.add_widget(ent_datetime)
-    # create eventdata instance & store widgets
+    # create eventsdata instance & store widgets
     if event_name == "e1":
-        manager.app.EVENT_ONE = EventData(
+        manager.app.EVENT_ONE = EventsData(
             id="e1",
             name=ent_event_name,
             country=ddn_country,
@@ -264,7 +263,7 @@ only use [space] as separator
             app=manager.app,
         )
     else:
-        manager.app.EVENT_TWO = EventData(
+        manager.app.EVENT_TWO = EventsData(
             id="e2",
             name=ent_event_name,
             country=ddn_country,

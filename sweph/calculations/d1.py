@@ -6,14 +6,14 @@
 # places in natal chart, unfolding events in years to come; each degree
 # of such motion corresponds to approximately 1 year of life
 import logging as log
-from sweph.helpers import ok, err
 import math
 import swisseph as swe
-from ui.helpers import _object_name_to_code as objcode
+from helpers import _object_name_to_code as objcode, ok, err
 
 
-source = "d1 direction"
+source = "d1"
 route = ["terminal"]
+routing = {"source": source, "route": route}
 
 
 def get_speculum(jd_ut, code, lat, ramc, flag):
@@ -23,7 +23,7 @@ def get_speculum(jd_ut, code, lat, ramc, flag):
     except swe.Error as e:
         log.error(
             f"speculum error : {e}",
-            extra={"source": source, "route": route},
+            extra=routing,
         )
         return None
     pos = res[0] if isinstance(res, tuple) else res
@@ -103,7 +103,7 @@ def calculate_d1(jd_ut, geo=(), objs=(), flag=0, params=None):
         except Exception as e:
             log.error(
                 f"speculum error for {obj} : {e}",
-                extra={"source": source, "route": route},
+                extra=routing,
             )
             continue
     # body to body directions (proportional semi-arc)
@@ -117,7 +117,7 @@ def calculate_d1(jd_ut, geo=(), objs=(), flag=0, params=None):
         except Exception as e:
             log.error(
                 f"speculums calculation error : {e}",
-                extra={"source": source, "route": route},
+                extra=routing,
             )
             continue
     codes = list(speculums.keys())

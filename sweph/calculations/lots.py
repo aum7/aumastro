@@ -1,11 +1,12 @@
 # sweph/calculations/lots.py
 # ruff: noqa: E402, E701
 import logging as log
-from sweph.helpers import ok, err
+from helpers import ok, err
 
 
 source = "lots"
 route = ["terminal"]
+routing = {"source": source, "route": route}
 
 
 def calculate_lots(jd_ut, geo=(), objs=(), flag=0, params=None):
@@ -57,7 +58,7 @@ def calculate_lots(jd_ut, geo=(), objs=(), flag=0, params=None):
         except Exception as e:
             log.error(
                 f"lot calculation error for {lot} : {e}",
-                extra={"source": source, "route": route},
+                extra=routing,
             )
             continue
 

@@ -11,14 +11,14 @@ from gi.repository import Gtk  # type: ignore
 
 # from typing import Dict, Tuple, List
 from pathlib import Path
-from ui.helpers import _object_name_to_code as objcode
-from sweph.calculations.varga import get_varga_lon as vargalon
+from helpers import _object_name_to_code as objcode
+from sweph.calculations.transitvarga import get_varga_lon as vargalon
 from datetime import date, timedelta, datetime, timezone
 from zoneinfo import ZoneInfo
 from sweph.swetime import jd_to_custom_iso as jdtoiso
 
 
-class SearchManager:
+class Searcher:
     def __init__(self):
         self.app = Gtk.Application.get_default()
         self.notify = self.app.notify_manager

@@ -1,15 +1,15 @@
 # sweph/calculations/positions.py
 # ruff: noqa: E402, E701
 import logging as log
-from sweph.helpers import ok, err
 import swisseph as swe
-from ui.helpers import _object_name_to_code as objcode, _relative_speed
+from helpers import _object_name_to_code as objcode, _relative_speed, ok, err
 from sweph.calculations.naksatras import calculate_naksatras
 from sweph.calculations.transitvarga import get_varga_lon
 
 
 source = "positions"
 route = ["terminal"]
+routing = {"source": source, "route": route}
 
 
 def calculate_positions(
@@ -54,7 +54,7 @@ def calculate_positions(
         except swe.Error as e:
             log.error(
                 f"positions calculations error : {e}",
-                extra={"source": source, "route": route},
+                extra=routing,
             )
             continue
     lumies = {}
@@ -72,7 +72,7 @@ def calculate_positions(
         except swe.Error as e:
             log.error(
                 f"lumies calculation error : {e}",
-                extra={"source": source, "route": route},
+                extra=routing,
             )
             continue
 

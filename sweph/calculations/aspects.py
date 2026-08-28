@@ -1,12 +1,13 @@
 # sweph/calculations/aspects.py
 # ruff: noqa: E402, E701
 # import logging as log
-from sweph.helpers import ok, err
+from helpers import ok, err
 import math
 from ui.fonts.glyphs import ASPECTS
 
 source = "aspects"
 route = ["terminal"]
+routing = {"source": source, "route": route}
 
 
 def angle_diff(a, b):

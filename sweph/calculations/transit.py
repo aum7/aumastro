@@ -1,9 +1,8 @@
 # sweph/calculations/transit.py
 # ruff: noqa: E402, E701
 # import swisseph as swe
-import logging as log
-from sweph.helpers import ok, err
-from ui.helpers import _object_name_to_code as objcode
+# import logging as log
+from helpers import err
 
 source = "transit"
 route = ["terminal"]

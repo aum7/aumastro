@@ -1,9 +1,8 @@
 # sweph/calculations/stations.py
 # ruff: noqa: E402, E701
 import logging as log
-from sweph.helpers import ok, err
 import swisseph as swe
-from ui.helpers import _object_name_to_code as objcode
+from helpers import _object_name_to_code as objcode, ok, err
 from sweph.constants import STATION_SPEED, RETRO_DAYS
 
 source = "stations"

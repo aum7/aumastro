@@ -2,11 +2,12 @@
 # simplified calculaton format : data stored in positions
 # supports 1 single naksatra 2 all naksatras calculation
 import logging as log
-from sweph.helpers import ok, err
+from helpers import ok, err
 from sweph.constants import NAKSATRAS27, MANSIONS28
 
 source = "naksatras"
 route = ["terminal"]
+routing = {"source": source, "route": route}
 
 
 def get_naksatra(lon, use_28_nak=False, first_nak=1):
@@ -45,7 +46,7 @@ def calculate_naksatras(jd_ut=None, geo=(), objs=(), flag=0, params=None):
         return ok(res)
     log.error(
         "invalid positions : expected dict",
-        extra={"source": source, "route": route},
+        extra=routing,
     )
 
     return err("positions must be a dict")

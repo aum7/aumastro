@@ -3,12 +3,12 @@
 # note : results depend on selected year : sidereal gives closest solar
 # position at return time : Tsu / Tmo longitude equals Nsu / Nmo longitude
 import logging as log
-from sweph.helpers import ok, err
 import swisseph as swe
-from ui.helpers import _object_name_to_code as objcode
+from helpers import _object_name_to_code as objcode, ok, err
 
 source = "returnsolar"
 route = ["terminal"]
+routing = {"source": source, "route": route}
 
 
 def calculate_sr(jd_ut=None, geo=(), objs=(), flag=0, params=None):
@@ -68,7 +68,7 @@ def calculate_sr(jd_ut=None, geo=(), objs=(), flag=0, params=None):
             except swe.Error as e:
                 log.error(
                     f"lunar return houses calculation error : {e}",
-                    extra={"source": source, "route": route},
+                    extra=routing,
                 )
         return ok(sol_ret)
     except swe.Error as e:

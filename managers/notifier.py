@@ -2,14 +2,10 @@
 # ruff: noqa: E402
 # import os
 import logging
-import gi
 from datetime import datetime, timezone
 from enum import Enum
 from pathlib import Path
-
-gi.require_version("Gtk", "4.0")
-gi.require_version("Adw", "1")
-from gi.repository import Gtk, Adw, GLib  # type: ignore
+from gi.repository import GLib  # type: ignore
 
 
 class NotifyLevel(Enum):
@@ -88,9 +84,9 @@ NOTIFY_TO_LOG_LEVEL = {
 class GtkNotificationHandler(logging.Handler):
     """custom logging handler routing python logs to notifications"""
 
-    def __init__(self, notify_manager):
+    def __init__(self, notifier):
         super().__init__()
-        self.notify_manager = notify_manager
+        self.notifier = notifier
 
     def emit(self, record):
         try:
@@ -118,7 +114,7 @@ class GtkNotificationHandler(logging.Handler):
                 timestamp=datetime.fromtimestamp(record.created, tz=timezone.utc),
                 timeout=timeout,
             )
-            self.notify_manager.dispatch(msg)
+            self.notifier.route_message(msg)
         except Exception:
             self.handleError(record)
 
@@ -127,17 +123,8 @@ class Notifier:
     """notification manager with level-specific toasts"""
 
     def __init__(self, app=None, log_file=None):
-        self._app = app or Gtk.Application.get_default()
-        self.toast_overlay = None
-        # setup logger
-        self._DEFAULT_TIMEOUTS = {
-            NotifyLevel.INFO: 3,
-            NotifyLevel.SUCCESS: 3,
-            NotifyLevel.WARNING: 4,
-            NotifyLevel.ERROR: 5,
-            NotifyLevel.DEBUG: 5,
-        }
-        self.default_route = [NotifyRoute.ALL.value]
+        self.app = app
+        self.default_route = [NotifyRoute.TERMINAL.value]
         if log_file is None:
             log_dir = Path.home() / ".aumastro" / "logs"
             log_dir.mkdir(parents=True, exist_ok=True)
@@ -207,11 +194,11 @@ class Notifier:
             extra={"_from_notify": True, "route": route},
         )
         # print(f"[DEBUG NOTIFY] notify called for '{msg.message}'")
-        self.dispatch(msg)
+        self.route_message(msg)
 
         return True
 
-    def dispatch(self, msg):
+    def route_message(self, msg):
         """route notifymessage to ui toast or terminal output"""
         # dont display nor store messages
         if msg.route is None or "":
@@ -222,7 +209,6 @@ class Notifier:
         if not all(val in valid_routes for val in route):
             print(f"notifymanager : invalid route values in {route} : using default")
             return
-            # route = self.default_route
         if any(r in (NotifyRoute.NONE.value, NotifyRoute.EMPTY.value) for r in route):
             # print("[DEBUG NOTIFY] route is none or empty : message discarded")
             return
@@ -236,54 +222,5 @@ class Notifier:
         #     f"[DEBUG DISPATCH] msg={msg.message} | notifyuser={notify_user} | "
         #     f"toastoverlay is set={self.toast_overlay is not None}"
         # )
-        if notify_user and self.toast_overlay:
-            GLib.idle_add(self._show_toast, msg)
-
-    def _show_toast(self, msg):
-        """show toast notification with level-specific icon"""
-        try:
-            if not self.toast_overlay:
-                print("[DEBUG TOAST] selftoastoverlay is NONE inside showtoast")
-                return False
-            # custom layout box
-            box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=5)
-            box.set_margin_start(3)
-            box.set_margin_end(5)
-            # icon without callbacks
-            icon_name = f"{msg.level.value}"
-            icon = Gtk.Image.new_from_file(
-                f"ui/imgs/icons/hicolor/scalable/notify/{icon_name}.svg"
-            )
-            icon.set_pixel_size(24)
-            # fallback to system icons
-            if not icon:
-                fallback_icons = {
-                    NotifyLevel.INFO: "dialog-information",
-                    NotifyLevel.SUCCESS: "checkbox-checked",
-                    NotifyLevel.WARNING: "dialog-warning",
-                    NotifyLevel.ERROR: "dialog-error",
-                    NotifyLevel.DEBUG: "preferences-system",
-                }
-                icon = Gtk.Image()
-                icon.set_from_icon_name(fallback_icons[msg.level])
-                icon.set_pixel_size(24)
-            box.append(icon)
-            # label with message
-            label = Gtk.Label(label=str(msg))
-            box.append(label)
-            # create toast
-            toast = Adw.Toast.new("")
-            toast.set_custom_title(box)
-            # use custom timeout if provided, else use default
-            if msg.timeout is not None:
-                toast.set_timeout(msg.timeout)
-            else:
-                toast.set_timeout(self._DEFAULT_TIMEOUTS[msg.level])
-            self.toast_overlay.add_toast(toast)
-            # print("[DEBUG TOAST] toast added to overlay")
-
-        except Exception as e:
-            print(f"error in toast notification: {str(e)}")
-            print(f"message was: {msg.full_str()}")
-
-        return False
+        if notify_user and self.app and getattr(self.app, "signaler", None):
+            GLib.idle_add(self.app.signaler.emit, "show_toast", msg)

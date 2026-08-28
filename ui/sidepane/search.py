@@ -7,8 +7,88 @@ import gi
 gi.require_version("Gtk", "4.0")
 from gi.repository import Gtk, Gdk  # type: ignore
 from ui.collapsepanel import CollapsePanel
-from ui.sidepane.searchmanager import SearchManager
-from user.settings import SEARCH, SEARCH_TOKENS
+from managers.searcher import Searcher
+# from user.settings import SEARCH, SEARCH_TOKENS
+
+# --- search panel
+SEARCH_TOKENS = {
+    "command": ["clear"],
+    "object": [
+        "mo",
+        "ma",
+        "me",
+        "ju",
+        "ve",
+        "sa",
+        "su",
+        "ur",
+        "ne",
+        "pl",
+        "ra",
+        "asc",
+        "mc",
+    ],
+    "operator": [
+        "in",
+        "ingress",
+        "aspect",
+        "at",
+        "declination",
+        "rasc",
+        "speed",
+        "min",
+        "max",
+        "near",
+        "conjunct",
+        "hora",
+        "hr",
+        "sunrise",
+    ],
+    "place": (
+        "sign",
+        "naksatra",
+        "nk",
+        # "nak",
+        "term",  # terms / bounds
+    ),
+    "sign": {
+        "ari": {"lord": "ma", "element": "fire", "mode": "movable"},  # 01 f m
+        "tau": {"lord": "ve", "element": "earth", "mode": "fixed"},  # 02 e f
+        "gem": {"lord": "me", "element": "air", "mode": "dual"},  # 03 a d
+        "can": {"lord": "mo", "element": "water", "mode": "movable"},  # 04 w m
+        "leo": {"lord": "su", "element": "fire", "mode": "fixed"},  # 05 f f
+        "vir": {"lord": "me", "element": "earth", "mode": "dual"},  # 06 e d
+        "lib": {"lord": "ve", "element": "air", "mode": "movable"},  # 07 a m
+        "sco": {"lord": "ma", "element": "water", "mode": "fixed"},  # 08 w f
+        "sag": {"lord": "ju", "element": "fire", "mode": "dual"},  # 09 f d
+        "cap": {"lord": "sa", "element": "earth", "mode": "movable"},  # 10 e m
+        "aqu": {"lord": "sa", "element": "air", "mode": "fixed"},  # 11 a f
+        "pis": {"lord": "ju", "element": "water", "mode": "dual"},  # 12 w d
+    },
+    "element": {"fire", "earth", "air", "water"},
+    "mode": {"movable", "fixed", "dual"},
+}
+SEARCH = {  # timerange can be omitted, range derived from datagraph data
+    "search timerange": ("2024-1-1", "2025-08-19"),
+    "rules": (
+        "mo in v9 ju nk",
+        """enter time range (YYYY-mm-dd) & rules (formula) for search
+example :
+    2012 12 21 - 2013 1 7 [enter search range as top line *]
+    ve 144 su   [list of rules, newline separated]
+    mo in v9 ju nk
+
+v : varga 2-60
+hs : house 1-12
+nk : naksatra 1-27 / mansion 1-28
+
+* : can be omitted, search range will be derived from data file
+    if lots of data > slower calculations
+    use search time range when testing rules
+
+search results are saved to 'user/data/search/' folder""",
+    ),
+}
 
 
 def on_focus_changed(widget, pspec, tokens):
@@ -191,7 +271,7 @@ def validate_input(query: str, use_28=False, notify=None):
 
 def setup_search(manager) -> CollapsePanel:
     # separate search panel
-    manager.search = SearchManager()
+    manager.search = Searcher()
     notify = manager.app.notify_manager
     use_28 = manager.app.chart_settings.get("28 naksatras", False)
     pad_x = 7

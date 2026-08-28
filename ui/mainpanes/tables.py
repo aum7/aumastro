@@ -4,8 +4,7 @@ import gi
 
 gi.require_version("Gtk", "4.0")
 from gi.repository import Gtk  # type: ignore
-from ui.helpers import _decimal_to_sign_dms as decsigndms
-from ui.helpers import _decimal_to_ra as decra
+from helpers import _decimal_to_sign_dms as decsigndms, _decimal_to_ra as decra
 from user.settings import HOUSE_SYSTEMS
 from sweph.swetime import jd_to_custom_iso as jdtoiso
 from ui.fonts.glyphs import get_glyph

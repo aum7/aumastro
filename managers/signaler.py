@@ -1,6 +1,9 @@
 # managers/signaler.py
 # ruff: noqa: E402
-import logging as log
+# log & notify
+import logging
+
+log = logging.getLogger(__name__)
 
 source = "signaler"
 route = ["terminal"]
@@ -12,8 +15,6 @@ class Signaler:
         self.app = app
         # store handlers
         self.handlers = {}
-        # log & notify
-        self.log = log.getLogger(__name__)
 
     def connect(self, signal_name, handler):
         log.debug(

@@ -2,18 +2,19 @@
 # ruff: noqa: E402
 import gi
 
+gi.require_version("Adw", "1")
 gi.require_version("Gtk", "4.0")
-from gi.repository import Gtk  # type: ignore
+from gi.repository import Gtk, Adw  # type: ignore
 from typing import Any, Optional
 
 from .sidepane.sidepane import SidepaneManager
 from .sidepane.settings import update_chart_setting_checkbox
 from .uisetup import UISetup
 from managers.hotkeyer import Hotkeyer
+from managers.notifier import NotifyLevel
 from ui.mainpanes.tables import Tables
 from ui.mainpanes.chart.astrochart import AstroChart
 from ui.mainpanes.datagraph import DataGraph
-
 from .dataprintscreen import DataPrintscreen  # printscreen sequence generation
 
 
@@ -24,16 +25,32 @@ class MainWindow(
 ):
     """main application window, combining ui : sidepane & main panes"""
 
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
+    # setup logger
+    DEFAULT_TIMEOUTS = {
+        NotifyLevel.INFO: 3,
+        NotifyLevel.SUCCESS: 3,
+        NotifyLevel.WARNING: 4,
+        NotifyLevel.ERROR: 5,
+        NotifyLevel.DEBUG: 5,
+    }
+    FALLBACK_ICONS = {
+        NotifyLevel.INFO: "dialog-information",
+        NotifyLevel.SUCCESS: "checkbox-checked",
+        NotifyLevel.WARNING: "dialog-warning",
+        NotifyLevel.ERROR: "dialog-error",
+        NotifyLevel.DEBUG: "preferences-system",
+    }
+
+    def __init__(self, application: Gtk.Application, **kwargs: Any) -> None:
         """initialize main window"""
-        super().__init__(*args, **kwargs)
+        super().__init__(application=application, **kwargs)
         # store application & core managers centrally
-        self.app = self.get_application() or Gtk.Application.get_default()
-        self.notify = self.app.notify_manager
-        self.signal = self.app.signal_manager
-        # Gtk.ApplicationWindow.__init__(self, *args, **kwargs)
+        self.app = application
+        self.notifier = self.app.notifier
+        self.signaler = self.app.signaler
+        self.dispatcher = self.app.dispatcher
         # initialize sidepane ui elements - user input
-        self.init_sidepane()
+        self.init_sidepane(self.app)
         # custom info in window title bar
         self.headerbar = Gtk.HeaderBar()
         self.headerbar.set_show_title_buttons(True)
@@ -71,6 +88,7 @@ class MainWindow(
         # orientation is only considered
         self.orientation = getattr(self, "orientation", "vertical")
         self.signal.connect("update_titlebar", self.on_update_titlebar)
+        self.signal.connect("show_toast", self.show_toast)
 
     def close_request(self, window) -> bool:
         # print("mainwindow : close_request called : quiting app ...")
@@ -222,6 +240,48 @@ class MainWindow(
             source="mainwindow",
             route=[""],
         )
+
+    def show_toast(self, msg):
+        # show toast notification with level-specific icon
+        try:
+            if not self.toast_overlay:
+                print("[DEBUG TOAST] selftoastoverlay is NONE inside showtoast")
+                return False
+            # custom layout box
+            box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=5)
+            box.set_margin_start(3)
+            box.set_margin_end(5)
+            # icon without callbacks
+            icon_name = f"{msg.level.value}"
+            icon = Gtk.Image.new_from_file(
+                f"ui/imgs/icons/hicolor/scalable/notify/{icon_name}.svg"
+            )
+            icon.set_pixel_size(24)
+            # fallback to system icons
+            if not icon:
+                icon = Gtk.Image()
+                icon.set_from_icon_name(self.FALLBACK_ICONS[msg.level])
+                icon.set_pixel_size(24)
+            box.append(icon)
+            # label with message
+            label = Gtk.Label(label=str(msg))
+            box.append(label)
+            # create toast
+            toast = Adw.Toast.new("")
+            toast.set_custom_title(box)
+            # use custom timeout if provided, else use default
+            if msg.timeout is not None:
+                toast.set_timeout(msg.timeout)
+            else:
+                toast.set_timeout(self._DEFAULT_TIMEOUTS[msg.level])
+            self.toast_overlay.add_toast(toast)
+            # print("[DEBUG TOAST] toast added to overlay")
+
+        except Exception as e:
+            print(f"error in toast notification: {str(e)}")
+            print(f"message was: {msg.full_str()}")
+
+        return False
 
     def init_panes(self):
         """initialize panes with content"""
@@ -381,7 +441,6 @@ class MainWindow(
                 source="mainwindow",
                 route=["terminal"],
             )
-            # return
 
     def on_update_titlebar(self, data: dict[str, Any]) -> None:
         # todo careful here

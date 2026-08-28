@@ -3,13 +3,18 @@
 # minor progression (month for a year - sun-moon) (blaschke)
 # 13.369 ratio
 import logging as log
-from sweph.helpers import ok, err
 import swisseph as swe
-from ui.helpers import _object_name_to_code as objcode, _decimal_to_hms as dectohms
+from helpers import (
+    _object_name_to_code as objcode,
+    _decimal_to_hms as dectohms,
+    ok,
+    err,
+)
 
 
 source = "p3m"
 route = ["terminal"]
+routing = {"source": source, "route": route}
 
 
 def tuple_to_iso(jd):
@@ -81,7 +86,7 @@ def calculate_p3m(jd_ut=None, geo=(), objs=(), flag=0, params=None):
             except swe.Error as e:
                 log.error(
                     f"p3m true asc mc calculation error : {e}",
-                    extra={"source": source, "route": route},
+                    extra=routing,
                 )
         e1_mc_arc = (e1_mc - e1_su) % 360.0 if e1_mc else 0.0
         e1_asc_arc = (e1_asc - e1_su) % 360.0 if e1_asc else 0.0

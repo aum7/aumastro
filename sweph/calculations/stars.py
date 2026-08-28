@@ -4,11 +4,12 @@
 # returns : (lon, lat, dist, speeds : lon, lat, dist), star name, flags used
 # eta tauri : ("Alcyone", "Alcyone, Krttika", "etTau"),
 import logging as log
-from sweph.helpers import ok, err
+from helpers import ok, err
 import swisseph as swe
 
 source = "stars"
 route = ["terminal"]
+routing = {"source": source, "route": route}
 
 
 def calculate_stars(jd_ut=None, geo=(), objs=(), flag=0, params=None):
@@ -39,11 +40,11 @@ def calculate_stars(jd_ut=None, geo=(), objs=(), flag=0, params=None):
         except swe.Error as e:
             log.error(
                 f"stars calculation error : {e}",
-                extra={"source": source, "route": route},
+                extra=routing,
             )
         except Exception as e:
             log.error(
                 f"stars calculation exception : {e}",
-                extra={"source": source, "route": route},
+                extra=routing,
             )
     return ok(stars)

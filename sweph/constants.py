@@ -59,6 +59,7 @@ DRAW_ORDER_REVERSE = [
 # ne : 5 m 6 d : every 12 months     : 0.006 : 0.038055556  # 10" / d
 # pl : 5-6 m   : every 12 months     : 0.004 : 0.036388889  # 10" / d
 RETRO_DAYS = {  # average length of retro period
+    # su mo never retro
     2: 21.0,  # "me"
     3: 42.0,  # "ve"
     4: 70.0,  # "ma"
@@ -69,6 +70,7 @@ RETRO_DAYS = {  # average length of retro period
     9: 168.0,  # "pl"
 }
 STATION_SPEED = {  # stationary speed
+    # su mo never stationary
     2: 0.08333,  # "me"
     3: 0.05,  # "ve"
     4: 0.025,  # "ma"
@@ -93,7 +95,8 @@ AVG_SPEEDS = {
     10: 0.0529,  # mean node (retrograde)
     11: 0.0529,  # true node (retrograde)
 }
-TERMS = {  # egyptian terms table: starting degree : ruler
+TERMS = {  # egyptian terms table
+    # starting degree : ruler
     0: "ju",
     6: "ve",
     12: "me",
@@ -156,6 +159,7 @@ TERMS = {  # egyptian terms table: starting degree : ruler
     358: "sa",
 }
 NAKSATRAS27 = {
+    # ruler - name
     1: ("ke", "asv"),  #  00-00 - 13-20 ari
     2: ("ve", "bha"),  #  13-20 - 26-40 ari
     3: ("su", "krt"),  #  26-40 - 10-00 tau
@@ -186,6 +190,7 @@ NAKSATRAS27 = {
 }
 MANSIONS28 = {  # 12-51-25
     # source : vivian robson - fixed stars & constellations in astrology
+    # ruler - chinese - arabic name
     1: ("ve", "leu", "al thurayya"),  #    00-00-00 - 12-51-25 ari
     2: ("sa", "oei", "al dabaran"),  #    12-51-25 - 25-42-51 ari
     3: ("su", "mao", "al hak'ah"),  #    25-42-51 - 08-34-17 tau (krt)

@@ -2,7 +2,7 @@
 # calculate sunrise & sunset & planetary hour / hora
 # ruff: noqa: E402
 import logging as log
-from sweph.helpers import ok, err
+from helpers import ok, err
 import swisseph as swe
 from zoneinfo import ZoneInfo
 from timezonefinder import TimezoneFinder
@@ -11,6 +11,7 @@ from datetime import datetime, timezone
 
 source = "hora"
 route = ["terminal"]
+routing = {"source": source, "route": route}
 # weekday number to name
 WEEKDAY = {
     0: ("mon", "mo"),
@@ -118,10 +119,16 @@ def get_day_horas(jd_ut, lon, lat, alt=0.0, flag=0, tz_name=None):
         )
         srise_next = data[0]
     except swe.Error as e:
-        log.error(f"sunrise / set calculation failed : {e}")
+        log.error(
+            f"sunrise / set calculation failed : {e}",
+            extra=routing,
+        )
         return None
     except Exception as e:
-        log.error(f"unexpected error in sunrise / set : {e}")
+        log.error(
+            f"unexpected error in sunrise / set : {e}",
+            extra=routing,
+        )
         return None
     # validate
     sunrise = jdtoiso(srise)
@@ -136,7 +143,7 @@ def get_day_horas(jd_ut, lon, lat, alt=0.0, flag=0, tz_name=None):
             f"\tsunrise : {sunrise}\n"
             f"\tsunset : {sunset}\n"
             f"\tnext sunrise : {sunrise_next}\n",
-            extra={"source": source, "route": route},
+            extra=routing,
         )
     # weekday from sunrise
     wday = swe.day_of_week(srise)

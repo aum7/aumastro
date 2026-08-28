@@ -2,11 +2,12 @@
 # ruff: noqa: E402
 import logging as log
 import swisseph as swe
-from sweph.helpers import ok, err
+from helpers import ok, err
 
 
 source = "eclipses"
 route = ["terminal"]
+routing = {"source": source, "route": route}
 
 
 def format_eclipse_type(eclflag):
@@ -63,7 +64,7 @@ def find_solar_eclipse(jd_ut, flag, search="prev"):
     except swe.Error as e:
         log.error(
             f"solar eclipse error : {e}",
-            extra={"source": source, "route": route},
+            extra=routing,
         )
         return None
 
@@ -88,7 +89,7 @@ def find_lunar_eclipse(jd_ut, flag, search="prev"):
     except swe.Error as e:
         log.error(
             f"lunar eclipse error : {e}",
-            extra={"source": source, "route": route},
+            extra=routing,
         )
         return None
 

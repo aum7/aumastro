@@ -2,10 +2,11 @@
 # simple division by user input
 # ruff: noqa: E402, E701
 import logging as log
-from sweph.helpers import ok, err
+from helpers import ok, err
 
 source = "transitvarga"
 route = ["terminal"]
+routing = {"source": source, "route": route}
 
 
 def get_varga_lon(lon, division=9):
@@ -38,7 +39,7 @@ def calculate_transit_varga(jd_ut=None, objs=(), flag=0, params=None):
     ascmc = houses.get("ascmc")
     log.debug(
         f"types : pos={type(pos)} | cusps={type(cusps)} | ascmc={type(ascmc)}",
-        extra={"source": source, "route": route},
+        extra=routing,
     )
     transit_varga = []
     if isinstance(pos, dict):

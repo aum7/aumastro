@@ -1,11 +1,8 @@
 # sweph/eventsdata.py
 # ruff: noqa: E402
-# import re
-import logging as log
-import gi
+import logging
 
-gi.require_version("Gtk", "4.0")
-from gi.repository import Gtk  # type: ignore
+log = logging.getLogger(__name__)
 from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
 from timezonefinder import TimezoneFinder
@@ -13,7 +10,7 @@ from helpers import _decimal_to_dms
 from sweph.swetime import validate_datetime, naive_to_utc, utc_to_jd
 
 
-class EventData:
+class EventsData:
     def __init__(
         self,
         id=None,
@@ -24,9 +21,9 @@ class EventData:
         date_time=None,
         app=None,
     ):
-        self.logger = log.getLogger(__name__)  # todo proper implementation ???
-        self.app = app or Gtk.Application.get_default()
-        self.notify = self.app.notify_manager
+        if app is not None:
+            self.app = app
+        # self.notify = self.app.notifier # replaced by logging
         self.id = id
         self.country = country
         self.city = city
@@ -41,17 +38,13 @@ class EventData:
         self.old_date_time = ""
         self.old_location = ""
         # logging helper
-        source = "eventdata"
-        route = ["terminal"]
-        self.notify = {"source": source, "route": route}
+        self.extra = {"source": "eventsdata", "route": "['terminal']"}
         # data from calculation
         self.chart = {}
         self.sweph = {}
-        signal = self.app.signal_manager
-        signal.connect("datetime_captured", self.datetime_captured)
-        # todo end
+        # self.app.signaler.connect("datetime_captured", self.datetime_capture)
 
-    def datetime_captured(self, data):
+    def datetime_capture(self, data):
         id = data[0]
         dt = str(data[1])
         if self.id != id:
@@ -69,7 +62,7 @@ class EventData:
             if self.id == "e1":
                 log.warning(
                     f"mandatory data missing : {location_name}",
-                    extra=self.notify,
+                    self.extra,
                 )
                 # self.notify.warning(
                 #     f"\n\tmandatory data missing : {location_name}",
@@ -194,7 +187,7 @@ class EventData:
         except Exception as e:
             log.error(
                 f"location calculation failed : {e}",
-                extra=self.notify,
+                self.extra,
             )
             # self.notify.error(
             #     f"{location_name} invalid format",
@@ -244,7 +237,7 @@ class EventData:
         # todo debug
         log.info(
             "location change processed",
-            extra=self.notify,
+            self.extra,
         )
         return
 
@@ -255,7 +248,7 @@ class EventData:
         if self.id == "e1" and not name:
             log.error(
                 f"mandatory data missing : {name_name}",
-                extra=self.notify,
+                self.extra,
             )
             # self.notify.warning(
             #     f"\n\tmandatory data missing : {name_name}",
@@ -268,7 +261,7 @@ class EventData:
         if len(name) > 30:
             log.warning(
                 f"{name_name} too long : max 30 characters",
-                extra=self.notify,
+                self.extra,
             )
             # self.notify.warning(
             #     f"\n\t{name_name} too long : max 30 characters",
@@ -281,7 +274,7 @@ class EventData:
         self.chart["name"] = name
         log.info(
             "name change processed",
-            extra=self.notify,
+            self.extra,
         )
         return
 
@@ -293,7 +286,7 @@ class EventData:
             if not self.sweph.get("lon"):
                 log.warning(
                     "event one : set location first",
-                    extra=self.notify,
+                    self.extra,
                 )
                 # self.notify.warning(
                 #     "event one : set location first",
@@ -306,7 +299,7 @@ class EventData:
             if not e1 or e1.chart.get("location") is None:
                 log.warning(
                     "event two : event one must be set first",
-                    extra=self.notify,
+                    self.extra,
                 )
                 # self.notify.warning(
                 #     "event two : event one must be set first",
@@ -354,7 +347,7 @@ class EventData:
             except Exception as e:
                 log.error(
                     f"{datetime_name} time now failed : {e}",
-                    extra=self.notify,
+                    self.extra,
                 )
                 # self.notify.error(
                 #     f"{datetime_name} time now failed",
@@ -369,7 +362,7 @@ class EventData:
                 if self.id == "e1":
                     log.warning(
                         f"mandatory data missing for {datetime_name}",
-                        extra=self.notify,
+                        self.extra,
                     )
                     # self.notify.warning(
                     #     f"\n\tmandatory data missing : {datetime_name}",
@@ -386,7 +379,7 @@ class EventData:
                         self.app.signal_manager._emit("e2_cleared", "e2")
                         log.info(
                             "event 2 cleared",
-                            extra=self.notify,
+                            self.extra,
                         )
                         return
 
@@ -427,7 +420,7 @@ class EventData:
             except Exception as e:
                 log.error(
                     f"{datetime_name} error : {e}",
-                    extra=self.notify,
+                    self.extra,
                 )
                 # self.notify.warning(
                 #     f"{datetime_name} error",
@@ -439,7 +432,7 @@ class EventData:
         if not jd_ut:
             log.error(
                 "jd_ut is missing",
-                extra=self.notify,
+                self.extra,
             )
             return
 
@@ -476,6 +469,6 @@ class EventData:
                         self.sweph[key] = e1.sweph.get(key)
 
         dataset = {"id": self.id, "chart": self.chart, "sweph": self.sweph}
-        self.app.signal_manager._emit("event_changed", dataset)
+        self.app.signaler.emit("event_changed", dataset)
 
         return

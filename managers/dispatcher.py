@@ -1,55 +1,57 @@
 # managers/dispatcher.py
 # gather event 1 & 2 data, calculate astro data, serve to interested parties
 # ruff: noqa: E402
-import logging as log
+import logging
+
+log = logging.getLogger(__name__)
 
 from helpers import _decimal_to_ymd  # _update_main_title
 from sweph.calculations.positions import calculate_positions
-from sweph.calculations.houses import calculate_houses
-from sweph.calculations.vimsottari import calculate_vimsottari
+
+# from sweph.calculations.houses import calculate_houses
+# from sweph.calculations.vimsottari import calculate_vimsottari
 from sweph.calculations.horas import calculate_horas
-from user.fixedstars import FIXEDSTARS
-from user.settings import (
-    # APP_ORIENTATION, # todo in mainwindow
-    # 0 su 1 mo 2 me 3 ve 4 ma 5 ju 6 sa 7 ur 9 ne 9 pl 11 truenode
-    OBJECTS,
-    # same order as above but full name : "sun", "saturn", "true node",
-    OBJECTS_2,
-    # 7 x : "fortuna": {"enable":False, "day":"asc + (mo - su)", "tooltip":"body"}
-    LOTS,
-    # {"syzygy": {"enable":False,"tooltip":"syzygy..."}}, {"eclipse":{enable...}}
-    PRENATAL,
-    # {"sidereal zodiac":(True,"""hinttext""")}, {"true positions":(True,hinttext)} "topocentric" "default flag" "no nutation" "equatorial" (only needed for d1 direction)
-    SWE_FLAG,
-    HOUSE_SYSTEMS,  # select top as it is default
-    SOLAR_YEAR,  # select top = default
-    LUNAR_MONTH,  # top = default
-    AYANAMSA,  # top = default
-    # {"custom julian day utc": 245....., "custom ayanamsa": 23.....,}
-    CUSTOM_AYANAMSA,
-    # {"use mean node":(False,"[hinttext]"), "exact lunar mont" "enable glyphs"
-    # "fixed asc" "naksatras ring" "28 naksatras" "first naksatra" "harmonic ring"
-    # "event 2 rings":{"transit":(False, "[hinttext]")} "transit varga"
-    # "p2 progress" "p3 progress" "p3m progress" "d1 direction" "lunar return"
-    # "solar return" "use varga aspects" "fixed stars":("custom", "[hinttext]")
-    # "snap tolerance" "chart info string" "chart info string extra"
-    CHART_SETTINGS,
-    # {"ephe path": ("sweph/ephe/","[hinttext]"),"astro font"
-    # "mono font" "events db" "data" "filename""
-    FILES,
-)
+
+# from user.fixedstars import FIXEDSTARS
+import user.settings as usersett
+# APP_ORIENTATION, # todo in mainwindow
+# 0 su 1 mo 2 me 3 ve 4 ma 5 ju 6 sa 7 ur 9 ne 9 pl 11 truenode
+# OBJECTS,
+# same order as above but full name : "sun", "saturn", "true node",
+# OBJECTS_2,
+# 7 x : "fortuna": {"enable":False, "day":"asc + (mo - su)", "tooltip":"body"}
+# LOTS,
+# {"syzygy": {"enable":False,"tooltip":"syzygy..."}}, {"eclipse":{enable...}}
+# PRENATAL,
+# {"sidereal zodiac":(True,"""hinttext""")}, {"true positions":(True,hinttext)} "topocentric" "default flag" "no nutation" "equatorial" (only needed for d1 direction)
+# SWE_FLAG,
+# HOUSE_SYSTEMS,  # select top as it is default
+# SOLAR_YEAR,  # select top = default
+# LUNAR_MONTH,  # top = default
+# AYANAMSA,  # top = default
+# {"custom julian day utc": 245....., "custom ayanamsa": 23.....,}
+# CUSTOM_AYANAMSA,
+# {"use mean node":(False,"[hinttext]"), "exact lunar mont" "enable glyphs"
+# "fixed asc" "naksatras ring" "28 naksatras" "first naksatra" "harmonic ring"
+# "event 2 rings":{"transit":(False, "[hinttext]")} "transit varga"
+# "p2 progress" "p3 progress" "p3m progress" "d1 direction" "lunar return"
+# "solar return" "use varga aspects" "fixed stars":("custom", "[hinttext]")
+# "snap tolerance" "chart info string" "chart info string extra"
+# CHART_SETTINGS,
+# {"ephe path": ("sweph/ephe/","[hinttext]"),"astro font"
+# "mono font" "events db" "data" "filename""
+# FILES,
 
 
 class Dispatcher:
     def __init__(self, app):
-        self.log = log.getLogger(__name__)
         self.app = app
-        self.signal = app.signal_manager
+        self.signal = app.signaler
         self.astro_data = {"e1": {}, "e2": {}}
         # pick existing settings in user/settings.py
         self.chart_settings = {
             # select top from list / dict
-            "selected year period": list(SOLAR_YEAR.values())[0],
+            "selected year period": list(usersett.SOLAR_YEAR.values())[0],
             "sweph flag": getattr(self.app, "sweph_flag", 0),
         }  # todo set default flag
         self.app_settings = {
@@ -58,11 +60,8 @@ class Dispatcher:
             "selected change time str": "1 D",
         }
         self.e2_active = False
-        # messages sent from where & to which recipients
-        source = "datamanager"
-        route = ["terminal"]
-        # logging
-        self.notify = {"source": source, "route": route}
+        # logging : messages sent from where & to which recipients
+        self.extra = {"source": "datamanager", "route": ["terminal"]}
         # signals
         self.signal.connect("event_changed", self.on_event_change)
         self.signal.connect("e2_cleared", self.on_e2_clear)
@@ -108,11 +107,11 @@ class Dispatcher:
             if getattr(self.astro_data[event_id], "extra info", ""):  # todo data type
                 self.astro_data["extra info"] = dataset.get("extra info", "")
         # debug
-        self.log.debug(
+        log.debug(
             f"e1 unpacked :\npos : {len(self.astro_data['e1 pos'])}"
             f"\nlots : {len(self.astro_data['lots'])}"
             f"\nstars : {len(self.astro_data['stars'])}",
-            extra=self.notify,
+            self.extra,
         )
 
     def on_chart_settings_change(self, settings):
@@ -138,7 +137,7 @@ class Dispatcher:
                 log.debug(
                     "recalculate : received eid='e2' but e2_active is false "
                     "> investigate",
-                    extra=self.notify,
+                    self.extra,
                 )
                 continue
             sweph = self.astro_data.get(eid, {}).get("sweph", {})
@@ -225,7 +224,7 @@ class Dispatcher:
             self.app_settings["selected event"] = event_name
             self.signal._emit("event_selection_changed", event_name)
             self.update_titlebar()
-            self.log.debug(
+            log.debug(
                 f"{event_name} selected",
-                extra=self.notify,
+                self.extra,
             )

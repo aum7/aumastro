@@ -8,8 +8,47 @@ import gi
 gi.require_version("Gtk", "4.0")
 from gi.repository import Gtk, Gdk  # type: ignore
 from ui.collapsepanel import CollapsePanel
-from ui.sidepane.cyclemanager import CycleManager
-from user.settings import CYCLE, CYCLE_TOKENS
+from managers.cycler import Cycler
+# from user.settings import CYCLE, CYCLE_TOKENS
+
+CYCLE_TOKENS = {
+    "command": ["clear"],
+    "object": [
+        "mo",
+        "ma",
+        "me",
+        "ju",
+        "ve",
+        "sa",
+        "su",
+        "ur",
+        "ne",
+        "pl",
+        "ra",
+    ],
+    "operator": [
+        "declination",
+    ],
+}
+CYCLE = {  # timerange can be omitted, range derived from datagraph data
+    "cycle timerange": ("2024-1-21", "2025-08-19"),
+    "rules": (
+        "pl ne ur sa ju ma su ve me mo",
+        """enter time range (YYYY-mm-dd) & rules (members) for cycle
+example :
+    2012 12 21 - 2013 1 7 [enter cycle range as top line *]
+    mo decl  [list of members & rules, newline separated]
+    pl ne ur sa ju v9
+
+v : varga 2-60
+
+* : can be omitted, cycle range will be derived from data file
+    if lots of data > slower calculations
+    use cycle time range when testing waves / rules
+
+cycle results are saved to 'user/data/wave/' folder""",
+    ),
+}
 
 
 def on_focus_changed(widget, pspec, tokens):
@@ -147,7 +186,7 @@ def validate_input(query: str, notify=None):
 
 def setup_cycle(manager) -> CollapsePanel:
     # separate search panel
-    manager.cycle = CycleManager()
+    manager.cycle = Cycler()
     notify = manager.app.notify_manager
     pad_x = 7
     pad_y = 0

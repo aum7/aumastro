@@ -1,7 +1,7 @@
 # sweph/calculations/syzygy.py
 # ruff: noqa: E402
 import logging as log
-from sweph.helpers import ok, err
+from helpers import ok, err
 import swisseph as swe
 from sweph.swetime import jd_to_custom_iso as jdtoiso
 

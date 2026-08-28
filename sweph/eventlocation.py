@@ -11,7 +11,7 @@ class EventLocation:
     def __init__(self, parent=None, app=None):
         self.parent = parent
         self.app = app or Gtk.Application.get_default()
-        self.notify = self.app.notify_manager
+        self.notify = self.app.notifier
         self.location_callback = None
         self.countries = []
         self.country_map = {}
@@ -33,8 +33,8 @@ class EventLocation:
                             parts[1].strip('"'),
                             parts[2].strip('"'),
                         )
-                    self.countries.append(name)
-                    self.country_map[name] = iso3
+                    self.countries.append(name)  # type:ignore
+                    self.country_map[name] = iso3  # type:ignore
 
         return sorted(self.countries)
 
@@ -127,7 +127,7 @@ class EventLocation:
         listbox = Gtk.ListBox()
         listbox.set_selection_mode(Gtk.SelectionMode.SINGLE)
 
-        def pick_city(listbox_, row):
+        def pick_city(row):
             if row and (label := row.get_child()):
                 if isinstance(label, Gtk.Label):
                     selected = label.get_text()

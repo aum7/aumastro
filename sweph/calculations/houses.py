@@ -1,11 +1,12 @@
 # sweph/calculations/houses.py
 # ruff: noqa: E402, E701
 import logging as log
-from sweph.helpers import ok, err
+from helpers import ok, err
 import swisseph as swe  # type:ignore
 
 source = "houses"
 route = ["terminal"]
+routing = {"source": source, "route": route}
 
 
 def calculate_houses(jd_ut, geo=(), objs=(), flag=0, params=None):
@@ -29,6 +30,6 @@ def calculate_houses(jd_ut, geo=(), objs=(), flag=0, params=None):
     except swe.Error as e:
         log.error(
             f"houses calculations failed : {e}",
-            extra={"source": source, "route": route},
+            extra=routing,
         )
         return err(e)

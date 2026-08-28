@@ -1,13 +1,13 @@
 # sweph/calculations/lunarreturn.py
 # ruff: noqa: E402, E701
 import logging as log
-from sweph.helpers import ok, err
 import swisseph as swe
-from ui.helpers import _object_name_to_code as objcode
+from helpers import _object_name_to_code as objcode, ok, err
 # from sweph.swetime import jd_to_custom_iso as jdtoiso
 
 source = "returnlunar"
 route = ["terminal"]
+routing = {"source": source, "route": route}
 
 
 def calculate_lr(jd_ut=None, geo=(), objs=(), flag=0, params=None):
@@ -57,7 +57,7 @@ def calculate_lr(jd_ut=None, geo=(), objs=(), flag=0, params=None):
             except swe.Error as e:
                 log.error(
                     f"lunar return houses calculation error : {e}",
-                    extra={"source": source, "route": route},
+                    extra=routing,
                 )
         return ok(lun_ret)
     except swe.Error as e:
