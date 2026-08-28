@@ -204,7 +204,7 @@ class Searcher:
         print(f"searchmanager : generic rule called : {args}")
 
     def naksatra_lord(self, tokens, datarange):
-        use_28 = self.app.chart_settings.get("28 naksatras", False)
+        use_28 = self.app.chart_settings.get("28 mansions", False)
         use_mean_node = self.app.chart_settings.get("mean node", False)
         hits = []
         who = next((tvalue for ttype, tvalue in tokens if ttype == "object"), None)

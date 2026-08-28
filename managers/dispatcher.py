@@ -5,7 +5,8 @@ import logging
 
 log = logging.getLogger(__name__)
 
-from helpers import _decimal_to_ymd  # _update_main_title
+import swisseph as swe
+from helpers import _decimal_to_ymd
 from sweph.calculations.positions import calculate_positions
 
 # from sweph.calculations.houses import calculate_houses
@@ -13,64 +14,135 @@ from sweph.calculations.positions import calculate_positions
 from sweph.calculations.horas import calculate_horas
 
 # from user.fixedstars import FIXEDSTARS
-import user.settings as usersett
-# APP_ORIENTATION, # todo in mainwindow
-# 0 su 1 mo 2 me 3 ve 4 ma 5 ju 6 sa 7 ur 9 ne 9 pl 11 truenode
-# OBJECTS,
-# same order as above but full name : "sun", "saturn", "true node",
-# OBJECTS_2,
-# 7 x : "fortuna": {"enable":False, "day":"asc + (mo - su)", "tooltip":"body"}
-# LOTS,
-# {"syzygy": {"enable":False,"tooltip":"syzygy..."}}, {"eclipse":{enable...}}
-# PRENATAL,
-# {"sidereal zodiac":(True,"""hinttext""")}, {"true positions":(True,hinttext)} "topocentric" "default flag" "no nutation" "equatorial" (only needed for d1 direction)
-# SWE_FLAG,
-# HOUSE_SYSTEMS,  # select top as it is default
-# SOLAR_YEAR,  # select top = default
-# LUNAR_MONTH,  # top = default
-# AYANAMSA,  # top = default
-# {"custom julian day utc": 245....., "custom ayanamsa": 23.....,}
-# CUSTOM_AYANAMSA,
-# {"use mean node":(False,"[hinttext]"), "exact lunar mont" "enable glyphs"
-# "fixed asc" "naksatras ring" "28 naksatras" "first naksatra" "harmonic ring"
-# "event 2 rings":{"transit":(False, "[hinttext]")} "transit varga"
-# "p2 progress" "p3 progress" "p3m progress" "d1 direction" "lunar return"
-# "solar return" "use varga aspects" "fixed stars":("custom", "[hinttext]")
-# "snap tolerance" "chart info string" "chart info string extra"
-# CHART_SETTINGS,
-# {"ephe path": ("sweph/ephe/","[hinttext]"),"astro font"
-# "mono font" "events db" "data" "filename""
-# FILES,
+import user.usersettings as usersett
+
+# map string settings to sweph flag
+SWEPH_FLAG_MAP = {
+    "sidereal zodiac": swe.FLG_SIDEREAL,
+    "true positions": swe.FLG_TRUEPOS,
+    "topocentric": swe.FLG_TOPOCTR,
+    # "heliocentric": swe.FLG_HELCTR,
+    "default flag": swe.FLG_SWIEPH | swe.FLG_SPEED,
+    "no nutation": swe.FLG_NONUT,
+    # "no abberation": swe.FLG_NOABERR,
+    # "no deflection": swe.FLG_NOGDEFL,
+    # "equatorial": swe.FLG_EQUATORIAL,
+    # "cartesian": swe.FLG_XYZ,
+    # "radians": swe.FLG_RADIANS,
+}
+MAIN_FLAGS = ["sidereal zodiac", "true positions", "topocentric"]
 
 
 class Dispatcher:
-    def __init__(self, app):
-        self.app = app
-        self.signal = app.signaler
+    def __init__(self, app=None):
+        if app is not None:
+            self.app = app
         self.astro_data = {"e1": {}, "e2": {}}
+        self.e2_active = False
+        # logging : messages sent from where & to which recipients
+        self.extra = {"source": "dispatcher", "route": ["terminal"]}
         # pick existing settings in user/settings.py
-        self.chart_settings = {
-            # select top from list / dict
-            "selected year period": list(usersett.SOLAR_YEAR.values())[0],
-            "sweph flag": getattr(self.app, "sweph_flag", 0),
-        }  # todo set default flag
+        self.chart_settings = {}
+        self.app_settings = {}
+        self.load_user_settings()
+        # signals
+        self.app.signaler.connect("event changed", self.on_event_change)
+        self.app.signaler.connect("e2 cleared", self.on_e2_clear)
+        self.app.signaler.connect(
+            "chart settings changed", self.on_chart_settings_change
+        )
+        self.app.signaler.connect("app settings changed", self.on_app_settings_change)
+
+    def load_user_settings(self):
+        # extract & parse defaults from usersettings
         self.app_settings = {
+            "orientation": getattr(usersett, "APP_ORIENTATION", "vertical"),
             "selected event": "e1",
             "movie mode": False,
             "selected change time str": "1 D",
         }
-        self.e2_active = False
-        # logging : messages sent from where & to which recipients
-        self.extra = {"source": "datamanager", "route": ["terminal"]}
-        # signals
-        self.signal.connect("event_changed", self.on_event_change)
-        self.signal.connect("e2_cleared", self.on_e2_clear)
-        self.signal.connect("chart_settings_changed", self.on_chart_settings_change)
-        self.signal.connect("app_settings_changed", self.on_app_settings_change)
 
-    # check if topocentric flag is set
-    # if (flag & swe.FLG_TOPOCTR) and geo and len(geo) == 3:
-    #     swe.set_topo(geo[0], geo[1], geo[2])
+        def unpack(value):
+            if isinstance(value, tuple) and len(value) == 2:
+                return value[0]
+            return value
+
+        # parse user chart settings
+        parsed_chart_sett = {}
+        for key, val in usersett.CHART_SETTINGS.items():
+            if isinstance(val, dict):
+                parsed_chart_sett[key] = {
+                    sub_k: unpack(sub_k) for sub_k, sub_v in val.items()
+                }
+            else:
+                parsed_chart_sett[key] = unpack(val)
+        # build initial set of flags
+        selected_flags = {
+            flag_name
+            for flag_name, flag_data in usersett.SWE_FLAG.items()
+            if unpack(flag_data) is True
+        }
+        # resolve primary list defaults : top item = default
+        default_house = list(usersett.HOUSE_SYSTEMS[0][0])
+        default_year_period = list(usersett.SOLAR_YEAR.keys())[0]
+        default_lunar_period = list(usersett.LUNAR_MONTH.keys())[0]
+        default_ayanamsa = list(usersett.AYANAMSA.keys())[0]
+        # consolidate into chart
+        self.chart_settings = {
+            "objects": dict(usersett.OBJECTS),
+            "objects_2": set(usersett.OBJECTS_2),
+            "lots": {k: v.get("enable", False) for k, v in usersett.LOTS.items()},
+            "prenatal": {
+                k: v.get("enable", False) for k, v in usersett.PRENATAL.items()
+            },
+            "selected flags": selected_flags,
+            "sweph flag": self.compute_sweph_flag(selected_flags),
+            "house system": default_house,
+            "house systems list": list(usersett.HOUSE_SYSTEMS),
+            "selected year period": default_year_period,
+            "selected lunar period": default_lunar_period,
+            "default ayanamsa": default_ayanamsa,
+            "custom ayanamsa": dict(usersett.CUSTOM_AYANAMSA),
+            "files": {k: unpack(v) for k, v in usersett.FILES.items()},
+            **parsed_chart_sett,
+        }
+
+    def compute_sweph_flag(self, selected_flags):
+        return sum(
+            SWEPH_FLAG_MAP[flag] for flag in selected_flags if flag in SWEPH_FLAG_MAP
+        )
+
+    @property
+    def is_sidereal(self):
+        return "sidereal zodiac" in self.chart_settings["selected flags"]
+
+    @property
+    def is_topocentric(self):
+        return "topocentric" in self.chart_settings["selected flags"]
+
+    def on_chart_settings_change(self, sett_data: dict):
+        if not isinstance(sett_data, dict):
+            return
+        # handle flag toggling deltas
+        if "toggle flag" in sett_data:
+            flag_name, is_active = sett_data.pop("toggle flag")
+            flags = self.chart_settings["selected flags"]
+            if is_active:
+                flags.add(flag_name)
+            else:
+                flags.discard(flag_name)
+            self.chart_settings["selected flags"] = flags
+            self.chart_settings["sweph flag"] = self.compute_sweph_flag(flags)
+        # merge remaining deltas
+        self.chart_settings.update(sett_data)
+        # re-run calculations for active event
+        active_event = self.app_settings["selected event"]
+        self.recalculate(active_event)
+
+    def on_app_settings_change(self, sett_data: dict):
+        if isinstance(sett_data, dict):
+            self.app_settings.update(sett_data)
+        self.update_titlebar()  # todo ???
 
     def on_event_change(self, dataset):
         event_id = dataset.get("id")
@@ -114,16 +186,8 @@ class Dispatcher:
             self.extra,
         )
 
-    def on_chart_settings_change(self, settings):
-        self.chart_settings = settings
-        self.recalculate(settings)  # todo fix
-
-    def on_app_settings_change(self, settings):
-        self.app_settings = settings
-        self.recalculate(settings)  # todo fix
-
     def on_e2_clear(self):
-        # lets try handle e2 removal close to
+        # handle e2 removal
         self.astro_data["e2"] = {}
         self.update_titlebar()
         self.e2_active = False
@@ -143,18 +207,11 @@ class Dispatcher:
             sweph = self.astro_data.get(eid, {}).get("sweph", {})
             if not sweph.get("jd_ut"):
                 continue
-            # e1_sweph = self.astro_data.get("e1", {}).get("sweph", {})
-            # e1_astro = self.astro_data.get("e1", {}).get("astro", {})
-            # if not e1_sweph.get("jd_ut") or not e1_astro.get("jd_ut"):
-            #     log.error(
-            #         "recalculation failed : missing jd_ut for e1 (sweph or astro)",
-            #         extra=self.notify,
-            #     )
             jdut = sweph["jd_ut"]
             lat = sweph["lat"]
             lon = sweph["lon"]
             alt = sweph.get("alt", 0.0)
-            flag = self.chart_settings.get("sweph flag", 0)
+            flag = self.chart_settings["sweph flag"]
             # calculate all-day horas :from sunrise to sunset | wall clock new day 00:00
             # def calculate_horas(jd_ut=None, geo=(), objs=(), flag=0, params=None):
             self.astro_data["e1"]["chart"]["horas"] = calculate_horas(
@@ -167,15 +224,17 @@ class Dispatcher:
             # needs : use_mean_node use_28_naks first_nak division
             pos_params = {
                 "use mean node": getattr(self.chart_settings, "use mean node", False),
-                "use 28 naks": getattr(self.chart_settings, "use 28 naks", False),
-                "first naksatra": getattr(self.chart_settings, "first nak", 1),
+                "use 28 mansions": getattr(
+                    self.chart_settings, "use 28 mansions", False
+                ),
+                "first naksatra": getattr(self.chart_settings, "first naksatra", 1),
                 "division": getattr(self.chart_settings, "division", 9),
             }
             pos_calc = calculate_positions(jd_ut=jdut, flag=flag, params=pos_params)
             if pos_calc:
                 self.astro_data[eid]["positions"] = pos_calc.get("positions", {})
                 self.astro_data[eid]["lumies"] = pos_calc.get("lumies", {})
-        self.signal._emit("data calculated", self.astro_data[eid])
+        self.app.signaler.emit("data calculated", self.astro_data[eid])
         self.update_titlebar()
 
     def update_titlebar(self):
@@ -191,9 +250,7 @@ class Dispatcher:
             title += f" | {event} : no date"
         age_y = getattr(self.chart_settings, "age_y", 0.0)
         age_m = getattr(self.chart_settings, "age_m", 0.0)
-        sel_year = getattr(
-            self.chart_settings, "selected year period", (365.2425, "gregorian")
-        )
+        sel_year = self.chart_settings["selected year period"]
         year_length = sel_year[0]
         if event and dt:
             title += f" | {event} : {dt}"
@@ -207,24 +264,51 @@ class Dispatcher:
         if age_m:
             title += f" - lun : {age_m:.2f}m"
         # todo check below
-        change_time = self.app_settings.get("selected change time str", "1 D")
+        change_time = self.app_settings["selected change time str"]
         if change_time:
             title += f" | ct : {change_time}"
         elif change_time is None:
             title += " | ct : 1 D"
             # emit signal & subscribe in mainwindow
-        self.signal.emit(
-            "update_titlebar", {"title": title, "e2_active": self.e2_active}
-        )
+        self.app.signaler.emit("update titlebar", {"title": title})
 
-    def event_selection(self, event_name):
+    def event_selection(self, event_id):
         # def event_selection(self, gesture, n_press, x, y, event_name):
         # handle event selection
-        if self.app_settings["selected event"] != event_name:
-            self.app_settings["selected event"] = event_name
-            self.signal._emit("event_selection_changed", event_name)
+        if self.app_settings["selected event"] != event_id:
+            self.app_settings["selected event"] = event_id
+            self.app.signaler.emit("event selection changed", event_id)
             self.update_titlebar()
             log.debug(
-                f"{event_name} selected",
+                f"{event_id} selected",
                 self.extra,
             )
+
+
+# APP_ORIENTATION, # todo in mainwindow
+# 0 su 1 mo 2 me 3 ve 4 ma 5 ju 6 sa 7 ur 9 ne 9 pl 11 truenode
+# OBJECTS,
+# same order as above but full name : "sun", "saturn", "true node",
+# OBJECTS_2,
+# 7 x : "fortuna": {"enable":False, "day":"asc + (mo - su)", "tooltip":"body"}
+# LOTS,
+# {"syzygy": {"enable":False,"tooltip":"syzygy..."}}, {"eclipse":{enable...}}
+# PRENATAL,
+# {"sidereal zodiac":(True,"""hinttext""")}, {"true positions":(True,hinttext)} "topocentric" "default flag" "no nutation" "equatorial" (only needed for d1 direction)
+# SWE_FLAG,
+# HOUSE_SYSTEMS,  # select top as it is default
+# SOLAR_YEAR,  # select top = default
+# LUNAR_MONTH,  # top = default
+# AYANAMSA,  # top = default
+# {"custom julian day utc": 245....., "custom ayanamsa": 23.....,}
+# CUSTOM_AYANAMSA,
+# {"use mean node":(False,"[hinttext]"), "exact lunar mont" "enable glyphs"
+# "fixed asc" "naksatras ring" "28 mansions" "first naksatra" "harmonic ring"
+# "event 2 rings":{"transit":(False, "[hinttext]")} "transit varga"
+# "p2 progress" "p3 progress" "p3m progress" "d1 direction" "lunar return"
+# "solar return" "use varga aspects" "fixed stars":("custom", "[hinttext]")
+# "snap tolerance" "chart info string" "chart info string extra"
+# CHART_SETTINGS,
+# {"ephe path": ("sweph/ephe/","[hinttext]"),"astro font"
+# "mono font" "events db" "data" "filename""
+# FILES,

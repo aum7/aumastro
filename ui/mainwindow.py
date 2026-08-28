@@ -8,7 +8,7 @@ from gi.repository import Gtk, Adw  # type: ignore
 from typing import Any, Optional
 
 from .sidepane.sidepane import SidepaneManager
-from .sidepane.settings import update_chart_setting_checkbox
+from .sidepane.sidepanesettings import update_chart_setting_checkbox
 from .uisetup import UISetup
 from managers.hotkeyer import Hotkeyer
 from managers.notifier import NotifyLevel
@@ -84,9 +84,6 @@ class MainWindow(
         self.orig_top_right_child = None  # datagraph to be overlaid
         # initialize panes layout todo doesnt work properly
         self.connect("realize", lambda w: self.panes_double())
-        # todo : adjust panes for horizontal app orientation : currently vertical
-        # orientation is only considered
-        self.orientation = getattr(self, "orientation", "vertical")
         self.signal.connect("update_titlebar", self.on_update_titlebar)
         self.signal.connect("show_toast", self.show_toast)
 

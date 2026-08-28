@@ -24,7 +24,7 @@
 #("--- sort_0", "only named stars / clusters are included (524)", ""),
 #("--- sort_1", "1: all named stars sorted by constellation", ""),
 #("--- sort_2", "2: all named stars sorted alphabetically", ""),
-#("--- sort_3", "3: 28 naksatras", ""),
+#("--- sort_3", "3: 28 mansions", ""),
 #("--- sort_4", "4: 118 major stars / clusters by vivian robson", ""),
 #("--- sort_5", "5: 15 behenian stars", ""),
 #
@@ -1151,7 +1151,7 @@
 #("Zubeneshamali", "Zubeneshamali, Zuben Eschamali", "beLib"),
 #("Zubenhakrabi", "Zubenhakrabi, Zuben Hakrabi", "nuLib"),
 #
-#("--- sort3", "--- 28 naksatras:", ""),
+#("--- sort3", "--- 28 mansions:", ""),
 #("Ashvini", "01 asv Ashvini", "beAri"),
 #("Bharani", "02 bha Bharani", "41Ari"),
 #("Krttika", "03 krt Krttika", "etTau"),

@@ -8,10 +8,11 @@ from gi.repository import Gtk  # type: ignore
 
 
 class EventLocation:
-    def __init__(self, parent=None, app=None):
-        self.parent = parent
-        self.app = app or Gtk.Application.get_default()
-        self.notify = self.app.notifier
+    def __init__(self, sidepane=None, app=None):
+        if app is not None:
+            self.app = app
+        if sidepane is not None:
+            self.sidepane = sidepane
         self.location_callback = None
         self.countries = []
         self.country_map = {}
@@ -44,7 +45,7 @@ class EventLocation:
         ddn_country,
     ):
         # store entry reference
-        self.entry = ent_city
+        self.sidepane.entry = ent_city
         city = ent_city.get_text().strip()
         country_index = ddn_country.get_selected()
         country = ddn_country.get_model().get_string(country_index)
@@ -70,14 +71,14 @@ class EventLocation:
             self.check_cities(sorted(cities))
 
         except Exception as e:
-            self.notify.error(
+            self.app.notifier.error(
                 f"atlas db error\n\t{e}",
                 source="eventlocation",
             )
 
     def check_cities(self, cities):
         if len(cities) == 0:
-            self.notify.warning(
+            self.app.notifier.warning(
                 "city not found",
                 source="eventlocation",
                 route=["user"],
@@ -114,7 +115,7 @@ class EventLocation:
             title="select city : name | latitude | longitude | altitude [- = s / w ]",
             modal=True,
         )
-        dialog.set_transient_for(self.parent)
+        dialog.set_transient_for(self.sidepane)
         dialog.set_default_size(-1, -1)
 
         content = dialog.get_content_area()

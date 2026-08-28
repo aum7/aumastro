@@ -1,6 +1,6 @@
 # ui/sidepane/sidepane.py
 # collapsible side pa
-# also sidepane, since we removed __init__, does not recognize self anymorenel with all user input widgets
+# also sidepane, since we removed __init__, does not recognize self anymore with all user input widgets
 # ruff: noqa: E402
 import re
 import gi
@@ -13,7 +13,7 @@ from ui.collapsepanel import CollapsePanel
 from sweph.swetime import custom_iso_to_jd, jd_to_custom_iso
 from .eventsinput import setup_event
 from .search import setup_search
-from .settings import setup_settings
+from .sidepanesettings import SidepaneSettings
 from .cycle import setup_cycle
 
 
@@ -47,49 +47,17 @@ class SidepaneManager:
         "0.000012": "1 s",  # 1/86400 of a day
     }
 
-    # def __init__(self, app=None, *args, **kwargs):
-    #     self.app = app or Gtk.Application.get_default()
-    #     self.notify = self.app.notify_manager
-    #     self.signal = self.app.signal_manager
-    #     self.dispatcher = self.app.dispatcher
-
     def init_sidepane(self, app=None):
         # initialize attributes
         if app is not None:
             self.app = app
-        # self.dispatcher = self.app.dispatcher
+        self.selected_event = self.app.dispatcher.app_settings["selected event"]
         self.margin_end = 7
         # intialize panels
         self.clp_event_one = None
         self.clp_event_two = None
         self.clp_tools = None
         self.clp_settings = None
-
-    # def setup_event_binding(self, event_data, signaler):
-    #     # wire gtk entry widgets to eventsdata methods
-    #     for entry, callback in [
-    #         # called funcs are in eventsdata.py : we removed gtk from there
-    #         # how do we access onnamechange onlocationchange ondatetimechange ?
-    #         # or otherwise solve access
-    #         # do we need controller ?
-    #         (event_panel.name, self.on_name_change),
-    #         (event_panel.location, self.on_location_change),
-    #         (event_panel.date_time, self.on_datetime_change),
-    #     ]:
-    #         entry.connect("activate", callback)
-    #         focus_controller = Gtk.EventControllerFocus.new()
-    #         entry.add_controller(focus_controller)
-    #         focus_controller.connect(
-    #             "leave", lambda ctrl, cb=callback: cb(ctrl.get_widget())
-    #         )
-
-    #     def on_datetime_change(data):
-    #         event_id, dt_str = data[0], str(data[1])
-    #         if event_data.id == event_id:
-    #             event_panel.entry_datetime.set_text(dt_str)
-    #             event_data.on_datetime_change(dt_str)
-
-    #     self.signaler.connect("datetime_captured", on_datetime_capture)
 
     def buttons_from_dict(
         self,
@@ -132,12 +100,13 @@ class SidepaneManager:
         # 2 events : True/False = set expanded on/off on init
         self.clp_event_one = setup_event(self, "e1", True)
         self.clp_event_two = setup_event(self, "e2", False)
-        if self.app.dispatcher["selected event"] == "e1":
+        if self.selected_event == "e1":
             self.clp_event_one.add_title_css_class("label-event-selected")
         else:
             self.clp_event_two.add_title_css_class("label-event-selected")
         # settings ie objects to calculate & flags to use etc
-        self.clp_settings = setup_settings(self)
+        self.clp_settings = SidepaneSettings(self)
+        # self.clp_settings = setup_settings(self)
         # search module
         self.clp_search = setup_search(self)
         # cycle wave module
@@ -222,7 +191,7 @@ ui/sidepane/sidepane.py"""
 
         return clp_change_time
 
-    def odd_time_period(self, dropdown, user_data=None):
+    def odd_time_period(self, dropdown):
         """on dropdown time period changed / selected"""
         selected = dropdown.get_selected()
         value = self.time_periods_list[selected]
@@ -249,23 +218,23 @@ ui/sidepane/sidepane.py"""
             dropdown_index = period_values.index(new_value)
             self.ddn_time_periods.set_selected(dropdown_index)
             # notify new value
-            # manager.notify.info(
+            # self.app.notifier.info(
             #     f"selected period : {new_value}", source="change time", timeout=3
             # )
             key = next(k for k, v in self.CHANGE_TIME_PERIODS.items() if v == new_value)
             self.CHANGE_TIME_SELECTED = float(key)
             # store selected change time period for main title update
             self.app.dispatcher["selected change time str"] = new_value
-            # update main window title
+            # update main window title todo expects dt + x
             self.app.dispatcher.update_titlebar(self, new_value)
 
     def change_event_time(self, change_delta):
         """adjust selected event time by julian day delta"""
         # get active entry based on selected event
         entry = None
-        if self.app.dispatcher["selected event"] == "e1" and self.app.EVENT_ONE:
+        if self.selected_event == "e1" and self.app.EVENT_ONE:
             entry = self.app.EVENT_ONE.date_time
-        elif self.app.selected_event == "e2" and self.app.EVENT_TWO:
+        elif self.selected_event == "e2" and self.app.EVENT_TWO:
             entry = self.app.EVENT_TWO.date_time
         # get datetime string ! datetime is naive here !
         current_text = ""
@@ -333,11 +302,11 @@ ui/sidepane/sidepane.py"""
 
     def on_time_now(self):
         """get time now (utc) for computer / app location"""
-        if self.app.selected_event == "e1" and self.app.EVENT_ONE:
+        if self.selected_event == "e1" and self.app.EVENT_ONE:
             entry = self.app.EVENT_ONE.date_time
             self.app.EVENT_ONE.is_hotkey_now = True
             self.app.EVENT_ONE.on_datetime_change(entry)
-        elif self.app.selected_event == "e2" and self.app.EVENT_TWO:
+        elif self.selected_event == "e2" and self.app.EVENT_TWO:
             entry = self.app.EVENT_TWO.date_time
             self.app.EVENT_TWO.is_hotkey_now = True
             self.app.EVENT_TWO.on_datetime_change(entry)

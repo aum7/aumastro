@@ -1,5 +1,8 @@
 # ui/mainpanes/datagraph.py
 # ruff: noqa: E402
+import logging
+
+log = logging.getLogger(__name__)
 import os
 import glob
 import pandas as pd
@@ -25,7 +28,6 @@ class DataGraph(Gtk.Box):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.app = Gtk.Application.get_default()
-        self.notify = self.app.notify_manager
         self.set_orientation(Gtk.Orientation.VERTICAL)
         # create figure & axes
         self.figure, self.ax = plt.subplots()
@@ -58,11 +60,11 @@ class DataGraph(Gtk.Box):
         # init / create cycle wave
         # self.cycle_calculated = False # todo move to on_enter_key
         self.cycle_wave = None
-        self.app.signal_manager._connect("plot_wave", self.on_plot_wave)
+        self.app.signaler._connect("plot_wave", self.on_plot_wave)
         # init search result plot
         self.search_markers = []
-        self.app.signal_manager._connect("clear_search_plots", self.clear_search_plots)
-        self.app.signal_manager._connect("plot_search_result", self.plot_search_result)
+        self.app.signaler.connect("clear search plots", self.clear_search_plots)
+        self.app.signaler.connect("plot search result", self.plot_search_result)
         self.plot_last_n(800)
         self.search_cleared = False
 
@@ -75,7 +77,7 @@ class DataGraph(Gtk.Box):
 
     def clear_search_plots(self, *args):
         # remove all previously plotted search markers
-        if hasattr(self, "search_markers") and self.search_markers:
+        if hasattr(self, "search markers") and self.search_markers:
             for marker in self.search_markers:
                 try:
                     if hasattr(marker, "remove"):
@@ -370,10 +372,13 @@ class DataGraph(Gtk.Box):
                     linewidth=0.5,
                     zorder=0,
                 )
-        except Exception:
+        except Exception as e:
             # fail silently if numeric issues occur
-            print("failed setting horizontal price lines")
-            # pass
+            self.app.notifier.error(
+                f"failed setting horizontal price lines : {e}",
+                self.extra,
+            )
+
         # plot overlay cycle wave
         if hasattr(self, "cycle_wave") and self.cycle_wave:
             dataframe = self.cycle_wave["results"][0]["dataframe"].copy()
@@ -464,6 +469,7 @@ class DataGraph(Gtk.Box):
             self.shift_held = False
 
     def on_click(self, event):
+        # grab datetime from datagraph click
         if event.button == 1 and event.inaxes:
             ix = int(round(event.xdata))
             num = len(self.df)
@@ -477,7 +483,7 @@ class DataGraph(Gtk.Box):
                     # print("datagraph : shift-click - jump forward")
                     self.jump_bars(5800)
                 else:
-                    self.notify.info(
+                    self.app.notifier.info(
                         "shift-click : not at edge",
                         source="datagraph",
                         route=["terminal", "user"],
@@ -486,8 +492,8 @@ class DataGraph(Gtk.Box):
                 # normal click
                 if self.df is not None and 0 <= ix < len(self.df):
                     dt = self.df.index[ix]
-                    selected_e = self.app.selected_event
-                    self.app.signal_manager._emit("datetime_captured", (selected_e, dt))
+                    selected_e = self.app.dispatcher["selected event"]
+                    self.app.signaler.emit("datetime captured", (selected_e, dt))
                     # print(f"datagraph : datetime : {dt}")
 
     def jump_bars(self, bars):
@@ -501,14 +507,14 @@ class DataGraph(Gtk.Box):
             return
         num = cur_end - cur_start
         if bars < 0 and cur_start == 0:
-            self.notify.warning(
+            self.app.notifier.warning(
                 "reached data start",
                 source="datagraph",
                 route=["terminal", "user"],
             )
             return
         if bars > 0 and cur_end == df_len:
-            self.notify.warning(
+            self.app.notifier.warning(
                 "reached data end",
                 source="datagraph",
                 route=["terminal", "user"],

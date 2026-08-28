@@ -273,7 +273,7 @@ def setup_search(manager) -> CollapsePanel:
     # separate search panel
     manager.search = Searcher()
     notify = manager.app.notify_manager
-    use_28 = manager.app.chart_settings.get("28 naksatras", False)
+    use_28 = manager.app.chart_settings.get("28 mansions", False)
     pad_x = 7
     pad_y = 0
     clp_search = CollapsePanel(title="search", expanded=False)

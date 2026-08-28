@@ -13,24 +13,23 @@ if &shortmess =~ 'A'
 else
   set shortmess=aoO
 endif
-badd +12 ~/dev/venaumastro/aumastro/ui/mainwindow.py
-badd +61 ~/dev/venaumastro/aumastro/ui/sidepane/eventsinput.py
-badd +85 ~/dev/venaumastro/aumastro/ui/sidepane/sidepane.py
-badd +52 sweph/eventsdata.py
+badd +11 ~/dev/venaumastro/aumastro/ui/sidepane/sidepanesettings.py
+badd +105 ui/sidepane/sidepane.py
+badd +99 ~/dev/venaumastro/aumastro/ui/sidepane/sidepanehelpers.py
 argglobal
 %argdel
-edit ~/dev/venaumastro/aumastro/ui/sidepane/sidepane.py
+edit ~/dev/venaumastro/aumastro/ui/sidepane/sidepanesettings.py
 argglobal
-balt sweph/eventsdata.py
+balt ~/dev/venaumastro/aumastro/ui/sidepane/sidepanehelpers.py
 let s:cpo_save=&cpo
 set cpo&vim
 inoremap <buffer> <M-e> l<Cmd>lua require('nvim-autopairs.fastwrap').show()
 nnoremap <buffer> <silent> K <Cmd>lua vim.lsp.buf.hover()
 nnoremap <buffer> <silent> gI <Cmd>lua vim.lsp.buf.implementation()
-nnoremap <buffer> <silent> gr <Cmd>lua vim.lsp.buf.references()
+nnoremap <buffer> <silent> gD <Cmd>lua vim.lsp.buf.declaration()
 nnoremap <buffer> <silent> gd <Cmd>lua vim.lsp.buf.definition()
 nnoremap <buffer> <silent> gs <Cmd>lua vim.lsp.buf.signature_help()
-nnoremap <buffer> <silent> gD <Cmd>lua vim.lsp.buf.declaration()
+nnoremap <buffer> <silent> gr <Cmd>lua vim.lsp.buf.references()
 let &cpo=s:cpo_save
 unlet s:cpo_save
 setlocal keymap=
@@ -75,7 +74,7 @@ setlocal foldcolumn=0
 setlocal foldenable
 setlocal foldexpr=
 setlocal foldignore=#
-setlocal foldlevel=1
+setlocal foldlevel=4
 setlocal foldmarker={{{,}}}
 setlocal foldmethod=indent
 setlocal foldminlines=1
@@ -133,7 +132,7 @@ setlocal spellfile=
 setlocal spelllang=en,cjk
 setlocal spelloptions=noplainbuffer
 setlocal statuscolumn=
-setlocal statusline=%#lualine_a_4_command#\ ����\ %#lualine_b_5_command#%#SLGitIcon#\ %*%#SLBranchName#\ majorupgrade\ %<%#lualine_c_diff_added_command#\ \ \ 60\ %#lualine_c_diff_modified_command#\ 15\ %#lualine_c_diff_removed_command#\ 3\ %#lualine_c_normal#%=%#lualine_x_diagnostics_error_command#\ \ 44\ %#lualine_x_diagnostics_warn_command#\ 1\ %#lualine_x_diagnostics_hint_command#\ 14\ %#lualine_c_normal#%#lualine_c_normal#\ 󰌒\ 4\ %#lualine_x_filetype_DevIconPy_command#\ \ %#lualine_c_normal#python\ %#lualine_b_command#\ \ 57:4\ \ %#lualine_z_progress_command#\ %P/%L\ 
+setlocal statusline=%#lualine_a_10_command#\ ����\ %#lualine_b_11_command#%#SLGitIcon#\ %*%#SLBranchName#\ majorupgrade\ %<%#lualine_c_diff_added_command#\ \ \ 878\ %#lualine_c_normal#%=%#lualine_x_diagnostics_error_command#\ \ 92\ %#lualine_x_diagnostics_hint_command#\ 3\ %#lualine_c_normal#%#lualine_c_normal#\ 󰌒\ 4\ %#lualine_x_filetype_DevIconPy_command#\ \ %#lualine_c_normal#python\ %#lualine_b_command#\ \ 22:52\ %#lualine_z_progress_command#\ %P/%L\ 
 setlocal suffixesadd=.py
 setlocal noswapfile
 setlocal synmaxcol=3000
@@ -152,35 +151,53 @@ setlocal undolevels=-123456
 setlocal varsofttabstop=
 setlocal vartabstop=
 setlocal virtualedit=
-setlocal winbar=\ %#DevIconPy#%*\ %#Winbar#sidepane.py%*\ %#NavicSeparator#%*\ %#NavicIconsClass#\ %*%#NavicText#SidepaneManager%*
+setlocal winbar=\ %#DevIconPy#%*\ %#Winbar#sidepanesettings.py%*\ 
 setlocal winblend=0
 setlocal winhighlight=
 setlocal nowinfixheight
 setlocal nowinfixwidth
 setlocal wrap
 setlocal wrapmargin=0
-22
+38
 normal! zo
-69
+46
 normal! zo
-70
+63
 normal! zo
-74
+75
 normal! zo
-78
+201
 normal! zo
-82
+246
 normal! zo
-84
+272
 normal! zo
-186
+293
 normal! zo
-let s:l = 57 - ((25 * winheight(0) + 17) / 34)
+495
+normal! zo
+571
+normal! zo
+629
+normal! zo
+642
+normal! zo
+653
+normal! zo
+654
+normal! zo
+806
+normal! zo
+826
+normal! zo
+851
+normal! zo
+let s:l = 22 - ((21 * winheight(0) + 17) / 34)
 if s:l < 1 | let s:l = 1 | endif
 keepjumps exe s:l
 normal! zt
-keepjumps 57
-normal! 04|
+keepjumps 22
+normal! 052|
 tabnext 1
 if exists('s:wipebuf') && len(win_findbuf(s:wipebuf)) == 0 && getbufvar(s:wipebuf, '&buftype') isnot# 'terminal'
   silent exe 'bwipe ' . s:wipebuf

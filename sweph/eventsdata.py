@@ -23,7 +23,6 @@ class EventsData:
     ):
         if app is not None:
             self.app = app
-        # self.notify = self.app.notifier # replaced by logging
         self.id = id
         self.country = country
         self.city = city
@@ -42,16 +41,7 @@ class EventsData:
         # data from calculation
         self.chart = {}
         self.sweph = {}
-        # self.app.signaler.connect("datetime_captured", self.datetime_capture)
-
-    def datetime_capture(self, data):
-        id = data[0]
-        dt = str(data[1])
-        if self.id != id:
-            return
-        if self.date_time is not None:
-            self.date_time.set_text(dt)
-            self.on_datetime_change(self.date_time)
+        self.app.signaler.connect("datetime captured", self.on_datetime_capture)
 
     def on_location_change(self, entry):
         location_name = entry.get_name()
@@ -64,12 +54,8 @@ class EventsData:
                     f"mandatory data missing : {location_name}",
                     self.extra,
                 )
-                # self.notify.warning(
-                #     f"\n\tmandatory data missing : {location_name}",
-                #     source="eventdata",
-                #     route=["terminal", "user"],
-                # )
                 return
+
             elif self.id == "e2":
                 self.chart["location"] = ""
                 self.chart["timezone"] = ""
@@ -189,12 +175,6 @@ class EventsData:
                 f"location calculation failed : {e}",
                 self.extra,
             )
-            # self.notify.error(
-            #     f"{location_name} invalid format",
-            #     source="eventdata",
-            #     route=["terminal", "user"],
-            #     timeout=4,
-            # )
             return
 
         if lon:
@@ -250,11 +230,6 @@ class EventsData:
                 f"mandatory data missing : {name_name}",
                 self.extra,
             )
-            # self.notify.warning(
-            #     f"\n\tmandatory data missing : {name_name}",
-            #     source="eventdata",
-            #     route=["terminal", "user"],
-            # )
             return
         if name == self.old_name:
             return
@@ -263,11 +238,6 @@ class EventsData:
                 f"{name_name} too long : max 30 characters",
                 self.extra,
             )
-            # self.notify.warning(
-            #     f"\n\t{name_name} too long : max 30 characters",
-            #     source="eventdata",
-            #     route=["terminal", "user"],
-            # )
             return
 
         self.old_name = name
@@ -288,11 +258,6 @@ class EventsData:
                     "event one : set location first",
                     self.extra,
                 )
-                # self.notify.warning(
-                #     "event one : set location first",
-                #     source="eventdata",
-                #     route=["terminal", "user"],
-                # )
                 return
         elif self.id == "e2":
             e1 = getattr(self.app, "EVENT_ONE", None)
@@ -301,11 +266,6 @@ class EventsData:
                     "event two : event one must be set first",
                     self.extra,
                 )
-                # self.notify.warning(
-                #     "event two : event one must be set first",
-                #     source="eventdata",
-                #     route=["terminal", "user"],
-                # )
                 return
 
         jd_ut = None
@@ -349,13 +309,9 @@ class EventsData:
                     f"{datetime_name} time now failed : {e}",
                     self.extra,
                 )
-                # self.notify.error(
-                #     f"{datetime_name} time now failed",
-                #     source="eventdata",
-                #     route=["terminal"],
-                # )
                 self.is_hotkey_now = False
                 return
+
             self.is_hotkey_now = False
         else:
             if not date_time:
@@ -364,11 +320,7 @@ class EventsData:
                         f"mandatory data missing for {datetime_name}",
                         self.extra,
                     )
-                    # self.notify.warning(
-                    #     f"\n\tmandatory data missing : {datetime_name}",
-                    #     source="eventdata",
-                    #     route=["terminal", "user"],
-                    # )
+
                     return
                 elif self.id == "e2":
                     if self.chart or self.sweph:
@@ -422,11 +374,7 @@ class EventsData:
                     f"{datetime_name} error : {e}",
                     self.extra,
                 )
-                # self.notify.warning(
-                #     f"{datetime_name} error",
-                #     source="eventdata",
-                #     route=["terminal", "user"],
-                # )
+
                 return
 
         if not jd_ut:
@@ -472,3 +420,18 @@ class EventsData:
         self.app.signaler.emit("event_changed", dataset)
 
         return
+
+    def on_datetime_capture(self, data):
+        # receives data from datagraph click ie user clicks datagraph > read
+        # datetime under cursor > pass forward = here
+        id = data[0]
+        dt = str(data[1])
+        captured = None
+        if self.id != id:
+            return
+        if self.date_time is not None:
+            self.date_time.set_text(dt)
+            captured = self.on_datetime_change(self.date_time)
+        # self.app.signaler.emit("datetime captured", (id, captured))
+
+        return  # todo needed ???

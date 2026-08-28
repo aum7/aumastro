@@ -3,7 +3,7 @@
 from math import modf
 from swisseph import contrib as swh
 from ui.fonts.glyphs import SIGNS
-from user.settings import OBJECTS
+from user.usersettings import OBJECTS
 from sweph.constants import AVG_SPEEDS
 
 

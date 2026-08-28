@@ -233,28 +233,19 @@ CHART_SETTINGS = {
 22 sra\t23 dha\t24 sat
 25 pbh\t26 ubh\t27 rev""",
     ),
-    # --- use 28 (all equal = no mini abhijt) else standard 27 naksatras
+    # --- use 28 lunar mansions
     # rulership as per chinese astrology / vivian e robson - fixed stars ...
-    "28 naksatras": (
+    "28 mansions": (
         True,
-        """use 28 (all equal = no mini abhijit) vs standard 27 naksatras
-1  asv\t2  bha\t3  krt\t4  roh
-5  mrg\t6  ard\t7  pun\t8  pus
-9  asl\t10 mag\t11 pph\t12 uph
-13 has\t14 cit\t15 sva\t16 vis
-17 anu\t18 jye\t19 mul\t20 pas
-21 uas\t22 abh\t23 sra\t24 dha
-25 sat\t26 pbh\t27 ubh\t28 rev
-
+        """use 28 lunar mansions with chinese / arabian name
 rulership changes to weekday order !
-basically chinese / arabian mansions
 can be changed in
 sweph / constants.py""",
     ),
     # --- start naksatras ring with which naksatra
     "first naksatra": (
         1,
-        "start naksatras ring with any naksatra\nrotate relative to 0° aries\n1 = asvini (standard)\n19 = mula\n22 = abhijit if 28 naksatras etc",
+        "start naksatras ring with any naksatra / lunar mansion\nrotate relative to 0° aries\n1 = asvini (standard)\n19 = mula\n22 = abhijit if 28 naksatras etc",
     ),
     # --- harmonics division ring : 0 hide | 1 egypt. terms (bounds) |
     # 1+ simple divisions, similar but NOT all equal to varga
