@@ -1,10 +1,10 @@
-# ui/data_printscreen.py : printscreen all data (datagraph)
-# & save as .png sequence
+# ui/data_printscreen.py
+# printscreen all data (datagraph) & save as .png sequence
 # ruff: noqa: E402
 import logging
 
 log = logging.getLogger(__name__)
-extra = {"source": "dataprintscreen", "route": ["terminal"]}
+extra = {"source": "dataprintscreen", "route": [""]}
 import pandas as pd
 import gi
 
@@ -13,7 +13,7 @@ from gi.repository import GLib  # type: ignore
 from pathlib import Path
 from datetime import datetime
 
-EXPORT_FOLDER = "Documents/goldseqd"  # daily data
+EXPORT_FOLDER = "user/data/gold/goldseqd"  # daily data
 START_DATE = "1969-01-01 00:00:00"
 END_DATE = "2026-01-01 00:00:00"
 
@@ -46,14 +46,14 @@ class DataPrintscreen:
     def run_seq(self):
         # hotkey entry point
         if not self.app.EVENT_ONE:
-            self.notify.warning(
+            self.app.notifier.warning(
                 "event 1 not initialized",
                 source="dataprintscreen",
                 route=["terminal", "user"],
             )
             return
         if not hasattr(self.app.EVENT_ONE, "date_time"):
-            self.notify.warning(
+            self.app.notifier.warning(
                 "event 1 datetime missing",
                 source="dataprintscreen",
                 route=["terminal", "user"],
@@ -63,7 +63,7 @@ class DataPrintscreen:
         win = self.app.get_active_window()
         print(f"activewin : {win}")
         if not win:
-            self.notify.error(
+            self.app.notifer.error(
                 "main window not found",
                 source="dataprintscreen",
                 route=["terminal", "user"],
@@ -73,7 +73,7 @@ class DataPrintscreen:
         try:
             gold_path = Path("user/data/gold/gold_d.csv")
             if not gold_path.exists():
-                self.notify.error(
+                self.app.notifier.error(
                     f"datagraph data not found : {gold_path}",
                     source="dataprintscreen",
                     route=["terminal", "user"],
@@ -107,14 +107,14 @@ class DataPrintscreen:
                         raise ValueError(f"no data in range {start_dt} to {end_dt}")
                     actual_start = self.gold_df.iloc[0]["datetime"]
                     actual_end = self.gold_df.iloc[-1]["datetime"]
-                    self.notify.info(
+                    self.app.notifier.info(
                         f"datetime filter : {original_len} -> {filtered_len} enties\n"
                         f"range : {actual_start} to {actual_end}",
                         source="dataprintscreen",
                         route=["terminal"],
                     )
                 except Exception as e:
-                    self.notify.error(
+                    self.app.notifier.error(
                         f"datetime filter error\n{e}",
                         source="dataprintscreen",
                         route=["terminal"],
@@ -123,20 +123,20 @@ class DataPrintscreen:
             # sequence test
             if self.test_seq:
                 self.gold_df = self.gold_df.head(self.test_screenshots)
-                self.notify.warning(
+                self.app.notifier.warning(
                     f"test sequence ({self.test_screenshots} screenshots)",
                     source="dataprintscreen",
                     route=["terminal"],
                 )
             self.total = len(self.gold_df)
             if self.total == 0:
-                self.notify.warning(
+                self.app.notifer.warning(
                     "no data after filtering",
                     source="dataprintscreen",
                     route=["terminal"],
                 )
                 return
-            self.notify.info(
+            self.app.notifer.info(
                 f"loaded {self.total} data entries\nstarting printscreen sequence",
                 source="dataprintscreen",
                 route=["terminal"],
@@ -146,7 +146,7 @@ class DataPrintscreen:
             estimated_m = estimated_s / 60
             print(f"estimated time : {estimated_m:.1f} min ({estimated_s:.0f} sec)")
         except Exception as e:
-            self.notify.error(
+            self.app.notifer.error(
                 f"loading printscreen data error :\n{e}",
                 source="dataprintscreen",
                 route=["terminal", "user"],
@@ -182,10 +182,11 @@ class DataPrintscreen:
                 remaining = (
                     (self.total - self.current_idx - 1) / rate if rate > 0 else 0
                 )
-                print(
+                log.debug(
                     f"{self.current_idx + 1} / {self.total}\t({pct:.1f}% : {dt_str})"
                     f"\n{rate:.1f}/s"
-                    f"\neta : {remaining / 60:.1f} min"
+                    f"\neta : {remaining / 60:.1f} min",
+                    extra=extra,
                 )
             # flush pending events : wait a bit for screenshot
             if not self.skip_flush_redraw:
@@ -195,10 +196,9 @@ class DataPrintscreen:
             # schedule screenshot after redraw
             GLib.timeout_add(self.capture_delay, self._capture, dt)
         except Exception as e:
-            self.notify.error(
+            self.app.notifer.error(
                 f"error processing index {self.current_idx}\n{e}",
-                source="dataprintscreen",
-                route=["terminal"],
+                extra=extra,
             )
             self.current_idx += 1
             return True
@@ -209,10 +209,9 @@ class DataPrintscreen:
         try:
             self._screenshot(dt)
         except Exception as e:
-            self.notify.error(
+            self.app.notifer.error(
                 f"screenshot failed for {dt}\n{e}",
-                source="dataprintscreen",
-                route=["terminal"],
+                extra=extra,
             )
         self.current_idx += 1
         # schedule next iteration
@@ -261,17 +260,26 @@ class DataPrintscreen:
             if hasattr(dg, "cursor_text"):
                 dg.cursor_text.set_text(info)
                 dg.cursor_text.set_visible(True)
-        except Exception:
-            print("failed to set info banner")
+        except Exception as e:
+            log.error(
+                f"failed to set info banner : {e}",
+                extra=extra,
+            )
         # redraw canvas
         try:
             dg.canvas.draw()
-        except Exception:
-            print("using drawidle()")
+        except Exception as e:
+            log.debug(
+                f"using drawidle() : {e}",
+                extra=extra,
+            )
             try:
                 dg.canvas.draw_idle()
-            except Exception:
-                print("failed to redraw canvas")
+            except Exception as e:
+                log.debug(
+                    f"failed to redraw canvas : {e}",
+                    extra=extra,
+                )
 
     def _screenshot(self, dt):
         # capture window screenshot to png
@@ -301,7 +309,7 @@ class DataPrintscreen:
                 )
                 return result.returncode == 0 and file_path.exists()
             except (subprocess.TimeoutExpired, FileNotFoundError):
-                self.notify.error(
+                self.app.notifer.error(
                     f"gnome-screenshot failed : {file_path}",
                     source="dataprintscreen",
                     route=["terminal"],
@@ -310,7 +318,7 @@ class DataPrintscreen:
             return False
             # todo more external printscreen methods
         except Exception as e:
-            self.notify.debug(
+            self.app.notifer.debug(
                 f"external screenshot failed\n{e}",
                 source="dataprintscreen",
                 route=["terminal"],
@@ -341,7 +349,7 @@ class DataPrintscreen:
         png_files = sorted(self.output_dir.glob("gold_*.png"))
         elapsed = (datetime.now() - self.start_time).total_seconds()
         rate = self.current_idx / elapsed if elapsed > 0 else 0
-        self.notify.info(
+        self.app.notifer.info(
             f"data printscreen complete : {self.current_idx} screenshots\n"
             f"saved {len(png_files)} files to {self.output_dir}"
             f"time : {elapsed / 60:.1f} min ({rate:.1f}/s)\n",
@@ -353,7 +361,7 @@ class DataPrintscreen:
         # stop generation early
         if self.running:
             self.running = False
-            self.notify.warning(
+            self.app.notifer.warning(
                 f"data sequence stopped at {self.current_idx}/{self.total}",
                 source="dataprintscreen",
                 route=["terminal", "user"],

@@ -300,7 +300,7 @@ CHART_SETTINGS = {
     ),
     # --- use 28 lunar mansions
     # rulership as per chinese astrology / vivian e robson - fixed stars ...
-    "28 mansions": (
+    "use 28 mansions": (
         True,
         """use 28 lunar mansions with chinese / arabian name
 rulership changes to weekday order !

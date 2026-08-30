@@ -3,7 +3,7 @@
 import logging
 
 log = logging.getLogger(__name__)
-extra = {"source": "cycler", "route": ["terminal"]}
+extra = {"source": "cycler", "route": [""]}
 extrauser = {"source": "cycler", "route": ["terminal", "user"]}
 extratimeout4 = {"source": "cycler", "route": ["terminal"], "timeout": "4"}
 extratimeout6 = {"source": "cycler", "route": ["terminal"], "timeout": "6"}
@@ -183,7 +183,7 @@ class Cycler:
             )
 
         cycle = {"range": (start, end), "results": results}
-        self.app.signaler.emit("plot_wave", "cycle", cycle)
+        self.app.signaler.emit("plot wave", "cycle", cycle)
         return cycle
 
     def compute_wave(

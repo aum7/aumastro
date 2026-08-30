@@ -3,7 +3,7 @@
 import logging
 
 log = logging.getLogger(__name__)
-extra = {"source": "searcher", "route": ["terminal"]}
+extra = {"source": "searcher", "route": [""]}
 extratimeout4 = {"source": "searcher", "route": ["terminal"], "timeout": "4"}
 extratimeout6 = {"source": "searcher", "route": ["terminal"], "timeout": "6"}
 import os
@@ -208,7 +208,7 @@ class Searcher:
         print(f"searcher : generic rule called : {args}")
 
     def naksatra_lord(self, tokens, datarange):
-        use_28 = self.dispatcher.chart_settings.get("28 mansions", False)
+        use_28 = self.dispatcher.chart_settings.get("use 28 mansions", False)
         use_mean_node = self.dispatcher.chart_settings.get("mean node", False)
         hits = []
         who = next((tvalue for ttype, tvalue in tokens if ttype == "object"), None)

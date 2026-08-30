@@ -3,7 +3,7 @@
 import logging
 
 log = logging.getLogger(__name__)
-extra = {"source": "search", "route": ["terminal"]}
+extra = {"source": "search", "route": [""]}
 # extratimeout4 = {"source": "search", "route": ["terminal"], "timeout": 4}
 # extratimeout6 = {"source": "search", "route": ["terminal"], "timeout": 6}
 extrauser = {"source": "search", "route": ["terminal", "user"]}
@@ -286,7 +286,7 @@ def setup_search(app) -> CollapsePanel:
     )
     app.search = Searcher(app)
     # notifier = app.notifier
-    use_28 = app.dispatcher.chart_settings.get("28 mansions", False)
+    use_28 = app.dispatcher.chart_settings.get("use 28 mansions", False)
     pad_x = 7
     pad_y = 0
     margin_end = 7

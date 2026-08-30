@@ -13,23 +13,24 @@ if &shortmess =~ 'A'
 else
   set shortmess=aoO
 endif
-badd +259 ~/dev/venaumastro/aumastro/ui/sidepane/sidepanesettings.py
-badd +91 ~/dev/venaumastro/aumastro/managers/dispatcher.py
-badd +132 ~/dev/venaumastro/aumastro/user/usersettings.py
+badd +284 ui/sidepane/sidepane.py
+badd +322 ~/dev/venaumastro/aumastro/managers/dispatcher.py
+badd +291 ~/dev/venaumastro/aumastro/sweph/eventsdata.py
+badd +86 ~/dev/venaumastro/aumastro/sweph/swetime.py
 argglobal
 %argdel
-edit ~/dev/venaumastro/aumastro/managers/dispatcher.py
+edit ~/dev/venaumastro/aumastro/sweph/eventsdata.py
 argglobal
-balt ~/dev/venaumastro/aumastro/ui/sidepane/sidepanesettings.py
+balt ~/dev/venaumastro/aumastro/sweph/swetime.py
 let s:cpo_save=&cpo
 set cpo&vim
 inoremap <buffer> <M-e> l<Cmd>lua require('nvim-autopairs.fastwrap').show()
 nnoremap <buffer> <silent> K <Cmd>lua vim.lsp.buf.hover()
 nnoremap <buffer> <silent> gI <Cmd>lua vim.lsp.buf.implementation()
-nnoremap <buffer> <silent> gr <Cmd>lua vim.lsp.buf.references()
 nnoremap <buffer> <silent> gs <Cmd>lua vim.lsp.buf.signature_help()
-nnoremap <buffer> <silent> gD <Cmd>lua vim.lsp.buf.declaration()
+nnoremap <buffer> <silent> gr <Cmd>lua vim.lsp.buf.references()
 nnoremap <buffer> <silent> gd <Cmd>lua vim.lsp.buf.definition()
+nnoremap <buffer> <silent> gD <Cmd>lua vim.lsp.buf.declaration()
 let &cpo=s:cpo_save
 unlet s:cpo_save
 setlocal keymap=
@@ -132,7 +133,7 @@ setlocal spellfile=
 setlocal spelllang=en,cjk
 setlocal spelloptions=noplainbuffer
 setlocal statuscolumn=
-setlocal statusline=%#lualine_a_2_command#\ ����\ %#lualine_b_3_command#%#SLGitIcon#\ %*%#SLBranchName#\ majorupgrade\ %<%#lualine_c_diff_added_command#\ \ \ 72\ %#lualine_c_diff_modified_command#\ 65\ %#lualine_c_diff_removed_command#\ 72\ %#lualine_c_normal#%=%#lualine_x_diagnostics_hint_command#\ \ 1\ %#lualine_c_normal#%#lualine_c_normal#\ 󰌒\ 4\ %#lualine_x_filetype_DevIconPy_command#\ \ %#lualine_c_normal#python\ %#lualine_b_command#\ \ 91:37\ %#lualine_z_progress_command#\ %P/%L\ 
+setlocal statusline=%#lualine_a_3_command#\ ����\ %#lualine_b_4_command#%#SLGitIcon#\ %*%#SLBranchName#\ majorupgrade\ %<%#lualine_c_diff_added_command#\ \ \ 34\ %#lualine_c_diff_modified_command#\ 63\ %#lualine_c_diff_removed_command#\ 6\ %#lualine_c_normal#%=%#lualine_x_diagnostics_error_command#\ \ 2\ %#lualine_c_normal#%#lualine_c_normal#\ 󰌒\ 4\ %#lualine_x_filetype_DevIconPy_command#\ \ %#lualine_c_normal#python\ %#lualine_b_command#\ 395:1\ \ %#lualine_z_progress_command#\ %P/%L\ 
 setlocal suffixesadd=.py
 setlocal noswapfile
 setlocal synmaxcol=3000
@@ -151,27 +152,97 @@ setlocal undolevels=-123456
 setlocal varsofttabstop=
 setlocal vartabstop=
 setlocal virtualedit=
-setlocal winbar=\ %#DevIconPy#%*\ %#Winbar#dispatcher.py%*\ %#NavicSeparator#%*\ %#NavicIconsClass#\ %*%#NavicText#Dispatcher%*%#NavicSeparator#\ \ %*%#NavicIconsMethod#\ %*%#NavicText#load_init_settings%*
+setlocal winbar=\ %#DevIconPy#%*\ %#Winbar#eventsdata.py%*\ %#NavicSeparator#%*\ %#NavicIconsClass#\ %*%#NavicText#EventsData%*%#NavicSeparator#\ \ %*%#NavicIconsMethod#\ %*%#NavicText#on_datetime_change%*
 setlocal winblend=0
 setlocal winhighlight=
 setlocal nowinfixheight
 setlocal nowinfixwidth
 setlocal wrap
 setlocal wrapmargin=0
-34
+18
 normal! zo
-77
+28
 normal! zo
-121
+58
 normal! zo
-170
+63
 normal! zo
-let s:l = 91 - ((16 * winheight(0) + 17) / 34)
+64
+normal! zo
+185
+normal! zo
+236
+normal! zo
+240
+normal! zo
+248
+normal! zo
+263
+normal! zo
+270
+normal! zo
+271
+normal! zo
+277
+normal! zo
+278
+normal! zo
+292
+normal! zo
+293
+normal! zo
+321
+normal! zo
+330
+normal! zo
+331
+normal! zo
+332
+normal! zo
+333
+normal! zo
+339
+normal! zo
+340
+normal! zo
+346
+normal! zo
+351
+normal! zo
+364
+normal! zo
+366
+normal! zo
+374
+normal! zo
+377
+normal! zo
+383
+normal! zo
+384
+normal! zo
+393
+normal! zo
+403
+normal! zo
+411
+normal! zo
+434
+normal! zo
+435
+normal! zo
+443
+normal! zo
+444
+normal! zo
+466
+normal! zo
+let s:l = 395 - ((21 * winheight(0) + 17) / 34)
 if s:l < 1 | let s:l = 1 | endif
 keepjumps exe s:l
 normal! zt
-keepjumps 91
-normal! 037|
+keepjumps 395
+normal! 0
 tabnext 1
 if exists('s:wipebuf') && len(win_findbuf(s:wipebuf)) == 0 && getbufvar(s:wipebuf, '&buftype') isnot# 'terminal'
   silent exe 'bwipe ' . s:wipebuf

@@ -3,9 +3,9 @@
 import logging
 
 log = logging.getLogger(__name__)
-extra = {"source": "notifier", "route": ["terminal"]}
-extratimeout4 = {"source": "notifier", "route": ["terminal"], "timeout": "4"}
-extratimeout6 = {"source": "notifier", "route": ["terminal"], "timeout": "6"}
+extra = {"source": "astrochart", "route": [""]}
+extratimeout4 = {"source": "astrochart", "route": ["terminal"], "timeout": "4"}
+extratimeout6 = {"source": "astrochart", "route": ["terminal"], "timeout": "6"}
 from ui.mainpanes.chart.chartinspector import ChartInspector
 from ui.mainpanes.chart.rings import Rings
 import gi
@@ -17,10 +17,18 @@ from gi.repository import Gtk  # type: ignore
 class AstroChart(Gtk.Box):
     """main astro chart widget for rings & objects"""
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.app = Gtk.Application.get_default()
-        self.notifier = self.app.notifier
+    def __init__(self, app=None, **kwargs):
+        super().__init__(**kwargs)
+        if app is not None:
+            self.app = app
+        log.debug(
+            f"hasselfappnotifier : {hasattr(self.app, 'notifier')}"
+            f"\nhasselfappdispatcher : {hasattr(self.app, 'dispatcher')}",
+            # f"hasselfappsignaler : {hasattr(self.app, 'signaler')}",
+            extra=extra,
+        )
+        # self.notifier = self.app.notifier
+        # signal = self.app.signaler
         # cairo drawing area
         self.drawing_area = Gtk.DrawingArea()
         self.drawing_area.set_draw_func(self.draw)
@@ -31,10 +39,9 @@ class AstroChart(Gtk.Box):
         self.events_data = {}
         self.chart_settings = getattr(self.app, "chart_settings", {})
         self.extra_info = {}
-        self.snap_targets = []
+        # self.snap_targets = []
         # subscribe to signals
-        signal = self.app.signaler
-        signal.connect("data calculated", self.on_data_calculate)
+        self.app.signaler.connect("data calculated", self.on_data_calculate)
         # if settings change > data changes > datamanager recalculates & adjusts
         # signal._connect("settings_changed", self.settings_changed)
         self.inspector = ChartInspector(self)

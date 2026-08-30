@@ -4,7 +4,7 @@
 import logging
 
 log = logging.getLogger(__name__)
-extra = {"source": "cycle", "route": ["terminal"]}
+extra = {"source": "cycle", "route": [""]}
 extratimeout4 = {"source": "cycle", "route": ["terminal"], "timeout": "4"}
 extratimeout6 = {"source": "cycle", "route": ["terminal"], "timeout": "6"}
 import re

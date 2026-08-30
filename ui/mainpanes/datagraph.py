@@ -3,7 +3,7 @@
 import logging
 
 log = logging.getLogger(__name__)
-extra = {"source": "datagraph", "route": ["terminal"]}
+extra = {"source": "datagraph", "route": [""]}
 import os
 import glob
 import pandas as pd

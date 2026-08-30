@@ -4,6 +4,7 @@
 import logging
 
 log = logging.getLogger(__name__)
+# logging : messages sent from where & to which recipients
 extra = {"source": "dispatcher", "route": ["terminal"]}
 import swisseph as swe
 from helpers import _decimal_to_ymd
@@ -36,13 +37,19 @@ class Dispatcher:
         if app is not None:
             self.app = app
         self.astro_data = {"e1": {}, "e2": {}}
-        # logging : messages sent from where & to which recipients
         # explicit selected event : the one arrived last or be user-selected
         self.selected_event = "e1"
         self.active_flags = ()
         self.swe_flag = 0
         self.selected_year_period = None
         self.selected_month_period = None
+        # below links to sidepane.py - change time
+        # "selected change time str": "1 D", < on hotkeys [ctrl+arrow] | button click
+        self.selected_change_time_str = "1 D"
+        self.age_years = 0.0
+        self.age_months = 0.0
+        # explicit setting
+        self.movie_mode = False
         # if event 2 has datetime > e2 is active ie user interested in transit etc
         self.e2_active = False
         # filter existing settings : data calculated & dispatched
@@ -72,8 +79,6 @@ class Dispatcher:
         # extract & parse defaults from usersettings & co
         # needed internaly only by dispatcher calculations :
         # "main flags": MAIN_FLAGS,
-        # below belong to sidepane.py - change time
-        # "selected change time str": "1 D", < on hotkeys [ctrl+arrow] | button click
         # set once in dispatcher
         # "selected event": "e1", set on init
         self.active_flags = [
@@ -82,8 +87,9 @@ class Dispatcher:
         # pass explicitly init value
         self.swe_flag = self.compute_swe_flag(self.active_flags)
         # default periods etc
-        self.selected_year_period = usersett.SOLAR_YEARS[0]
-        self.selected_month_period = usersett.LUNAR_MONTHS[0]
+        self.selected_year_period = usersett.SOLAR_YEARS[0]  # whole tuple
+        # self.app.notifier.debug(f"loadinitsettings : {self.selected_year_period}")
+        self.selected_month_period = usersett.LUNAR_MONTHS[1]
         self.selected_ayanamsa = usersett.AYANAMSAS[0]
         # default events data
         self.events = {
@@ -95,7 +101,7 @@ class Dispatcher:
             "use mean node": usersett.CHART_SETTINGS.get("use mean node"),
             "swe flags": getattr(usersett, "SWE_FLAGS", {}),
             "use varga aspects": usersett.CHART_SETTINGS.get("use varga aspects"),
-            "selected year period": self.selected_year_period,
+            "selected year period": self.selected_year_period,  # whole tuple
             "selected month period": self.selected_month_period,
             # contains : custom julian day utc: float & custom ayanamsa: float
             "custom ayanamsa": getattr(usersett, "CUSTOM_AYANAMSA", {}),
@@ -120,8 +126,6 @@ class Dispatcher:
                 9.9,
             ),
             "files": dict(getattr(usersett, "FILES", {})),
-            # explicit setting
-            "movie mode": False,
         }
         # events separated
         e1_objects = dict(getattr(usersett, "OBJECTS", {}))
@@ -139,8 +143,8 @@ class Dispatcher:
                 "naksatras ring": usersett.CHART_SETTINGS.get(
                     "naksatras ring", (False, "")
                 )[0],
-                "28 mansions": usersett.CHART_SETTINGS.get(
-                    "28 mansions",
+                "use 28 mansions": usersett.CHART_SETTINGS.get(
+                    "use 28 mansions",
                     (False, ""),
                 )[0],
                 "first naksatra": usersett.CHART_SETTINGS.get(
@@ -238,114 +242,123 @@ class Dispatcher:
         return swe_flag
 
     def set_event_data(self, event_id, dataset):
+        if event_id not in self.astro_data:
+            self.astro_data[event_id] = {}
         self.astro_data[event_id]["chart"] = dataset.get("chart", {})
         self.astro_data[event_id]["sweph"] = dataset.get("sweph", {})
-        raw_pos = dataset.get("positions", {})
-        if raw_pos:
-            self.astro_data[event_id]["positions"] = raw_pos
-        self.astro_data[event_id] = {
-            "ascmc": dataset.get("ascmc", []),
-            "cusps": dataset.get("cusps", []),
-        }
+        if "positions" in dataset:
+            self.astro_data[event_id]["positions"] = dataset["positions"]
+        self.astro_data[event_id]["ascmc"] = dataset.get("ascmc", [])
+        self.astro_data[event_id]["cusps"] = dataset.get("cusps", [])
         # self.astro_data[event_id]["stars"] =dataset.get("stars",{})
         # should check here which ...
         # or if star setting active > do magick
         if event_id == "e1":
-            if getattr(self.astro_data[event_id], "stars", "custom"):
-                self.astro_data[event_id] = dataset.get("stars", {})
-            if getattr(self.astro_data[event_id], "lots", {}):
-                self.astro_data[event_id] = dataset.get("lots", {})
-            # nested : PRENATAL["eclipses"]
-            if getattr(self.astro_data[event_id], "eclipses", False):
-                self.astro_data[event_id] = dataset.get("eclipses", {})
-            if getattr(self.astro_data[event_id], "syzygy", False):
-                self.astro_data[event_id] = dataset.get("syzygy", False)
-            # todo figure where this belongs - can we (yesss!) pick it here ???
-            if getattr(self.astro_data[event_id], "extra info", ""):  # todo data type
-                self.astro_data["extra info"] = dataset.get("extra info", "")
+            for key in ["stars", "lots", "eclipses", "syzygy"]:
+                if key in dataset:
+                    self.astro_data[event_id][key] = dataset[key]
+            if "extra info" in dataset:
+                self.astro_data["extra info"] = dataset["extra info"]
+            # if getattr(self.astro_data[event_id], "stars", "custom"):
+            #     self.astro_data[event_id] = dataset.get("stars", {})
+            # if getattr(self.astro_data[event_id], "lots", {}):
+            #     self.astro_data[event_id] = dataset.get("lots", {})
+            # # nested : PRENATAL["eclipses"]
+            # if getattr(self.astro_data[event_id], "eclipses", False):
+            #     self.astro_data[event_id] = dataset.get("eclipses", {})
+            # if getattr(self.astro_data[event_id], "syzygy", False):
+            #     self.astro_data[event_id] = dataset.get("syzygy", False)
+            # # todo figure where this belongs - can we (yesss!) pick it here ???
+            # if getattr(self.astro_data[event_id], "extra info", ""):  # todo data type
+            #     self.astro_data["extra info"] = dataset.get("extra info", "")
+        e1_data = self.astro_data.get("e1", {})
         # logging
         log.debug(
-            f"e1 unpacked :\npos : {len(self.astro_data['e1 pos'])}"
-            f"\nlots : {len(self.astro_data['lots'])}"
-            f"\nstars : {len(self.astro_data['stars'])}",
+            f"e1 unpacked :\npos : {len(e1_data.get('positions', {}))}"
+            f"\nlots : {len(e1_data.get('lots', {}))}"
+            f"\nstars : {len(e1_data.get('stars', {}))}",
             extra=extra,
         )
 
-    def recalculate(self, event_id):
+    def recalculate(self, event_id: str):
         # on event or settings change > recalculate astodata
         # todo separate e1 & e2 func, re-pack duplicated funcs for reuse
-        eid = event_id
-        for eid in ["e1", "e2"]:
-            if eid == "e2" and not self.e2_active:
-                log.debug(
-                    "recalculate : received eid='e2' but e2_active is false "
-                    "> investigate",
-                    extra=extra,
-                )
-                continue
-            sweph = self.astro_data.get(eid, {}).get("sweph", {})
-            if not sweph.get("jd_ut"):
-                continue
-            jdut = sweph["jd_ut"]
-            lat = sweph["lat"]
-            lon = sweph["lon"]
-            alt = sweph.get("alt", 0.0)
-            flag = self.chart_settings["swe flag"]
-            # calculate all-day horas :from sunrise to sunset | wall clock new day 00:00
-            # def calculate_horas(jd_ut=None, geo=(), objs=(), flag=0, params=None):
-            self.astro_data[eid]["chart"]["horas"] = calculate_horas(
-                jd_ut=jdut, geo=(lon, lat, alt), flag=flag, params={33, 14}
+        # eid = event_id
+        # for eid in ["e1", "e2"]:
+        if event_id == "e2" and not self.e2_active:
+            log.debug(
+                "recalculate : received 'e2' but e2_active is false > investigate",
+                extra=extra,
             )
-            # after getting daily horas extract current hora if needed
-            # curr_hora1 = self.astro_data["e1"]["chart"]["horas"]["current hora"]
-            # positions of planets
-            # def calculate_positions(jd_ut=None,geo=(),objs=(),flag=0, params=None,):
-            # needs : use_mean_node use_28_naks first_nak division
-            pos_params = {
-                "use mean node": getattr(self.swe_settings, "use mean node", False),
-                "use 28 mansions": getattr(
-                    self.chart_settings, "use 28 mansions", False
-                ),
-                "first naksatra": getattr(self.chart_settings, "first naksatra", 1),
-                "division": getattr(self.chart_settings, "division", 9),
-            }
-            pos_calc = calculate_positions(jd_ut=jdut, flag=flag, params=pos_params)
-            if pos_calc:
-                self.astro_data[eid]["positions"] = pos_calc.get("positions", {})
-                self.astro_data[eid]["lumies"] = pos_calc.get("lumies", {})
+            # continue
+        sweph = self.astro_data.get(event_id, {}).get("sweph", {})
+        if not sweph.get("jd_ut"):
+            log.debug(
+                "sweph has no jdut",
+            )
+            return
+        jdut = sweph["jd_ut"]
+        lat = sweph["lat"]
+        lon = sweph["lon"]
+        alt = sweph.get("alt", 0.0)
+        flag = self.swe_flag
+        # calculate all-day horas :from sunrise to sunset | wall clock new day 00:00
+        # def calculate_horas(jd_ut=None, geo=(), objs=(), flag=0, params=None):
+        self.astro_data[event_id]["chart"]["horas"] = calculate_horas(
+            jd_ut=jdut, geo=(lon, lat, alt), flag=flag, params={33, 14}
+        )
+        # after getting daily horas extract current hora if needed
+        # curr_hora1 = self.astro_data["e1"]["chart"]["horas"]["current hora"]
+        # positions of planets
+        # def calculate_positions(jd_ut=None,geo=(),objs=(),flag=0, params=None,):
+        # needs : use_mean_node use_28_naks first_nak division
+        e1_chart_settings = self.chart_settings.get("e1", {})
+        pos_params = {
+            "use mean node": self.swe_settings.get("use mean node", False),
+            "use 28 mansions": e1_chart_settings.get("use 28 mansions", False),
+            "first naksatra": e1_chart_settings.get("first naksatra", 1),
+            "division": e1_chart_settings.get("division", 9),
+        }
+        pos_calc = calculate_positions(jd_ut=jdut, flag=flag, params=pos_params)
+        if pos_calc:
+            self.astro_data[event_id]["positions"] = pos_calc.get("positions", {})
+            self.astro_data[event_id]["lumies"] = pos_calc.get("lumies", {})
 
-        self.app.signaler.emit("data calculated", self.astro_data[eid])
+        self.app.signaler.emit("data calculated", self.astro_data[event_id])
         self.update_titlebar()
 
     def update_titlebar(self):
         # todo careful here
         event = self.selected_event
         # event = self.app_settings.get("selected event")
-        dt = None
-        if event:
-            dt = self.astro_data.get(event, {}).get("chart", {}).get("datetime")
+        dt = (
+            self.astro_data.get(event, {}).get("chart", {}).get("datetime")
+            if event
+            else None
+        )
         title = "aumastro"
         if event and dt:
             title += f" | {event} : {dt}"
         elif event:
             title += f" | {event} : no date"
-        age_y = getattr(self.chart_settings, "age_y", 0.0)
-        age_m = getattr(self.chart_settings, "age_m", 0.0)
-        sel_year = self.chart_settings["selected year period"]
-        year_length = sel_year[0]
+        sel_year = (
+            self.selected_year_period[1] if self.selected_year_period else 365.2425
+        )
+        self.app.notifier.debug(f"updatetitlebar : selectedyearperiod :{sel_year}")
         if event and dt:
             title += f" | {event} : {dt}"
         elif event:
             title += f" | {event} : no date"
-        if age_y:
-            age_y = _decimal_to_ymd(age_y, year_length)
+        if self.age_years:
+            age_y_str = _decimal_to_ymd(self.age_years, sel_year).replace(" ", "")
             # remove spaces to save titlebar space
-            age_y = age_y.replace(" ", "")
-            title += f" | age : {age_y}"
-        if age_m:
-            title += f" - lun : {age_m:.2f}m"
+            # age_y = age_y.replace(" ", "")
+            title += f" | age : {age_y_str}"
+        if self.age_months:
+            title += f" - lun : {self.age_months:.2f}m"
         # todo check below
-        change_time = self.app_settings["selected change time str"]
+        change_time = self.selected_change_time_str or "1 D"
+        # change_time = self.app_settings["selected change time str"]
         if change_time:
             title += f" | ct : {change_time}"
         elif change_time is None:

@@ -3,12 +3,13 @@
 import logging
 
 log = logging.getLogger(__name__)
+extra = {"source": "sidepanesettings", "route": [""]}
+from ui.collapsepanel import CollapsePanel
+import ui.sidepane.sidepanehelpers as help
 import gi
 
 gi.require_version("Gtk", "4.0")
 from gi.repository import Gtk  # type:ignore
-from ui.collapsepanel import CollapsePanel
-import ui.sidepane.sidepanehelpers as help
 
 
 def update_chart_setting_checkbox(sidepane, setting: str, state: bool):
@@ -17,7 +18,7 @@ def update_chart_setting_checkbox(sidepane, setting: str, state: bool):
         return
     if setting == "naksatras ring" and hasattr(sidepane, "chk_naks_ring"):
         sidepane.chk_naks_ring.set_active(state)
-    elif setting == "28 mansions" and hasattr(sidepane, "chk_28_naks"):
+    elif setting == "use 28 mansions" and hasattr(sidepane, "chk_28_naks"):
         sidepane.chk_28_naks.set_active(state)
     elif hasattr(sidepane, "lbx_chart_setts_1"):
         row = sidepane.lbx_chart_setts_1.get_first_child()
@@ -36,11 +37,10 @@ class SidepaneSettings(CollapsePanel):
             self.sidepane = sidepane
         # self.app = getattr(sidepane, "app")
         self.dispatcher = getattr(sidepane, "dispatcher")
-        self.extra = {"source": "sidepanesettings", "route": ["terminal"]}
         log.debug(
             f"\nhasselfdispatcher : {hasattr(sidepane, 'dispatcher')}"
             f"\nhasdispatcherchartsettings : {hasattr(self.dispatcher, 'chart_settings')}",
-            self.extra,
+            extra=extra,
         )
         self.set_title_tooltip("sweph & application & chart settings")
         if self.sidepane:
@@ -210,9 +210,9 @@ class SidepaneSettings(CollapsePanel):
         row_nak_opt = Gtk.ListBoxRow()
         box_nak_opt = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=5)
         chk_28_naks = Gtk.CheckButton(label="28")
-        chk_28_naks.set_active(chart_setts.get("28 mansions", (False, ""))[0])
+        chk_28_naks.set_active(chart_setts.get("use 28 mansions", (False, ""))[0])
         chk_28_naks.connect(
-            "toggled", help.naksatras_ring, "28 mansions", self.sidepane
+            "toggled", help.naksatras_ring, "use 28 mansions", self.sidepane
         )
         ent_1st_nak = Gtk.Entry()
         ent_1st_nak.set_text(str(chart_setts.get("first naksatra", (1, ""))[0]))

@@ -4,7 +4,7 @@
 import logging
 
 log = logging.getLogger(__name__)
-extra = {"source": "notifier", "route": ["terminal"]}
+extra = {"source": "notifier", "route": [""]}
 extratimeout4 = {"source": "notifier", "route": ["terminal"], "timeout": "4"}
 extratimeout6 = {"source": "notifier", "route": ["terminal"], "timeout": "6"}
 from datetime import datetime, timezone
@@ -86,23 +86,6 @@ NOTIFY_TO_LOG_LEVEL = {
 }
 
 
-# class SafeFormatter(logging.Formatter):
-#     def format(self, record):
-#         if record.args:
-#             try:
-#                 record.message = record.getMessage()
-#             except Exception as e:
-#                 log.error(
-#                     f"record / message error : {e}",
-#                     extra=extra,
-#                 )
-#                 record.message = str(record.msg)
-#         else:
-#             record.message = str(record.msg)
-
-#         return record.message
-
-
 class GtkNotificationHandler(logging.Handler):
     """custom logging handler routing python logs to notifications"""
 
@@ -128,17 +111,6 @@ class GtkNotificationHandler(logging.Handler):
                     route = [NotifyRoute.TERMINAL.value, NotifyRoute.LOG.value]
                 else:
                     route = [NotifyRoute.ALL.value]
-            # if record.args:
-            #     try:
-            #         msg_text = record.getMessage()
-            #     except Exception as e:
-            #         log.debug(
-            #             f"message text error : {e}",
-            #             extra=extra,
-            #         )
-            #         msg_text = str(record.msg)
-            # else:
-            #     msg_text = str(record.msg)
             msg = NotifyMessage(
                 # message=msg_text,
                 message=record.getMessage(),
@@ -234,7 +206,7 @@ class Notifier:
         return True
 
     def route_message(self, msg):
-        """route notifymessage to ui toast or terminal output"""
+        """route notify message to ui toast or terminal output"""
         # dont display nor store messages
         if msg.route is None or "":
             return
@@ -242,7 +214,7 @@ class Notifier:
         # validate route
         valid_routes = {item.value for item in NotifyRoute}
         if not all(val in valid_routes for val in route):
-            print(f"notifymanager : invalid route values in {route} : using default")
+            log.error(f"notifier : invalid route values in {route} : using default")
             return
         if any(r in (NotifyRoute.NONE.value, NotifyRoute.EMPTY.value) for r in route):
             # print("[DEBUG NOTIFY] route is none or empty : message discarded")
@@ -258,4 +230,4 @@ class Notifier:
         #     f"toastoverlay is set={self.toast_overlay is not None}"
         # )
         if notify_user and self.app and getattr(self.app, "signaler", None):
-            GLib.idle_add(self.app.signaler.emit, "show_toast", msg)
+            GLib.idle_add(self.app.signaler.emit, "show toast", msg)

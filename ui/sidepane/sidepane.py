@@ -24,11 +24,11 @@ class SidepaneManager:
     """mixin class for managing side pane"""
 
     CHANGE_TIME_BUTTONS: dict[str, str] = {
-        "arrow_l": "move time backward\n(hk : arrow left)",
-        "arrow_r": "move time forward\n(hk : arrow right)",
-        "time_now": "time now (hk : n)\nset time now for selected event",
-        "arrow_up": "select previous time period\n(hk : arrow up)",
-        "arrow_dn": "select next time period\n(hk : arrow down)",
+        "arrow_l": "move time backward\n(hk : ctrl+arrow left)",
+        "arrow_r": "move time forward\n(hk : ctrl+arrow right)",
+        "time_now": "time now (hk : ctrl+n)\nset time now for selected event",
+        "arrow_up": "select previous time period\n(hk : ctrl+arrow up)",
+        "arrow_dn": "select next time period\n(hk : ctrl+arrow down)",
     }
     # value for selected change time : 1 day as default
     CHANGE_TIME_SELECTED = 1.0
@@ -54,8 +54,8 @@ class SidepaneManager:
         # get events data from app
         if app is not None:
             self.app = app
-        self.dispatcher = getattr(self.app, "dispatcher")
-        self.selected_event = self.dispatcher.selected_event
+        # self.dispatcher = getattr(self.app, "dispatcher")
+        self.selected_event = self.app.dispatcher.selected_event
         # debug
         # log.debug(
         #     f"\nhasselfselectedevent : {hasattr(self, 'selected_event')}",
@@ -78,7 +78,7 @@ class SidepaneManager:
         icon_size: Optional[int] = None,
     ):
         # create buttons from dictionary with icon and tooltip
-        # changetime notify events
+        # changetime events
         icons_folder = "ui/imgs/icons/hicolor/scalable/"
         icons_path_cpl = icons_folder + icons_path if icons_path else icons_folder
         buttons = []
@@ -149,24 +149,16 @@ class SidepaneManager:
         clp_change_time.set_margin_end(self.margin_end)
         clp_change_time.set_title_tooltip(
             """change time (ct) period for selected event (one or two)
-hotkeys (dedicated to app):
+hotkeys (dedicated to app - hold ctrl):
 arrow key up / down : select previous / next time period
 arrow key left / right : move time backward / forward
 
-note : since arrow keys are mapped to ct,
-navigating any text entry is a bit tricky
-(industry standard missing single arrow keys) :
-shift + left / right arrow : select / deselect character
 ctrl + left / right arrow : jump cursor between elements
-shift + ctrl + left / right arrow : select / deselect elements
 ctrl + a : select all text
 ctrl + c : copy selected text
 ctrl + v : paste text, ie from external source,
            or event one / two
 backspace / delete : delete text / character
-recommended workflow if you use manual input :
-    select either all text, or its element
-    delete it & enter desired one
 
 this text can be changed in
 ui/sidepane/sidepane.py"""
@@ -237,9 +229,10 @@ ui/sidepane/sidepane.py"""
             key = next(k for k, v in self.CHANGE_TIME_PERIODS.items() if v == new_value)
             self.CHANGE_TIME_SELECTED = float(key)
             # store selected change time period for main title update
-            self.app.dispatcher["selected change time str"] = new_value
+            self.app.dispatcher.selected_change_time_str = new_value
+            # self.app.dispatcher["selected change time str"] = new_value
             # update main window title todo expects dt + x
-            self.app.dispatcher.update_titlebar(self, new_value)
+            self.app.dispatcher.update_titlebar()
 
     def change_event_time(self, change_delta):
         """adjust selected event time by julian day delta"""
@@ -260,13 +253,14 @@ ui/sidepane/sidepane.py"""
             dt_now = datetime.now(timezone.utc).replace(microsecond=0)
             # get julian day - verified as side-effect
             _, jd, _ = custom_iso_to_jd(
-                self,
-                dt_now.year,  # positional arguments
+                # self,
+                dt_now.year,
                 dt_now.month,
                 dt_now.day,
-                hour=dt_now.hour,  # keyword arguments
-                min=dt_now.minute,
-                sec=dt_now.second,
+                dt_now.hour,
+                dt_now.minute,
+                dt_now.second,
+                calendar=b"g",
             )
             # back to string in custom iso format
             dt_str = jd_to_custom_iso(jd)
@@ -304,12 +298,12 @@ ui/sidepane/sidepane.py"""
                 self.ddn_time_periods.get_selected()
             ]
             # update main window title
-            self.app.dispatcher.update_titlebar(self, change_time_period)
+            self.app.dispatcher.update_titlebar()
         except Exception as e:
             self.app.notifier.error(
-                f"\n\t{datetime_name}\n\terror\n\t{e}\n",  # type:ignore
+                f"\n{datetime_name} error : {e}",  # type:ignore
                 source="sidepane",
-                route=["terminal"],
+                route=["terminal", "user"],
             )
             return
 
@@ -325,48 +319,41 @@ ui/sidepane/sidepane.py"""
             self.app.EVENT_TWO.on_datetime_change(entry)
 
     # on button click handlers
-    def obc_default(self, widget, data):
+    def obc_default(self, *args):
+        data = args[1] if len(args) > 1 else "button"
         self.app.notifier.debug(
-            f"{data} clicked", source="sidepane", route=["terminal"]
+            f"{data} clicked",
+            source="sidepane",
+            route=["terminal"],
         )
 
     # change time handlers
-    def obc_arrow_l(
-        self, widget: Optional[Gtk.Widget] = None, data: Optional[str] = None
-    ):
+    def obc_arrow_l(self, *args):
         """move selected event time backward"""
         self.change_event_time(-float(self.CHANGE_TIME_SELECTED))
 
-    def obc_arrow_r(
-        self, widget: Optional[Gtk.Widget] = None, data: Optional[str] = None
-    ):
+    def obc_arrow_r(self, *args):
         """move selected event time forward"""
         self.change_event_time(float(self.CHANGE_TIME_SELECTED))
 
-    def obc_time_now(
-        self, widget: Optional[Gtk.Widget] = None, data: Optional[str] = None
-    ):
+    def obc_time_now(self, *args):
         """set time now for selected event"""
         # obc_time_now needed because button created dynamically
         self.on_time_now()
 
-    def obc_arrow_up(
-        self, widget: Optional[Gtk.Widget] = None, data: Optional[str] = None
-    ):
+    def obc_arrow_up(self, *args):
         """select previous time period"""
         self.change_time_period(direction=-1)
 
-    def obc_arrow_dn(
-        self, widget: Optional[Gtk.Widget] = None, data: Optional[str] = None
-    ):
+    def obc_arrow_dn(self, *args):
         """select next time period"""
         self.change_time_period(direction=1)
 
     # def obc_settings(self, widget, data):
-    #     self.notify.debug(f"{data} clicked", source="sidepane", route=["terminal"])
+    #     self.app.notifier.debug(f"{data} clicked", source="sidepane", route=["terminal"])
 
     # def obc_file_save(self, widget, data):
-    #     self.notify.debug(f"{data} clicked", source="sidepane", route=["terminal"])
+    #     self.app.notifier.debug(f"{data} clicked", source="sidepane", route=["terminal"])
 
     # def obc_file_load(self, widget, data):
-    #     self.notify.debug(f"{data} clicked", source="sidepane", route=["terminal"])
+    #     self.app.notifier.debug(f"{data} clicked", source="sidepane", route=["terminal"])

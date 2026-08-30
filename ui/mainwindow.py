@@ -71,12 +71,16 @@ class MainWindow(
         self.hotkeys = Hotkeyer(self)
         self.setup_hotkeys()
         # intercept toggle pane button
-        self.hotkeys.intercept_button_controller(self.btn_toggle_pane, "toggle_pane")
+        # self.hotkeys.intercept_button_controller(self.btn_toggle_pane, "toggle_pane")
         # 4 main panes
-        self.astro_chart = AstroChart()
-        self.tables = Tables()
+        self.astro_chart = AstroChart(self.app)
+        self.tables = Tables(self.app)
+        # we pass self.app to datagraph -
+        # keeping track for dispatcher signaler notifier access
+        # probably update also astrochart astrodata tables to same syntax
         self.datagraph = DataGraph(self.app)
-        self.astrodata = AstroChart()  # extra astro chart for data overlay
+        # todo we could pass self.datagraph to self.astrodata ???
+        self.astrodata = AstroChart(self.app)  # extra astro chart for data overlay
         self.init_panes()
         # printscreen sequence script
         self.data_seq = DataPrintscreen(self.app)
@@ -86,9 +90,11 @@ class MainWindow(
         self.orig_target = None
         self.orig_top_right_child = None  # datagraph to be overlaid
         # initialize panes layout todo doesnt work properly
-        self.connect("realize", lambda w: self.panes_double())
+        self.connect("realize", lambda _: self.panes_double())
         self.signaler.connect("update titlebar", self.on_update_titlebar)
         self.signaler.connect("show toast", self.on_show_toast)
+        # gtk widgets debug
+        # self.print_widget_tree(self)
 
     def on_update_titlebar(self, data: dict[str, Any]) -> None:
         # todo careful here
@@ -127,7 +133,7 @@ class MainWindow(
             if msg.timeout is not None:
                 toast.set_timeout(msg.timeout)
             else:
-                toast.set_timeout(self._DEFAULT_TIMEOUTS[msg.level])
+                toast.set_timeout(self.DEFAULT_TIMEOUTS[msg.level])
             self.toast_overlay.add_toast(toast)
             # print("[DEBUG TOAST] toast added to overlay")
 
@@ -159,32 +165,42 @@ class MainWindow(
 
     def setup_hotkeys(self):
         """register additional hotkeys"""
+        # no more custom hotkey & mouseclick controllers
         # [shift]
         # toggle vimsottari table level
-        self.hotkeys.register_hotkey("shift+v", lambda: self.tables.toggle_vimso())
-        self.hotkeys.register_hotkey("shift+r", lambda: self.astro_chart.ruler.toggle())
+        self.hotkeys.register_hotkey("<Shift>v", lambda: self.tables.toggle_vimso())
+        self.hotkeys.register_hotkey(
+            "<Shift>r", lambda: self.astro_chart.ruler.toggle()
+        )
         # below works for qwertz keyboard, modify according to your keyboard layout
-        self.hotkeys.register_hotkey("shift+exclam", self.panes_single)  # shift+1
-        self.hotkeys.register_hotkey("shift+quotedbl", self.panes_double)  # shift+2
-        self.hotkeys.register_hotkey("shift+numbersign", self.panes_triple)  # shift+3
-        self.hotkeys.register_hotkey("shift+dollar", self.panes_all)  # shift+4
-        self.hotkeys.register_hotkey("shift+percent", self.panes_movie)  # shift+5
-        self.hotkeys.register_hotkey("shift+ampersand", self.on_data_seq)
-        self.hotkeys.register_hotkey("Up", self.obc_arrow_up)
-        self.hotkeys.register_hotkey("Down", self.obc_arrow_dn)
-        self.hotkeys.register_hotkey("Left", self.obc_arrow_l)
-        self.hotkeys.register_hotkey("Right", self.obc_arrow_r)
+        # self.hotkeys.register_hotkey("<shift>exclam", self.panes_single)  # shift+1
+        # self.hotkeys.register_hotkey("<shift>exclam", self.panes_single)  # shift+1
+        # self.hotkeys.register_hotkey("<shift>quotedbl", self.panes_double)  # shift+2
+        # self.hotkeys.register_hotkey("<shift>numbersign", self.panes_triple)  # shift+3
+        # self.hotkeys.register_hotkey("<shift>dollar", self.panes_all)  # shift+4
+        # self.hotkeys.register_hotkey("<shift>percent", self.panes_movie)  # shift+5
+        # self.hotkeys.register_hotkey("<shift>ampersand", self.on_data_seq)
+        self.hotkeys.register_hotkey("<Shift>quotedbl", self.panes_double)  # shift+2
+        self.hotkeys.register_hotkey("<Shift>numbersign", self.panes_triple)  # shift+3
+        self.hotkeys.register_hotkey("<Shift>dollar", self.panes_all)  # shift+4
+        self.hotkeys.register_hotkey("<Shift>percent", self.panes_movie)  # shift+5
+        self.hotkeys.register_hotkey("<Shift>ampersand", self.on_data_seq)
+        self.hotkeys.register_hotkey("<Control>Up", self.obc_arrow_up)
+        self.hotkeys.register_hotkey("<Control>Down", self.obc_arrow_dn)
+        self.hotkeys.register_hotkey("<Control>Left", self.obc_arrow_l)
+        self.hotkeys.register_hotkey("<Control>Right", self.obc_arrow_r)
+        # call helper function for time now
+        self.hotkeys.register_hotkey("<Control>n", lambda: self.on_time_now())
         # [ctrl]
         self.hotkeys.register_hotkey(
-            "ctrl+c", lambda: self.astro_chart.ruler.angle_to_clipboard()
+            "<Control>c", lambda: self.astro_chart.ruler.angle_to_clipboard()
         )
-        self.hotkeys.register_hotkey("ctrl+m", self.show_manual)
-        self.hotkeys.register_hotkey("ctrl+s", self.on_toggle_sidepane)
-        # call helper function for time now
-        self.hotkeys.register_hotkey("ctrl+n", lambda: self.on_time_now())
+        # self.hotkeys.register_hotkey("ctrl+m", self.show_manual)
+        self.hotkeys.register_hotkey("<Control>m", self.show_manual)
+        self.hotkeys.register_hotkey("<Control>s", self.on_toggle_sidepane)
         # toggle selected event
         self.hotkeys.register_hotkey(
-            "ctrl+e",
+            "<Control>e",
             lambda: self.app.dispatcher.event_selection(
                 "e2"
                 if self.app.dispatcher.app_settings.get("selected event") == "e1"
@@ -193,44 +209,44 @@ class MainWindow(
         )
         # astro chart drawing
         self.hotkeys.register_hotkey(
-            "ctrl+g", lambda: self.toggle_chart_setting("enable glyphs")
+            "<Control>g", lambda: self.toggle_chart_setting("enable glyphs")
         )
         self.hotkeys.register_hotkey(
-            "ctrl+f", lambda: self.toggle_chart_setting("fixed asc")
+            "<Control>f", lambda: self.toggle_chart_setting("fixed asc")
         )
         # toggle rasi / varga / harmonic aspects table
         self.hotkeys.register_hotkey(
-            "ctrl+h", lambda: self.toggle_chart_setting("use varga aspect")
+            "<Control>h", lambda: self.toggle_chart_setting("use varga aspects")
         )
         # astro chart outer rings for event 2
         # transit|varga|p2|p3|p3m|d1|lunar|solar return|naksatras ring
         self.hotkeys.register_hotkey(
-            "ctrl+1", lambda: self.toggle_chart_setting("transit")
+            "<Control>1", lambda: self.toggle_chart_setting("transit")
         )
         self.hotkeys.register_hotkey(
-            "ctrl+2", lambda: self.toggle_chart_setting("transit varga")
+            "<Control>2", lambda: self.toggle_chart_setting("transit varga")
         )
         self.hotkeys.register_hotkey(
-            "ctrl+3", lambda: self.toggle_chart_setting("p2 progress")
+            "<Control>3", lambda: self.toggle_chart_setting("p2 progress")
         )
         self.hotkeys.register_hotkey(
-            "ctrl+4", lambda: self.toggle_chart_setting("p3 progress")
+            "<Control>4", lambda: self.toggle_chart_setting("p3 progress")
         )
         self.hotkeys.register_hotkey(
-            "ctrl+5", lambda: self.toggle_chart_setting("p3m progress")
+            "<Control>5", lambda: self.toggle_chart_setting("p3m progress")
         )
         self.hotkeys.register_hotkey(
-            "ctrl+6", lambda: self.toggle_chart_setting("d1 direction")
+            "<Control>6", lambda: self.toggle_chart_setting("d1 direction")
         )
         self.hotkeys.register_hotkey(
-            "ctrl+7", lambda: self.toggle_chart_setting("lunar return")
+            "<Control>7", lambda: self.toggle_chart_setting("lunar return")
         )
         self.hotkeys.register_hotkey(
-            "ctrl+8", lambda: self.toggle_chart_setting("solar return")
+            "<Control>8", lambda: self.toggle_chart_setting("solar return")
         )
         # astro chart naksatras ring
         self.hotkeys.register_hotkey(
-            "ctrl+9", lambda: self.toggle_chart_setting("naksatras ring")
+            "<Control>9", lambda: self.toggle_chart_setting("naksatras ring")
         )
 
     # help / manual
@@ -451,3 +467,21 @@ class MainWindow(
                 source="mainwindow",
                 route=["terminal"],
             )
+
+    def print_widget_tree(self, widget: Gtk.Widget, indent: int = 2) -> None:
+        """Recursively prints the hierarchy starting from the given widget."""
+        widget_type = widget.__class__.__name__
+        buildable_id = widget.get_buildable_id() or ""
+        css_classes = " ".join(widget.get_css_classes())
+
+        info = f"{'  ' * indent}- {widget_type}"
+        if buildable_id:
+            info += f" [id='{buildable_id}']"
+        if css_classes:
+            info += f" (classes: {css_classes})"
+        print(info)
+
+        child = widget.get_first_child()
+        while child is not None:
+            self.print_widget_tree(child, indent + 1)
+            child = child.get_next_sibling()

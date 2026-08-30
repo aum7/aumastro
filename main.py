@@ -1,19 +1,27 @@
 # main.py
 # ruff: noqa: E402
-# launch inspector (Ctrl+Shift+I or Ctrl+Shift+D) when app is running
-# os.environ["GTK_DEBUG"] = "keybindings geometry size-request actions constraints"
 # import atexit
+import logging
+
+log = logging.getLogger(__name__)
+# extra = {"source": "main", "route": ["terminal"]}
+extrauser = {"source": "main", "route": ["terminal", "user"]}
 import os
+
 import swisseph as swe  # type:ignore
+from ui.mainwindow import MainWindow
+from managers.notifier import Notifier
+from managers.signaler import Signaler
+from managers.dispatcher import Dispatcher
 import gi
 
 gi.require_version("Gtk", "4.0")
 gi.require_version("Gio", "2.0")
 from gi.repository import Gtk, Gio  # type: ignore
-from ui.mainwindow import MainWindow
-from managers.notifier import Notifier
-from managers.signaler import Signaler
-from managers.dispatcher import Dispatcher
+
+# launch inspector (Ctrl+Shift+I or Ctrl+Shift+D) when app is running
+# os.environ["GTK_DEBUG"] = "keybindings geometry size-request actions constraints"
+# Gtk.Window.set_interactive_debugging(True)
 
 
 class AumastroApp(Gtk.Application):
@@ -48,12 +56,17 @@ class AumastroApp(Gtk.Application):
         #     toast_overlay.set_child(content)
         # # set toast overlay as window child
         # win.set_child(toast_overlay)
-        # self.notify_manager.toast_overlay = toast_overlay
+        # self.notifier.toast_overlay = toast_overlay
         # notification : code specific to this file
-        self.notifier.notify(
+        # if self.notifier:
+        #     self.notifier.notify(
+        #         "press [ctrl+h] for help | [esc] to discard this message",
+        #         source="olo",
+        #         timeout=5,
+        #     )
+        log.info(
             "press [ctrl+h] for help | [esc] to discard this message",
-            source="olo",
-            timeout=5,
+            extra=extrauser,
         )
         win.present()
 

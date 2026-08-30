@@ -5,9 +5,7 @@ import logging
 
 log = logging.getLogger(__name__)
 
-source = "signaler"
-route = ["terminal"]
-routing = {"source": source, "route": route}
+routing = {"source": "signaler", "route": ["terminal"]}
 
 
 class Signaler:

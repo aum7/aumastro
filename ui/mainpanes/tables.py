@@ -18,9 +18,16 @@ from gi.repository import Gtk  # type: ignore
 
 
 class Tables(Gtk.Notebook):
-    def __init__(self):
-        super().__init__()
-        self.app = Gtk.Application.get_default()
+    def __init__(self, app=None, **kwargs):
+        super().__init__(**kwargs)
+        if app is not None:
+            self.app = app
+        log.debug(
+            f"hasselfappnotifier : {hasattr(self.app, 'notifier')}"
+            f"\nhasselfappdispatcher : {hasattr(self.app, 'dispatcher')}",
+            # f"hasselfappsignaler : {hasattr(self.app, 'signaler')}",
+            extra=extra,
+        )
         # connect signals & notifications
         self.signaler = self.app.signaler
         self.notifier = self.app.notifier
@@ -112,7 +119,7 @@ class Tables(Gtk.Notebook):
         houses = data.get("houses", {})
         if not positions or not houses:
             log.error(
-                f"positions or houses missing for {event} : exiting ...",
+                f"positions or houses missing for {event}",
                 extra=extra,
             )
             return ""
@@ -374,7 +381,7 @@ class Tables(Gtk.Notebook):
         p3_stations = data.get("p3 stations", [])
         if not p3_pos:
             log.error(
-                "missing p3 positions : exiting ...",
+                "missing p3 positions",
                 extra=extrauser,
             )
             return
@@ -473,8 +480,8 @@ class Tables(Gtk.Notebook):
 
     def update_horas(self, page: str, horas: list):
         if not horas:
-            self.notify.error(
-                "missing horas : exiting ...",
+            self.notifier.error(
+                "missing horas",
                 source="tabels",
                 route=["terminal"],
             )
