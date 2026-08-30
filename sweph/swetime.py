@@ -18,7 +18,6 @@ from helpers import ok, err, _decimal_to_hms
 
 
 def validate_datetime(date_time, lon=None):
-    # def validate_datetime(manager, date_time, lon=None):
     """validate date-time string : check characters
     parse numbers & letters
     check calendar & local time
@@ -29,14 +28,12 @@ def validate_datetime(date_time, lon=None):
     # diff = equation of time : historical date lat => to lmt (equation of time)
     valid_chars = set("0123456789 -:ja")
     invalid_chars = set(date_time) - valid_chars
-    # msg_negative_year = ""
-    # try:
     if invalid_chars:
         msg = (
             f"characters {sorted(invalid_chars)} not allowed"
             "\n\twe accept : 0123456789 -:ja"
-            "\n\tj = julian calendar (gregorian = default)"
-            "\n\ta = local apparent time (mean = default)",
+            "\n\tj = julian calendar (default gregorian)"
+            "\n\ta = local apparent time (default mean)",
         )
         log.error(msg, extra=routinguser)
         return None, msg
@@ -206,12 +203,11 @@ def utc_to_jd(year, month, day, hour, minute, second, calendar):
     # return jd_et, jd_ut
 
 
-def calculate_swetime(jd_ut=None, geo=(), objs=(), flag=0, params=None):
-    p = params or {}
-    date_time = p.get("datetime", None)
-    lon = geo[0] if geo and len(geo) > 0 else None
-    tz_offset = p.get("tz_offset", 0.0)
-    dt_data, error = validate_datetime(date_time, lon=lon)
+def calculate_swetime(jd_ut=None, lon=None):
+    # managing function
+    # jd_ut = jd_ut
+    # lon = lon
+    dt_data, error = validate_datetime(jd_ut, lon=lon)
     if error:
         return err(error)
     if dt_data:
@@ -222,7 +218,7 @@ def calculate_swetime(jd_ut=None, geo=(), objs=(), flag=0, params=None):
         cal = dt_data[6]
         dt_utc = naive_to_utc(Y, M, D, h, m, s, tz_offset)
         jd_et, jd_ut = utc_to_jd(*dt_utc, calendar=cal)
-        iso_str = jd_to_custom_iso(jd_ut, calendar=cal)
+        jd_ut_str = jd_to_custom_iso(jd_ut, calendar=cal)
         return ok({
             "year": Y,
             "month": M,
@@ -234,5 +230,5 @@ def calculate_swetime(jd_ut=None, geo=(), objs=(), flag=0, params=None):
             "dt_utc": dt_utc,
             "jd_et": jd_et,
             "jd_ut": jd_ut,
-            "iso_str": iso_str,
+            "jd_ut_str": jd_ut_str,
         })

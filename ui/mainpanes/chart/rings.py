@@ -2,6 +2,8 @@
 # ui/fonts/victor/victormonolightastro.ttf
 # ruff: noqa: E402
 import logging
+
+log = logging.getLogger(__name__)
 import cairo
 import ui.fonts.glyphs as glyphs
 from math import pi, radians, cos, sin
@@ -19,12 +21,7 @@ from user.usersettings import OBJECTS
 
 class Rings:
     RING_COLORS = {
-        "asc": (1, 1, 1, 0.5),
-        "dsc": (0, 0, 0, 0.7),
-        "mc": (0.1176, 0.5647, 1, 0.7),
-        "ic": (0, 0, 0, 0, 0.7),
-        "tas": (1, 1, 1, 0.7),
-        "tmc": (1, 1, 1, 0.7),
+        # background color
         "transit": (0, 1, 0, 0.5),  # (0.0038, 0.0741, 0, 1),
         "transit varga": (0, 1, 0, 0.5),  # (0.0078, 0.0941, 0, 1),
         "p2 progress": (0, 0.3, 0.721, 0.5),  # (0.0353, 0.0863, 0.1, 1),
@@ -35,9 +32,16 @@ class Rings:
         "solar return": (0.6686, 0.6569, 0.5392, 1),  # (0.1686, 0.1569, 0.0392, 1),
         "signs": (0.15, 0.15, 0.15, 1),
         "event": (0.0776, 0.0, 0.0, 1.0),  # (0.15, 0.15, 0.15, 1),
-        "lots": (0.1, 0.8, 0.9, 0.8),  # need darkgreen
         "harmonic": (0.1, 0.1, 0.1, 1),  # (0.0776, 0.0, 0.0, 1.0),
         "info": (0.15, 0.15, 0.15, 1),  # (0.1, 0.1, 0.1, 1),
+        # object color
+        "asc": (1, 1, 1, 0.5),
+        "dsc": (0, 0, 0, 0.7),
+        "mc": (0.1176, 0.5647, 1, 0.7),
+        "ic": (0, 0, 0, 0, 0.7),
+        "tas": (1, 1, 1, 0.7),
+        "tmc": (1, 1, 1, 0.7),
+        "lots": (0.1, 0.8, 0.9, 0.8),  # need darkgreen
         "info movie": (0.5, 0.5, 0.5, 1),  # (0.1, 0.1, 0.1, 1),
         "border light": (0.8, 0.8, 0.8, 0.8),
         "border dark": (0.3, 0.3, 0.3, 0.8),
@@ -45,7 +49,6 @@ class Rings:
     }
 
     def __init__(self, ctx: dict, data: dict):
-        self.logger = logging.getLogger("rings")
         self.ctx = ctx
         # dispatcher takes care of correct amount of data per ring
         self.data = data or {}
@@ -57,7 +60,13 @@ class Rings:
         self.outer_rings = ctx.get("outer_rings", [])  # outer rings are togglable
         self.chart_settings = ctx.get("chart_settings", {})
         self.snap_targets = []
-        self.font_size = 12  # arbitrary
+        self.font_size = 22  # default font size
+        log.debug(
+            f"ctx received : fontscale={self.font_scale} "
+            f"radius_dict={self.radius_dict} "
+            f"outer_rings={self.outer_rings} "
+            f"chart_settings={self.chart_settings} "
+        )
 
     def get_ring_color(self, ring: str):
         return self.RING_COLORS.get(ring, self.RING_COLORS["default"])
@@ -372,7 +381,7 @@ class Rings:
             x = self.cx + outer_r * 0.96 * cos(angle)
             y = self.cy + outer_r * 0.96 * sin(angle)
             self.draw_rotated_text(cr, glyph, x, y, angle)
-        self.set_custom_font(cr, font_size=18)
+        self.set_custom_font(cr, font_size=30)
         cr.save()
         cr.set_source_rgba(1.0, 0.9, 0.2, 0.8)
         # draw stars circle
@@ -481,7 +490,7 @@ class Rings:
         # planets with adjusted radius based on latitude
         use_mean_node = self.chart_settings.get("mean node", False)
         for obj in e1_pos:
-            self.logger.debug(
+            log.debug(
                 f"draweventring : obj : {obj}",
                 extra={"source": "rings", "route": ["terminal"]},
             )
@@ -766,7 +775,7 @@ class Rings:
                 info_text = (
                     fmt_basic.format(**data) + "\n" + fmt_extra.format(**extra_info)
                 )
-                self.logger.debug(
+                log.debug(
                     f"circleinfo : infotext :\n{info_text}",
                     extra={"source": "rings", "route": ["terminal"]},
                 )

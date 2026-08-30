@@ -1,5 +1,5 @@
-# sweph/eventsdata.py
-# data only - 0 zero ui
+# sweph/eventdata.py
+# gather & process event input from user : data only - 0 zero ui
 # ruff: noqa: E402
 import logging
 
@@ -11,7 +11,8 @@ from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
 from timezonefinder import TimezoneFinder
 from helpers import _decimal_to_dms
-from sweph.swetime import validate_datetime, naive_to_utc, utc_to_jd
+from sweph.swetime import calculate_swetime, naive_to_utc, utc_to_jd
+# from sweph.swetime import validate_datetime, naive_to_utc, utc_to_jd
 
 
 class EventsData:
@@ -25,6 +26,7 @@ class EventsData:
         date_time=None,
         app=None,
     ):
+        # gather & process all user event input data
         if app is not None:
             self.app = app
         # logging helper
@@ -37,6 +39,7 @@ class EventsData:
         self.timezone = None
         self.tz_offset = None
         self.lon = None
+        self.calendar = b"g"
         self.is_hotkey_now = False
         self.old_name = ""
         self.old_date_time = ""
@@ -228,7 +231,7 @@ class EventsData:
         # todo debug
         log.info(
             "location change processed",
-            extra=routing,
+            extra=routinguser,
         )
         return
 
@@ -247,25 +250,25 @@ class EventsData:
         if len(name) > 30:
             log.warning(
                 f"{name_name} too long : max 30 characters",
-                extra=routing,
+                extra=routinguser,
             )
             return
 
         self.old_name = name
         self.chart["name"] = name
         log.debug(
-            "name change processed",
-            extra=routing,
+            "name input processed",
+            extra=routinguser,
         )
         return
 
     def on_datetime_change(self, entry):
         datetime_name = entry.get_name()
         date_time = entry.get_text().strip()
-
-        e1_data = self.app.dispatcher.astro_data.get("e1", {})
-        e1_chart = e1_data.get("chart", {})
-        e1_sweph = e1_data.get("sweph", {})
+        # todo we are accessing data that this file is supposed to provide
+        # e1_data = self.app.dispatcher.astro_data.get("e1", {})
+        # e1_chart = e1_data.get("chart", {})
+        # e1_sweph = e1_data.get("sweph", {})
         if self.id == "e1":
             if not self.sweph.get("lon"):
                 log.warning(
@@ -280,7 +283,12 @@ class EventsData:
                     extra=routinguser,
                 )
                 return
-
+        log.debug(
+            "ondatetimechange : data received :"
+            f"\ne1data={e1_data}"
+            f"\ne1chart={e1_chart}"
+            f"\ne1sweph={e1_sweph}"
+        )
         jd_ut = None
         dt_utc = None
         dt_event = None
@@ -291,6 +299,7 @@ class EventsData:
         if self.is_hotkey_now:
             try:
                 dt_utc = datetime.now(timezone.utc).replace(microsecond=0)
+                #
                 e1 = getattr(self.app, "EVENT_ONE", None)
                 tz = (
                     self.timezone
@@ -350,7 +359,8 @@ class EventsData:
             try:
                 dt_str = entry.get_text().strip()
                 lon_val = self.lon if dt_str and "a" in dt_str else None
-                dt_data, error = validate_datetime(dt_str, lon=lon_val)
+                dt_data, error = calculate_swetime(dt_str, lon=lon_val)
+                # dt_data, error = validate_datetime(dt_str, lon=lon_val)
                 if error:  # and not dt_data:
                     log.error("datetime validation failed")
                 # if dt_str and "a" in dt_str and self.lon:

@@ -1,6 +1,6 @@
 - move chart setting to datamanager
 - merge duplicated funcs if applicable
---- aspects
+--- aspects - special specific case
 def angle_diff(a, b):
     # shortest angle difference, range -180..+180
     diff = (b - a) % 360.0
@@ -338,20 +338,21 @@ def calculate_eclipses(jd_ut, geo=(), objs=(), flag=0, params=None):
     if jd_ut is None:
         return err("invalid jd_ut")
     p = params or {}
-    search = p.get("search", "prev")
+    # always prev - set as fixed value
+    # search = p.get("search", "prev")
     eclipses_data = []
     # get last solar eclipse before event
-    solar = find_solar_eclipse(jd_ut, flag, search=search)
+    solar = find_solar_eclipse(jd_ut, flag, search="prev")
     if solar:
         eclipses_data.append(solar)
     # get last lunar eclipse
-    lunar = find_lunar_eclipse(jd_ut, flag, search=search)
+    lunar = find_lunar_eclipse(jd_ut, flag, search="prev")
     if lunar:
         eclipses_data.append(lunar)
 
     return ok(eclipses_data)
 --- hora
-# weekday number to name
+# weekday number to name & ruler
 WEEKDAY = {
     0: ("mon", "mo"),
     1: ("tue", "ma"),
@@ -361,7 +362,7 @@ WEEKDAY = {
     5: ("sat", "sa"),
     6: ("sun", "su"),
 }
-# order of planetary hours
+# planetary hours aka chaldean order - ring distance max to min 
 ORDER = ["sa", "ju", "ma", "su", "ve", "me", "mo"]
 
 
@@ -493,7 +494,7 @@ def get_day_horas(jd_ut, lon, lat, alt=0.0, flag=0, tz_name=None):
             "weekday": weekday,
             "sunrise": sunrise,
             "sunset": sunset,
-            "sunrise_next": sunrise_next,
+            "sunrise next": sunrise_next,
         }
     ]
     for i in range(24):
@@ -507,10 +508,10 @@ def get_day_horas(jd_ut, lon, lat, alt=0.0, flag=0, tz_name=None):
         horas.append({
             "hour": i + 1,
             "lord": lord,
-            "start_jd": start,
-            "end_jd": end,
-            "start_e": to_event_str(start),  # type:ignore
-            "end_e": to_event_str(end),  # type:ignore
+            "start jd": start,
+            "end jd": end,
+            "start e": to_event_str(start),  # type:ignore
+            "end e": to_event_str(end),  # type:ignore
         })
     # print(f"DBG : getdayhoras : horas :\n{horas}")
     return horas
