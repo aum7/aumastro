@@ -27,7 +27,7 @@ OBJECTS = {  # one-but-last = color ; last = size scale = drawing order
     8: ("ne", "neptune", "ne", "neptune", (0, 0.2539, 0.4931, 1), 0.97),
     9: ("pl", "pluto", "pl", "pluto", (0.1784, 0.1784, 0.1784, 1), 1.0),
     11: ("ra", "true node", "ra", "rahu", (0.4, 0.3, 0.3, 1), 1.1),
-    # 10: rahu mean is handled in positions.py
+    # 10: rahu mean handled in positions.py by usersettings.CHART_SETTINGS.usermeannode
     # heliocentric view
     # not implemented (deleted as some stubborn issue was persistent)
     # 14: ("ea", "earth", "ea", "earth"), ke color (0.3, 0.3, 0.3, 1)
@@ -54,7 +54,7 @@ LOTS = {  # 7 hermetic lots : many different definitions for lots exist
     # "affairs+": {"day": "9th + 3rd - ve"},
     # day = diurnal birth calculation formula, ie sun is above horizon (asc-dsc)
     "fortuna": {
-        "enable": False,  # todo False
+        "enable": True,  # todo False
         "day": "asc + (mo - su)",
         "tooltip": "body",
     },
@@ -85,7 +85,7 @@ LOTS = {  # 7 hermetic lots : many different definitions for lots exist
     },
     "nemesis": {
         "enable": False,
-        "day": "(asc + (mo - su)) - sa",
+        "day": "(asc + (mo - su)) - sa",  # vs night formula used for calculation
         "tooltip": "fortuna - sa\nunderworld, concealed, exposure, destruction",
     },
 }
@@ -106,7 +106,7 @@ PRENATAL = {
         ),
     },
 }
-SWE_FLAG = {
+SWE_FLAGS = {
     # default flags for sweph calculations
     # all flags are duplicated & commented as backup ; user can toggle them in
     # settings panel which will update uncommented flags / values (this file)
@@ -154,7 +154,7 @@ if checked also select ayanamsa below""",
     # --- return equatorial positions (right ascension & declination)
     # else return ecliptic (default, latitude & longitude) positions
     # FLG_EQUATORIAL
-    "equatorial": (False, "return equatorial (vs ecliptic) positions"),
+    # "equatorial": (False, "return equatorial (vs ecliptic) positions"),
     # --- return cartesian (x, y, z) else polar (default) coordinates
     # FLG_XYZ
     # "cartesian": (False, "return cartesian (x, y, z vs polar degrees) coordinates"),
@@ -165,7 +165,7 @@ if checked also select ayanamsa below""",
 # add or remove houses as you please
 # https://astrorigin.com/pyswisseph/sphinx/programmers_manual/house_cusp_calculation.html?highlight=houses#swisseph.houses
 # below are most popular 7 out of 24+; arrange line up or down as you please
-# top line is default choice
+# dropdown - top line is default choice
 HOUSE_SYSTEMS = [
     ("O", "prp : porphyry", "prp"),
     ("W", "whs : whole sign", "whs"),  # jyotisa & houck
@@ -178,21 +178,86 @@ HOUSE_SYSTEMS = [
     ("K", "kch : koch", "kch"),
 ]
 # --- time constants ---
-# (solar) year lengths in days : top is default
-SOLAR_YEAR = {
-    "sid": (365.256363, "sidereal"),
-    "gre": (365.2425, "gregorian"),
-    "jul": (365.25, "julian"),
-    "trp": (365.24219, "tropical"),
-    "lun": (354.37, "lunar"),  # 12 * synodic lunar month
-}
-# lunar month lengths : top is default
-LUNAR_MONTH = {
-    "sid": (27.321661, "sidereal\t\tfixed star"),
-    "syn": (29.53059, "synodic\t\tnew moons"),
-    "trp": (27.321582, "tropical\t\t0 ari"),  # houck
-    "anm": (27.554551, "anomalistic\tperigee-apogee"),
-    "drc": (27.21222, "draconic\tlunar nodes"),
+# dropdown : top is default
+SOLAR_YEARS = [  # (solar) year lengths in days
+    ("sid", 365.256363, "sidereal"),
+    ("gre", 365.2425, "gregorian"),
+    ("jul", 365.25, "julian"),
+    ("trp", 365.24219, "tropical"),
+    ("lun", 354.37, "lunar"),  # 12 * synodic lunar month
+]
+# dropdown : top is default
+LUNAR_MONTHS = [  # lunar month lengths
+    ("sid", 27.321661, "sidereal\t\tfixed star"),
+    ("syn", 29.53059, "synodic\t\tnew moons"),
+    ("trp", 27.321582, "tropical\t\t0 ari"),  # houck
+    ("anm", 27.554551, "anomalistic\tperigee-apogee"),
+    ("drc", 27.21222, "draconic\tlunar nodes"),
+]
+# !!! UNCOMMENT ANY AYANAMSA THAT YOU NEED !!!
+# uncomment > delete '# ', indent properly, and save file
+# also arrange order as you please > move line up / down & save file
+# dropdown : top is default
+AYANAMSAS = [
+    (45, "Krishnamurti-Senthilathiban", "kms (45)"),  # SIDM_KRISHNAMURTI_VP291
+    (17, "Galact. Center 0 Sag", "glc (17)"),  # SIDM_GALCENT_0SAG j2000 = 26°50'31.8335
+    (255, "user-defined (below)", "usr"),  # SIDM_USER
+    # 0: ("Fagan/Bradley", "fbr (00)"),  # SIDM_FAGAN_BRADLEY
+    # 1: ("Lahiri 1", "lhr (01)"),  # SIDM_LAHIRI
+    # 2: ("De Luce", "dlc (02)"),  # SIDM_DELUCE
+    # 3: ("Raman", "rmn (03)"),  # SIDM_RAMAN
+    # 4: ("Usha/Shashi", "uss (04)"),  # SIDM_USHASHASHI
+    # 5: ("Krishnamurti", "kmr (05)"),  # SIDM_KRISHNAMURTI
+    # 6: ("Djwhal Khul", "dwk (06)"),  # SIDM_DJWHAL_KHUL
+    # 7: ("Yukteshwar", "ykt (07)"),  # SIDM_YUKTESHWAR
+    # 8: ("J.N. Bhasin", "jnb (08)"),  # SIDM_JN_BHASIN
+    # 9: ("Babylonian/Kugler 1", "bk1 (09)"),  # SIDM_BABYL_KUGLER1
+    # 10: ("Babylonian/Kugler 2", "bk2 (10)"),  # SIDM_BABYL_KUGLER2
+    # 11: ("Babylonian/Kugler 3", "bk3 (11)"),  # SIDM_BABYL_KUGLER3
+    # 12: ("Babylonian/Huber", "bhb (12)"),  # SIDM_BABYL_HUBER
+    # 13: ("Babylonian/Eta Piscium", "bep (13)"),  # SIDM_BABYL_ETPSC
+    # 14: ("Babylonian/Aldebaran 15 Tau", "bat (14)"),  # SIDM_ALDEBARAN_15TAU
+    # 15: ("Hipparchos", "hpc (15)"),  # SIDM_HIPPARCHOS
+    # 16: ("Sassanian", "snn (16)"),  # SIDM_SASSANIAN
+    # 18: ("J2000", "j20 (18)"),  # SIDM_J2000
+    # 19: ("J1900", "j19 (19)"),  # SIDM_J1900
+    # 20: ("B1950", "b50 (20)"),  # SIDM_B1950
+    # 21: ("Suryasiddhanta", "ssd (21)"),  # SIDM_SURYASIDDHANTA
+    # 22: ("Suryasiddhanta, mean Sun", "ssm (22)"),  # SIDM_SURYASIDDHANTA_MSUN
+    # 23: ("Aryabhata", "ary (23)"),  # SIDM_ARYABHATA
+    # 24: ("Aryabhata, mean Sun", "arm (24)"),  # SIDM_ARYABHATA_MSUN
+    # 25: ("SS Revati", "ssr (25)"),  # SIDM_SS_REVATI
+    # 26: ("SS Citra", "ssc (26)"),  # SIDM_SS_CITRA
+    # 27: ("True Citra", "tct (27)"),  # SIDM_TRUE_CITRA
+    # 28: ("True Revati", "trv (28)"),  # SIDM_TRUE_REVATI
+    # 29: ("True Pushya (PVRN Rao)", "tps (29)"),  # SIDM_TRUE_PUSHYA
+    # 30: ("Galactic Center (Gil Brand)", "gcb (30)"),  # SIDM_GALCENT_RGBRAND
+    # 31: ("Galactic Equator (IAU1958)", "gei (31)"),  # SIDM_GALEQU_IAU1958
+    # 32: ("Galactic Equator", "geq (32)"),  # SIDM_GALEQU_TRUE
+    # 33: ("Galactic Equator mid-Mula", "gem (33)"),  # SIDM_GALEQU_MULA
+    # 34: ("Skydram (Mardyks)", "skm (34)"),  # SIDM_GALALIGN_MARDYKS
+    # 35: ("True Mula (Chandra Hari)", "tmh (35)"),  # SIDM_TRUE_MULA
+    # 36: ("Dhruva/GC/Mula (Wilhelm)", "gcw (36)"),  # SIDM_GALCENT_MULA_WILHELM
+    # 37: ("Aryabhata 522", "ary (37)"),  # SIDM_ARYABHATA_522
+    # 38: ("Babylonian/Britton", "bbb (38)"),  # SIDM_BABYL_BRITTON
+    # 39: ("Vedic Sheoran", "vsh (39)"),  # SIDM_TRUE_SHEORAN
+    # 40: ("Cochrane (Gal.Center 0 Cap)", "gcc (40)"),  # SIDM_GALCENT_COCHRANE
+    # 41: ("Galactic Equator (Fiorenza)", "gef (41)"),  # SIDM_GALEQU_FIORENZA
+    # 42: ("Vettius Valens", "vvl (42)"),  # SIDM_VALENS_MOON
+    # 43: ("Lahiri 1940", "lh2 (43)"),  # SIDM_LAHIRI_1940
+    # 44: ("Lahiri VP285", "lh3 (44)"),  # SIDM_LAHIRI_VP285
+    # 46: ("Lahiri ICRC", "lh4 (46)"),  # SIDM_LAHIRI_ICRC
+]
+CUSTOM_AYANAMSA = {
+    # custom user-defined ayanamsa properties
+    # julian day utc > reference date for custom ayanamsa calculation
+    # default is for 2000-01-01 12:00 utc (julian day starts at noon)
+    # if needed, get julian day utc online, then copy-paste the number here
+    "custom julian day utc": 2451545.00000,
+    # user-defined custom ayanamsa : must be decimal degrees
+    # default is 23.76694445 (23° 46' 01"), as per richard houck's book
+    # 'astrology of death', for 2000-01-01
+    "custom ayanamsa": 23.76694444,
 }
 CHART_SETTINGS = {
     # --- use mean node else true node
@@ -203,7 +268,7 @@ CHART_SETTINGS = {
     # ---
     "exact lunar month": (
         False,
-        "calculate exact vs average lunar month length for progressions",
+        "calculate exact (vs average) lunar month length for progressions",
     ),
     # --- toggle glyphs visibility (shortcut)
     "enable glyphs": (True, "toggle glyphs visibility"),
@@ -255,8 +320,8 @@ sweph / constants.py""",
     ),
     # --- event 2 astro chart circles : draw progressions (p1 & p3) | returns | transit
     # calculated in sweph / calculations / ...
-    "event2 rings": {
-        "transit": (False, "show transit for event 2\nhk: ctrl+1"),
+    "event 2 rings": {
+        "transit": (False, "show transit for event 2\nhk : ctrl+1"),
         "transit varga": (
             False,
             "show (simple) transit varga / harmonic ring for event 2\nset varga in above harmonic ring\nhk : ctrl+2",
@@ -280,7 +345,7 @@ sweph / constants.py""",
         "lunar return": (False, "show lunar return for event 2\nhk : ctrl+7"),
         "solar return": (
             False,
-            "show solar return for event 2\nhk : ctrl+8\nchange in sweph / calculations / ...",
+            "show solar return for event 2\nhk : ctrl+8",
         ),
     },
     # --- use varga positions for aspects
@@ -303,12 +368,11 @@ sweph / constants.py""",
             "draw fixed stars inside signs circle"
             "\navailable categories :"
             "\n\tcustom | naksatras [28] | behenian [15]"
-            "\n\trobson [117] | alphabetical [521]"
             "\nset empty to draw no stars"
             "\nmodify user/fixedstars.py > add / remove from custom"
         ),
     ),
-    # --- astro chart angle ruler snapping distance (or angle)
+    # --- astro chart angle ruler & hover info snapping distance (or angle)
     "snap tolerance": (
         "9.9",
         (
@@ -338,7 +402,7 @@ example : {name}\n{date}\n{wday} {time_short}\n{city} @ {country}\n{lat}\n{lon}"
     # - data same for both charts
     # additional 'chart info' format: allowed fields: 1: house system {hsys} |
     # 2: {zod}iac | 3: ayanamsa name {aynm} | 4: ayanamsa value {ayvl}
-    "chart info string extra": (
+    "chart info extra": (
         r"{hsys} | {zod}\n{aynm}",
         r"""additional 'chart info' format : allowed fields :
     1: {hsys} house system
@@ -348,71 +412,6 @@ example : {name}\n{date}\n{wday} {time_short}\n{city} @ {country}\n{lat}\n{lon}"
 \n = new line
 example : {hsys} | {zod}\n{aynm}""",
     ),
-}
-# !!! UNCOMMENT ANY AYANAMSA THAT YOU NEED !!!
-# uncomment > delete '# ', indent properly, and save file
-# also arrange order as you please > move line up / down & save file
-# top line is default choice
-AYANAMSA = {
-    45: ("Krishnamurti-Senthilathiban", "kms (45)"),  # SIDM_KRISHNAMURTI_VP291
-    17: ("Galact. Center 0 Sag", "glc (17)"),  # SIDM_GALCENT_0SAG j2000 = 26°50'31.8335
-    255: ("user-defined (below)", "usr"),  # SIDM_USER
-    # 0: ("Fagan/Bradley", "fbr (00)"),  # SIDM_FAGAN_BRADLEY
-    # 1: ("Lahiri 1", "lhr (01)"),  # SIDM_LAHIRI
-    # 2: ("De Luce", "dlc (02)"),  # SIDM_DELUCE
-    # 3: ("Raman", "rmn (03)"),  # SIDM_RAMAN
-    # 4: ("Usha/Shashi", "uss (04)"),  # SIDM_USHASHASHI
-    # 5: ("Krishnamurti", "kmr (05)"),  # SIDM_KRISHNAMURTI
-    # 6: ("Djwhal Khul", "dwk (06)"),  # SIDM_DJWHAL_KHUL
-    # 7: ("Yukteshwar", "ykt (07)"),  # SIDM_YUKTESHWAR
-    # 8: ("J.N. Bhasin", "jnb (08)"),  # SIDM_JN_BHASIN
-    # 9: ("Babylonian/Kugler 1", "bk1 (09)"),  # SIDM_BABYL_KUGLER1
-    # 10: ("Babylonian/Kugler 2", "bk2 (10)"),  # SIDM_BABYL_KUGLER2
-    # 11: ("Babylonian/Kugler 3", "bk3 (11)"),  # SIDM_BABYL_KUGLER3
-    # 12: ("Babylonian/Huber", "bhb (12)"),  # SIDM_BABYL_HUBER
-    # 13: ("Babylonian/Eta Piscium", "bep (13)"),  # SIDM_BABYL_ETPSC
-    # 14: ("Babylonian/Aldebaran 15 Tau", "bat (14)"),  # SIDM_ALDEBARAN_15TAU
-    # 15: ("Hipparchos", "hpc (15)"),  # SIDM_HIPPARCHOS
-    # 16: ("Sassanian", "snn (16)"),  # SIDM_SASSANIAN
-    # 18: ("J2000", "j20 (18)"),  # SIDM_J2000
-    # 19: ("J1900", "j19 (19)"),  # SIDM_J1900
-    # 20: ("B1950", "b50 (20)"),  # SIDM_B1950
-    # 21: ("Suryasiddhanta", "ssd (21)"),  # SIDM_SURYASIDDHANTA
-    # 22: ("Suryasiddhanta, mean Sun", "ssm (22)"),  # SIDM_SURYASIDDHANTA_MSUN
-    # 23: ("Aryabhata", "ary (23)"),  # SIDM_ARYABHATA
-    # 24: ("Aryabhata, mean Sun", "arm (24)"),  # SIDM_ARYABHATA_MSUN
-    # 25: ("SS Revati", "ssr (25)"),  # SIDM_SS_REVATI
-    # 26: ("SS Citra", "ssc (26)"),  # SIDM_SS_CITRA
-    # 27: ("True Citra", "tct (27)"),  # SIDM_TRUE_CITRA
-    # 28: ("True Revati", "trv (28)"),  # SIDM_TRUE_REVATI
-    # 29: ("True Pushya (PVRN Rao)", "tps (29)"),  # SIDM_TRUE_PUSHYA
-    # 30: ("Galactic Center (Gil Brand)", "gcb (30)"),  # SIDM_GALCENT_RGBRAND
-    # 31: ("Galactic Equator (IAU1958)", "gei (31)"),  # SIDM_GALEQU_IAU1958
-    # 32: ("Galactic Equator", "geq (32)"),  # SIDM_GALEQU_TRUE
-    # 33: ("Galactic Equator mid-Mula", "gem (33)"),  # SIDM_GALEQU_MULA
-    # 34: ("Skydram (Mardyks)", "skm (34)"),  # SIDM_GALALIGN_MARDYKS
-    # 35: ("True Mula (Chandra Hari)", "tmh (35)"),  # SIDM_TRUE_MULA
-    # 36: ("Dhruva/GC/Mula (Wilhelm)", "gcw (36)"),  # SIDM_GALCENT_MULA_WILHELM
-    # 37: ("Aryabhata 522", "ary (37)"),  # SIDM_ARYABHATA_522
-    # 38: ("Babylonian/Britton", "bbb (38)"),  # SIDM_BABYL_BRITTON
-    # 39: ("Vedic Sheoran", "vsh (39)"),  # SIDM_TRUE_SHEORAN
-    # 40: ("Cochrane (Gal.Center 0 Cap)", "gcc (40)"),  # SIDM_GALCENT_COCHRANE
-    # 41: ("Galactic Equator (Fiorenza)", "gef (41)"),  # SIDM_GALEQU_FIORENZA
-    # 42: ("Vettius Valens", "vvl (42)"),  # SIDM_VALENS_MOON
-    # 43: ("Lahiri 1940", "lh2 (43)"),  # SIDM_LAHIRI_1940
-    # 44: ("Lahiri VP285", "lh3 (44)"),  # SIDM_LAHIRI_VP285
-    # 46: ("Lahiri ICRC", "lh4 (46)"),  # SIDM_LAHIRI_ICRC
-}
-CUSTOM_AYANAMSA = {
-    # custom user-defined ayanamsa properties
-    # julian day utc > reference date for custom ayanamsa calculation
-    # default is for 2000-01-01 12:00 utc (julian day starts at noon)
-    # if needed, get julian day utc online, then copy-paste the number here
-    "custom julian day utc": 2451545.00000,
-    # user-defined custom ayanamsa : must be decimal degrees
-    # default is 23.76694445 (23° 46' 01"), as per richard houck's book
-    # 'astrology of death', for 2000-01-01
-    "custom ayanamsa": 23.76694444,
 }
 FILES = {
     # --- path to ephemerides folder, with min semo_18.se1 & sepl_18.se1 files, or
@@ -435,7 +434,7 @@ FILES = {
     # --- path to events / birth charts database folder; inside go saved charts
     "events db": (
         "user/eventsdb/",
-        "path to event / birth charts database folder ; inside go saved charts",
+        "path to event / birth charts database folder : inside go saved charts",
     ),
     # --- path to data folder & file ; data to be plotted on graph
     "data": (
@@ -447,9 +446,10 @@ FILES = {
     # 1: event {name} | 2: event {date} | 3: {time}
     # separate fields with '_' underscore ; for short time format (no seconds)
     # use {time_short} ; see default value as example
+    # todo unused
     "filename": (
         r"{name}_{date}_{time_short}",
-        "construct your own 'filename' format: allowed fields"
+        "construct your own 'save filename' format : allowed fields"
         "\n\t1: event {name} | 2: event {date} | 3: {time}"
         "\nseparate fields with '_' underscore ; for short time format "
         "(no seconds) use {time_short}"

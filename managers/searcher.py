@@ -1,27 +1,39 @@
 # ui/sidepane/searchmanager.py
 # ruff: noqa: E402
+import logging
+
+log = logging.getLogger(__name__)
+extra = {"source": "searcher", "route": ["terminal"]}
+extratimeout4 = {"source": "searcher", "route": ["terminal"], "timeout": "4"}
+extratimeout6 = {"source": "searcher", "route": ["terminal"], "timeout": "6"}
 import os
 import swisseph as swe
 import pandas as pd
 import json
-import gi
-
-gi.require_version("Gtk", "4.0")
-from gi.repository import Gtk  # type: ignore
-
-# from typing import Dict, Tuple, List
 from pathlib import Path
 from helpers import _object_name_to_code as objcode
 from sweph.calculations.transitvarga import get_varga_lon as vargalon
 from datetime import date, timedelta, datetime, timezone
 from zoneinfo import ZoneInfo
 from sweph.swetime import jd_to_custom_iso as jdtoiso
+# import gi
+# gi.require_version("Gtk", "4.0")
+# from gi.repository import Gtk  # type: ignore
 
 
 class Searcher:
-    def __init__(self):
-        self.app = Gtk.Application.get_default()
-        self.notify = self.app.notify_manager
+    def __init__(self, app=None):
+        if app is not None:
+            self.app = app
+        self.dispatcher = self.app.dispatcher
+        self.notifier = self.app.notifier
+        self.signaler = self.app.signaler
+        log.debug(
+            # f"selfapp : {self.app.__class__.__name__}",
+            # f"selfapp : {hasattr(self.app, 'app')}",
+            f"hasselfnotifier : {hasattr(self.app, 'notifier')}",
+            extra=extra,
+        )
 
     def file_properties(self, path):
         filename = Path(path).name.lower()
@@ -48,7 +60,8 @@ class Searcher:
 
     def run(self, query):
         # data file : user/data/ folder
-        file_props = self.file_properties(self.app.files.get("data"))
+        file_props = self.dispatcher.app_settings.get("files")
+        # file_props = self.file_properties(self.app.files.get("data"))
         # store results to
         save_dir = "user/data/search"
         os.makedirs(save_dir, exist_ok=True)
@@ -80,12 +93,11 @@ class Searcher:
                 (file_dataframe.iloc[:, 0] >= start)
                 & (file_dataframe.iloc[:, 0] <= end)
             ].copy()
-        self.notify.info(
+        log.info(
             f"running search from {start} to {end}",
-            source="searchmanager",
-            route=[""],
+            extra=extra,
         )
-        self.notify.debug(
+        log.debug(
             # f"run : query : {query}\n"
             # f"filename : {filename}\n"
             # f"filedataframe : {file_dataframe}\n"
@@ -93,8 +105,7 @@ class Searcher:
             # f"searchdatarange : {search_datarange}\n"
             # f"search timerange : {search_timerange}\n"
             f"parsedrules : {parsed_rules}\n",
-            source="searchmanager",
-            route=[""],
+            extra=extra,
         )
         for parsed in parsed_rules:
             rule_str = parsed["rule"]
@@ -105,11 +116,10 @@ class Searcher:
                 for ttype, tvalue in tokens
             )
             if is_clear:
-                self.app.signal_manager._emit("clear_search_plots")
-                self.notify.info(
+                self.app.signaler.emit("clear search plots")
+                log.info(
                     "clearing search plots",
-                    source="searchmanager",
-                    route=["terminal", "user"],
+                    extra=extra,
                 )
                 # do not create or save any csv
                 return
@@ -129,11 +139,9 @@ class Searcher:
                 rows = self.sunriseset(start, end)
                 if rows:
                     self.sunrise_json(rows, start, end, outdir=save_dir)
-                    self.notify.info(
+                    log.info(
                         f"sunrise result saved to {save_dir} .json file",
-                        source="searchmanager",
-                        route=["terminal", "user"],
-                        timeout=6,
+                        extratimeout6,
                     )
                 continue
             # make sure search time range fits into file time range
@@ -141,13 +149,12 @@ class Searcher:
                 start = max(start, file_start)
                 end = min(end, file_end)
                 if start > end:
-                    self.notify.warning(
+                    log.warning(
                         f"search time range {start} - {end}"
                         "\n  is outside file time range"
                         f"\nfile {file_start} - {file_end} :"
                         "\n  no search possible : exiting ...",
-                        source="searchmanager",
-                        route=["terminal", "user"],
+                        extra=extra,
                     )
                     return
             main_place = parsed["place"]
@@ -165,21 +172,18 @@ class Searcher:
             if result is not None and not result.empty:
                 result.to_csv(os.path.join(save_dir, rule_filename), index=False)
                 # trigger search results plot
-                self.app.signal_manager._emit("plot_search_result")
-            self.notify.info(
+                self.app.signaler.emit("plot search result")
+            log.info(
                 f"search result saved : {rule_filename}",
-                source="searchmanager",
-                route=["terminal", "user"],
-                timeout=4,
+                extratimeout6,
             )
 
     def sunrise_json(self, rows, start, end, outdir="sunrise"):
-        chart = getattr(self.app, "e1_chart", None)
+        chart = getattr(self.dispatcher, "e1 chart", None)
         if chart is None:
-            self.notify.error(
+            log.error(
                 "missing e1 chart data : exiting ...",
-                source="searchmanager",
-                route=["terminal", "user"],
+                extra=extra,
             )
             return
         country = chart.get("country", "/")
@@ -201,11 +205,11 @@ class Searcher:
             json.dump(data, f, ensure_ascii=False, indent=2)
 
     def generic_rule(self, *args):
-        print(f"searchmanager : generic rule called : {args}")
+        print(f"searcher : generic rule called : {args}")
 
     def naksatra_lord(self, tokens, datarange):
-        use_28 = self.app.chart_settings.get("28 mansions", False)
-        use_mean_node = self.app.chart_settings.get("mean node", False)
+        use_28 = self.dispatcher.chart_settings.get("28 mansions", False)
+        use_mean_node = self.dispatcher.chart_settings.get("mean node", False)
         hits = []
         who = next((tvalue for ttype, tvalue in tokens if ttype == "object"), None)
         # where_place = next(
@@ -229,7 +233,7 @@ class Searcher:
         )
         dt, jd = None, None
         who_pos, who_varga_pos = None, None
-        for idx, row in datarange.iterrows():
+        for _, row in datarange.iterrows():
             dt = row.iloc[0]  # pandas.timestamp
             # get jd
             jd = swe.julday(
@@ -237,7 +241,7 @@ class Searcher:
             )
             # get object longitude
             if code is not None:
-                result, _ = swe.calc_ut(jd, code, self.app.sweph_flag)
+                result, _ = swe.calc_ut(jd, code, self.dispatcher.swe_flag)
                 who_pos = result[0]  # longitude
             # convert to varga longitude
             who_varga_pos = vargalon(who_pos) if who_pos is not None else None
@@ -267,7 +271,7 @@ class Searcher:
         else:
             hits_filter = hits
         search_result = pd.DataFrame(hits_filter)
-        self.notify.debug(
+        log.debug(
             # f"\nwho : {who} | whereplace : {where_place} | "
             # f"varga : {varga} | forwho : {for_who}\n"
             # f"jd : {jd}\n"
@@ -275,8 +279,7 @@ class Searcher:
             # f"whopos : {who_pos} | whovargapos : {who_varga_pos}\n",
             # f"v9map :\n{v9_map}",
             f"searchresult : {search_result}",
-            source="searchmanager",
-            route=[""],
+            extra=extra,
         )
         return search_result
 
@@ -286,7 +289,9 @@ class Searcher:
         who = next((tvalue for ttype, tvalue in tokens if ttype == "object"), None)
         if who is None:
             return pd.DataFrame()
-        code, _ = objcode(who, self.app.chart_settings.get("mean node", False))
+        code, _ = objcode(
+            who, self.dispatcher.chart_settings.get("use mean node", False)
+        )
         if code is None:
             return pd.DataFrame()
         values = []
@@ -296,7 +301,9 @@ class Searcher:
             jd = swe.julday(
                 dt.year, dt.month, dt.day, dt.hour + dt.minute / 60 + dt.second / 3600
             )
-            result, _ = swe.calc_ut(jd, code, self.app.sweph_flag | swe.FLG_EQUATORIAL)
+            result, _ = swe.calc_ut(
+                jd, code, self.dispatcher.swe_flag | swe.FLG_EQUATORIAL
+            )
             decl = result[1]
             values.append((dt, decl))
             # check 0-crossing
@@ -352,16 +359,15 @@ class Searcher:
         return slots
 
     def sunriseset(self, start, end):
-        app = self.app
-        sweph_flag = getattr(app, "sweph_flag", 0)
+        # app = self.app
+        sweph_flag = getattr(self.dispatcher.swe_settings, "swe flag", 0)
         # need location : event 1
-        sweph = getattr(app, "e1_sweph", None)
-        chart = getattr(app, "e1_chart", None)
+        sweph = self.dispatcher.events.get("e1", None)
+        chart = self.app.dispatcher.events.get("chart", None)
         if not sweph or not chart:
-            self.notify.error(
-                "missing e1 data : exiting ...",
-                source="searchmanager",
-                route=["terminal", "user"],
+            log.error(
+                "missing e1 data",
+                extra=extra,
             )
             return []
         lon = sweph.get("lon")
@@ -370,7 +376,10 @@ class Searcher:
         tz_name = chart.get("timezone")
         weekdays = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
         jd_start = swe.julday(start.year, start.month, start.day, 0.0)
-        print(f"searchmanager : jdstart : {jdtoiso(jd_start)}")
+        log.debug(
+            f"jdstart : {jdtoiso(jd_start)}",
+            extra=extra,
+        )
         jd_end = swe.julday(end.year, end.month, end.day, 0.0)
         rows = []
         srise = None
@@ -400,18 +409,16 @@ class Searcher:
                     flags=sweph_flag,
                 )
                 if ret_rise < 0 or ret_set < 0:
-                    self.notify.error(
+                    log.error(
                         f"sunrise / set calculation failed at lat {lat} & lon {lon}",
-                        source="searchmanager",
-                        route=["terminal", "user"],
+                        extra=extra,
                     )
                 srise = data_rise[0]
                 sset = data_set[0]
             except Exception as e:
-                self.notify.error(
+                log.error(
                     f"sunrise / set calculation failed\nerror : {e}",
-                    source="searchmanager",
-                    route=["terminal", "user"],
+                    extra=extra,
                 )
                 # to utc
                 dt_rise_utc = datetime.strptime(
@@ -450,10 +457,8 @@ class Searcher:
         outdir="user/data/search",
     ):
         if start is None or end is None:
-            self.notify.warning(
+            log.warning(
                 "missing data range",
-                source="searchmanager",
-                route=["terminal", "user"],
             )
             return None
         # prepare dataframe
@@ -486,17 +491,15 @@ class Searcher:
             os.makedirs(outdir, exist_ok=True)
             filename = f"aspect_{from_obj}_{degree}_v{varga}.csv"
             df.to_csv(os.path.join(outdir, filename), index=False)
-            self.app.signal_manager._emit("plot_search_result")
-            self.notify.info(
+            self.app.signaler.emit("plot search result")
+            log.info(
                 "plot aspect signal emitted",
-                source="searchmanager",
-                route=["terminal"],
+                extra=extra,
             )
             return df
-        self.notify.info(
+        log.info(
             "no aspect found",
-            source="searchmanager",
-            route=["terminal"],
+            extra=extra,
         )
         return None
 

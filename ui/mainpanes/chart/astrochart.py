@@ -1,11 +1,17 @@
 # ui/mainpanes/chart/astrochart.py
 # ruff: noqa: E402, F821
+import logging
+
+log = logging.getLogger(__name__)
+extra = {"source": "notifier", "route": ["terminal"]}
+extratimeout4 = {"source": "notifier", "route": ["terminal"], "timeout": "4"}
+extratimeout6 = {"source": "notifier", "route": ["terminal"], "timeout": "6"}
+from ui.mainpanes.chart.chartinspector import ChartInspector
+from ui.mainpanes.chart.rings import Rings
 import gi
 
 gi.require_version("Gtk", "4.0")
 from gi.repository import Gtk  # type: ignore
-from ui.mainpanes.chart.chartinspector import ChartInspector
-from ui.mainpanes.chart.rings import Rings
 
 
 class AstroChart(Gtk.Box):
@@ -14,7 +20,7 @@ class AstroChart(Gtk.Box):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.app = Gtk.Application.get_default()
-        self.notify = self.app.notify_manager
+        self.notifier = self.app.notifier
         # cairo drawing area
         self.drawing_area = Gtk.DrawingArea()
         self.drawing_area.set_draw_func(self.draw)
@@ -27,11 +33,17 @@ class AstroChart(Gtk.Box):
         self.extra_info = {}
         self.snap_targets = []
         # subscribe to signals
-        signal = self.app.signal_manager
-        signal._connect("data_calculated", self.data_calculated)
+        signal = self.app.signaler
+        signal.connect("data calculated", self.on_data_calculate)
         # if settings change > data changes > datamanager recalculates & adjusts
         # signal._connect("settings_changed", self.settings_changed)
         self.inspector = ChartInspector(self)
+
+    def on_data_calculate(self, data):
+        log.debug(
+            f"calculated data received : {data}",
+            extra=extra,
+        )
 
     # todo datamanager takes below code & settings_changed
     # on data received : ...queue_draw()
@@ -72,7 +84,7 @@ class AstroChart(Gtk.Box):
                 "p2 progress",
                 "p3 progress",
                 "p3m progress",
-                "d1 return",
+                "d1 direction",
                 "solar return",
                 "lunar return",
             ):
@@ -132,11 +144,7 @@ class AstroChart(Gtk.Box):
             "movie_mode": getattr(self.app, "movie_mode", False),
         }
         # repeated code : above = already sent via ctx
-        self.max_radius = max_radius
-        self.radius_dict = radius_dict
+        # self.max_radius = max_radius
+        # self.radius_dict = radius_dict
         rings = Rings(ctx, self.events_data)  # or we draw in rings.py
         rings.draw(cr)
-        # todo snap targets calculated in rings ???
-        # self.snap_targets = getattr(rings, "snap_targets", [])
-        # inspector toggled with hotkey
-        # self.inspector.draw(cr, cx, cy, max_radius)

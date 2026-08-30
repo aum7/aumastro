@@ -1,4 +1,5 @@
 # sweph/eventsdata.py
+# data only - 0 zero ui
 # ruff: noqa: E402
 import logging
 
@@ -23,6 +24,10 @@ class EventsData:
     ):
         if app is not None:
             self.app = app
+        # logging helper
+        self.extra = {"source": "eventsdata", "route": ["terminal"]}
+        # signaling
+        # self.signaler = getattr(self.app, "signaler")
         self.id = id
         self.country = country
         self.city = city
@@ -36,12 +41,18 @@ class EventsData:
         self.old_name = ""
         self.old_date_time = ""
         self.old_location = ""
-        # logging helper
-        self.extra = {"source": "eventsdata", "route": "['terminal']"}
         # data from calculation
         self.chart = {}
         self.sweph = {}
         self.app.signaler.connect("datetime captured", self.on_datetime_capture)
+        # debug
+        log.debug(
+            f"\nhasselfappsignaler : {hasattr(self.app, 'signaler')}",
+            # f"e1 unpacked :\npos : {len(self.astro_data['e1 pos'])}"
+            # f"\nlots : {len(self.astro_data['lots'])}"
+            # f"\nstars : {len(self.astro_data['stars'])}",
+            self.extra,
+        )
 
     def on_location_change(self, entry):
         location_name = entry.get_name()
@@ -328,7 +339,7 @@ class EventsData:
                         self.sweph = {}
                         # todo needed below code ???
                         self.old_date_time = ""
-                        self.app.signal_manager._emit("e2_cleared", "e2")
+                        self.app.signaler.emit("e2 cleared", "e2")
                         log.info(
                             "event 2 cleared",
                             self.extra,
@@ -393,10 +404,10 @@ class EventsData:
         self.chart["datetime"] = dt_event_str
         self.chart["date"] = date
         self.chart["time"] = time
-        self.chart["time_short"] = time_short
+        self.chart["time short"] = time_short
         self.chart["wday"] = wday
         self.chart["offset"] = str(self.tz_offset)
-        self.sweph["jd_ut"] = jd_ut
+        self.sweph["jd ut"] = jd_ut
 
         self.old_date_time = dt_event_str
 
@@ -417,7 +428,7 @@ class EventsData:
                         self.sweph[key] = e1.sweph.get(key)
 
         dataset = {"id": self.id, "chart": self.chart, "sweph": self.sweph}
-        self.app.signaler.emit("event_changed", dataset)
+        self.app.signaler.emit("event changed", dataset)
 
         return
 
@@ -432,6 +443,6 @@ class EventsData:
         if self.date_time is not None:
             self.date_time.set_text(dt)
             captured = self.on_datetime_change(self.date_time)
-        # self.app.signaler.emit("datetime captured", (id, captured))
+        self.app.signaler.emit("datetime changed", (id, captured))
 
         return  # todo needed ???

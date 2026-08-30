@@ -1,6 +1,10 @@
 # ui/data_printscreen.py : printscreen all data (datagraph)
 # & save as .png sequence
 # ruff: noqa: E402
+import logging
+
+log = logging.getLogger(__name__)
+extra = {"source": "dataprintscreen", "route": ["terminal"]}
 import pandas as pd
 import gi
 
@@ -18,7 +22,11 @@ class DataPrintscreen:
     # generate printscreen sequence of data in datagraph
     def __init__(self, app):
         self.app = app
-        self.notify = self.app.notify_manager
+        self.notifier = self.app.notifier
+        log.debug(
+            f"hasselfappnotifier : {hasattr(self.app, 'notifier')}",
+            extra=extra,
+        )
         self.output_dir = Path.home() / EXPORT_FOLDER
         self.output_dir.mkdir(parents=True, exist_ok=True)
         self.running = False

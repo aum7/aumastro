@@ -1,15 +1,14 @@
 # ui/sidepane/sidepaggnesettings.py
 # ruff: noqa: E402
 import logging
+
+log = logging.getLogger(__name__)
 import gi
 
 gi.require_version("Gtk", "4.0")
 from gi.repository import Gtk  # type:ignore
-
 from ui.collapsepanel import CollapsePanel
 import ui.sidepane.sidepanehelpers as help
-
-log = logging.getLogger(__name__)
 
 
 def update_chart_setting_checkbox(sidepane, setting: str, state: bool):
@@ -33,16 +32,15 @@ def update_chart_setting_checkbox(sidepane, setting: str, state: bool):
 class SidepaneSettings(CollapsePanel):
     def __init__(self, sidepane=None):
         super().__init__(title="settings", expanded=False)
-        self.sidepane = sidepane
-        self.app = getattr(sidepane, "app")
+        if sidepane is not None:
+            self.sidepane = sidepane
+        # self.app = getattr(sidepane, "app")
         self.dispatcher = getattr(sidepane, "dispatcher")
+        self.extra = {"source": "sidepanesettings", "route": ["terminal"]}
         log.debug(
-            # f"\nsidepanesetting : received sidepane={sidepane.__class__.__name__} "
-            # f"\nhasapp : {hasattr(sidepane, 'app')} olo"
-            # f"\nhasselfapp : {hasattr(sidepane, 'app')}"
             f"\nhasselfdispatcher : {hasattr(sidepane, 'dispatcher')}"
             f"\nhasdispatcherchartsettings : {hasattr(self.dispatcher, 'chart_settings')}",
-            extra={"source": "sidepanelsettings", "route": ["terminal"]},
+            self.extra,
         )
         self.set_title_tooltip("sweph & application & chart settings")
         if self.sidepane:
@@ -50,7 +48,6 @@ class SidepaneSettings(CollapsePanel):
             self.set_margin_end(self.sidepane.margin_end)
             self.set_margin_top(self.sidepane.margin_end)
             self.set_margin_bottom(self.sidepane.margin_end)
-
         self.build_ui()
 
     def build_ui(self):
@@ -74,7 +71,7 @@ class SidepaneSettings(CollapsePanel):
         box_button = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=5)
         box_button.set_halign(Gtk.Align.START)
         ico_event = Gtk.Image.new_from_file(
-            "ui/imgs/icons/hicolor/scalable/objects/event_1.svg"
+            "ui/imgs/icons/hicolor/scalable/events/event_1.svg"
         )
         ico_event.set_pixel_size(30)
         # buttons
@@ -97,12 +94,12 @@ class SidepaneSettings(CollapsePanel):
         # testing ground
         # objects_data = self.dispatcher.chart_settings["objects"]
         lots_data = self.dispatcher.chart_settings.get("lots", {})
-        # debug
-        log.debug(
-            f"\nlotsdata={type(lots_data)}"
-            f"\n\t{lots_data}"
-            f"\n\tWE ARE TRANSMITING ON CLEAR AIR - NO EXTRA ATTRS NEEDED",
-        )
+        # logging
+        # log.debug(
+        #     f"\nlotsdata={type(lots_data)}"
+        #     f"\n\t{lots_data}"
+        #     f"\n\tTRANSMITING CLEAR - NO EXTRA ATTRS NEEDED",
+        # )
         # loop start
         for _, obj_data in lots_data.items():
             row = Gtk.ListBoxRow()
@@ -117,7 +114,6 @@ class SidepaneSettings(CollapsePanel):
         subsub_lots = CollapsePanel(title="lots / parts", indent=21, expanded=False)
         lbx_lots = Gtk.ListBox()
         lbx_lots.set_selection_mode(Gtk.SelectionMode.NONE)
-        lots_data = self.dispatcher.chart_settings["lots"]  # if self.dispatcher else {}
         for name, obj_data in lots_data.items():
             row = Gtk.ListBoxRow()
             row.set_tooltip_text(f"{obj_data['day']}\n{obj_data['tooltip']}")
@@ -131,9 +127,7 @@ class SidepaneSettings(CollapsePanel):
         subsub_prenatal = CollapsePanel(title="prenatal", indent=21, expanded=False)
         lbx_prenatal = Gtk.ListBox()
         lbx_prenatal.set_selection_mode(Gtk.SelectionMode.NONE)
-        prenatal_data = self.dispatcher.chart_settings[
-            "prenatal"
-        ]  # if self.dispatcher else {}
+        prenatal_data = self.dispatcher.chart_settings.get("prenatal", {})
         for name, obj_data in prenatal_data.items():
             row = Gtk.ListBoxRow()
             row.set_tooltip_text(obj_data["tooltip"])
@@ -151,9 +145,7 @@ class SidepaneSettings(CollapsePanel):
 
     def build_subpnl_housesys(self) -> CollapsePanel:
         subpnl_hsys = CollapsePanel(title="house system", indent=14, expanded=False)
-        house_system = self.dispatcher.chart_settings[
-            "house_system"
-        ]  # if self.dispatcher else []
+        house_system = self.dispatcher.chart_settings.get("house system", {})
         housesys_list = Gtk.StringList.new([name for _, name, _ in house_system])
         ddn = Gtk.DropDown.new(housesys_list)
         ddn.add_css_class("dropdown")
@@ -168,7 +160,7 @@ class SidepaneSettings(CollapsePanel):
         )
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5)
         # todo
-        chart_setts = self.dispatcher.chart_settings  # if self.dispatcher else {}
+        chart_setts = self.dispatcher.chart_settings
         # calculations
         lbl_calc = Gtk.Label(label="calculations")
         lbl_calc.set_halign(Gtk.Align.START)
@@ -204,8 +196,7 @@ class SidepaneSettings(CollapsePanel):
             row.set_tooltip_text(tooltip)
             row.set_child(check)
             lbx_draw.append(row)
-
-        # Naksatras Row
+        # naksatras row
         row_nak = Gtk.ListBoxRow()
         chk_naks_ring = Gtk.CheckButton(label="naksatras ring")
         chk_naks_ring.set_active(chart_setts.get("naksatras ring", (False, ""))[0])
@@ -262,14 +253,12 @@ class SidepaneSettings(CollapsePanel):
         subpnl_flags = CollapsePanel(title="sweph flags", indent=14, expanded=False)
         lbx_flags = Gtk.ListBox()
         lbx_flags.set_selection_mode(Gtk.SelectionMode.NONE)
-        swe_flags = self.dispatcher.sweph_settings[
-            "swe flags"
-        ]  # if self.dispatcher else {}
-        main_flags = self.dispatcher.sweph_settings[
-            "main_flags"
-        ]  # if self.dispatcher else []
+        # single calculated flag todo ???
+        swe_flags = self.dispatcher.swe_settings.get("swe flags", {})
+        # flags from usersettings
+        active_flags = self.dispatcher.active_flags
         for flag, flags_data in swe_flags.items():
-            if flag in main_flags:
+            if flag in active_flags:
                 row = Gtk.ListBoxRow()
                 row.set_tooltip_text(flags_data[1])
                 check = Gtk.CheckButton(label=flag)
@@ -286,21 +275,17 @@ class SidepaneSettings(CollapsePanel):
             title="solar & lunar periods", indent=14, expanded=False
         )
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
-        solar_years = self.dispatcher.chart_setttings[
-            "solar years period"
-        ]  # if self.dispatcher else {} # <
-        lunar_months = self.dispatcher.chart_settings[
-            "lunar months period"
-        ]  # if self.dispatcher else {}
+        solar_years = self.dispatcher.swe_settings["solar years"]
+        lunar_months = self.dispatcher.swe_settings["lunar months"]
         # solar year
         box.append(Gtk.Label(label="solar year", halign=Gtk.Align.START))
-        year_store = Gtk.StringList.new([val[1] for val in solar_years.values()])
+        year_store = Gtk.StringList.new(str([val[1] for val in solar_years]))
         ddn_year = Gtk.DropDown.new(year_store)
         ddn_year.connect("notify::selected", help.solar_year_changed, self.sidepane)
         box.append(ddn_year)
         # lunar month
         box.append(Gtk.Label(label="lunar month", halign=Gtk.Align.START))
-        month_store = Gtk.StringList.new([val[1] for val in lunar_months.values()])
+        month_store = Gtk.StringList.new(str([val[1] for val in lunar_months]))
         ddn_month = Gtk.DropDown.new(month_store)
         ddn_month.connect("notify::selected", help.lunar_month_changed, self.sidepane)
         box.append(ddn_month)
@@ -311,13 +296,9 @@ class SidepaneSettings(CollapsePanel):
     def build_subpnl_ayanamsa(self) -> CollapsePanel:
         subpnl_ayanamsa = CollapsePanel(title="ayanamsa", indent=14, expanded=False)
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
-        ayanamsas = self.dispatcher.chart_settings[
-            "ayanamsas"
-        ]  # if self.dispatcher else {}
-        custom_ayan = self.dispatcher.chart_settings[
-            "custom_ayanamsa"
-        ]  # if self.dispatcher else {}
-        ayan_store = Gtk.StringList.new([val[0] for val in ayanamsas.values()])
+        ayanamsas = self.dispatcher.swe_settings["ayanamsas"]
+        custom_ayan = self.dispatcher.swe_settings["custom ayanamsa"]
+        ayan_store = Gtk.StringList.new(str([val[0] for val in ayanamsas]))
         ddn_ayan = Gtk.DropDown.new(ayan_store)
         ddn_ayan.connect("notify::selected", help.ayanamsa_changed, self.sidepane)
         box.append(ddn_ayan)
@@ -352,7 +333,7 @@ class SidepaneSettings(CollapsePanel):
     def build_subpnl_files(self) -> CollapsePanel:
         subpnl_files = CollapsePanel(title="files & paths", indent=14, expanded=False)
         grid = Gtk.Grid(column_spacing=12, row_spacing=4)
-        files = self.dispatcher.chart_settings["files"]  # if self.dispatcher else {}
+        files = self.dispatcher.app_settings["files"]
         for row_idx, (key, value) in enumerate(files.items()):
             lbl = Gtk.Label(label=key, halign=Gtk.Align.START)
             ent = Gtk.Entry()

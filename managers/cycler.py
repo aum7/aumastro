@@ -1,7 +1,13 @@
 # managers/cycler.py
 # ruff: noqa: E402
+import logging
+
+log = logging.getLogger(__name__)
+extra = {"source": "cycler", "route": ["terminal"]}
+extrauser = {"source": "cycler", "route": ["terminal", "user"]}
+extratimeout4 = {"source": "cycler", "route": ["terminal"], "timeout": "4"}
+extratimeout6 = {"source": "cycler", "route": ["terminal"], "timeout": "6"}
 import os
-import logging as log
 import pandas as pd
 import swisseph as swe
 from pathlib import Path
@@ -28,9 +34,13 @@ MEMBERS_ORDER = [
 class Cycler:
     def __init__(self, app=None):
         self.app = app
-        self.logger = log.getLogger(__name__)
-        self.notify = getattr(app, "notifer", None)
-        self.signal = getattr(app, "signaler", None)
+        self.notifier = getattr(app, "notifer", None)
+        self.signaler = getattr(app, "signaler", None)
+        log.debug(
+            # f"selfapp : {str(app.__class__.__name__)}",
+            f"hasselfnotifier : {hasattr(self.app, 'notifier')}",
+            extra=extra,
+        )
 
     def file_properties(self, path: str) -> dict:
         filename = Path(path).name.lower()
@@ -93,7 +103,10 @@ class Cycler:
 
     def run(self, query: dict):
         if not self.app or not hasattr(self.app, "files"):
-            log.error("Data file path missing in app context")
+            log.error(
+                "Data file path missing in app context",
+                extra=extra,
+            )
             return
 
         file_props = self.file_properties(self.app.files.get("data"))
@@ -114,24 +127,20 @@ class Cycler:
             start = max(pd.to_datetime(start), pd.to_datetime(file_props["start"]))
             end = min(pd.to_datetime(end), pd.to_datetime(file_props["end"]))
             if start > end:
-                if self.notify:
-                    self.notify.warning(
-                        f"cycle time range {start} - {end} is outside file time range",
-                        source="cyclemanager",
-                        route=["terminal", "user"],
-                    )
+                log.warning(
+                    f"cycle time range {start} - {end} is outside file time range",
+                    extrauser,
+                )
                 return
 
         dataframe_range = (
             file_dataframe.loc[start:end] if start and end else file_dataframe
         )
         if dataframe_range.empty:
-            if self.notify:
-                self.notify.warning(
-                    "missing data for selected range",
-                    source="cyclemanager",
-                    route=["terminal", "user"],
-                )
+            log.warning(
+                "missing data for selected range",
+                extrauser,
+            )
             return
 
         file_timeframe = file_props.get("timeframe")
@@ -148,12 +157,10 @@ class Cycler:
                 result_df = self.compute_wave(dataframe_range, members, varga)
 
             if result_df is None or result_df.empty:
-                if self.notify:
-                    self.notify.warning(
-                        f"rule '{rule_str}' has no data",
-                        source="cyclemanager",
-                        route=["terminal", "user"],
-                    )
+                log.warning(
+                    f"rule '{rule_str}' has no data",
+                    extrauser,
+                )
                 continue
 
             rule_name = rule_str.replace(" ", "_").replace("/", "_")
@@ -170,16 +177,13 @@ class Cycler:
                 "varga": varga,
                 "dataframe": result_df,
             })
-            if self.notify:
-                self.notify.info(
-                    f"wave saved : {rule_filename}",
-                    source="cyclemanager",
-                    route=["terminal", "user"],
-                )
+            log.info(
+                f"wave saved : {rule_filename}",
+                extrauser,
+            )
 
         cycle = {"range": (start, end), "results": results}
-        if self.signal:
-            self.signal._emit("plot_wave", "cycle", cycle)
+        self.app.signaler.emit("plot_wave", "cycle", cycle)
         return cycle
 
     def compute_wave(
@@ -205,12 +209,10 @@ class Cycler:
         return pd.DataFrame({"datetime": df_time_indexed.index, "cycle": out_vals})
 
     def declination_wave(self, tokens, datarange) -> pd.DataFrame:
-        if self.notify:
-            self.notify.debug(
-                f"declination rule called : {tokens}",
-                source="cyclemanager",
-                route=["terminal"],
-            )
+        log.debug(
+            f"declination rule called : {tokens}",
+            extra=extra,
+        )
         return pd.DataFrame()
 
     def map_varga_naks(

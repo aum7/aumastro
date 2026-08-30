@@ -1,12 +1,10 @@
 # ui/mainwindow.py
 # ruff: noqa: E402
-import gi
+import logging
 
-gi.require_version("Adw", "1")
-gi.require_version("Gtk", "4.0")
-from gi.repository import Gtk, Adw  # type: ignore
+log = logging.getLogger(__name__)
+extra = {"source": "mainwindow", "route": ["terminal"]}
 from typing import Any, Optional
-
 from .sidepane.sidepane import SidepaneManager
 from .sidepane.sidepanesettings import update_chart_setting_checkbox
 from .uisetup import UISetup
@@ -16,6 +14,11 @@ from ui.mainpanes.tables import Tables
 from ui.mainpanes.chart.astrochart import AstroChart
 from ui.mainpanes.datagraph import DataGraph
 from .dataprintscreen import DataPrintscreen  # printscreen sequence generation
+import gi
+
+gi.require_version("Adw", "1")
+gi.require_version("Gtk", "4.0")
+from gi.repository import Gtk, Adw  # type: ignore
 
 
 class MainWindow(
@@ -72,7 +75,7 @@ class MainWindow(
         # 4 main panes
         self.astro_chart = AstroChart()
         self.tables = Tables()
-        self.datagraph = DataGraph()
+        self.datagraph = DataGraph(self.app)
         self.astrodata = AstroChart()  # extra astro chart for data overlay
         self.init_panes()
         # printscreen sequence script
@@ -84,13 +87,60 @@ class MainWindow(
         self.orig_top_right_child = None  # datagraph to be overlaid
         # initialize panes layout todo doesnt work properly
         self.connect("realize", lambda w: self.panes_double())
-        self.signal.connect("update_titlebar", self.on_update_titlebar)
-        self.signal.connect("show_toast", self.show_toast)
+        self.signaler.connect("update titlebar", self.on_update_titlebar)
+        self.signaler.connect("show toast", self.on_show_toast)
 
-    def close_request(self, window) -> bool:
-        # print("mainwindow : close_request called : quiting app ...")
-        self.app.quit()
+    def on_update_titlebar(self, data: dict[str, Any]) -> None:
+        # todo careful here
+        if title := data.get("title"):
+            self.title_label.set_text(title)
+
+    def on_show_toast(self, msg):
+        # show toast notification with level-specific icon
+        try:
+            if not self.toast_overlay:
+                print("[DEBUG TOAST] selftoastoverlay is NONE inside showtoast")
+                return False
+            # custom layout box
+            box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=5)
+            box.set_margin_start(3)
+            box.set_margin_end(5)
+            # icon without callbacks
+            icon_name = f"{msg.level.value}"
+            icon = Gtk.Image.new_from_file(
+                f"ui/imgs/icons/hicolor/scalable/notify/{icon_name}.svg"
+            )
+            icon.set_pixel_size(24)
+            # fallback to system icons
+            if not icon:
+                icon = Gtk.Image()
+                icon.set_from_icon_name(self.FALLBACK_ICONS[msg.level])
+                icon.set_pixel_size(24)
+            box.append(icon)
+            # label with message
+            label = Gtk.Label(label=str(msg))
+            box.append(label)
+            # create toast
+            toast = Adw.Toast.new("")
+            toast.set_custom_title(box)
+            # use custom timeout if provided, else use default
+            if msg.timeout is not None:
+                toast.set_timeout(msg.timeout)
+            else:
+                toast.set_timeout(self._DEFAULT_TIMEOUTS[msg.level])
+            self.toast_overlay.add_toast(toast)
+            # print("[DEBUG TOAST] toast added to overlay")
+
+        except Exception as e:
+            print(f"error in toast notification: {str(e)}")
+            print(f"message was: {msg.full_str()}")
+
         return False
+
+    def on_data_seq(self):
+        # run printscreen for data sequence in datagraph
+        if hasattr(self, "data_seq"):
+            self.data_seq.run_seq()
 
     def on_toggle_sidepane(self, button: Optional[Gtk.Button] = None) -> None:
         """toggle sidepane visibility"""
@@ -101,6 +151,11 @@ class MainWindow(
         else:
             self.rvl_side_pane.set_visible(True)
             self.rvl_side_pane.set_reveal_child(True)
+
+    def close_request(self, window) -> bool:
+        # print("mainwindow : close_request called : quiting app ...")
+        self.app.quit()
+        return False
 
     def setup_hotkeys(self):
         """register additional hotkeys"""
@@ -180,7 +235,7 @@ class MainWindow(
 
     # help / manual
     def show_manual(self):
-        self.notify.debug(
+        self.app.notifer.debug(
             "manual\n"
             "\nhover mouse over buttons & text = show tooltips (aka detailed manual)"
             "\nhover mouse over (ie this) notification message = do not hide message"
@@ -231,54 +286,12 @@ class MainWindow(
         self.app.chart_settings[setting] = new_val
         # update checkbox
         update_chart_setting_checkbox(self, setting, new_val)
-        self.app.signal_manager._emit("settings_changed", None)
+        self.app.signaler.emit("settings changed", None)
         self.notify.debug(
             f"toggled {setting} : {new_val}",
             source="mainwindow",
             route=[""],
         )
-
-    def show_toast(self, msg):
-        # show toast notification with level-specific icon
-        try:
-            if not self.toast_overlay:
-                print("[DEBUG TOAST] selftoastoverlay is NONE inside showtoast")
-                return False
-            # custom layout box
-            box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=5)
-            box.set_margin_start(3)
-            box.set_margin_end(5)
-            # icon without callbacks
-            icon_name = f"{msg.level.value}"
-            icon = Gtk.Image.new_from_file(
-                f"ui/imgs/icons/hicolor/scalable/notify/{icon_name}.svg"
-            )
-            icon.set_pixel_size(24)
-            # fallback to system icons
-            if not icon:
-                icon = Gtk.Image()
-                icon.set_from_icon_name(self.FALLBACK_ICONS[msg.level])
-                icon.set_pixel_size(24)
-            box.append(icon)
-            # label with message
-            label = Gtk.Label(label=str(msg))
-            box.append(label)
-            # create toast
-            toast = Adw.Toast.new("")
-            toast.set_custom_title(box)
-            # use custom timeout if provided, else use default
-            if msg.timeout is not None:
-                toast.set_timeout(msg.timeout)
-            else:
-                toast.set_timeout(self._DEFAULT_TIMEOUTS[msg.level])
-            self.toast_overlay.add_toast(toast)
-            # print("[DEBUG TOAST] toast added to overlay")
-
-        except Exception as e:
-            print(f"error in toast notification: {str(e)}")
-            print(f"message was: {msg.full_str()}")
-
-        return False
 
     def init_panes(self):
         """initialize panes with content"""
@@ -438,13 +451,3 @@ class MainWindow(
                 source="mainwindow",
                 route=["terminal"],
             )
-
-    def on_update_titlebar(self, data: dict[str, Any]) -> None:
-        # todo careful here
-        if title := data.get("title"):
-            self.title_label.set_text(title)
-
-    def on_data_seq(self):
-        # run printscreen for data sequence in datagraph
-        if hasattr(self, "data_seq"):
-            self.data_seq.run_seq()

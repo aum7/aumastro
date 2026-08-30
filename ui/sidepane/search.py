@@ -1,16 +1,23 @@
 # ui/search.py
 # ruff: noqa: E402
+import logging
+
+log = logging.getLogger(__name__)
+extra = {"source": "search", "route": ["terminal"]}
+# extratimeout4 = {"source": "search", "route": ["terminal"], "timeout": 4}
+# extratimeout6 = {"source": "search", "route": ["terminal"], "timeout": 6}
+extrauser = {"source": "search", "route": ["terminal", "user"]}
+
 import re
 import pandas as pd
+from ui.collapsepanel import CollapsePanel
+from managers.searcher import Searcher
 import gi
 
 gi.require_version("Gtk", "4.0")
 from gi.repository import Gtk, Gdk  # type: ignore
-from ui.collapsepanel import CollapsePanel
-from managers.searcher import Searcher
-# from user.settings import SEARCH, SEARCH_TOKENS
 
-# --- search panel
+# --- search panel for events searching : sign entry, moon in naksatra etc
 SEARCH_TOKENS = {
     "command": ["clear"],
     "object": [
@@ -269,15 +276,22 @@ def validate_input(query: str, use_28=False, notify=None):
     }
 
 
-def setup_search(manager) -> CollapsePanel:
-    # separate search panel
-    manager.search = Searcher()
-    notify = manager.app.notify_manager
-    use_28 = manager.app.chart_settings.get("28 mansions", False)
+def setup_search(app) -> CollapsePanel:
+    # separate search collapse panel
+    # if app is not None:
+    log.debug(
+        # f"app : {app.__class__.__name__}", # notifier / logging doesnt like this
+        f"hasappdispatcher : {hasattr(app, 'dispatcher')}",
+        extra=extra,
+    )
+    app.search = Searcher(app)
+    # notifier = app.notifier
+    use_28 = app.dispatcher.chart_settings.get("28 mansions", False)
     pad_x = 7
     pad_y = 0
+    margin_end = 7
     clp_search = CollapsePanel(title="search", expanded=False)
-    clp_search.set_margin_end(manager.margin_end)
+    clp_search.set_margin_end(margin_end)
 
     box_search = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
     box_search.set_margin_start(14)
@@ -364,16 +378,15 @@ type 'clear' & execute it to clear all search plots from datagraph
                 # start & end range, include hidden chars
                 query = buf.get_text(start, end, True)
                 # validate search input : minimal validation
-                ok, result = validate_input(query, use_28, notify)  # type:ignore
+                ok, result = validate_input(query, use_28, app.app.notifier)  # type:ignore
                 if not ok:
-                    manager.notify.error(
+                    log.error(
                         f"invalid input :\n{result}",
-                        source="search",
-                        route=["terminal", "user"],
+                        extra=extrauser,
                     )
                     return True
-                # serve to searchmanager
-                manager.search.run(result)
+                # serve to searchsidepane
+                app.search.run(result)
                 return True
             else:
                 buf = view.get_buffer()

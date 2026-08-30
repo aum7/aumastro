@@ -3,6 +3,7 @@
 import logging
 
 log = logging.getLogger(__name__)
+extra = {"source": "datagraph", "route": ["terminal"]}
 import os
 import glob
 import pandas as pd
@@ -25,9 +26,16 @@ from matplotlib.lines import Line2D
 class DataGraph(Gtk.Box):
     """load data & plot it as chart"""
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.app = Gtk.Application.get_default()
+    def __init__(self, app=None, **kwargs):
+        super().__init__(**kwargs)
+        if app is not None:
+            self.app = app
+        log.debug(
+            f"hasselfappnotifier : {hasattr(self.app, 'notifier')}"
+            f"\nhasselfappdispatcher : {hasattr(self.app, 'dispatcher')}",
+            # f"hasselfappsignaler : {hasattr(self.app, 'signaler')}",
+            extra=extra,
+        )
         self.set_orientation(Gtk.Orientation.VERTICAL)
         # create figure & axes
         self.figure, self.ax = plt.subplots()
@@ -41,7 +49,7 @@ class DataGraph(Gtk.Box):
         key_controller.connect("key-pressed", self.on_canvas_key)
         self.canvas.add_controller(key_controller)
         # global datetime attribute to move astro chart
-        self.app.selected_dt = None
+        self.app.dispatcher.app_settings.get("blues", None)  # selected_dt = None
         # load & plot data
         self.full_df = None
         self.plot_range = [None, None]  # start, end
@@ -60,22 +68,23 @@ class DataGraph(Gtk.Box):
         # init / create cycle wave
         # self.cycle_calculated = False # todo move to on_enter_key
         self.cycle_wave = None
-        self.app.signaler._connect("plot_wave", self.on_plot_wave)
+        self.app.signaler.connect("plot wave", self.on_plot_wave)
         # init search result plot
         self.search_markers = []
-        self.app.signaler.connect("clear search plots", self.clear_search_plots)
-        self.app.signaler.connect("plot search result", self.plot_search_result)
+        self.app.signaler.connect("clear search plots", self.on_clear_search_plots)
+        self.app.signaler.connect("plot search result", self.on_plot_search_result)
         self.plot_last_n(800)
         self.search_cleared = False
 
     def on_canvas_key(self, controller, keyval, keycode, state):
         # release focus
         win = self.app.get_active_window()
+        # win = self.app.mainwindow.get_active_window()
         if win:
             win.grab_focus()
         return False
 
-    def clear_search_plots(self, *args):
+    def on_clear_search_plots(self, *args):
         # remove all previously plotted search markers
         if hasattr(self, "search markers") and self.search_markers:
             for marker in self.search_markers:
@@ -98,7 +107,11 @@ class DataGraph(Gtk.Box):
 
     def data_load(self):
         """load & plot data"""
-        filepath = self.app.files.get("data")
+        filepath = self.app.dispatcher.app_settings.get("files").get("data")[0]
+        log.debug(
+            f"dataload : filepath : {filepath}",
+            extra=extra,
+        )
         # load csv
         df = pd.read_csv(
             filepath,
@@ -202,7 +215,7 @@ class DataGraph(Gtk.Box):
             self.search_markers.append(artist)
         self.canvas.draw_idle()
 
-    def plot_search_result(self):
+    def on_plot_search_result(self):
         self.search_cleared = False
         # plot search data from user/search/*.csv
         df_search = self.load_last_search()
@@ -374,9 +387,9 @@ class DataGraph(Gtk.Box):
                 )
         except Exception as e:
             # fail silently if numeric issues occur
-            self.app.notifier.error(
+            log.error(
                 f"failed setting horizontal price lines : {e}",
-                self.extra,
+                extra=extra,
             )
 
         # plot overlay cycle wave

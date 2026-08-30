@@ -1,6 +1,10 @@
 # ui/sidepane/sidepane.py
 # collapsible side panel
 # ruff: noqa: E402
+import logging
+
+log = logging.getLogger(__name__)
+extra = {"source": "sidepane", "route": ["terminal"]}
 import re
 import gi
 
@@ -47,10 +51,19 @@ class SidepaneManager:
     }
 
     def init_sidepane(self, app=None):
-        # initialize attributes
+        # get events data from app
         if app is not None:
             self.app = app
-        self.selected_event = self.app.dispatcher.app_settings["selected event"]
+        self.dispatcher = getattr(self.app, "dispatcher")
+        self.selected_event = self.dispatcher.selected_event
+        # debug
+        # log.debug(
+        #     f"\nhasselfselectedevent : {hasattr(self, 'selected_event')}",
+        # f"\nhasselfappdispatcher : {hasattr(self.app, 'dispatcher')}",
+        # f"\nhasdispatcherchartsettings : {hasattr(self.dispatcher, 'chart_settings')}",
+        # self.extra,
+        # )
+        # initialize attributes
         self.margin_end = 7
         # intialize panels
         self.clp_event_one = None
@@ -65,6 +78,7 @@ class SidepaneManager:
         icon_size: Optional[int] = None,
     ):
         # create buttons from dictionary with icon and tooltip
+        # changetime notify events
         icons_folder = "ui/imgs/icons/hicolor/scalable/"
         icons_path_cpl = icons_folder + icons_path if icons_path else icons_folder
         buttons = []
@@ -106,10 +120,10 @@ class SidepaneManager:
         # settings ie objects to calculate & flags to use etc
         self.clp_settings = SidepaneSettings(self)
         # self.clp_settings = setup_settings(self)
-        # search module
-        self.clp_search = setup_search(self)
+        # search module todo self or self.app ???
+        self.clp_search = setup_search(self.app)
         # cycle wave module
-        self.clp_cycle = setup_cycle(self)
+        self.clp_cycle = setup_cycle(self.app)
         # append to box
         box_sidepane.append(self.clp_change_time)
         box_sidepane.append(self.clp_event_one)

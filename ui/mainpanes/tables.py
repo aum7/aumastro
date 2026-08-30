@@ -1,22 +1,29 @@
 # ui/mainpanes/tables.py
 # ruff: noqa: E402
-import gi
+import logging
 
-gi.require_version("Gtk", "4.0")
-from gi.repository import Gtk  # type: ignore
+log = logging.getLogger(__name__)
+extra = {"source": "notifier", "route": ["terminal"]}
+extratimeout4 = {"source": "notifier", "route": ["terminal"], "timeout": "4"}
+extratimeout6 = {"source": "notifier", "route": ["terminal"], "timeout": "6"}
+extrauser = {"source": "notifier", "route": ["terminal", "user"]}
 from helpers import _decimal_to_sign_dms as decsigndms, _decimal_to_ra as decra
 from user.usersettings import HOUSE_SYSTEMS
 from sweph.swetime import jd_to_custom_iso as jdtoiso
 from ui.fonts.glyphs import get_glyph
+import gi
+
+gi.require_version("Gtk", "4.0")
+from gi.repository import Gtk  # type: ignore
 
 
 class Tables(Gtk.Notebook):
     def __init__(self):
         super().__init__()
         self.app = Gtk.Application.get_default()
-        self.notify = self.app.notify_manager
-        # connect signals
-        signal = self.app.signal_manager
+        # connect signals & notifications
+        self.signaler = self.app.signaler
+        self.notifier = self.app.notifier
         # styling and scroll options
         self.add_css_class("no-border")
         self.set_tab_pos(Gtk.PositionType.TOP)
@@ -37,9 +44,9 @@ class Tables(Gtk.Notebook):
         self.mc = "\u01c1"
         self.order = ("su", "mo", "me", "ve", "ma", "ju", "sa", "ur", "ne", "pl", "ra")
         # event data widget
-        signal._connect("data_calculated", self.data_calculated)
+        self.signaler.connect("data calculated", self.on_data_calculate)
 
-    def data_calculated(self, event: str, data: str):
+    def on_data_calculate(self, event: str, data: str):
         if event not in ("e1", "e2"):
             return
         self.events_data[event] = data
@@ -91,11 +98,11 @@ class Tables(Gtk.Notebook):
         if "horas" in data:
             self.update_horas(f"{event} horas", data["horas"])
         if event == "e2":
-            if "p2_pos" in data:
+            if "p2 pos" in data:
                 self.update_p2("p2", data)
-            if "p3_pos" in data:
+            if "p3 pos" in data:
                 self.update_p3("p3", data)
-            if "p3m_pos" in data:  # todo add p3m widget
+            if "p3m pos" in data:  # todo add p3m widget
                 self.update_p3m("p3m", data)
 
     def get_positions_text(self, event: str, data: dict):
@@ -104,10 +111,9 @@ class Tables(Gtk.Notebook):
         # get houses data if available
         houses = data.get("houses", {})
         if not positions or not houses:
-            self.notify.error(
+            log.error(
                 f"positions or houses missing for {event} : exiting ...",
-                source="tables",
-                route=["terminal"],
+                extra=extra,
             )
             return ""
         pos_map = {k: v for k, v in positions.items() if isinstance(k, int)}
@@ -197,14 +203,13 @@ class Tables(Gtk.Notebook):
     def get_aspects_text(self, event: str, data: dict):
         aspects = data.get("aspects", {})
         if not aspects:
-            self.notify.error(
-                f"aspects missing for {event} : exiting ...",
-                source="tables",
-                route=["terminal"],
+            log.error(
+                f"aspects missing for {event}",
+                extra=extra,
             )
             return ""
 
-        use_varga_aspect = self.app.chart_settings.get("use varga aspect", False)
+        use_varga_aspects = self.app.chart_settings.get("use varga aspects", False)
         division = self.app.chart_settings.get("harmonic ring", "1").strip()
         obj_names = aspects["obj names"]
         speeds = aspects["speeds"]
@@ -213,7 +218,7 @@ class Tables(Gtk.Notebook):
         # title line
         text = (
             f" aspects{self.vic_spc}[v{division}]{self.vic_spc}{self.h_sym * 52}\n"
-            if use_varga_aspect
+            if use_varga_aspects
             else f" aspects{self.vic_spc}[v1]{self.vic_spc}{self.h_sym * 52}\n"
         )
         # header row
@@ -253,21 +258,19 @@ class Tables(Gtk.Notebook):
             text += "\n"
         # horizontal line at end
         text += self.h_line
-        self.notify.debug(
+        log.debug(
             f"updateaspects : {text}",
-            source="tables",
-            route=[""],
+            extra=extra,
         )
         return text
 
     def update_p2(self, event: str, data: dict):
-        p2_pos = data.get("p2_pos", [])
-        p2_stations = data.get("p2_stations", [])
+        p2_pos = data.get("p2 pos", [])
+        p2_stations = data.get("p2 stations", [])
         if not p2_pos:
-            self.notify.error(
-                "missing p2 positions : exiting ...",
-                source="tables",
-                route=["terminal", "user"],
+            log.error(
+                "missing p2 positions",
+                extra=extra,
             )
             return
         # msg += f"p2changed : p2pos :\n\t{p2_pos}\n"
@@ -337,10 +340,9 @@ class Tables(Gtk.Notebook):
             buffer.set_text(content)
         else:
             self.p2_widget(event, content)
-        self.notify.debug(
+        log.debug(
             "p2 tables set",
-            source="tables",
-            route=["terminal"],
+            extra=extra,
         )
 
     def p2_widget(self, event: str, content: str):
@@ -368,13 +370,12 @@ class Tables(Gtk.Notebook):
 
     # ----
     def update_p3(self, event: str, data: dict):
-        p3_pos = data.get("p3_pos", [])
-        p3_stations = data.get("p3_stations", [])
+        p3_pos = data.get("p3 pos", [])
+        p3_stations = data.get("p3 stations", [])
         if not p3_pos:
-            self.notify.error(
+            log.error(
                 "missing p3 positions : exiting ...",
-                source="tables",
-                route=["terminal", "user"],
+                extra=extrauser,
             )
             return
         separ = f"{self.h_sym * 20}\n"
@@ -442,10 +443,9 @@ class Tables(Gtk.Notebook):
             buffer.set_text(content)
         else:
             self.p3_widget(event, content)
-        self.notify.debug(
+        log.debug(
             "p3 data set",
-            source="tables",
-            route=["terminal"],
+            extra=extra,
         )
 
     def p3_widget(self, event: str, content: str):
@@ -580,7 +580,7 @@ class Tables(Gtk.Notebook):
         # update vimsottari for new level
         if event and event in self.events_data:
             # emit signal to force recalculation
-            self.app.signal_manager._emit(
-                "luminaries_changed",
+            self.app.signaler.emit(
+                "luminaries changed",
                 event,
             )

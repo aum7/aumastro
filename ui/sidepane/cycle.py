@@ -1,16 +1,22 @@
 # ui/sidepane/cycle.py
 # calculate cycle wave
 # ruff: noqa: E402
+import logging
+
+log = logging.getLogger(__name__)
+extra = {"source": "cycle", "route": ["terminal"]}
+extratimeout4 = {"source": "cycle", "route": ["terminal"], "timeout": "4"}
+extratimeout6 = {"source": "cycle", "route": ["terminal"], "timeout": "6"}
 import re
 import pandas as pd
 import gi
+from ui.collapsepanel import CollapsePanel
+from managers.cycler import Cycler
 
 gi.require_version("Gtk", "4.0")
 from gi.repository import Gtk, Gdk  # type: ignore
-from ui.collapsepanel import CollapsePanel
-from managers.cycler import Cycler
-# from user.settings import CYCLE, CYCLE_TOKENS
 
+# --- panel to plot cycles on data graph
 CYCLE_TOKENS = {
     "command": ["clear"],
     "object": [
@@ -184,15 +190,19 @@ def validate_input(query: str, notify=None):
     }
 
 
-def setup_cycle(manager) -> CollapsePanel:
+def setup_cycle(app) -> CollapsePanel:
     # separate search panel
-    manager.cycle = Cycler()
-    notify = manager.app.notify_manager
+    log.debug(
+        f"sidepane : {str(app.__class__.__name__)}",  # mainwindow
+        extra=extra,
+    )
+    app.cycle = Cycler(app)
+    # notifier = sidepane.app.notifier
     pad_x = 7
     pad_y = 0
+    margin_end = 7
     clp_cycle = CollapsePanel(title="cycle wave", expanded=False)
-    clp_cycle.set_margin_end(manager.margin_end)
-
+    clp_cycle.set_margin_end(margin_end)
     box_cycle = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
     box_cycle.set_margin_start(14)
     # --- token viewer with filter
@@ -201,7 +211,6 @@ def setup_cycle(manager) -> CollapsePanel:
     ent_filter.set_placeholder_text("filter tokens ...")
     ent_filter.set_margin_bottom(pad_y)
     ent_filter.set_margin_top(pad_y)
-
     box_tokens.append(ent_filter)
     # scrolled window for tokens
     scrolled = Gtk.ScrolledWindow()
@@ -220,7 +229,6 @@ def setup_cycle(manager) -> CollapsePanel:
     txv_tokens.set_right_margin(pad_x)
     txv_tokens.set_top_margin(pad_y)
     txv_tokens.set_bottom_margin(pad_y)
-
     scrolled.set_child(txv_tokens)
     box_tokens.append(scrolled)
     # present tokens & examples
@@ -277,16 +285,15 @@ type 'clear' & execute it to clear all cycles from datagraph
                 # start & end range, include hidden chars
                 query = buf.get_text(start, end, True)
                 # validate search input : minimal validation
-                ok, result = validate_input(query, notify)  # type:ignore
+                ok, result = validate_input(query, app.notifier)  # type:ignore
                 if not ok:
-                    manager.notify.error(
+                    log.error(
                         f"invalid input :\n{result}",
-                        source="cycle",
-                        route=["terminal", "user"],
+                        extra=extra,
                     )
                     return True
-                # serve to cyclemanager
-                manager.cycle.run(result)
+                # serve to cycler
+                app.cycle.run(result)
                 return True
             else:
                 buf = view.get_buffer()
