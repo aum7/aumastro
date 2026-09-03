@@ -1,21 +1,21 @@
 # sweph/eventdata.py
 # gather & process event input from user : data only - 0 zero ui
+# exclusive write access to app.EVENT_ONE & app.EVENT_TWO
 # ruff: noqa: E402
 import logging
 
 # signaling
 log = logging.getLogger(__name__)
-routing = {"source": "eventsdata", "route": ["terminal"]}
-routinguser = {"source": "eventsdata", "route": ["terminal", "user"]}
+routing = {"source": "eventdata", "route": ["terminal"]}
+routinguser = {"source": "eventdata", "route": ["terminal", "user"]}
 from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
 from timezonefinder import TimezoneFinder
 from helpers import _decimal_to_dms
-from sweph.swetime import calculate_swetime, naive_to_utc, utc_to_jd
-# from sweph.swetime import validate_datetime, naive_to_utc, utc_to_jd
+from sweph.swetime import validate_datetime, naive_to_utc, utc_to_jd
 
 
-class EventsData:
+class EventData:
     def __init__(
         self,
         id=None,
@@ -39,7 +39,7 @@ class EventsData:
         self.timezone = None
         self.tz_offset = None
         self.lon = None
-        self.calendar = b"g"
+        # self.calendar = b"g"
         self.is_hotkey_now = False
         self.old_name = ""
         self.old_date_time = ""
@@ -185,6 +185,7 @@ class EventsData:
             self.old_location = location_formatted
 
         except Exception as e:
+            # all above errors land here as exception e
             log.error(
                 f"location calculation failed : {e}",
                 extra=routing,
@@ -230,7 +231,7 @@ class EventsData:
         self.sweph["alt"] = int(alt)
         # todo debug
         log.info(
-            "location change processed",
+            "location input processed",
             extra=routinguser,
         )
         return
@@ -266,29 +267,34 @@ class EventsData:
         datetime_name = entry.get_name()
         date_time = entry.get_text().strip()
         # todo we are accessing data that this file is supposed to provide
-        # e1_data = self.app.dispatcher.astro_data.get("e1", {})
-        # e1_chart = e1_data.get("chart", {})
-        # e1_sweph = e1_data.get("sweph", {})
+        E1 = self.app.EVENT_ONE
+        # log.debug(f"ondatetimechange : E1={E1.name}")
+        if E1 is None:
+            log.debug("ondatetimechange : E1 is NONE")
+        E1_chart = E1.chart
+        E1_sweph = E1.sweph
         if self.id == "e1":
-            if not self.sweph.get("lon"):
+            if not self.lon:
                 log.warning(
                     "event one : set location first",
                     extra=routinguser,
                 )
                 return
         elif self.id == "e2":
-            if not e1_chart.get("location"):
+            if not E1.sweph.get("lon"):
+                # if not self.app.dispatcher.get("e1", {}).get("sweph", {}).get("lon"):
+                # if not e1_chart.get("location"):
                 log.warning(
                     "event two : event one must be set first",
                     extra=routinguser,
                 )
                 return
-        log.debug(
-            "ondatetimechange : data received :"
-            f"\ne1data={e1_data}"
-            f"\ne1chart={e1_chart}"
-            f"\ne1sweph={e1_sweph}"
-        )
+        # log.debug(
+        #     "ondatetimechange : data received :"
+        #     f"\ne1data={e1_data}"
+        #     f"\ne1chart={e1_chart}"
+        #     f"\ne1sweph={e1_sweph}"
+        # )
         jd_ut = None
         dt_utc = None
         dt_event = None
@@ -297,14 +303,15 @@ class EventsData:
         wday = "-"
 
         if self.is_hotkey_now:
+            # on hotkey now
             try:
                 dt_utc = datetime.now(timezone.utc).replace(microsecond=0)
                 #
-                e1 = getattr(self.app, "EVENT_ONE", None)
+                # e1 = getattr(self.app, "EVENT_ONE", None)
                 tz = (
                     self.timezone
                     if self.timezone
-                    else (e1.chart.get("timezone") if self.id == "e2" and e1 else None)
+                    else (E1_chart.get("timezone") if self.id == "e2" and E1 else None)
                 )
                 if tz:
                     dt_event = dt_utc.astimezone(ZoneInfo(tz))
@@ -324,6 +331,7 @@ class EventsData:
                     dt_utc.hour,
                     dt_utc.minute,
                     int(dt_utc.second),
+                    # fixed gregorian calendar for time now
                     calendar=b"g",
                 )
             except Exception as e:
@@ -336,6 +344,7 @@ class EventsData:
 
             self.is_hotkey_now = False
         else:
+            # entry confirm : not hotkey now
             if not date_time:
                 if self.id == "e1":
                     log.warning(
@@ -344,6 +353,7 @@ class EventsData:
                     )
                     return
 
+                # empty e2 datetime = delete e2 data
                 elif self.id == "e2":
                     if self.chart or self.sweph:
                         self.chart = {}
@@ -359,19 +369,16 @@ class EventsData:
             try:
                 dt_str = entry.get_text().strip()
                 lon_val = self.lon if dt_str and "a" in dt_str else None
-                dt_data, error = calculate_swetime(dt_str, lon=lon_val)
-                # dt_data, error = validate_datetime(dt_str, lon=lon_val)
-                if error:  # and not dt_data:
+                # if dt_str and lon_val and self.tz_offset:
+                dt_data, error = validate_datetime(
+                    date_time=dt_str,
+                    lon=lon_val,
+                )
+                if error:
                     log.error("datetime validation failed")
-                # if dt_str and "a" in dt_str and self.lon:
-                #     result = validate_datetime(self, dt_str, lon=self.lon)
-                # else:
-                #     result = validate_datetime(self, dt_str)
-                # if not result:
-                #     raise ValueError("validation failed")
 
                 if dt_data is not None:
-                    Y, M, D, h, m, s, _, _ = dt_data
+                    Y, M, D, h, m, s, cal, _ = dt_data
                     Y, M, D, h, m, s = (
                         int(Y),
                         int(M),
@@ -384,9 +391,7 @@ class EventsData:
                         self.timezone
                         if self.timezone
                         else (
-                            e1_chart.get("timezone")
-                            if self.id == "e2" and e1_chart
-                            else None
+                            E1.chart.get("timezone") if self.id == "e2" and E1 else None
                         )
                     )
                     if Y >= 1:
@@ -404,17 +409,15 @@ class EventsData:
                         wday = "-"
 
                     dt_event_str = f"{Y}-{M:02d}-{D:02d} {h:02d}:{m:02d}:{s:02d}"
-                    dt_utc = naive_to_utc(Y, M, D, h, m, s, self.tz_offset)
-                    Y_u, M_u, D_u, h_u, m_u, s_u = dt_utc
-                    _, jd_ut = utc_to_jd(Y_u, M_u, D_u, h_u, m_u, s_u, calendar)
-                    # _, jd_ut = utc_to_jd(*dt_utc)
-                    # _, jd_ut = utc_to_jd(*dt_utc, calendar)
+                    if self.tz_offset is not None:
+                        dt_utc = naive_to_utc(Y, M, D, h, m, s, self.tz_offset)
+                        Yu, Mu, Du, hu, mu, su = dt_utc
+                        _, jd_ut = utc_to_jd(Yu, Mu, Du, hu, mu, su, calendar=cal)
             except Exception as e:
                 log.error(
                     f"{datetime_name} error : {e}",
                     extra=routing,
                 )
-
                 return
 
         if not jd_ut:
@@ -441,6 +444,7 @@ class EventsData:
         self.old_date_time = dt_event_str
 
         if self.id == "e2" and self.chart.get("datetime"):
+            # copy missing location from event 1
             if self.chart.get("location"):
                 for key in [
                     "country",
@@ -450,20 +454,9 @@ class EventsData:
                     "iso3",
                     "offset",
                 ]:
-                    if key in e1_chart:
-                        self.chart[key] = e1_chart[key]
-                # if e1:
-                #     for key in [
-                #         "country",
-                #         "city",
-                #         "location",
-                #         "timezone",
-                #         "iso3",
-                #         "offset",
-                #     ]:
-                #         self.chart[key] = e1.chart.get(key)
+                    self.chart[key] = E1_chart[key]
                 for key in ["lat", "lon", "alt"]:
-                    self.sweph[key] = e1_sweph[key]
+                    self.sweph[key] = E1_sweph[key]
 
         dataset = {"id": self.id, "chart": self.chart, "sweph": self.sweph}
         self.app.signaler.emit("event changed", dataset)

@@ -4,8 +4,8 @@
 import logging
 
 log = logging.getLogger(__name__)
-# extra = {"source": "main", "route": ["terminal"]}
-extrauser = {"source": "main", "route": ["terminal", "user"]}
+routing = {"source": "main", "route": ["terminal"]}
+routinguser = {"source": "main", "route": ["terminal", "user"]}
 import os
 
 import swisseph as swe  # type:ignore
@@ -66,11 +66,12 @@ class AumastroApp(Gtk.Application):
         #     )
         log.info(
             "press [ctrl+h] for help | [esc] to discard this message",
-            extra=extrauser,
+            extra=routinguser,
         )
         win.present()
 
     def do_shutdown(self):
+        log.debug("shuting down")
         # close sweph at application exit
         swe.close()
         # call parent shutdown

@@ -3,7 +3,9 @@
 import logging
 
 log = logging.getLogger(__name__)
-extra = {"source": "sidepanesettings", "route": [""]}
+source = "sidepanesettings"
+routing = {"source": source, "route": ["terminal"]}  # todo default so no need
+routingnone = {"source": source, "route": [""]}
 from ui.collapsepanel import CollapsePanel
 import ui.sidepane.sidepanehelpers as help
 import gi
@@ -32,7 +34,7 @@ def update_chart_setting_checkbox(sidepane, setting: str, state: bool):
 
 class SidepaneSettings(CollapsePanel):
     def __init__(self, sidepane=None):
-        super().__init__(title="settings", expanded=False)
+        super().__init__(title="settings", expanded=True)
         if sidepane is not None:
             self.sidepane = sidepane
         # self.app = getattr(sidepane, "app")
@@ -40,14 +42,15 @@ class SidepaneSettings(CollapsePanel):
         log.debug(
             f"\nhasselfdispatcher : {hasattr(sidepane, 'dispatcher')}"
             f"\nhasdispatcherchartsettings : {hasattr(self.dispatcher, 'chart_settings')}",
-            extra=extra,
+            extra=routing,
         )
         self.set_title_tooltip("sweph & application & chart settings")
+        margin = 0
         if self.sidepane:
-            self.set_margin_start(self.sidepane.margin_end)
-            self.set_margin_end(self.sidepane.margin_end)
-            self.set_margin_top(self.sidepane.margin_end)
-            self.set_margin_bottom(self.sidepane.margin_end)
+            self.set_margin_start(margin)
+            self.set_margin_end(margin)
+            self.set_margin_top(margin)
+            self.set_margin_bottom(margin)
         self.build_ui()
 
     def build_ui(self):

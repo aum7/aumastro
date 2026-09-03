@@ -3,9 +3,10 @@
 # ruff: noqa: E402
 import logging
 
-log = logging.getLogger(__name__)
 # logging : messages sent from where & to which recipients
-extra = {"source": "dispatcher", "route": ["terminal"]}
+log = logging.getLogger(__name__)
+source = "dispatcher"
+routing = {"source": source, "route": ["terminal"]}
 import swisseph as swe
 from helpers import _decimal_to_ymd
 from sweph.calculations.positions import calculate_positions
@@ -277,7 +278,7 @@ class Dispatcher:
             f"e1 unpacked :\npos : {len(e1_data.get('positions', {}))}"
             f"\nlots : {len(e1_data.get('lots', {}))}"
             f"\nstars : {len(e1_data.get('stars', {}))}",
-            extra=extra,
+            extra=routing,
         )
 
     def recalculate(self, event_id: str):
@@ -288,7 +289,7 @@ class Dispatcher:
         if event_id == "e2" and not self.e2_active:
             log.debug(
                 "recalculate : received 'e2' but e2_active is false > investigate",
-                extra=extra,
+                extra=routing,
             )
             # continue
         sweph = self.astro_data.get(event_id, {}).get("sweph", {})
@@ -366,6 +367,20 @@ class Dispatcher:
             #  send signal & subscribe in mainwindow
         self.app.signaler.emit("update titlebar", {"title": title})
 
+    def update_chart_setting(self, setting: str, active: bool, event_id: str = "e1"):
+        # update chart setting for an event & trigger recalculation
+        if event_id not in self.chart_settings:
+            self.chart_settings[event_id] = {}
+        self.chart_settings[event_id][setting] = active
+        self.recalculate(event_id)
+
+    def toggle_sweph_flag(self, flag: str, active: bool):
+        # toggle sweph flag & recalculate active events
+        self.swe_settings[flag] = active
+        self.recalculate("e1")
+        if getattr(self, "e2_active", False):
+            self.recalculate("e2")
+
     def event_selection(self, event_id):  # todo move to ui ie sidepane ???
         # def event_selection(self, gesture, n_press, x, y, event_name):
         # handle event selection todo belongs to ui sidepane ???
@@ -375,5 +390,5 @@ class Dispatcher:
             self.update_titlebar()
             log.debug(
                 f"{event_id} selected",
-                extra=extra,
+                extra=routing,
             )

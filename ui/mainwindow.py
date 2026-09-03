@@ -3,7 +3,8 @@
 import logging
 
 log = logging.getLogger(__name__)
-extra = {"source": "mainwindow", "route": ["terminal"]}
+source = "mainwindow"
+routing = {"source": source, "route": ["terminal"]}
 from typing import Any, Optional
 from .sidepane.sidepane import SidepaneManager
 from .sidepane.sidepanesettings import update_chart_setting_checkbox

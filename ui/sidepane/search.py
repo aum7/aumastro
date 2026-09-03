@@ -11,7 +11,7 @@ extrauser = {"source": "search", "route": ["terminal", "user"]}
 import re
 import pandas as pd
 from ui.collapsepanel import CollapsePanel
-from managers.searcher import Searcher
+from managers.uisearcher import Searcher
 import gi
 
 gi.require_version("Gtk", "4.0")

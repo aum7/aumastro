@@ -11,7 +11,7 @@ import re
 import pandas as pd
 import gi
 from ui.collapsepanel import CollapsePanel
-from managers.cycler import Cycler
+from managers.uicycler import Cycler
 
 gi.require_version("Gtk", "4.0")
 from gi.repository import Gtk, Gdk  # type: ignore

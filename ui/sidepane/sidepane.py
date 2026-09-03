@@ -14,7 +14,7 @@ from typing import Optional
 from datetime import datetime, timezone
 from ui.collapsepanel import CollapsePanel
 from sweph.swetime import custom_iso_to_jd, jd_to_custom_iso
-from .eventsinput import setup_event
+from .eventinput import setup_event
 from .search import setup_search
 from .sidepanesettings import SidepaneSettings
 from .cycle import setup_cycle
@@ -243,27 +243,34 @@ ui/sidepane/sidepane.py"""
         elif self.selected_event == "e2" and self.app.EVENT_TWO:
             entry = self.app.EVENT_TWO.date_time
         # get datetime string ! datetime is naive here !
+        datetime_name = "DateTime"
         current_text = ""
         if entry:
             datetime_name = entry.get_name()
             current_text = entry.get_text()
         jd = None
+        # jd: float = 0.0
         if not current_text:
             # missing date-time : fabricate utc now
             dt_now = datetime.now(timezone.utc).replace(microsecond=0)
             # get julian day - verified as side-effect
-            _, jd, _ = custom_iso_to_jd(
-                # self,
-                dt_now.year,
-                dt_now.month,
-                dt_now.day,
-                dt_now.hour,
-                dt_now.minute,
-                dt_now.second,
-                calendar=b"g",
-            )
+            if dt_now:
+                # if dt_now is not None:
+                is_valid, jd, dt_corr = custom_iso_to_jd(
+                    dt_now.year,
+                    dt_now.month,
+                    dt_now.day,
+                    dt_now.hour,
+                    dt_now.minute,
+                    dt_now.second,
+                    calendar=b"g",
+                    # local_time=None,
+                    # lon=None,
+                )
+                log.debug(f"changeeventtime : isvalid={is_valid}")
             # back to string in custom iso format
-            dt_str = jd_to_custom_iso(jd)
+            if isinstance(jd, float):
+                dt_str = jd_to_custom_iso(jd)
             # present string back to user
             entry.set_text(dt_str)  # type:ignore
             self.app.notifier.info(
@@ -274,14 +281,14 @@ ui/sidepane/sidepane.py"""
         try:
             current_text = entry.get_text()  # type:ignore
             # convert to verified (side-effect) julian day, keep negative year
-            _, jd, _ = custom_iso_to_jd(
-                self,
+            jd, dt_corr, _ = custom_iso_to_jd(
                 *map(
                     int,
                     re.sub(r"(?<!^)-", " ", current_text).replace(":", " ").split(),
                 ),
                 calendar=b"g",
             )
+            log.debug(f"dtcorr={dt_corr}")
             # change time by delta which is in julian days
             jd_new = jd + change_delta
             # back to custom iso format for string
@@ -294,9 +301,9 @@ ui/sidepane/sidepane.py"""
             else:
                 # self.app.EVENT_TWO.is_hotkey_arrow = True
                 self.app.EVENT_TWO.on_datetime_change(entry)
-            change_time_period = self.time_periods_list[
-                self.ddn_time_periods.get_selected()
-            ]
+            # change_time_period = self.time_periods_list[
+            #     self.ddn_time_periods.get_selected()
+            # ]
             # update main window title
             self.app.dispatcher.update_titlebar()
         except Exception as e:
@@ -305,7 +312,7 @@ ui/sidepane/sidepane.py"""
                 source="sidepane",
                 route=["terminal", "user"],
             )
-            return
+            # return
 
     def on_time_now(self):
         """get time now (utc) for computer / app location"""

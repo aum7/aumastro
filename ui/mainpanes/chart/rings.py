@@ -4,6 +4,10 @@
 import logging
 
 log = logging.getLogger(__name__)
+source = "rings"
+routing = {"source": source, "route": ["terminal"]}
+routinguser = {"source": source, "route": ["terminal", "user"]}
+routingnone = {"source": source, "route": [""]}
 import cairo
 import ui.fonts.glyphs as glyphs
 from math import pi, radians, cos, sin
@@ -65,7 +69,8 @@ class Rings:
             f"ctx received : fontscale={self.font_scale} "
             f"radius_dict={self.radius_dict} "
             f"outer_rings={self.outer_rings} "
-            f"chart_settings={self.chart_settings} "
+            f"chart_settings={self.chart_settings} ",
+            extra=routingnone,
         )
 
     def get_ring_color(self, ring: str):
@@ -492,7 +497,7 @@ class Rings:
         for obj in e1_pos:
             log.debug(
                 f"draweventring : obj : {obj}",
-                extra={"source": "rings", "route": ["terminal"]},
+                extra=routing,
             )
             lat = obj.data.get("lat", 0)
             name = obj.data.get("name", "")
@@ -777,7 +782,7 @@ class Rings:
                 )
                 log.debug(
                     f"circleinfo : infotext :\n{info_text}",
-                    extra={"source": "rings", "route": ["terminal"]},
+                    extra=routing,
                 )
             except Exception as e:
                 # fallback to default info string
