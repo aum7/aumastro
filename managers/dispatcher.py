@@ -54,13 +54,16 @@ class Dispatcher:
         self.selected_lots = {
             lot: data for lot, data in usersett.LOTS.items() if data["enable"]
         }
-        self.selected_prenatal = usersett.PRENATAL
-        # star list if fixed stars list not empty : custom | naksatras | behenian
-        self.fixed_stars = usersett.CHART_SETTINGS["fixed stars"]
-        self.selected_stars = FIXEDSTARS[self.fixed_stars[0]] or ""
+        # self.prenatal = usersett.PRENATAL
+        self.selected_prenatal = {
+            item: data for item, data in usersett.PRENATAL.items() if data["enable"]
+        }
         # ddn list : selected house system & ayanamsa
         self.house_systems = usersett.HOUSE_SYSTEMS
         self.selected_hsys = self.house_systems[0][0]
+        # star list if fixed stars list not empty : custom | naksatras | behenian
+        self.fixed_stars = usersett.CHART_SETTINGS["fixed stars"]
+        self.selected_stars = FIXEDSTARS[self.fixed_stars[0]] or ""
         # swe settings
         self.mean_node = usersett.CHART_SETTINGS["mean node"]
         self.varga_aspects = usersett.CHART_SETTINGS["harmonic aspects"]
@@ -68,14 +71,12 @@ class Dispatcher:
         self.app_orientation = usersett.APP_ORIENTATION
         self.enable_glyphs = usersett.CHART_SETTINGS["enable glyphs"]
         self.snap_tolerance = usersett.CHART_SETTINGS["snap tolerance"]
-        self.files = usersett.FILES
         # chart settings
         self.fixed_asc = usersett.CHART_SETTINGS["fixed asc"]
         self.naksatras_ring = usersett.CHART_SETTINGS["naksatras ring"]
         self.mansions_28 = usersett.CHART_SETTINGS["28 mansions"]
         self.first_naksatra = usersett.CHART_SETTINGS["first naksatra"]
         self.harmonic_ring = usersett.CHART_SETTINGS["harmonic ring"]
-        # self."fixed_stars": usersett.CHART_SETTINGS["fixed stars"][0],
         self.chart_info = usersett.CHART_SETTINGS["chart info string"]
         self.chart_info_extra = usersett.CHART_SETTINGS["chart info extra"]
         # chart outer rings
@@ -93,6 +94,8 @@ class Dispatcher:
             "lunar return": self.e2_rings["lunar return"],
             "solar return": self.e2_rings["solar return"],
         }
+        # ephe path & astro font & mono font & events database & graph data & filename
+        self.files = usersett.FILES
         # explicit setting
         self.age_years = 0.0
         self.age_months = 0.0

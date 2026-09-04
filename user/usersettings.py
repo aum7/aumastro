@@ -301,7 +301,10 @@ CHART_SETTINGS = {
         "calculate exact (vs average) lunar month length for progressions",
     ),
     # --- toggle glyphs visibility (shortcut)
-    "enable glyphs": (True, "toggle glyphs visibility"),
+    "enable glyphs": (
+        True,
+        "toggle glyphs visibility",
+    ),
     # --- show true midheaven & imum coeli when equal or whole house system is
     # selected : true mc / ic can differ by upto 2 signs in those cases
     # "true mc & ic": (
@@ -312,7 +315,8 @@ CHART_SETTINGS = {
     # else aries (mesha) 0° is fixed at left
     "fixed asc": (
         True,
-        "rotate chart so ascendant is fixed at left (east)\nelse aries 0° is fixed at left (default)",
+        "rotate chart so ascendant is fixed at left (east)"
+        "\nelse aries 0° is fixed at left (default)",
     ),
     # --- naksatras ring
     "naksatras ring": (
@@ -340,7 +344,9 @@ sweph / constants.py""",
     # --- start naksatras ring with which naksatra
     "first naksatra": (
         1,
-        "start naksatras ring with any naksatra / lunar mansion\nrotate relative to 0° aries\n1 = asvini (standard)\n19 = mula\n22 = abhijit if 28 naksatras etc",
+        "start naksatras ring with any naksatra / lunar mansion"
+        "\nrotate relative to 0° aries\n1 = asvini (standard)"
+        "\n19 = mula etc\nsee user/usersettings/CHART_SETTINGS for more info",
     ),
     # --- harmonics division ring : 0 hide | 1 egypt. terms (bounds) |
     # 1+ simple divisions, similar but NOT all equal to varga

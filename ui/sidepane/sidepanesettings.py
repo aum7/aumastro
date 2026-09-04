@@ -94,34 +94,38 @@ class SidepaneSettings(CollapsePanel):
         # main objects list from dispatcher
         lbx_objects = Gtk.ListBox()
         lbx_objects.set_selection_mode(Gtk.SelectionMode.NONE)
-        # testing ground
-        # objects_data = self.dispatcher.chart_settings["objects"]
-        sel_lots = self.dispatcher.selected_lots
-        # logging
-        log.debug(
-            f"\nsellots={type(sel_lots)}"
-            f"\n\t{sel_lots}"
-            f"\n\tTRANSMITING CLEAR - NO EXTRA ATTRS NEEDED",
-        )
-        # loop start
-        for _, obj_data in sel_lots.items():
+        # get objects
+        sel_objs = self.dispatcher.selected_objects_e1
+        for name, data in sel_objs.items():
             row = Gtk.ListBoxRow()
-            name = obj_data[1]
-            row.set_tooltip_text(obj_data[3])
+            name = data[1]
+            tooltip = data[3]
+            row.set_tooltip_text(tooltip)
             check = Gtk.CheckButton(label=name)
-            check.connect("toggled", help.objects_toggled, name, self.sidepane)
+            log.debug(
+                f"\nselobjs={type(sel_objs)}"
+                f"\n\t{sel_objs}"
+                f"\n\tname={name}"
+                f"\n\tdata={data}"
+            )
+            check.set_active(data[0])
+            # check.set_active(data["enable"])
             row.set_child(check)
+            check.connect("toggled", help.objects_toggled, name, self.sidepane)
             lbx_objects.append(row)
         box_objects.append(lbx_objects)
         # sub-sub-panel: lots
+        sel_lots = self.dispatcher.selected_lots
+        # logging
+        log.debug(f"\nsellots={type(sel_lots)}\n\t{sel_lots}")
         subsub_lots = CollapsePanel(title="lots / parts", indent=21, expanded=False)
         lbx_lots = Gtk.ListBox()
         lbx_lots.set_selection_mode(Gtk.SelectionMode.NONE)
-        for name, obj_data in sel_lots.items():
+        for name, data in sel_lots.items():
             row = Gtk.ListBoxRow()
-            row.set_tooltip_text(f"{obj_data['day']}\n{obj_data['tooltip']}")
+            row.set_tooltip_text(f"{data['day']}\n{data['tooltip']}")
             check = Gtk.CheckButton(label=name)
-            check.set_active(obj_data["enable"])
+            check.set_active(data["enable"])
             check.connect("toggled", help.lots_toggled, name, self.sidepane)
             row.set_child(check)
             lbx_lots.append(row)
@@ -130,12 +134,12 @@ class SidepaneSettings(CollapsePanel):
         subsub_prenatal = CollapsePanel(title="prenatal", indent=21, expanded=False)
         lbx_prenatal = Gtk.ListBox()
         lbx_prenatal.set_selection_mode(Gtk.SelectionMode.NONE)
-        prenatal_data = self.dispatcher.chart_settings.get("prenatal", {})
-        for name, obj_data in prenatal_data.items():
+        sel_prenatal = self.dispatcher.selected_prenatal
+        for name, data in sel_prenatal.items():
             row = Gtk.ListBoxRow()
-            row.set_tooltip_text(obj_data["tooltip"])
+            row.set_tooltip_text(data["tooltip"])
             check = Gtk.CheckButton(label=name)
-            check.set_active(obj_data["enable"])
+            check.set_active(data["enable"])
             check.connect("toggled", help.prenatal_toggled, name, self.sidepane)
             row.set_child(check)
             lbx_prenatal.append(row)
@@ -148,8 +152,8 @@ class SidepaneSettings(CollapsePanel):
 
     def build_subpnl_housesys(self) -> CollapsePanel:
         subpnl_hsys = CollapsePanel(title="house system", indent=14, expanded=False)
-        house_system = self.dispatcher.chart_settings.get("house system", {})
-        housesys_list = Gtk.StringList.new([name for _, name, _ in house_system])
+        house_systems = self.dispatcher.house_systems
+        housesys_list = Gtk.StringList.new([name for _, name, _ in house_systems])
         ddn = Gtk.DropDown.new(housesys_list)
         ddn.add_css_class("dropdown")
         ddn.set_selected(0)  # < hardcoded
@@ -170,7 +174,7 @@ class SidepaneSettings(CollapsePanel):
         box.append(lbl_calc)
         lbx_chart_setts_1 = Gtk.ListBox()
         lbx_chart_setts_1.set_selection_mode(Gtk.SelectionMode.NONE)
-        for setting in ["use mean node", "exact lunar month"]:
+        for setting in ["mean node", "exact lunar month"]:
             row = Gtk.ListBoxRow()
             default, tooltip = chart_setts.get(setting, (False, ""))
             check = Gtk.CheckButton(label=setting)
@@ -213,9 +217,9 @@ class SidepaneSettings(CollapsePanel):
         row_nak_opt = Gtk.ListBoxRow()
         box_nak_opt = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=5)
         chk_28_naks = Gtk.CheckButton(label="28")
-        chk_28_naks.set_active(chart_setts.get("use 28 mansions", (False, ""))[0])
+        chk_28_naks.set_active(chart_setts.get("28 mansions", (False, ""))[0])
         chk_28_naks.connect(
-            "toggled", help.naksatras_ring, "use 28 mansions", self.sidepane
+            "toggled", help.naksatras_ring, "28 mansions", self.sidepane
         )
         ent_1st_nak = Gtk.Entry()
         ent_1st_nak.set_text(str(chart_setts.get("first naksatra", (1, ""))[0]))
