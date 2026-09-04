@@ -217,7 +217,7 @@ class EventData:
                 city = mainwindow.city_two.get_text()
             if hasattr(mainwindow, "event_location"):
                 iso3 = mainwindow.event_location.country_map.get(country, "")
-
+        # data needed for event 1 center info ring
         self.chart["country"] = country
         self.chart["city"] = city
         self.chart["iso3"] = iso3
@@ -225,7 +225,7 @@ class EventData:
         self.chart["lat"] = lat_str
         self.chart["lon"] = lon_str
         self.chart["timezone"] = timezone_
-
+        # data needed for sweph calculations
         self.sweph["lat"] = lat
         self.sweph["lon"] = lon
         self.sweph["alt"] = int(alt)
@@ -437,7 +437,7 @@ class EventData:
         self.chart["date"] = date
         self.chart["time"] = time
         self.chart["time short"] = time_short
-        self.chart["wday"] = wday
+        self.chart["weekday"] = wday
         self.chart["offset"] = str(self.tz_offset)
         self.sweph["jd ut"] = jd_ut
 

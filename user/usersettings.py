@@ -106,6 +106,20 @@ PRENATAL = {
         ),
     },
 }
+# SWE_FLAGS_MAP = {
+#     "sidereal zodiac":
+#     "true positions": swe.FLG_TRUEPOS,
+#     "topocentric": swe.FLG_TOPOCTR,
+#     # "heliocentric": swe.FLG_HELCTR,
+#     "default flag": swe.FLG_SWIEPH | swe.FLG_SPEED,
+#     "no nutation": swe.FLG_NONUT,
+#     # "no abberation": swe.FLG_NOABERR,
+#     # "no deflection": swe.FLG_NOGDEFL,
+#     # "equatorial": swe.FLG_EQUATORIAL,
+#     # "cartesian": swe.FLG_XYZ,
+#     # "radians": swe.FLG_RADIANS,
+# }
+
 SWE_FLAGS = {
     # default flags for sweph calculations
     # all flags are duplicated & commented as backup ; user can toggle them in
@@ -116,51 +130,67 @@ SWE_FLAGS = {
         True,
         """use sidereal (vs tropical) zodiac
 if checked also select ayanamsa below""",
+        "FLG_SIDEREAL",
     ),
     # --- calculate true, not apparent (visible from earth) positions
     # journey of the light from a planet to the earth takes some time
-    # FLG_TRUEPOS
-    "true positions": (True, "calculate true (vs apparent) positions"),
+    "true positions": (
+        True,
+        "calculate true (vs apparent) positions",
+        "FLG_TRUEPOS",
+    ),
     # --- calculate topocentric positions, viewed from latitude & longitude of
     # event ; else calculate geocentric positions (default, used traditionally
     # in astrology), viewed from center of the earth
-    # FLG_TOPOCTR
-    "topocentric": (True, "calculate topocentric (vs geocentric) positions"),
+    "topocentric": (
+        True,
+        "calculate topocentric (vs geocentric) positions",
+        "FLG_TOPOCTR",
+    ),
     # --- calculate heliocentric positions : astrology uses geocentric positions
     # FLG_HELCTR
     # "heliocentric": (False, "calculate heliocentric (vs geocentric) positions"),
     # --- use default sweph ephemeris & speed calculations
-    "default flag": (True, "use default (swiss ephemeris & speed) calculations"),
+    "default flag": (
+        True,
+        "use default swiss ephemeris & speed calculations",
+        "FLG_SWIEPH | FLG_SPEED",
+    ),
     # --- do NOT use nutation : small irregularity in the precession of the equinoxes
     # use mean equinox of date
-    # FLG_NONUT
     "no nutation": (
         True,
         "do NOT use nutation if checked (small irregularity in equinoxes precession)",
+        "FLG_NONUT",
     ),
     # --- astrometric (not used = FLG_NOABERR | FLG_NOGDEFL > both below)
     # the light-time correction is computed, but annual aberration and
     # light-deflection by the sun neglected
     # FLG_ASTROMETRIC
     # --- no abberation : small irregularity in the motion of the moons
-    # FLG_NOABERR
     # "no abberation": (
     #     False,
     #     "do NOT use aberration if checked (small irregularity of moon)",
-    # ),
+    #     "FLG_NOABERR",),
     # --- no gravity deflection
-    # FLG_NOGDEFL
-    # "no deflection": (False, "do NOT use gravitational deflection if checked"),
+    # "no deflection" : (
+    #   False,
+    #   "do NOT use gravitational deflection if checked",
+    #   "FLG_NOGDEFL",),
     # --- return equatorial positions (right ascension & declination)
     # else return ecliptic (default, latitude & longitude) positions
-    # FLG_EQUATORIAL
-    # "equatorial": (False, "return equatorial (vs ecliptic) positions"),
+    # "equatorial": (
+    #   False,
+    #   "return equatorial (vs default ecliptic) positions",
+    #   "FLG_EQUATORIAL",),
     # --- return cartesian (x, y, z) else polar (default) coordinates
-    # FLG_XYZ
-    # "cartesian": (False, "return cartesian (x, y, z vs polar degrees) coordinates"),
+    # "cartesian": (
+    #   False,
+    #   "return cartesian (x, y, z vs default polar degrees) coordinates",
+    #   "FLG_XYZ",),
     # --- return radian else degree (default) units
-    # FLG_RADIANS
     # "radians": (False, "return radian (vs degree) units"),
+    #   "FLG_RADIANS",),
 }
 # add or remove houses as you please
 # https://astrorigin.com/pyswisseph/sphinx/programmers_manual/house_cusp_calculation.html?highlight=houses#swisseph.houses
@@ -261,7 +291,7 @@ CUSTOM_AYANAMSA = {
 }
 CHART_SETTINGS = {
     # --- use mean node else true node
-    "use mean node": (
+    "mean node": (
         False,
         "calculate mean node (vs default true node)",
     ),
@@ -300,7 +330,7 @@ CHART_SETTINGS = {
     ),
     # --- use 28 lunar mansions
     # rulership as per chinese astrology / vivian e robson - fixed stars ...
-    "use 28 mansions": (
+    "28 mansions": (
         True,
         """use 28 lunar mansions with chinese / arabian name
 rulership changes to weekday order !
@@ -321,39 +351,52 @@ sweph / constants.py""",
     # --- event 2 astro chart circles : draw progressions (p1 & p3) | returns | transit
     # calculated in sweph / calculations / ...
     "event 2 rings": {
-        "transit": (False, "show transit for event 2\nhk : ctrl+1"),
+        "transit": (
+            False,
+            "show transit ring for event 2\nhk : ctrl+1",
+        ),
         "transit varga": (
             False,
-            "show (simple) transit varga / harmonic ring for event 2\nset varga in above harmonic ring\nhk : ctrl+2",
+            "show (simple) transit varga / harmonic ring for event 2"
+            "\nset varga in above harmonic ring\nhk : ctrl+2",
         ),
         "p2 progress": (
             False,
-            "show secondary progression (p2) for event 2\nhk : ctrl+3\nchange in sweph / calculations / ...",
+            "show secondary progression (p2) ring for event 2\nhk : ctrl+3"
+            "\nchange in sweph / calculations / ...",
         ),
         "p3 progress": (
             False,
-            "show tertiary progression (p3) for event 2\nhk : ctrl+4\ncalculations as per richard houck\nchange in sweph / calculations / ...",
+            "show tertiary progression (p3) ring for event 2\nhk : ctrl+4"
+            "\ncalculations as per richard houck\nchange in sweph / calculations / ...",
         ),
         "p3m progress": (
             False,
-            "show minor (tertiary) progression (p3m) for event 2\nhk : ctrl+5\nchange in sweph / calculations / ...",
+            "show minor (tertiary) progression (p3m) ring for event 2\nhk : ctrl+5\n"
+            "change in sweph / calculations / ...",
         ),
         "d1 direction": (
             False,
-            "show traditional primary direction (d1) for event 2\nhk : ctrl+6\ncalculations as per martin gansten / ptolemy\n[todo needs verification : current is simple calculation]\nchange in sweph / calculations / ...",
+            "show traditional primary direction (d1) ring for event 2"
+            "\nhk : ctrl+6\ncalculations as per martin gansten / ptolemy"
+            "\n[todo needs verification : current is simple calculation]"
+            "\nchange in sweph / calculations / ...",
         ),
-        "lunar return": (False, "show lunar return for event 2\nhk : ctrl+7"),
+        "lunar return": (
+            False,
+            "show lunar return ring for event 2\nhk : ctrl+7",
+        ),
         "solar return": (
             False,
-            "show solar return for event 2\nhk : ctrl+8",
+            "show solar return ring for event 2\nhk : ctrl+8",
         ),
     },
-    # --- use varga positions for aspects
-    # ctrl+v hotkey was 1st choice, but that defaults now for text paste
-    # todo change to use harmonic aspect : also
-    "use varga aspects": (
+    # --- use varga positions for aspects todo change to use harmonic aspect : also
+    "harmonic aspects": (
         True,
-        "use *simple* varga / harmonic positions for aspects matrix calculation\nsort of 'harmonic aspectarian', in tables window\nhk : ctrl+h (toggle h1 <> hX)",
+        "use *simple* varga / harmonic positions for aspects matrix calculation"
+        "\nsort of 'harmonic aspectarian', in tables window"
+        "\nhk : ctrl+h (toggle h1 <> hX)",
     ),
     # --- draw fixed stars
     # in user/fixedstars.py are categories of stars :
@@ -369,7 +412,7 @@ sweph / constants.py""",
             "\navailable categories :"
             "\n\tcustom | naksatras [28] | behenian [15]"
             "\nset empty to draw no stars"
-            "\nmodify user/fixedstars.py > add / remove from custom"
+            "\nmodify user/fixedstars.py > add / remove line from custom"
         ),
     ),
     # --- astro chart angle ruler & hover info snapping distance (or angle)

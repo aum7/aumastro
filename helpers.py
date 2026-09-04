@@ -1,4 +1,4 @@
-# ui/helpers.py
+# helpers.py
 # ruff: noqa: E402
 from math import modf
 from swisseph import contrib as swh

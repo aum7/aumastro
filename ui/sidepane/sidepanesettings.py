@@ -96,15 +96,15 @@ class SidepaneSettings(CollapsePanel):
         lbx_objects.set_selection_mode(Gtk.SelectionMode.NONE)
         # testing ground
         # objects_data = self.dispatcher.chart_settings["objects"]
-        lots_data = self.dispatcher.chart_settings.get("lots", {})
+        sel_lots = self.dispatcher.selected_lots
         # logging
-        # log.debug(
-        #     f"\nlotsdata={type(lots_data)}"
-        #     f"\n\t{lots_data}"
-        #     f"\n\tTRANSMITING CLEAR - NO EXTRA ATTRS NEEDED",
-        # )
+        log.debug(
+            f"\nsellots={type(sel_lots)}"
+            f"\n\t{sel_lots}"
+            f"\n\tTRANSMITING CLEAR - NO EXTRA ATTRS NEEDED",
+        )
         # loop start
-        for _, obj_data in lots_data.items():
+        for _, obj_data in sel_lots.items():
             row = Gtk.ListBoxRow()
             name = obj_data[1]
             row.set_tooltip_text(obj_data[3])
@@ -117,7 +117,7 @@ class SidepaneSettings(CollapsePanel):
         subsub_lots = CollapsePanel(title="lots / parts", indent=21, expanded=False)
         lbx_lots = Gtk.ListBox()
         lbx_lots.set_selection_mode(Gtk.SelectionMode.NONE)
-        for name, obj_data in lots_data.items():
+        for name, obj_data in sel_lots.items():
             row = Gtk.ListBoxRow()
             row.set_tooltip_text(f"{obj_data['day']}\n{obj_data['tooltip']}")
             check = Gtk.CheckButton(label=name)
