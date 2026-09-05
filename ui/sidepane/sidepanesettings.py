@@ -284,7 +284,7 @@ class SidepaneSettings(CollapsePanel):
         row_nak.set_tooltip_text(chart_settings["naksatras ring"][1])
         chk_naks_ring.set_active(self.app.dispatcher.naksatras_ring)
         chk_naks_ring.connect(
-            "toggled", help.naksatras_ring, "naksatras ring", self.app.dispatcher
+            "toggled", help.naksatras_ring, "naksatras ring", self, self.app.dispatcher
         )
         row_nak.set_child(chk_naks_ring)
         lbx_draw.append(row_nak)
@@ -296,7 +296,7 @@ class SidepaneSettings(CollapsePanel):
         chk_28_naks.set_tooltip_text(chart_settings["28 mansions"][1])
         chk_28_naks.set_active(self.app.dispatcher.mansions_28)
         chk_28_naks.connect(
-            "toggled", help.naksatras_ring, "28 mansions", self.app.dispatcher
+            "toggled", help.naksatras_ring, "28 mansions", self, self.app.dispatcher
         )
         row_nak_opt._target_checkbox = chk_28_naks
         # first naksatra
@@ -308,7 +308,7 @@ class SidepaneSettings(CollapsePanel):
         )
         ent_1st_nak.set_max_width_chars(2)
         ent_1st_nak.connect(
-            "activate", help.naksatras_ring, "first naksatra", self.app.dispatcher
+            "activate", help.naksatras_ring, "first naksatra", self, self.app.dispatcher
         )
         box_nak_opt.append(chk_28_naks)
         box_nak_opt.append(Gtk.Label(label="1st"))
@@ -418,7 +418,11 @@ class SidepaneSettings(CollapsePanel):
         ddn_month = Gtk.DropDown.new(month_store)
         ddn_month.set_tooltip_text(
             "select period for lunar month"
-            "\nsidereal | synodic | tropical | anomalistic | draconian"
+            "\nsidereal = fixed star"
+            "\nsynodic = new moons"
+            "\ntropical = 0 ari"
+            "\nanomalistic = perigee-apogee"
+            "\ndraconian = lunar nodes"
         )
         ddn_month.connect(
             "notify::selected", help.lunar_month_changed, self.app.dispatcher

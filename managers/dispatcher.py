@@ -288,7 +288,6 @@ class Dispatcher:
         self.app.signaler.emit(
             "settings changed",
             {"naksatras": {"ring": val_ring, "28": val_28, "1st": val_1st}},
-            # {"naksatras ring": {"ring": val_ring, "28": val_28, "1st": val_1st}},
         )
         self.recalculate("e1")
 
@@ -387,7 +386,7 @@ class Dispatcher:
         event = self.selected_event
         ad = self.astro_data[event].get("chart")  # .get("datetime") if event else None
         dt = ad.get("datetime") if ad else None
-        self.app.notifier.debug(f"updatetitlebar : ad={ad} dt={dt}")
+        # self.app.notifier.debug(f"updatetitlebar : ad={ad} dt={dt}")
         title = "aumastro"
         if event and dt:
             title += f" | {event} : {dt}"

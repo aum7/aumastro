@@ -340,7 +340,7 @@ CHART_SETTINGS = {
         """use 28 lunar mansions with chinese / arabian name
 rulership changes to weekday order !
 can be changed in
-sweph / constants.py""",
+sweph/constants.py""",
     ),
     # --- start naksatras ring with which naksatra
     "first naksatra": (
@@ -353,7 +353,7 @@ sweph / constants.py""",
     # 1+ simple divisions, similar but NOT all equal to varga
     "harmonic ring": (
         "9",
-        "harmonic (aka varga) ring\nempty : do NOT show | 1 : egypt. terms (bounds)\n2+ : simple harmonic for event 1 *similar* to varga\nterms can be changed in\nsweph / constants.py",
+        "harmonic (aka varga) ring\nempty : do NOT show | 1 : egypt. terms (bounds)\n2+ : simple harmonic for event 1 *similar* to varga\nterms can be changed in\nsweph/constants.py",
     ),
     # --- event 2 astro chart circles : draw progressions (p1 & p3) | returns | transit
     # calculated in sweph / calculations / ...
@@ -370,24 +370,24 @@ sweph / constants.py""",
         "p2 progress": (
             False,
             "show secondary progression (p2) ring for event 2\nhk : ctrl+3"
-            "\nchange in sweph / calculations / ...",
+            "\nchange in sweph/calculations/...",
         ),
         "p3 progress": (
             False,
             "show tertiary progression (p3) ring for event 2\nhk : ctrl+4"
-            "\ncalculations as per richard houck\nchange in sweph / calculations / ...",
+            "\ncalculations as per richard houck\nchange in sweph/calculations/...",
         ),
         "p3m progress": (
             False,
             "show minor (tertiary) progression (p3m) ring for event 2\nhk : ctrl+5\n"
-            "change in sweph / calculations / ...",
+            "change in sweph/calculations/...",
         ),
         "d1 direction": (
             False,
             "show traditional primary direction (d1) ring for event 2"
             "\nhk : ctrl+6\ncalculations as per martin gansten / ptolemy"
             "\n[todo needs verification : current is simple calculation]"
-            "\nchange in sweph / calculations / ...",
+            "\nchange in sweph/calculations/...",
         ),
         "lunar return": (
             False,
