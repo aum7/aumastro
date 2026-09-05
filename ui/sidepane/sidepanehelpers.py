@@ -41,7 +41,7 @@ def prenatal_toggled(checkbutton, name, sidepane):
 
 def house_system_changed(dropdown, _pspec, sidepane):
     idx = dropdown.get_selected()
-    house_systems = sidepane.app.dispatcher.house_systems
+    house_systems = sidepane.app.dispatcher.HOUSE_SYSTEMS
     hsys, _, short_name = house_systems[idx]
     sidepane.app.dispatcher.update_house_system(hsys, short_name)
 
@@ -102,7 +102,7 @@ def snapping(entry, sidepane):
 def chart_info_string(entry, info, sidepane):
     value = entry.get_text()
     allowed = {
-        "chart info string": {
+        "chart info": {
             "{name}",
             "{datetime}",
             "{date}",
@@ -121,7 +121,7 @@ def chart_info_string(entry, info, sidepane):
             "{nak}",
             "{nakvar}",
         },
-        "chart info string extra": {"{hsys}", "{zod}", "{aynm}"},
+        "chart info extra": {"{hsys}", "{zod}", "{aynm}"},
     }
     fields = re.findall(r"\{[a-zA-Z0-9:]+\}", value)
     if not all(field in allowed[info] for field in fields):
@@ -139,21 +139,21 @@ def flags_toggled(button, flag, sidepane):
 
 def solar_year_changed(dropdown, _pspec, sidepane):
     idx = dropdown.get_selected()
-    solar_years = sidepane.app.dispatcher.solar_years
+    solar_years = sidepane.app.dispatcher.SOLAR_YEARS
     period = list(solar_years.values())[idx]
     sidepane.app.dispatcher.update_solar_year(period)
 
 
 def lunar_month_changed(dropdown, _pspec, sidepane):
     idx = dropdown.get_selected()
-    lunar_months = sidepane.app.dispatcher.lunar_months
+    lunar_months = sidepane.app.dispatcher.LUNAR_MONTHS
     period = list(lunar_months.values())[idx]
     sidepane.app.dispatcher.update_lunar_month(period)
 
 
 def ayanamsa_changed(dropdown, _pspec, sidepane):
     idx = dropdown.get_selected()
-    ayanamsas = sidepane.app.dispatcher.ayanamsas
+    ayanamsas = sidepane.app.dispatcher.AYANAMSAS
     key = list(ayanamsas.keys())[idx]
     is_custom = key == 255
     sidepane.subsub_custom_ayan.set_sensitive(is_custom)

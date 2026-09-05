@@ -3,10 +3,11 @@
 import logging
 
 log = logging.getLogger(__name__)
-extra = {"source": "search", "route": [""]}
+source = "search"
+routing = {"source": source, "route": [""]}
 # extratimeout4 = {"source": "search", "route": ["terminal"], "timeout": 4}
 # extratimeout6 = {"source": "search", "route": ["terminal"], "timeout": 6}
-extrauser = {"source": "search", "route": ["terminal", "user"]}
+routinguser = {"source": source, "route": ["terminal", "user"]}
 
 import re
 import pandas as pd
@@ -278,15 +279,12 @@ def validate_input(query: str, use_28=False, notify=None):
 
 def setup_search(app) -> CollapsePanel:
     # separate search collapse panel
-    # if app is not None:
     log.debug(
-        # f"app : {app.__class__.__name__}", # notifier / logging doesnt like this
         f"hasappdispatcher : {hasattr(app, 'dispatcher')}",
-        extra=extra,
+        extra=routing,
     )
     app.search = Searcher(app)
-    # notifier = app.notifier
-    use_28 = app.dispatcher.chart_settings.get("use 28 mansions", False)
+    use_28 = app.dispatcher.mansions_28
     pad_x = 7
     pad_y = 0
     margin_end = 7
@@ -382,7 +380,7 @@ type 'clear' & execute it to clear all search plots from datagraph
                 if not ok:
                     log.error(
                         f"invalid input :\n{result}",
-                        extra=extrauser,
+                        extra=routinguser,
                     )
                     return True
                 # serve to searchsidepane

@@ -50,9 +50,9 @@ class MainWindow(
         super().__init__(application=application, **kwargs)
         # store application & core managers centrally
         self.app = application
-        self.notifier = self.app.notifier
-        self.signaler = self.app.signaler
-        self.dispatcher = self.app.dispatcher
+        # self.notifier = self.app.notifier
+        # self.signaler = self.app.signaler
+        # self.dispatcher = self.app.dispatcher
         # initialize sidepane ui elements - user input
         self.init_sidepane(self.app)
         # custom info in window title bar
@@ -92,8 +92,8 @@ class MainWindow(
         self.orig_top_right_child = None  # datagraph to be overlaid
         # initialize panes layout todo doesnt work properly
         self.connect("realize", lambda _: self.panes_double())
-        self.signaler.connect("update titlebar", self.on_update_titlebar)
-        self.signaler.connect("show toast", self.on_show_toast)
+        self.app.signaler.connect("update titlebar", self.on_update_titlebar)
+        self.app.signaler.connect("show toast", self.on_show_toast)
         # gtk widgets debug
         # self.print_widget_tree(self)
 
@@ -139,8 +139,11 @@ class MainWindow(
             # print("[DEBUG TOAST] toast added to overlay")
 
         except Exception as e:
-            print(f"error in toast notification: {str(e)}")
-            print(f"message was: {msg.full_str()}")
+            log.error(
+                f"error in toast notification : {e}\nmessage was : {msg.full_str()}"
+            )
+            # print(f"error in toast notification: {str(e)}")
+            # print(f"message was: {msg.full_str()}")
 
         return False
 
@@ -252,7 +255,7 @@ class MainWindow(
 
     # help / manual
     def show_manual(self):
-        self.app.notifer.debug(
+        self.app.notifier.debug(
             "manual\n"
             "\nhover mouse over buttons & text = show tooltips (aka detailed manual)"
             "\nhover mouse over (ie this) notification message = do not hide message"
@@ -263,7 +266,7 @@ class MainWindow(
             "\nif you want transit / progression etc (aka event 2) :"
             "\n\tenter date-time 2 (app will reuse event 1 location & name)"
             "\n\tenter location 2 for relocation event (transit will be for location 2)"
-            "\n\tnote: can also be simple synastry chart - enable 'transit' ring"
+            "\n\t\tnote: can also be simple synastry chart - enable 'transit' ring"
             "\n\tenter custom name 2 (ie 'marriage' - not saved currently)"
             "\ndelete date-time 2 = erase event 2 data (not interested in transit etc)"
             # "\nnote : event name / title will be used for file saving"
@@ -304,7 +307,7 @@ class MainWindow(
         # update checkbox
         update_chart_setting_checkbox(self, setting, new_val)
         self.app.signaler.emit("settings changed", None)
-        self.notify.debug(
+        self.app.notifier.debug(
             f"toggled {setting} : {new_val}",
             source="mainwindow",
             route=[""],
@@ -328,11 +331,11 @@ class MainWindow(
     def panes_single(self) -> None:
         """show single pane : bottom left
         shift+single-click / shift+1"""
-        if hasattr(self, "orientation"):
-            if hasattr(self, "pnd_main") and hasattr(self, "pnd_btm"):
-                # separator position in pixels, from top-left | -ve = unset | default 0
-                self.pnd_main.set_position(0)
-                self.pnd_btm.set_position(0)
+        # if self.ORIENTATION == "vertical":
+        if hasattr(self, "pnd_main") and hasattr(self, "pnd_btm"):
+            # separator position in pixels, from top-left | -ve = unset | default 0
+            self.pnd_main.set_position(0)
+            self.pnd_btm.set_position(0)
 
     # panes show 2
     def panes_double(self) -> None:
@@ -384,7 +387,7 @@ class MainWindow(
         # need frames todo below code makes copies of frame widget
         # we need our custom widgets
         # print("hotkey panes movie pressed")
-        self.app.movie_mode = not self.app.movie_mode
+        self.app.dispatcher.movie_mode = not self.app.dispatcher.movie_mode
         frm_target = getattr(self, "frm_top_left", None)
         frm_top = getattr(self, "frm_top_right", None)
         if not frm_top and not frm_target:
@@ -419,10 +422,10 @@ class MainWindow(
             #     target_frame.set_child(overlay)
             self.movie_overlay = overlay
             self.overlay_active = True
-            self.notify.info(
+            self.app.notifier.info(
                 "movie mode enabled",
                 source="mainwindow",
-                route=["terminal"],
+                route=["terminal", "user"],
             )
             return
         # disable overlay & restore original layout
@@ -463,10 +466,10 @@ class MainWindow(
             self.overlay_active = False
             self.orig_target = None
             self.orig_top_right_child = None
-            self.notify.info(
+            self.app.notifier.info(
                 "movie mode disabled : layout restored",
                 source="mainwindow",
-                route=["terminal"],
+                route=["terminal", "user"],
             )
 
     def print_widget_tree(self, widget: Gtk.Widget, indent: int = 2) -> None:
@@ -474,7 +477,6 @@ class MainWindow(
         widget_type = widget.__class__.__name__
         buildable_id = widget.get_buildable_id() or ""
         css_classes = " ".join(widget.get_css_classes())
-
         info = f"{'  ' * indent}- {widget_type}"
         if buildable_id:
             info += f" [id='{buildable_id}']"

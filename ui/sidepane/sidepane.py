@@ -4,7 +4,8 @@
 import logging
 
 log = logging.getLogger(__name__)
-extra = {"source": "sidepane", "route": ["terminal"]}
+source = "sidepane"
+routing = {"source": source, "route": ["terminal"]}
 import re
 import gi
 
@@ -54,8 +55,8 @@ class SidepaneManager:
         # get events data from app
         if app is not None:
             self.app = app
-        # self.dispatcher = getattr(self.app, "dispatcher")
-        self.selected_event = self.app.dispatcher.selected_event
+        # select event for objects button
+        self.selected_objects_event = self.app.dispatcher.selected_event
         # debug
         # log.debug(
         #     f"\nhasselfselectedevent : {hasattr(self, 'selected_event')}",
@@ -113,7 +114,7 @@ class SidepaneManager:
         # 2 events : True/False = set expanded on/off on init
         self.clp_event_one = setup_event(self, "e1", True)
         self.clp_event_two = setup_event(self, "e2", False)
-        if self.selected_event == "e1":
+        if self.selected_objects_event == "e1":
             self.clp_event_one.add_title_css_class("label-event-selected")
         else:
             self.clp_event_two.add_title_css_class("label-event-selected")
@@ -238,9 +239,9 @@ ui/sidepane/sidepane.py"""
         """adjust selected event time by julian day delta"""
         # get active entry based on selected event
         entry = None
-        if self.selected_event == "e1" and self.app.EVENT_ONE:
+        if self.app.dispatcher.selected_event == "e1" and self.app.EVENT_ONE:
             entry = self.app.EVENT_ONE.date_time
-        elif self.selected_event == "e2" and self.app.EVENT_TWO:
+        elif self.app.dispatcher.selected_event == "e2" and self.app.EVENT_TWO:
             entry = self.app.EVENT_TWO.date_time
         # get datetime string ! datetime is naive here !
         datetime_name = "DateTime"
@@ -316,11 +317,11 @@ ui/sidepane/sidepane.py"""
 
     def on_time_now(self):
         """get time now (utc) for computer / app location"""
-        if self.selected_event == "e1" and self.app.EVENT_ONE:
+        if self.app.dispatcher.selected_event == "e1" and self.app.EVENT_ONE:
             entry = self.app.EVENT_ONE.date_time
             self.app.EVENT_ONE.is_hotkey_now = True
             self.app.EVENT_ONE.on_datetime_change(entry)
-        elif self.selected_event == "e2" and self.app.EVENT_TWO:
+        elif self.app.dispatcher.selected_event == "e2" and self.app.EVENT_TWO:
             entry = self.app.EVENT_TWO.date_time
             self.app.EVENT_TWO.is_hotkey_now = True
             self.app.EVENT_TWO.on_datetime_change(entry)

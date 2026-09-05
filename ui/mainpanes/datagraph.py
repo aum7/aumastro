@@ -3,7 +3,9 @@
 import logging
 
 log = logging.getLogger(__name__)
-extra = {"source": "datagraph", "route": [""]}
+source = "datagraph"
+routing = {"source": source, "route": ["terminal"]}
+routingnone = {"source": source, "route": [""]}
 import os
 import glob
 import pandas as pd
@@ -34,7 +36,7 @@ class DataGraph(Gtk.Box):
             f"hasselfappnotifier : {hasattr(self.app, 'notifier')}"
             f"\nhasselfappdispatcher : {hasattr(self.app, 'dispatcher')}",
             # f"hasselfappsignaler : {hasattr(self.app, 'signaler')}",
-            extra=extra,
+            extra=routingnone,
         )
         self.set_orientation(Gtk.Orientation.VERTICAL)
         # create figure & axes
@@ -49,7 +51,7 @@ class DataGraph(Gtk.Box):
         key_controller.connect("key-pressed", self.on_canvas_key)
         self.canvas.add_controller(key_controller)
         # global datetime attribute to move astro chart
-        self.app.dispatcher.app_settings.get("blues", None)  # selected_dt = None
+        # self.app.dispatcher.app_settings.get("blues", None)  # selected_dt = None
         # load & plot data
         self.full_df = None
         self.plot_range = [None, None]  # start, end
@@ -107,10 +109,10 @@ class DataGraph(Gtk.Box):
 
     def data_load(self):
         """load & plot data"""
-        filepath = self.app.dispatcher.app_settings.get("files").get("data")[0]
+        filepath = self.app.dispatcher.FILES["data"][0]
         log.debug(
             f"dataload : filepath : {filepath}",
-            extra=extra,
+            extra=routingnone,
         )
         # load csv
         df = pd.read_csv(
@@ -389,7 +391,7 @@ class DataGraph(Gtk.Box):
             # fail silently if numeric issues occur
             log.error(
                 f"failed setting horizontal price lines : {e}",
-                extra=extra,
+                extra=routing,
             )
 
         # plot overlay cycle wave

@@ -6,8 +6,10 @@ import logging
 
 # signaling
 log = logging.getLogger(__name__)
-routing = {"source": "eventdata", "route": ["terminal"]}
-routinguser = {"source": "eventdata", "route": ["terminal", "user"]}
+source = "eventdata"
+routing = {"source": source, "route": ["terminal"]}
+routinguser = {"source": source, "route": ["terminal", "user"]}
+routingnone = {"source": source, "route": [""]}
 from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
 from timezonefinder import TimezoneFinder
@@ -54,7 +56,7 @@ class EventData:
             # f"e1 unpacked :\npos : {len(self.astro_data['e1 pos'])}"
             # f"\nlots : {len(self.astro_data['lots'])}"
             # f"\nstars : {len(self.astro_data['stars'])}",
-            extra=routing,
+            extra=routingnone,
         )
 
     def on_location_change(self, entry):
@@ -66,7 +68,7 @@ class EventData:
             if self.id == "e1":
                 log.warning(
                     f"mandatory data missing : {location_name}",
-                    extra=routing,
+                    extra=routinguser,
                 )
                 return
 
@@ -77,6 +79,10 @@ class EventData:
                 self.sweph["lon"] = None
                 self.sweph["alt"] = None
                 self.old_location = ""
+                log.info(
+                    "event 2 erased",
+                    extra=routinguser,
+                )
                 return
             if location == self.old_location:
                 return
@@ -257,7 +263,7 @@ class EventData:
 
         self.old_name = name
         self.chart["name"] = name
-        log.debug(
+        log.info(
             "name input processed",
             extra=routinguser,
         )

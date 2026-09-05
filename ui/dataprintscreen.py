@@ -4,7 +4,10 @@
 import logging
 
 log = logging.getLogger(__name__)
-extra = {"source": "dataprintscreen", "route": [""]}
+source = "dataprintscreen"
+routing = {"source": source, "route": ["terminal"]}
+routinguser = {"source": source, "route": ["terminal", "user"]}
+routingnone = {"source": source, "route": [""]}
 import pandas as pd
 import gi
 
@@ -25,7 +28,7 @@ class DataPrintscreen:
         self.notifier = self.app.notifier
         log.debug(
             f"hasselfappnotifier : {hasattr(self.app, 'notifier')}",
-            extra=extra,
+            extra=routingnone,
         )
         self.output_dir = Path.home() / EXPORT_FOLDER
         self.output_dir.mkdir(parents=True, exist_ok=True)
@@ -186,7 +189,7 @@ class DataPrintscreen:
                     f"{self.current_idx + 1} / {self.total}\t({pct:.1f}% : {dt_str})"
                     f"\n{rate:.1f}/s"
                     f"\neta : {remaining / 60:.1f} min",
-                    extra=extra,
+                    extra=routingnone,
                 )
             # flush pending events : wait a bit for screenshot
             if not self.skip_flush_redraw:
@@ -198,7 +201,7 @@ class DataPrintscreen:
         except Exception as e:
             self.app.notifer.error(
                 f"error processing index {self.current_idx}\n{e}",
-                extra=extra,
+                extra=routing,
             )
             self.current_idx += 1
             return True
@@ -211,7 +214,7 @@ class DataPrintscreen:
         except Exception as e:
             self.app.notifer.error(
                 f"screenshot failed for {dt}\n{e}",
-                extra=extra,
+                extra=routing,
             )
         self.current_idx += 1
         # schedule next iteration
@@ -263,7 +266,7 @@ class DataPrintscreen:
         except Exception as e:
             log.error(
                 f"failed to set info banner : {e}",
-                extra=extra,
+                extra=routing,
             )
         # redraw canvas
         try:
@@ -271,14 +274,14 @@ class DataPrintscreen:
         except Exception as e:
             log.debug(
                 f"using drawidle() : {e}",
-                extra=extra,
+                extra=routing,
             )
             try:
                 dg.canvas.draw_idle()
             except Exception as e:
                 log.debug(
                     f"failed to redraw canvas : {e}",
-                    extra=extra,
+                    extra=routing,
                 )
 
     def _screenshot(self, dt):

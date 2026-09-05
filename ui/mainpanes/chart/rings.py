@@ -701,11 +701,11 @@ class Rings:
         self.set_custom_font(cr, self.font_size)
         # event 1 default chart info string (format)
         fmt_basic = self.chart_settings.get(
-            "chart info string",
+            "chart info",
             "{name}\n{date}\n{wday} {time_short}\n{city} @ {country}\n{lat}\n{lon}",
         )
         fmt_extra = self.chart_settings.get(
-            "chart info string extra",
+            "chart info extra",
             "{hsys} | {zod}\n{aynm}",
         )
         # convert raw newline into actual newline

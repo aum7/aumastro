@@ -7,13 +7,14 @@ import logging
 log = logging.getLogger(__name__)
 source = "dispatcher"
 routing = {"source": source, "route": ["terminal"]}
+routingnone = {"source": source, "route": [""]}
 import swisseph as swe
 from helpers import _decimal_to_ymd
 
 # from sweph.calculations.positions import calculate_positions
 from sweph.calculations.horas import calculate_horas
 import user.usersettings as usersett
-import user.eventsdb.db as eventsdb
+# import user.eventsdb.db as eventsdb
 
 # from sweph.calculations.houses import calculate_houses
 # from sweph.calculations.vimsottari import calculate_vimsottari
@@ -25,60 +26,69 @@ class Dispatcher:
     def __init__(self, app=None):
         if app is not None:
             self.app = app
+            # todo remove astro_data & use self.e1/e2 ???
         self.astro_data = {"e1": {}, "e2": {}}
+        # grab user settings & default events database
         # default event 1 mandatory data & default e2 optional data
-        self.e1 = eventsdb.DEFAULT_E1
-        self.e2 = eventsdb.DEFAULT_E2
+        # self.e1 = eventsdb.DEFAULT_E1
+        # self.e2 = eventsdb.DEFAULT_E2
         # todo from eventsdb collect event 1 & 2 data : location name datetime
         # explicit selected event : the one arrived last or be user-selected
         self.selected_event = "e1"
+        self.SWE_FLAGS = usersett.SWE_FLAGS
         self.active_flags = [
             flag for flag, data in usersett.SWE_FLAGS.items() if data[0]
         ]
         self.swe_flag = self.compute_swe_flag(self.active_flags)
-        # ddn list
-        self.solar_years = usersett.SOLAR_YEARS
-        self.selected_year_period = self.solar_years[0]
-        # self.app.notifier.debug(f"loadinitsettings : {self.selected_year_period}")
-        # ddn list
-        self.lunar_months = usersett.LUNAR_MONTHS
-        self.selected_month_period = self.lunar_months[0]
-        self.ayanamsas = usersett.AYANAMSAS
-        self.selected_ayanamsa = self.ayanamsas[0][0]
-        # default 2000-01-01 12:00 utc (julian day starts noon) : see usersettings.py
-        self.custom_ayanamsa = usersett.CUSTOM_AYANAMSA
         # change time < on hotkeys [ctrl+arrow] | button click
         self.selected_change_time_period = "1 D"
-        self.selected_objects_e1 = usersett.OBJECTS
-        self.selected_objects_e2 = usersett.OBJECTS_2
+        self.OBJECTS = usersett.OBJECTS
+        self.selected_objects_e1 = {data[0] for data in usersett.OBJECTS.values()}
+        self.OBJECTS_2 = usersett.OBJECTS_2
+        self.selected_objects_e2 = set(usersett.OBJECTS_2)
+        self.LOTS = usersett.LOTS
         self.selected_lots = {
             lot: data for lot, data in usersett.LOTS.items() if data["enable"]
         }
-        # self.prenatal = usersett.PRENATAL
+        self.PRENATAL = usersett.PRENATAL
         self.selected_prenatal = {
             item: data for item, data in usersett.PRENATAL.items() if data["enable"]
         }
         # ddn list : selected house system & ayanamsa
-        self.house_systems = usersett.HOUSE_SYSTEMS
-        self.selected_hsys = self.house_systems[0][0]
+        self.HOUSE_SYSTEMS = usersett.HOUSE_SYSTEMS
+        self.selected_hsys = self.HOUSE_SYSTEMS[0][0]
+        # ddn list
+        self.SOLAR_YEARS = usersett.SOLAR_YEARS
+        self.selected_year_period = self.SOLAR_YEARS[0]
+        # self.app.notifier.debug(f"loadinitsettings : {self.selected_year_period}")
+        # ddn list
+        self.LUNAR_MONTHS = usersett.LUNAR_MONTHS
+        self.selected_month_period = self.LUNAR_MONTHS[0]
+        self.AYANAMSAS = usersett.AYANAMSAS
+        self.selected_ayanamsa = self.AYANAMSAS[0][0]
+        # default 2000-01-01 12:00 utc (julian day starts noon) : see usersettings.py
+        self.CUSTOM_AYANAMSA = usersett.CUSTOM_AYANAMSA
+        # chart settings attrs
+        self.CHART_SETTINGS = usersett.CHART_SETTINGS
         # star list if fixed stars list not empty : custom | naksatras | behenian
-        self.fixed_stars = usersett.CHART_SETTINGS["fixed stars"]
-        self.selected_stars = FIXEDSTARS[self.fixed_stars[0]] or ""
+        self.fixed_stars = usersett.CHART_SETTINGS["fixed stars"][0]
+        self.selected_stars = FIXEDSTARS[self.fixed_stars]
         # swe settings
-        self.mean_node = usersett.CHART_SETTINGS["mean node"]
-        self.varga_aspects = usersett.CHART_SETTINGS["harmonic aspects"]
+        self.mean_node = usersett.CHART_SETTINGS["mean node"][0]
+        self.exact_lunar_month = usersett.CHART_SETTINGS["exact lunar month"][0]
+        self.varga_aspects = usersett.CHART_SETTINGS["harmonic aspects"][0]
         # app settings
-        self.app_orientation = usersett.APP_ORIENTATION
-        self.enable_glyphs = usersett.CHART_SETTINGS["enable glyphs"]
-        self.snap_tolerance = usersett.CHART_SETTINGS["snap tolerance"]
+        self.APP_ORIENTATION = usersett.APP_ORIENTATION
+        self.enable_glyphs = usersett.CHART_SETTINGS["enable glyphs"][0]
+        self.snap_tolerance = usersett.CHART_SETTINGS["snap tolerance"][0]
         # chart settings
-        self.fixed_asc = usersett.CHART_SETTINGS["fixed asc"]
-        self.naksatras_ring = usersett.CHART_SETTINGS["naksatras ring"]
-        self.mansions_28 = usersett.CHART_SETTINGS["28 mansions"]
-        self.first_naksatra = usersett.CHART_SETTINGS["first naksatra"]
-        self.harmonic_ring = usersett.CHART_SETTINGS["harmonic ring"]
-        self.chart_info = usersett.CHART_SETTINGS["chart info string"]
-        self.chart_info_extra = usersett.CHART_SETTINGS["chart info extra"]
+        self.fixed_asc = usersett.CHART_SETTINGS["fixed asc"][0]
+        self.naksatras_ring = usersett.CHART_SETTINGS["naksatras ring"][0]
+        self.mansions_28 = usersett.CHART_SETTINGS["28 mansions"][0]
+        self.first_naksatra = usersett.CHART_SETTINGS["first naksatra"][0]
+        self.harmonic_ring = usersett.CHART_SETTINGS["harmonic ring"][0]
+        self.chart_info = usersett.CHART_SETTINGS["chart info"][0]
+        self.chart_info_extra = usersett.CHART_SETTINGS["chart info extra"][0]
         # chart outer rings
         self.e2_rings = {
             k: v[0] for k, v in usersett.CHART_SETTINGS["event 2 rings"].items()
@@ -95,27 +105,25 @@ class Dispatcher:
             "solar return": self.e2_rings["solar return"],
         }
         # ephe path & astro font & mono font & events database & graph data & filename
-        self.files = usersett.FILES
+        self.FILES = usersett.FILES
         # explicit setting
         self.age_years = 0.0
         self.age_months = 0.0
         self.movie_mode = False
         # if event 2 has datetime > e2 is active ie user interested in transit etc
         self.e2_active = False
-        # grab user settings & default events database
         # signals
         self.app.signaler.connect("event changed", self.on_event_change)
         self.app.signaler.connect("e2 cleared", self.on_e2_clear)
-        # self.app.signaler.connect(
-        #     "chart settings changed", self.on_chart_settings_change
-        # )
-        # self.app.signaler.connect("app settings changed", self.on_app_settings_change)
+        self.app.signaler.connect(
+            "chart settings changed", self.on_chart_settings_change
+        )
         log.debug(
             f"selobjs1={self.selected_objects_e1}"
             f"\nselobjs2={self.selected_objects_e2}"
             f"\nsellots={self.selected_lots}"
             f"\nselprenatal={self.selected_prenatal}",
-            extra=routing,
+            extra=routingnone,
         )
 
     def on_event_change(self, dataset):
@@ -127,13 +135,9 @@ class Dispatcher:
         self.recalculate(event_id)
 
     def on_chart_settings_change(self, sett_data: dict):
+        # todo merge with below similar function ???
+        # update_chart_setting
         pass
-
-    def on_app_settings_change(self, sett_data: dict):
-        pass
-        # if isinstance(sett_data, dict):
-        #     self.app_settings.update(sett_data)
-        # self.update_titlebar()  # todo ???
 
     def on_e2_clear(self):
         # handle e2 removal
@@ -179,8 +183,8 @@ class Dispatcher:
                     self.astro_data[event_id][key] = dataset[key]
             if "chart info" in dataset:
                 self.astro_data["chart info"] = dataset["chart info"]
-            if "chart extra info" in dataset:
-                self.astro_data["chart extra info"] = dataset["chart extra info"]
+            if "chart info extra" in dataset:
+                self.astro_data["chart info extra"] = dataset["chart info extra"]
         e1_data = self.astro_data["e1"]
         # logging
         log.debug(
@@ -211,6 +215,7 @@ class Dispatcher:
         # update prenatal syzygy & eclipse selecion
         self.selected_prenatal = prenatal
         self.app.signaler.emit("settings changed", {"prenatal": self.selected_prenatal})
+        self.recalculate("e1")
 
     def update_hsys(self, hsys: str):
         # update selected house system : 'O', 'W' etc
@@ -224,13 +229,13 @@ class Dispatcher:
         self.app.signaler.emit("settings changed", {"ayanamsa": ayanamsa})
         self.recalculate("all")
 
-    # def update_chart_setting(self, setting: str, value):
-    #     # update chart setting for an event & trigger recalculation
-    #     self.chart_settings[setting] = value
-    #     if "e1" in self.chart_settings and isinstance(self.chart_settings["e1"], dict):
-    #         self.chart_settings["e1"][setting] = value
-    #     self.app.signaler.emit("settings changed", {"chart": self.chart_settings})
-    #     self.recalculate(self.selected_event)
+    def update_chart_setting(self, setting: str, value):
+        # update chart setting for an event & trigger recalculation
+        attr_name = setting.replace(" ", "_")
+        if hasattr(self, attr_name):
+            setattr(self, attr_name, value)
+            self.app.signaler.emit("settings changed", {"chart": {setting: value}})
+            self.recalculate(self.selected_event)
 
     def toggle_sweph_flag(self, flag: str, active: bool):
         # toggle sweph flag & recalculate active events
@@ -240,24 +245,13 @@ class Dispatcher:
             self.active_flags.remove(flag)
         self.swe_flag = self.compute_swe_flag(self.active_flags)
         self.app.signaler.emit("settings changed", {"sweph": self.active_flags})
-        self.recalculate("all")
-
-    # def update_sweph_setting(self, setting:str, value):
-    #     self.swe_settings
-    # def get_fixed_stars(self):
-    #     # get stars to be drawn on chart : e1
-    #     stars = self.selected_stars
-    #     category = stars[0]  # if isinstance(stars, (tuple, list)) else stars
-    #     if not category or str(category).strip() == "":
-    #         log.debug("getfixedstars : empty stars category")
-    #         return []
-    #     return FIXEDSTARS[category]
+        self.recalculate("e1")
+        if self.e2_active:
+            self.recalculate("e2")
 
     def recalculate(self, event_id: str):
         # on event or settings change > recalculate astodata
         # todo separate e1 & e2 func, re-pack duplicated funcs for reuse
-        # eid = event_id
-        # for eid in ["e1", "e2"]:
         if event_id == "e2" and not self.e2_active:
             log.debug(
                 "recalculate : received 'e2' but e2_active is false > investigate",
@@ -275,7 +269,7 @@ class Dispatcher:
         lat = sweph["lat"]
         lon = sweph["lon"]
         alt = sweph["alt"] or 0.0
-        # tpdp update all sweph/calculations files to receive exactly
+        # todo update all sweph/calculations files to receive exactly
         # what they need & return requested data = abandon unified definitions
         # positions of planets
         # pos_calc = calculate_positions(
@@ -296,18 +290,15 @@ class Dispatcher:
         self.update_titlebar()
 
     def update_titlebar(self):
-        # todo careful here
+        # grab needed data & construct string to be displayed on mainwindow titlebar
         event = self.selected_event
-        # event = self.app_settings.get("selected event")
         dt = self.astro_data[event]["chart"]["datetime"] if event else None
         title = "aumastro"
         if event and dt:
             title += f" | {event} : {dt}"
         elif event:
             title += f" | {event} : no date"
-        sel_year = (
-            self.selected_year_period[1] if self.selected_year_period else 365.2425
-        )
+        sel_year = self.selected_year_period[1]
         self.app.notifier.debug(f"updatetitlebar : selectedyearperiod :{sel_year}")
         if event and dt:
             title += f" | {event} : {dt}"
@@ -321,8 +312,7 @@ class Dispatcher:
         if self.age_months:
             title += f" - lun : {self.age_months:.2f}m"
         # todo check below
-        change_time = self.selected_change_time_period or "1 D"
-        # change_time = self.app_settings["selected change time str"]
+        change_time = self.selected_change_time_period
         if change_time:
             title += f" | ct : {change_time}"
         elif change_time is None:
@@ -330,8 +320,8 @@ class Dispatcher:
             #  send signal & subscribe in mainwindow
         self.app.signaler.emit("update titlebar", {"title": title})
 
-    def event_selection(self, event_id: str):  # todo move to ui ie sidepane ???
-        # handle event selection todo belongs to ui sidepane ???
+    def event_selection(self, event_id: str):
+        # handle event selection
         if self.selected_event != event_id:
             self.selected_event = event_id
             self.app.signaler.emit("event selected", event_id)

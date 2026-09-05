@@ -3,10 +3,12 @@
 import logging
 
 log = logging.getLogger(__name__)
-extra = {"source": "notifier", "route": ["terminal"]}
-extratimeout4 = {"source": "notifier", "route": ["terminal"], "timeout": "4"}
-extratimeout6 = {"source": "notifier", "route": ["terminal"], "timeout": "6"}
-extrauser = {"source": "notifier", "route": ["terminal", "user"]}
+source = "tables"
+routing = {"source": source, "route": ["terminal"]}
+routingtimeout4 = {"source": source, "route": ["terminal"], "timeout": "4"}
+routingtimeout6 = {"source": source, "route": ["terminal"], "timeout": "6"}
+routinguser = {"source": source, "route": ["terminal", "user"]}
+routingnone = {"source": source, "route": [""]}
 from helpers import _decimal_to_sign_dms as decsigndms, _decimal_to_ra as decra
 from user.usersettings import HOUSE_SYSTEMS
 from sweph.swetime import jd_to_custom_iso as jdtoiso
@@ -26,7 +28,7 @@ class Tables(Gtk.Notebook):
             f"hasselfappnotifier : {hasattr(self.app, 'notifier')}"
             f"\nhasselfappdispatcher : {hasattr(self.app, 'dispatcher')}",
             # f"hasselfappsignaler : {hasattr(self.app, 'signaler')}",
-            extra=extra,
+            extra=routingnone,
         )
         # connect signals & notifications
         self.signaler = self.app.signaler
@@ -120,7 +122,7 @@ class Tables(Gtk.Notebook):
         if not positions or not houses:
             log.error(
                 f"positions or houses missing for {event}",
-                extra=extra,
+                extra=routing,
             )
             return ""
         pos_map = {k: v for k, v in positions.items() if isinstance(k, int)}
@@ -212,7 +214,7 @@ class Tables(Gtk.Notebook):
         if not aspects:
             log.error(
                 f"aspects missing for {event}",
-                extra=extra,
+                extra=routing,
             )
             return ""
 
@@ -267,7 +269,7 @@ class Tables(Gtk.Notebook):
         text += self.h_line
         log.debug(
             f"updateaspects : {text}",
-            extra=extra,
+            extra=routing,
         )
         return text
 
@@ -277,7 +279,7 @@ class Tables(Gtk.Notebook):
         if not p2_pos:
             log.error(
                 "missing p2 positions",
-                extra=extra,
+                extra=routing,
             )
             return
         # msg += f"p2changed : p2pos :\n\t{p2_pos}\n"
@@ -349,7 +351,7 @@ class Tables(Gtk.Notebook):
             self.p2_widget(event, content)
         log.debug(
             "p2 tables set",
-            extra=extra,
+            extra=routing,
         )
 
     def p2_widget(self, event: str, content: str):
@@ -382,7 +384,7 @@ class Tables(Gtk.Notebook):
         if not p3_pos:
             log.error(
                 "missing p3 positions",
-                extra=extrauser,
+                extra=routinguser,
             )
             return
         separ = f"{self.h_sym * 20}\n"
@@ -452,7 +454,7 @@ class Tables(Gtk.Notebook):
             self.p3_widget(event, content)
         log.debug(
             "p3 data set",
-            extra=extra,
+            extra=routing,
         )
 
     def p3_widget(self, event: str, content: str):

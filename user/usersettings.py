@@ -64,7 +64,7 @@ LOTS = {  # 7 hermetic lots : many different definitions for lots exist
         "tooltip": "soul & intelect",
     },
     "necessity": {
-        "enable": False,
+        "enable": True,
         "day": "(asc + (mo - su)) - me",
         "tooltip": "fortuna - me\nconstraints, war, enmity",
     },
@@ -92,7 +92,7 @@ LOTS = {  # 7 hermetic lots : many different definitions for lots exist
 # prenatal events : syzygy & eclipses
 PRENATAL = {
     "syzygy": {
-        "enable": True,
+        "enable": False,
         "tooltip": (
             "syzygy - last full or new moon before event 1"
             "\nnote : syzygy might overlap with eclipses (below)"
@@ -197,15 +197,16 @@ if checked also select ayanamsa below""",
 # below are most popular 7 out of 24+; arrange line up or down as you please
 # dropdown - top line is default choice
 HOUSE_SYSTEMS = [
-    ("O", "prp : porphyry", "prp"),
-    ("W", "whs : whole sign", "whs"),  # jyotisa & houck
-    ("E", "eqa : equal asc", "eqa"),
-    ("B", "alc : alcabitus", "alc"),  # gansten : close to porphyry
-    ("D", "eqm : equal mc", "eqm"),
-    ("P", "plc : placidus", "plc"),
-    ("R", "rgm : regiomontanus", "rgm"),
-    ("C", "cmp : campanus", "cmp"),
-    ("K", "kch : koch", "kch"),
+    # sweph | name | display
+    ("O", "porphyry", "prp"),
+    ("W", "whole sign", "whs"),  # jyotisa & houck
+    ("E", "equal asc", "eqa"),
+    ("B", "alcabitus", "alc"),  # gansten : close to porphyry
+    ("D", "equal mc", "eqm"),
+    ("P", "placidus", "plc"),
+    ("R", "regiomontanus", "rgm"),
+    ("C", "campanus", "cmp"),
+    ("K", "koch", "kch"),
 ]
 # --- time constants ---
 # dropdown : top is default
@@ -229,9 +230,9 @@ LUNAR_MONTHS = [  # lunar month lengths
 # also arrange order as you please > move line up / down & save file
 # dropdown : top is default
 AYANAMSAS = [
-    (45, "Krishnamurti-Senthilathiban", "kms (45)"),  # SIDM_KRISHNAMURTI_VP291
-    (17, "Galact. Center 0 Sag", "glc (17)"),  # SIDM_GALCENT_0SAG j2000 = 26°50'31.8335
-    (255, "user-defined (below)", "usr"),  # SIDM_USER
+    (45, "krishnamurti-sent.", "kms (45)"),  # sidm_krishnamurti_vp291
+    (17, "gal. center 0 sag", "glc (17)"),  # sidm_galcent_0sag j2000 = 26°50'31.8335
+    (255, "custom (below)", "usr"),  # sidm_user
     # 0: ("Fagan/Bradley", "fbr (00)"),  # SIDM_FAGAN_BRADLEY
     # 1: ("Lahiri 1", "lhr (01)"),  # SIDM_LAHIRI
     # 2: ("De Luce", "dlc (02)"),  # SIDM_DELUCE
@@ -435,7 +436,7 @@ sweph / constants.py""",
     ),
     # --- event data to be presented in chart info
     # construct your own 'chart info' format
-    "chart info string": (
+    "chart info": (
         r"{name}\n{date}\n{wday} {time_short} {hora}\n{city} @ {iso3}\n{lat}\n{lon}",
         r"""construct your own 'chart info' format : allowed fields :
     1: event {name} | 2: {datetime} | 3: {date} | 4: {time}

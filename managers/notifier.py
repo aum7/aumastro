@@ -4,9 +4,10 @@
 import logging
 
 log = logging.getLogger(__name__)
-extra = {"source": "notifier", "route": [""]}
-extratimeout4 = {"source": "notifier", "route": ["terminal"], "timeout": "4"}
-extratimeout6 = {"source": "notifier", "route": ["terminal"], "timeout": "6"}
+source = "notifier"
+routing = {"source": source, "route": ["terminal"]}
+routingtimeout4 = {"source": source, "route": ["terminal"], "timeout": "4"}
+routingtimeout6 = {"source": source, "route": ["terminal"], "timeout": "6"}
 from datetime import datetime, timezone
 from enum import Enum
 from pathlib import Path
