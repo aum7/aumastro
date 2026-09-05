@@ -1,14 +1,20 @@
 # ui/sidepane/eventsinput.py
 # ruff: noqa: E402
-import gi
+import logging
 
-gi.require_version("Gtk", "4.0")
-from gi.repository import Gtk  # type: ignore
+log = logging.getLogger(__name__)
+source = "eventinput"
+routing = {"source": source, "route": ["terminal"]}
+routingnone = {"source": source, "route": [""]}
 from ui.collapsepanel import CollapsePanel
 from sweph.eventdata import EventData
 from sweph.eventlocation import EventLocation
 from user.eventsdb.db import DEFAULT_E1  # default event 1 data
 from user.eventsdb.db import DEFAULT_E2
+import gi
+
+gi.require_version("Gtk", "4.0")
+from gi.repository import Gtk  # type: ignore
 
 
 def bind_entry_events(entry: Gtk.Entry, callback):
@@ -20,13 +26,16 @@ def bind_entry_events(entry: Gtk.Entry, callback):
     entry.add_controller(focus_controller)
 
 
-def setup_event(sidepane, event_name: str, expand: bool) -> CollapsePanel:
-    """setup event one & two collapsible panels, incl location sub-panel"""
+def setup_event(mainwindow, event_name: str, expand: bool) -> CollapsePanel:
+    # setup event one & two collapsible panels, incl location sub-panel
+    # todo sidepane IS mainwindow
+    # log.debug(f"setupevent : whoisme={mainwindow.__class__.__name__}")
+    # log.debug(f"setupevent : has-sidepaneapp={hasattr(mainwindow, 'app')}")
     panel = CollapsePanel(
         title="event one" if event_name == "e1" else "event two",
         expanded=expand,  # todo
     )
-    panel.set_margin_end(sidepane.margin_end)
+    panel.set_margin_end(mainwindow.margin_end)
     # panel.set_margin_end(self.margin_end)
     panel.add_title_css_class("label-event")
     lbl_event = panel.get_title()
@@ -59,18 +68,15 @@ set latitude & longitude (& city) two to empty
 delete datetime two : clear event two data
 
 this text can be changed in
-user / events.py
+user/events.py
 default event one / two can be set in
-user / eventsdb / db.py (database)"""
+user/eventsdb/db.py (database)"""
     )
     # todo on clear event 2 data remove also from top title bar
     gesture = Gtk.GestureClick.new()
     gesture.connect(
         "pressed",
-        lambda: sidepane.app.event_selection(sidepane.app, event_name)
-        if hasattr(sidepane, "app")
-        else None,
-        # lambda g, n, x, y: self.event_selection(self, g, n, x, y, event_name),
+        lambda g, n, x, y: mainwindow.app.dispatcher.event_selection(event_name),
     )
     panel.add_title_controller(gesture)
     # location nested panel
@@ -83,9 +89,9 @@ user / eventsdb / db.py (database)"""
     lbl_country.add_css_class("label")
     lbl_country.set_halign(Gtk.Align.START)
 
-    event_location = EventLocation(sidepane=sidepane, app=sidepane.app)
+    event_location = EventLocation(mainwindow=mainwindow, app=mainwindow.app)
     # make event_location available to get iso3 of selected country
-    sidepane.event_location = event_location
+    mainwindow.event_location = event_location
     # countries
     countries = event_location.get_countries()
     ddn_country = Gtk.DropDown.new_from_strings(countries)
@@ -106,12 +112,12 @@ comment (add '# ' & save file) uninterested country"""
         default = DEFAULT_E1.get("country")
         if default and default in countries:
             ddn_country.set_selected(countries.index(default))
-        sidepane.country_one = ddn_country
+        mainwindow.country_one = ddn_country
     else:
         default = DEFAULT_E2.get("country")
         if default and default in countries:
             ddn_country.set_selected(countries.index(default))
-        sidepane.contry_two = ddn_country
+        mainwindow.contry_two = ddn_country
     # city
     lbl_city = Gtk.Label(label="city")
     lbl_city.add_css_class("label")
@@ -131,12 +137,12 @@ comment (add '# ' & save file) uninterested country"""
         default = DEFAULT_E1.get("city")
         if default:
             ent_city.set_text(default)
-        sidepane.city_one = ent_city
+        mainwindow.city_one = ent_city
     else:
         default = DEFAULT_E2.get("city")
         if default:
             ent_city.set_text(default)
-        sidepane.city_two = ent_city
+        mainwindow.city_two = ent_city
     ent_city.connect(
         "activate",
         lambda entry, country: event_location.get_selected_city(entry, country),
@@ -267,12 +273,12 @@ only use [space] as separator
         city=ent_city,
         location=ent_location,
         date_time=ent_datetime,
-        app=sidepane.app,
+        app=mainwindow.app,
     )
     if event_name == "e1":
-        sidepane.app.EVENT_ONE = event_data
+        mainwindow.app.EVENT_ONE = event_data
     else:
-        sidepane.app.EVENT_TWO = event_data
+        mainwindow.app.EVENT_TWO = event_data
     # wire gtk inputs directly to eventsdata handlers
     bind_entry_events(ent_event_name, event_data.on_name_change)
     bind_entry_events(ent_location, event_data.on_location_change)

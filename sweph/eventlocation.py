@@ -1,5 +1,11 @@
 # sweph/eventlocation.py
 # ruff: noqa: E402
+import logging
+
+log = logging.getLogger(__name__)
+source = "eventlocation"
+routing = {"source": source, "route": ["terminal"]}
+routingnone = {"source": source, "route": [""]}
 import sqlite3
 import gi
 
@@ -8,11 +14,15 @@ from gi.repository import Gtk  # type: ignore
 
 
 class EventLocation:
-    def __init__(self, sidepane=None, app=None):
+    def __init__(self, mainwindow=None, app=None):
         if app is not None:
             self.app = app
-        if sidepane is not None:
-            self.sidepane = sidepane
+        log.debug(
+            f"eventlocation : whoisme={mainwindow.__class__.__name__}",
+            extra=routingnone,
+        )
+        if mainwindow is not None:
+            self.mainwindow = mainwindow
         self.location_callback = None
         self.countries = []
         self.country_map = {}
@@ -45,7 +55,7 @@ class EventLocation:
         ddn_country,
     ):
         # store entry reference
-        self.sidepane.entry = ent_city
+        self.mainwindow.entry = ent_city
         city = ent_city.get_text().strip()
         country_index = ddn_country.get_selected()
         country = ddn_country.get_model().get_string(country_index)
@@ -115,7 +125,7 @@ class EventLocation:
             title="select city : name | latitude | longitude | altitude [- = s / w ]",
             modal=True,
         )
-        dialog.set_transient_for(self.sidepane)
+        dialog.set_transient_for(self.mainwindow)
         dialog.set_default_size(-1, -1)
 
         content = dialog.get_content_area()

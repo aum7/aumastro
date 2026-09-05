@@ -26,14 +26,9 @@ class Dispatcher:
     def __init__(self, app=None):
         if app is not None:
             self.app = app
-            # todo remove astro_data & use self.e1/e2 ???
+        # log.debug(f"whoisme={self.__class__.__name__}")
+        # log.debug(f"has-selfappsidepane={hasattr(self.app, 'sidepane')}")
         self.astro_data = {"e1": {}, "e2": {}}
-        # grab user settings & default events database
-        # default event 1 mandatory data & default e2 optional data
-        # already set in sidepane event
-        # self.e1 = eventsdb.DEFAULT_E1
-        # self.e2 = eventsdb.DEFAULT_E2
-        # todo from eventsdb collect event 1 & 2 data : location name datetime
         # explicit selected event : the one arrived last or be user-selected
         self.selected_event = "e1"
         # select event for objects button
@@ -127,15 +122,6 @@ class Dispatcher:
             f"\nselprenatal={self.selected_prenatal}",
             extra=routingnone,
         )
-
-    # DONTDELETE
-    # map string settings to sweph flag dynamically
-    # def get_swe_flags_map(self):
-    #     return {
-    #         name: data[1]
-    #         for name, data in usersett.SWE_FLAGS.items()
-    #         if isinstance(data, (tuple, list)) and len(data) > 1
-    #     }
 
     def compute_swe_flag(self, active_flags: list[str]):
         # get active flags & compute swe flag
@@ -346,6 +332,10 @@ class Dispatcher:
             if attr_name not in visual_settintgs:
                 self.recalculate(self.selected_event)
 
+    def update_ring(self):
+        # todo add code
+        pass
+
     def recalculate(self, event_id: str):
         # on event or settings change > recalculate astodata
         # todo separate e1 & e2 func, re-pack duplicated funcs for reuse
@@ -395,14 +385,15 @@ class Dispatcher:
     def update_titlebar(self):
         # grab needed data & construct string to be displayed on mainwindow titlebar
         event = self.selected_event
-        dt = self.astro_data[event]["chart"]["datetime"] if event else None
+        ad = self.astro_data[event].get("chart")  # .get("datetime") if event else None
+        dt = ad.get("datetime") if ad else None
+        self.app.notifier.debug(f"updatetitlebar : ad={ad} dt={dt}")
         title = "aumastro"
         if event and dt:
             title += f" | {event} : {dt}"
         elif event:
             title += f" | {event} : no date"
         sel_year = self.selected_year_period[1]
-        self.app.notifier.debug(f"updatetitlebar : selectedyearperiod :{sel_year}")
         if event and dt:
             title += f" | {event} : {dt}"
         elif event:
@@ -425,11 +416,28 @@ class Dispatcher:
 
     def event_selection(self, event_id: str):
         # handle event selection
-        if self.selected_event != event_id:
-            self.selected_event = event_id
-            self.app.signaler.emit("event selected", event_id)
-            self.update_titlebar()
-            log.debug(
-                f"{event_id} selected",
-                extra=routing,
-            )
+        if self.selected_event == event_id:
+            return
+
+        self.selected_event = event_id
+        mainwindow = self.app.get_active_window()
+        selected_panel = (
+            mainwindow.clp_event_one if event_id == "e1" else mainwindow.clp_event_two
+        )
+        other_panel = (
+            mainwindow.clp_event_two if event_id == "e1" else mainwindow.clp_event_one
+        )
+        # add & remove css class to the title
+        selected_panel.remove_title_css_class("label-event")
+        selected_panel.add_title_css_class("label-event-selected")
+        other_panel.remove_title_css_class("label-event-selected")
+        other_panel.add_title_css_class("label-event")
+        # if self.selected_event != event_id:
+        #     self.selected_event = event_id
+        # todo do we use this ???
+        self.app.signaler.emit("event selected", event_id)
+        self.update_titlebar()
+        log.debug(
+            f"{event_id} selected",
+            extra=routing,
+        )

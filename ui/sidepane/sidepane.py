@@ -6,6 +6,7 @@ import logging
 log = logging.getLogger(__name__)
 source = "sidepane"
 routing = {"source": source, "route": ["terminal"]}
+routingnone = {"source": source, "route": [""]}
 import re
 import gi
 
@@ -53,15 +54,9 @@ class SidepaneManager:
 
     def init_sidepane(self, app=None):
         # get events data from app
+        # self IS mainwindow
         if app is not None:
             self.app = app
-        # debug
-        # log.debug(
-        #     f"\nhasselfselectedevent : {hasattr(self, 'selected_event')}",
-        # f"\nhasselfappdispatcher : {hasattr(self.app, 'dispatcher')}",
-        # f"\nhasdispatcherchartsettings : {hasattr(self.dispatcher, 'chart_settings')}",
-        # self.extra,
-        # )
         # initialize attributes
         self.margin_end = 7
         # intialize panels
@@ -69,6 +64,12 @@ class SidepaneManager:
         self.clp_event_two = None
         self.clp_tools = None
         self.clp_settings = None
+        # debug
+        log.debug(
+            f"\ninitsidepane : whoisme={self.__class__.__name__}"
+            f"\ninitsidepane : has-clpeventone={hasattr(self, 'clp_event_one')}",
+            extra=routing,
+        )
 
     def buttons_from_dict(
         self,
@@ -76,7 +77,7 @@ class SidepaneManager:
         icons_path: Optional[str] = None,
         icon_size: Optional[int] = None,
     ):
-        # create buttons from dictionary with icon and tooltip
+        # create buttons from dictionary with icon & tooltip
         # changetime events
         icons_folder = "ui/imgs/icons/hicolor/scalable/"
         icons_path_cpl = icons_folder + icons_path if icons_path else icons_folder
@@ -112,7 +113,7 @@ class SidepaneManager:
         # 2 events : True/False = set expanded on/off on init
         self.clp_event_one = setup_event(self, "e1", True)
         self.clp_event_two = setup_event(self, "e2", False)
-        if self.app.dispatcher.selected_objects_event == "e1":
+        if self.app.dispatcher.selected_event == "e1":
             self.clp_event_one.add_title_css_class("label-event-selected")
         else:
             self.clp_event_two.add_title_css_class("label-event-selected")
