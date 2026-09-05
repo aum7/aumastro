@@ -503,6 +503,7 @@ FILES = {
         "\n\t1: event {name} | 2: event {date} | 3: {time}"
         "\nseparate fields with '_' underscore ; for short time format "
         "(no seconds) use {time_short}"
-        "\nexample : {name}_{date}_{time_short}",
+        "\nexample : {name}_{date}_{time_short}"
+        "\nnote : not implemented",
     ),
 }

@@ -8,42 +8,39 @@ source = "sidepanehelpers"
 routing = {"source": source, "route": ["terminal"]}
 
 
+def objects_select_all_none(button, dispatcher, select_all: bool):
+    # unified handler for selecting all or none objects
+    event_id = dispatcher.selected_objects_event
+    if select_all:
+        dispatcher.select_all_objects(event_id)
+    else:
+        dispatcher.select_none_objects(event_id)
+
+
 def objects_toggle_event(button, dispatcher):
-    dispatcher.selected_objects_event = (
-        2 if dispatcher.selected_objects_event == 1 else 1
+    # toggle objects for event 1 vs 2 by clicking on custom icon button
+    # todo this is not settings changed event at all : toggles planets to be drawn
+    # for event 1 & 2 separately
+    event_id = "e2" if dispatcher.selected_objects_event == "e1" else "e1"
+    dispatcher.set_selected_objects_event(event_id)
+    button.get_child().set_from_file(
+        f"ui/imgs/icons/hicolor/scalable/events/{event_id}.svg"
     )
-    img = button.get_child()
-    event = dispatcher.selected_objects_event
-    img.set_from_file(f"ui/imgs/icons/hicolor/scalable/events/event_{event}.svg")
-
-
-def objects_select_all(button, dispatcher):
-    # todo why dont we select all from here
-    dispatcher.select_all_objects(dispatcher.selected_objects_event)
-
-
-def objects_select_none(button, dispatcher):
-    dispatcher.select_no_objects(dispatcher.selected_objects_event)
 
 
 def objects_toggled(checkbutton, name, dispatcher):
+    # clicking on checkbutton
     active = checkbutton.get_active()
     event = dispatcher.selected_objects_event
     dispatcher.toggle_object(event, name, active)
 
 
 def lots_toggled(checkbutton, name, dispatcher):
-    active = checkbutton.get_active()
-    # todo below is suspicious : lots are e1 exclusively
-    event = dispatcher.selected_objects_event
-    dispatcher.toggle_lot(event, name, active)
+    dispatcher.toggle_lot(name, checkbutton.get_active())
 
 
 def prenatal_toggled(checkbutton, name, dispatcher):
-    active = checkbutton.get_active()
-    # todo prenatal is for e1 exclusively
-    event = dispatcher.selected_objects_event
-    dispatcher.toggle_prenatal(event, name, active)
+    dispatcher.toggle_prenatal(name, checkbutton.get_active())
 
 
 def house_system_changed(dropdown, _pspec, dispatcher):
@@ -54,9 +51,7 @@ def house_system_changed(dropdown, _pspec, dispatcher):
 
 
 def setting_toggled(button, setting, dispatcher):
-    active = button.get_active()
-    dispatcher.on_settings_change(setting, active)
-    # dispatcher.update_chart_setting(setting, active)
+    dispatcher.update_chart_setting(setting, button.get_active())
 
 
 def naksatras_ring(widget, key, panel, dispatcher):
@@ -181,4 +176,4 @@ def custom_ayanamsa_changed(entry, key, dispatcher):
 
 def files_changed(entry, key, dispatcher):
     value = entry.get_text().strip()
-    dispatcher.update_file_path(key, value)
+    dispatcher.update_files(key, value)

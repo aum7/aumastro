@@ -309,7 +309,8 @@ class MainWindow(
             "\nctrl+s : toggle side pane"
             "\nctrl+e : toggle selected event"
             "\n\t(ie for change time / time now & datagraph click (set datetime))"
-            "\narrow keys : up/down = change period | left/right = change time <</>> for selected event"
+            "\narrow keys : up/down = change period"
+            "\n\t\tleft/right = change time <</>> for selected event"
             "\nctrl+n : set time now for selected event location"
             "\n\t(your computer time > utc > event location time)"
             "\nctrl+f : toggle fixed ascendant vs ari 0° at zodiac left"
@@ -326,26 +327,10 @@ class MainWindow(
             "\n\tnote : could take a lot of time ! close app to force stop"
             "\nshift+v : toggle vimsottari level"
             "\nshift+r : toggle astro chart angle ruler",
-            # "\n\nnote : if entry / text field is focused, hotkeys will not work"
-            # "\n\t(text field will 'consume' key press)",
             source="manual",
             timeout=5,
             route=["user"],
         )
-
-    # def toggle_chart_setting(self, setting):
-    #     # hotkey callback to toggle chart setting & checkbox
-    #     current_val = self.app.chart_settings.get(setting, False)
-    #     new_val = not current_val
-    #     self.app.chart_settings[setting] = new_val
-    #     # update checkbox
-    #     # update_chart_setting_checkbox(self, setting, new_val)
-    #     self.app.signaler.emit("settings changed", None)
-    #     self.app.notifier.debug(
-    #         f"toggled {setting} : {new_val}",
-    #         source="mainwindow",
-    #         route=[""],
-    #     )
 
     def init_panes(self):
         """initialize panes with content"""

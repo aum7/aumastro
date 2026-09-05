@@ -14,24 +14,6 @@ gi.require_version("Gtk", "4.0")
 from gi.repository import Gtk  # type:ignore
 
 
-# def update_chart_setting_checkbox(dispatcher, setting: str, state: bool):
-#     # update checkbox state in ui when dispatched externally
-#     if not dispatcher:
-#         return
-#     if setting == "naksatras ring" and hasattr(dispatcher, "chk_naks_ring"):
-#         dispatcher.chk_naks_ring.set_active(state)
-#     elif setting == "28 mansions" and hasattr(dispatcher, "chk_28_naks"):
-#         dispatcher.chk_28_naks.set_active(state)
-#     elif hasattr(dispatcher, "lbx_chart_setts_1"):
-#         row = dispatcher.lbx_chart_setts_1.get_first_child()
-#         while row:
-#             check = row.get_child()
-#             if isinstance(check, Gtk.CheckButton) and check.get_label() == setting:
-#                 check.set_active(state)
-#                 break
-#             row = row.get_next_sibling()
-
-
 class SidepaneSettings(CollapsePanel):
     def __init__(self, sidepane=None):
         super().__init__(title="settings", expanded=True)
@@ -51,10 +33,34 @@ class SidepaneSettings(CollapsePanel):
             self.set_margin_end(margin)
             # self.set_margin_top(margin)
             # self.set_margin_bottom(margin)
+        self.app.signaler.connect("settings changed", self.on_settings_change)
         self.build_ui()
 
-    # def on_gtk_row_activated(self, listbox, row):
-    # find & toggle checkbox within row
+    def on_settings_change(self, data=None):
+        # received settings changed signal
+        if not data:
+            log.debug("onsettingschange : data missing : exiting")
+
+            return
+
+        objs_event = self.app.dispatcher.selected_objects_event
+        key = f"objects_{objs_event}"
+        if key in data:
+            self.sync_objects_checkboxes(data[key])
+
+    def sync_objects_checkboxes(self, selected):
+        if not hasattr(self, "chk_objects"):
+            log.debug("syncobjectcheckboxes : chk_objects is missing : exiting")
+
+            return
+
+        for short_name, check in self.chk_objects.items():
+            should_be_active = short_name in selected
+            if check.get_active() != should_be_active:
+                check.handler_block_by_func(help.objects_toggled)
+                check.set_active(should_be_active)
+                check.handler_unblock_by_func(help.objects_toggled)
+
     def build_ui(self):
         box_settings = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5)
         box_settings.append(self.build_subpnl_objects())
@@ -76,7 +82,7 @@ class SidepaneSettings(CollapsePanel):
         box_button = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=5)
         box_button.set_halign(Gtk.Align.START)
         ico_event = Gtk.Image.new_from_file(
-            "ui/imgs/icons/hicolor/scalable/events/event_1.svg"
+            "ui/imgs/icons/hicolor/scalable/events/e1.svg"
         )
         ico_event.set_pixel_size(30)
         # buttons
@@ -90,11 +96,15 @@ class SidepaneSettings(CollapsePanel):
         box_button.append(btn_toggle_event)
         btn_all = Gtk.Button(label="all")
         btn_all.set_tooltip_text("select all objects")
-        btn_all.connect("clicked", help.objects_select_all, self.app.dispatcher)
+        btn_all.connect(
+            "clicked", help.objects_select_all_none, self.app.dispatcher, True
+        )
         box_button.append(btn_all)
         btn_none = Gtk.Button(label="none")
         btn_none.set_tooltip_text("deselect all objects")
-        btn_none.connect("clicked", help.objects_select_none, self.app.dispatcher)
+        btn_none.connect(
+            "clicked", help.objects_select_all_none, self.app.dispatcher, False
+        )
         box_button.append(btn_none)
         box_objects.append(box_button)
         # log.debug(f"pnlobjects : has-selfsidepane : {hasattr(self, 'sidepane')}")
@@ -118,6 +128,7 @@ class SidepaneSettings(CollapsePanel):
             if self.app.dispatcher.selected_objects_event == "e1"
             else self.app.dispatcher.selected_objects_e2
         )
+        self.chk_objects = {}
         for name, data in objs.items():
             row = Gtk.ListBoxRow()
             short_name = data[0]
@@ -134,7 +145,10 @@ class SidepaneSettings(CollapsePanel):
             )
             check.set_active(short_name in sel_objs)
             # check.set_active(data["enable"])
-            check.connect("toggled", help.objects_toggled, name, self.app.dispatcher)
+            check.connect(
+                "toggled", help.objects_toggled, short_name, self.app.dispatcher
+            )
+            self.chk_objects[short_name] = check
             row.set_child(check)
             lbx_objects.append(row)
         box_objects.append(lbx_objects)
@@ -443,7 +457,7 @@ class SidepaneSettings(CollapsePanel):
             "activate",
             help.custom_ayanamsa_changed,
             "custom julian day utc",
-            self.app.dispatcher,
+            self.sidepane,
         )
         box_custom.append(Gtk.Label(label="julian day utc", halign=Gtk.Align.START))
         box_custom.append(ent_jd)
@@ -457,7 +471,7 @@ class SidepaneSettings(CollapsePanel):
             "activate",
             help.custom_ayanamsa_changed,
             "custom ayanamsa",
-            self.app.dispatcher,
+            self.sidepane,
         )
         box_custom.append(Gtk.Label(label="ayanamsa", halign=Gtk.Align.START))
         box_custom.append(ent_val)

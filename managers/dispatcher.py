@@ -39,24 +39,12 @@ class Dispatcher:
         # select event for objects button
         self.selected_objects_event = self.selected_event
         self.SWE_FLAGS = usersett.SWE_FLAGS
-        self.active_flags = [
-            flag for flag, data in usersett.SWE_FLAGS.items() if data[0]
-        ]
-        self.swe_flag = self.compute_swe_flag(self.active_flags)
         # change time < on hotkeys [ctrl+arrow] | button click
         self.selected_change_time_period = "1 D"
         self.OBJECTS = usersett.OBJECTS
-        self.selected_objects_e1 = {data[0] for data in usersett.OBJECTS.values()}
         self.OBJECTS_2 = usersett.OBJECTS_2
-        self.selected_objects_e2 = set(usersett.OBJECTS_2)
         self.LOTS = usersett.LOTS
-        self.selected_lots = {
-            lot: data for lot, data in usersett.LOTS.items() if data["enable"]
-        }
         self.PRENATAL = usersett.PRENATAL
-        self.selected_prenatal = {
-            item: data for item, data in usersett.PRENATAL.items() if data["enable"]
-        }
         # ddn list : selected house system & ayanamsa
         self.HOUSE_SYSTEMS = usersett.HOUSE_SYSTEMS
         self.selected_hsys = self.HOUSE_SYSTEMS[0][0]
@@ -73,6 +61,19 @@ class Dispatcher:
         self.CUSTOM_AYANAMSA = usersett.CUSTOM_AYANAMSA
         # chart settings attrs
         self.CHART_SETTINGS = usersett.CHART_SETTINGS
+        # basic data setting
+        self.active_flags = [
+            flag for flag, data in usersett.SWE_FLAGS.items() if data[0]
+        ]
+        self.swe_flag = self.compute_swe_flag(self.active_flags)
+        self.selected_objects_e1 = {data[0] for data in usersett.OBJECTS.values()}
+        self.selected_objects_e2 = set(usersett.OBJECTS_2)
+        self.selected_lots = {
+            lot for lot, data in usersett.LOTS.items() if data["enable"]
+        }
+        self.selected_prenatal = {
+            item for item, data in usersett.PRENATAL.items() if data["enable"]
+        }
         # star list if fixed stars list not empty : custom | naksatras | behenian
         self.fixed_stars = usersett.CHART_SETTINGS["fixed stars"][0]
         self.selected_stars = FIXEDSTARS[self.fixed_stars]
@@ -118,7 +119,7 @@ class Dispatcher:
         # signals
         self.app.signaler.connect("event changed", self.on_event_change)
         self.app.signaler.connect("e2 cleared", self.on_e2_clear)
-        self.app.signaler.connect("settings changed", self.on_settings_change)
+        # self.app.signaler.connect("settings changed", self.on_settings_change)
         log.debug(
             f"selobjs1={self.selected_objects_e1}"
             f"\nselobjs2={self.selected_objects_e2}"
@@ -127,111 +128,46 @@ class Dispatcher:
             extra=routingnone,
         )
 
-    def on_event_change(self, dataset):
-        event_id = dataset.get("id")
-        self.set_event_data(event_id, dataset)
-        # received e2 data - user is interested in transit progressions transit etc
-        if event_id == "e2":
-            self.e2_active = True
-        self.recalculate(event_id)
-
-    def on_settings_change(self, setting: str, value):
-        # update chart setting for an event & trigger recalculation
-        attr_name = setting.replace(" ", "_")
-        if hasattr(self, attr_name):
-            setattr(self, attr_name, value)
-            self.app.signaler.emit("settings changed", {"chart": {setting: value}})
-            self.recalculate(self.selected_event)
-
-    def on_e2_clear(self):
-        # handle e2 removal
-        self.astro_data["e2"] = {}
-        self.update_titlebar()
-        self.e2_active = False
-
+    # DONTDELETE
     # map string settings to sweph flag dynamically
-    def get_swe_flags_map(self):
-        return {
-            name: data[1]
-            for name, data in usersett.SWE_FLAGS.items()
-            if isinstance(data, (tuple, list)) and len(data) > 1
-        }
+    # def get_swe_flags_map(self):
+    #     return {
+    #         name: data[1]
+    #         for name, data in usersett.SWE_FLAGS.items()
+    #         if isinstance(data, (tuple, list)) and len(data) > 1
+    #     }
 
     def compute_swe_flag(self, active_flags: list[str]):
         # get active flags & compute swe flag
-        flags_map = self.get_swe_flags_map()
         swe_flag = 0
         for flag in active_flags:
-            if flag in flags_map:
-                if (
-                    isinstance(flag, (tuple, list))
-                    and len(flag) >= 3
-                    and isinstance(flag[2], str)
-                ):
-                    clean_flg = flag[2]
-                    # merge text string into sweph flag name / int
-                    flag_int = getattr(swe, clean_flg)
-                    swe_flag |= flag_int
+            if flag in usersett.SWE_FLAGS:
+                data = usersett.SWE_FLAGS[flag]
+                if isinstance(data, (tuple, list)) and len(data) >= 3:
+                    flag_str = data[2]
+                    for subflg in flag_str.split("|"):
+                        subflg = subflg.strip()
+                        if hasattr(swe, subflg):
+                            swe_flag |= getattr(swe, subflg)
         self.swe_flag = swe_flag
 
         return swe_flag
+        # flags_map = self.get_swe_flags_map()
+        # swe_flag = 0
+        # for flag in active_flags:
+        #     if flag in flags_map:
+        #         if (
+        #             isinstance(flag, (tuple, list))
+        #             and len(flag) >= 3
+        #             and isinstance(flag[2], str)
+        #         ):
+        #             clean_flg = flag[2]
+        #             # merge text string into sweph flag name / int
+        #             flag_int = getattr(swe, clean_flg)
+        #             swe_flag |= flag_int
+        # self.swe_flag = swe_flag
 
-    def set_event_data(self, event_id: str, dataset: dict):
-        # get sweph & chart data collected todo do we need this ???
-        self.astro_data[event_id]["chart"] = dataset["chart"]
-        self.astro_data[event_id]["sweph"] = dataset["sweph"]
-        # collect event 1 extra objects
-        if event_id == "e1":
-            for key in ["fixed stars", "lots", "eclipses", "syzygy"]:
-                if key in dataset:
-                    self.astro_data[event_id][key] = dataset[key]
-            if "chart info" in dataset:
-                self.astro_data["chart info"] = dataset["chart info"]
-            if "chart info extra" in dataset:
-                self.astro_data["chart info extra"] = dataset["chart info extra"]
-        e1_data = self.astro_data["e1"]
-        # logging
-        log.debug(
-            f"e1 unpacked :\npos : {len(e1_data.get('positions', {}))}"
-            f"\nlots : {len(e1_data.get('lots', {}))}"
-            f"\nstars : {len(e1_data.get('stars', {}))}",
-            extra=routing,
-        )
-
-    def update_objects_setting(self, event_id: str, objects_data):
-        # update active objects for event 1 / 2 dynamically
-        if event_id == "e1":
-            self.selected_objects_e1 = objects_data
-        elif event_id == "e2":
-            self.selected_objects_e2 = objects_data
-        self.app.signaler.emit(
-            "settings changed", {f"objects_{event_id}": objects_data}
-        )
-        self.recalculate(event_id)
-
-    def update_lots_setting(self, lots: dict):
-        # update lots selection
-        self.selected_lots = lots
-        self.app.signaler.emit("settings changed", {"lots": self.selected_lots})
-        self.recalculate("e1")
-
-    def update_prenatal_setting(self, prenatal: dict):
-        # update prenatal syzygy & eclipse selecion
-        self.selected_prenatal = prenatal
-        self.app.signaler.emit("settings changed", {"prenatal": self.selected_prenatal})
-        self.recalculate("e1")
-
-    def update_hsys(self, hsys: str):
-        # update selected house system : 'O', 'W' etc
-        self.selected_hsys = hsys
-        self.app.signaler.emit("settings changed", {"hsys": hsys})
-        self.recalculate(self.selected_event)
-
-    def update_ayanamsa(self, ayanamsa: int):
-        # update selected siderael ayanamsa
-        self.selected_ayanamsa = ayanamsa
-        self.app.signaler.emit("settings changed", {"ayanamsa": ayanamsa})
-        self.recalculate("all")
+        # return swe_flag
 
     def toggle_sweph_flag(self, flag: str, active: bool):
         # toggle sweph flag & recalculate active events
@@ -245,6 +181,171 @@ class Dispatcher:
         if self.e2_active:
             self.recalculate("e2")
 
+    def set_selected_objects_event(self, event_id: str):
+        self.selected_objects_event = event_id
+        selected = (
+            self.selected_objects_e1 if event_id == "e1" else self.selected_objects_e2
+        )
+        self.app.signaler.emit("settings changed", {f"objects_{event_id}": selected})
+
+    def select_all_objects(self, event_id: str):
+        if event_id == "e1":
+            self.selected_objects_e1 = {
+                data[0] for data in self.OBJECTS.values() if len(data) > 0
+            }
+            signal_data = {"objects_e1": self.selected_objects_e1}
+        else:
+            self.selected_objects_e2 = {
+                name for name in self.OBJECTS_2 if len(name) > 0
+            }
+            signal_data = {"objects_e2": self.selected_objects_e2}
+        self.app.signaler.emit("settings changed", signal_data)
+        self.recalculate(event_id)
+
+    def select_none_objects(self, event_id: str):
+        if event_id == "e1":
+            self.selected_objects_e1.clear()
+            signal_data = {"objects_e1": self.selected_objects_e1}
+        else:
+            self.selected_objects_e2.clear()
+            signal_data = {"objects_e2": self.selected_objects_e2}
+        self.app.signaler.emit("settings changed", signal_data)
+        self.recalculate(event_id)
+
+    def on_event_change(self, dataset):
+        # todo do we need this ??? we are operating with local attributes self.X
+        event_id = dataset.get("id")
+        self.set_event_data(event_id, dataset)
+        # received e2 data - user is interested in transit progressions transit etc
+        if event_id == "e2":
+            self.e2_active = True
+        self.recalculate(event_id)
+
+    def set_event_data(self, event_id: str, dataset: dict):
+        # get sweph & chart data collected todo do we need this ???
+        # calculations are in recalculate : this one sets chart sweph fixed stars
+        # lot eclipses syzygy chart info chart info extra
+        # self.astro_data[event_id]["chart"] = dataset["chart"]
+        # self.astro_data[event_id]["sweph"] = dataset["sweph"]
+        if "chart" in dataset:
+            self.astro_data[event_id]["chart"] = dataset["chart"]
+        if "sweph" in dataset:
+            self.astro_data[event_id]["sweph"] = dataset["sweph"]
+        # collect event 1 extra objects
+        # if event_id == "e1":
+        #     for key in ["fixed stars", "lots", "eclipses", "syzygy"]:
+        #         if key in dataset:
+        #             self.astro_data[event_id][key] = dataset[key]
+        #     if "chart info" in dataset:
+        #         self.astro_data["chart info"] = dataset["chart info"]
+        #     if "chart info extra" in dataset:
+        #         self.astro_data["chart info extra"] = dataset["chart info extra"]
+        # e1_data = self.astro_data["e1"]
+        # # logging
+        # log.debug(
+        #     # f"e1 unpacked :\npos : {len(e1_data.get('positions', {}))}"
+        #     f"\nlots : {len(e1_data.get('lots', {}))}"
+        #     f"\nstars : {len(e1_data.get('stars', {}))}",
+        #     extra=routing,
+        # )
+
+    def on_e2_clear(self):
+        # handle e2 removal
+        self.astro_data["e2"] = {}
+        self.update_titlebar()
+        self.e2_active = False
+
+    def toggle_object(self, event_id: str, name: str, active: bool):
+        # target correct set based on event
+        target_set = (
+            self.selected_objects_e1 if event_id == "e1" else self.selected_objects_e2
+        )
+        # mutate set
+        if active:
+            target_set.add(name)
+        else:
+            target_set.discard(name)
+        self.app.signaler.emit("settings changed", {f"objects_{event_id}": target_set})
+        self.recalculate(event_id)
+
+    def toggle_lot(self, name: str, active: bool):
+        # update lots selection : lots are exclusive to event 1
+        if active:
+            self.selected_lots.add(name)
+        else:
+            self.selected_lots.discard(name)
+        self.app.signaler.emit("settings changed", {"lots": self.selected_lots})
+        self.recalculate("e1")
+
+    def toggle_prenatal(self, name: str, active: bool):
+        # update prenatal syzygy & eclipse selecion : exclusive to event 1
+        if active:
+            self.selected_prenatal.add(name)
+        else:
+            self.selected_prenatal.discard(name)
+        self.app.signaler.emit("settings changed", {"prenatal": self.selected_prenatal})
+        self.recalculate("e1")
+
+    def update_house_system(self, hsys: str, short_name: str = ""):
+        # update selected house system : 'O', 'W' etc
+        # todo access via self.HOUSE_SYSTEMS
+        self.selected_hsys = hsys
+        if short_name:
+            self.selected_hsys_short = short_name
+        self.app.signaler.emit("settings changed", {"hsys": hsys})
+        self.recalculate(self.selected_event)
+
+    def update_naksatras_settings(self, val_ring, val_28, val_1st):
+        self.naksatras_ring = val_ring
+        self.mansions_28 = val_28
+        self.first_naksatra = val_1st
+        self.app.signaler.emit(
+            "settings changed",
+            {"naksatras": {"ring": val_ring, "28": val_28, "1st": val_1st}},
+            # {"naksatras ring": {"ring": val_ring, "28": val_28, "1st": val_1st}},
+        )
+        self.recalculate("e1")
+
+    def update_ayanamsa(self, ayanamsa: int):
+        # update selected siderael ayanamsa
+        self.selected_ayanamsa = ayanamsa
+        self.app.signaler.emit("settings changed", {"ayanamsa": ayanamsa})
+        self.recalculate("all")
+
+    def update_custom_ayanamsa(self, key, value):
+        if key in self.CUSTOM_AYANAMSA:
+            self.CUSTOM_AYANAMSA[key] = float(value)
+            self.app.signaler.emit(
+                "settings changed", {"custom_ayanamsa": self.CUSTOM_AYANAMSA}
+            )
+            # self.recalculate("all")
+            self.recalculate("e1")
+            if self.e2_active:
+                self.recalculate("e2")
+
+    def update_files(self, key, value):
+        if key in self.FILES:
+            # update path string & keep tooltip
+            current_data = self.FILES[key]
+            self.FILES[key] = (value, current_data[1])
+            self.app.signaler.emit("settings changed", {"files": {key: value}})
+
+    def update_chart_setting(self, setting: str, value):
+        # update chart setting for an event & trigger recalculation
+        attr_name = setting.replace(" ", "_")
+        if hasattr(self, attr_name):
+            setattr(self, attr_name, value)
+            self.app.signaler.emit("settings changed", {"chart": {setting: value}})
+            # filter recalculate() call to math-impacting settings
+            visual_settintgs = [
+                "enable_glyphs",
+                "chart_info",
+                "chart_info_extra",
+                "snap_tolerance",
+            ]
+            if attr_name not in visual_settintgs:
+                self.recalculate(self.selected_event)
+
     def recalculate(self, event_id: str):
         # on event or settings change > recalculate astodata
         # todo separate e1 & e2 func, re-pack duplicated funcs for reuse
@@ -253,12 +354,18 @@ class Dispatcher:
                 "recalculate : received 'e2' but e2_active is false > investigate",
                 extra=routing,
             )
-            # continue
-        sweph = self.astro_data[event_id]["sweph"]
-        if not sweph["jd_ut"]:
+            return
+
+        sweph = self.astro_data[event_id].get("sweph")
+        if not sweph:
             log.debug(
-                "sweph has no jdut > investigate",
+                f"recalculate : {event_id} has no sweph data yet > exiting",
             )
+            return
+
+        if not sweph["jd_ut"]:
+            log.debug("recalculate : sweph has no jdut > investigate")
+
             return
         # mandatory
         jdut = sweph["jd_ut"]
