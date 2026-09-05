@@ -1,105 +1,110 @@
-# ui/sidepane/settingshelpers.py
+# ui/dispatcher/settingshelpers.py
 # ruff: noqa: E402
 import logging
 import re
 
 log = logging.getLogger(__name__)
+source = "sidepanehelpers"
+routing = {"source": source, "route": ["terminal"]}
 
 
-def objects_toggle_event(button, sidepane):
-    sidepane.selected_objects_event = 2 if sidepane.selected_objects_event == 1 else 1
+def objects_toggle_event(button, dispatcher):
+    dispatcher.selected_objects_event = (
+        2 if dispatcher.selected_objects_event == 1 else 1
+    )
     img = button.get_child()
-    ev_num = sidepane.selected_objects_event
-    img.set_from_file(f"ui/imgs/icons/hicolor/scalable/objects/event_{ev_num}.svg")
+    event = dispatcher.selected_objects_event
+    img.set_from_file(f"ui/imgs/icons/hicolor/scalable/events/event_{event}.svg")
 
 
-def objects_select_all(button, sidepane):
-    sidepane.app.dispatcher.select_all_objects(sidepane.selected_objects_event)
+def objects_select_all(button, dispatcher):
+    # todo why dont we select all from here
+    dispatcher.select_all_objects(dispatcher.selected_objects_event)
 
 
-def objects_select_none(button, sidepane):
-    sidepane.app.dispatcher.select_no_objects(sidepane.selected_objects_event)
+def objects_select_none(button, dispatcher):
+    dispatcher.select_no_objects(dispatcher.selected_objects_event)
 
 
-def objects_toggled(checkbutton, name, sidepane):
+def objects_toggled(checkbutton, name, dispatcher):
     active = checkbutton.get_active()
-    event_num = sidepane.selected_objects_event
-    sidepane.app.dispatcher.toggle_object(event_num, name, active)
+    event = dispatcher.selected_objects_event
+    dispatcher.toggle_object(event, name, active)
 
 
-def lots_toggled(checkbutton, name, sidepane):
+def lots_toggled(checkbutton, name, dispatcher):
     active = checkbutton.get_active()
-    event_num = sidepane.selected_objects_event
-    sidepane.app.dispatcher.toggle_lot(event_num, name, active)
+    # todo below is suspicious : lots are e1 exclusively
+    event = dispatcher.selected_objects_event
+    dispatcher.toggle_lot(event, name, active)
 
 
-def prenatal_toggled(checkbutton, name, sidepane):
+def prenatal_toggled(checkbutton, name, dispatcher):
     active = checkbutton.get_active()
-    event_num = sidepane.selected_objects_event
-    sidepane.app.dispatcher.toggle_prenatal(event_num, name, active)
+    # todo prenatal is for e1 exclusively
+    event = dispatcher.selected_objects_event
+    dispatcher.toggle_prenatal(event, name, active)
 
 
-def house_system_changed(dropdown, _pspec, sidepane):
+def house_system_changed(dropdown, _pspec, dispatcher):
     idx = dropdown.get_selected()
-    house_systems = sidepane.app.dispatcher.HOUSE_SYSTEMS
+    house_systems = dispatcher.HOUSE_SYSTEMS
     hsys, _, short_name = house_systems[idx]
-    sidepane.app.dispatcher.update_house_system(hsys, short_name)
+    dispatcher.update_house_system(hsys, short_name)
 
 
-def chart_settings_toggled(button, setting, sidepane):
+def setting_toggled(button, setting, dispatcher):
     active = button.get_active()
-    sidepane.app.dispatcher.update_chart_setting(setting, active)
+    dispatcher.on_settings_change(setting, active)
+    # dispatcher.update_chart_setting(setting, active)
 
 
-def naksatras_ring(widget, key, sidepane):
-    val_ring = sidepane.chk_naks_ring.get_active()
-    val_28 = sidepane.chk_28_naks.get_active()
+def naksatras_ring(widget, key, panel, dispatcher):
+    val_ring = panel.chk_naks_ring.get_active()
+    val_28 = panel.chk_28_naks.get_active()
 
     try:
-        val_1st = int(sidepane.ent_1st_nak.get_text())
+        val_1st = int(panel.ent_1st_nak.get_text())
     except ValueError:
         val_1st = 1
-        sidepane.ent_1st_nak.set_text("1")
-
+        panel.ent_1st_nak.set_text("1")
     naks_range = 28 if val_28 else 27
     val_1st = max(1, min(naks_range, val_1st))
-    sidepane.ent_1st_nak.set_text(str(val_1st))
+    panel.ent_1st_nak.set_text(str(val_1st))
+    dispatcher.update_naksatras_settings(val_ring, val_28, val_1st)
 
-    sidepane.app.dispatcher.update_naksatras_settings(val_ring, val_28, val_1st)
 
-
-def harmonic_ring(entry, sidepane):
+def harmonic_ring(entry, dispatcher):
     text = entry.get_text().strip()
     if text != "" and not text.isdigit():
         entry.add_css_class("entry-warning")
         return
     entry.remove_css_class("entry-warning")
-    sidepane.app.dispatcher.update_chart_setting("harmonic ring", text)
+    dispatcher.update_chart_setting("harmonic ring", text)
 
 
-def fixed_stars(entry, sidepane):
+def fixed_stars(entry, dispatcher):
     text = entry.get_text().strip()
-    valid = {"custom", "naksatras", "behenian", "robson", "alphabetical", ""}
+    valid = {"custom", "naksatras", "behenian"}
     if text not in valid:
         entry.add_css_class("entry-warning")
         return
     entry.remove_css_class("entry-warning")
-    sidepane.app.dispatcher.update_chart_setting("fixed stars", text)
+    dispatcher.update_chart_setting("fixed stars", text)
 
 
-def snapping(entry, sidepane):
+def snapping(entry, dispatcher):
     text = entry.get_text().strip()
-    chart_setts = sidepane.app.dispatcher.chart_settings
-    default_snap = chart_setts.get("snap tolerance", [0.5])[0]
+    default_snap = dispatcher.snap_tolerance
     try:
-        val = float(text) if text else float(default_snap)
+        value = float(text) if text else float(default_snap)
         entry.remove_css_class("entry-warning")
-        sidepane.app.dispatcher.update_chart_setting("snap tolerance", str(val))
+        dispatcher.snap_tolerance = value
     except ValueError:
         entry.add_css_class("entry-warning")
 
 
-def chart_info_string(entry, info, sidepane):
+def chart_info_string(entry, info, dispatcher):
     value = entry.get_text()
     allowed = {
         "chart info": {
@@ -129,47 +134,51 @@ def chart_info_string(entry, info, sidepane):
         return
 
     entry.remove_css_class("entry-warning")
-    sidepane.app.dispatcher.update_chart_setting(info, value)
+    if info == "chart info":
+        dispatcher.chart_info = value
+    # todo missing chart info extra
+    elif info == "chart info extra":
+        dispatcher.chart_info_extra = value
 
 
-def flags_toggled(button, flag, sidepane):
+def flags_toggled(button, flag, dispatcher):
     active = button.get_active()
-    sidepane.app.dispatcher.toggle_sweph_flag(flag, active)
+    dispatcher.toggle_sweph_flag(flag, active)
 
 
-def solar_year_changed(dropdown, _pspec, sidepane):
+def solar_year_changed(dropdown, _pspec, dispatcher):
     idx = dropdown.get_selected()
-    solar_years = sidepane.app.dispatcher.SOLAR_YEARS
+    solar_years = dispatcher.SOLAR_YEARS
     period = list(solar_years.values())[idx]
-    sidepane.app.dispatcher.update_solar_year(period)
+    dispatcher.update_solar_year(period)
 
 
-def lunar_month_changed(dropdown, _pspec, sidepane):
+def lunar_month_changed(dropdown, _pspec, dispatcher):
     idx = dropdown.get_selected()
-    lunar_months = sidepane.app.dispatcher.LUNAR_MONTHS
+    lunar_months = dispatcher.LUNAR_MONTHS
     period = list(lunar_months.values())[idx]
-    sidepane.app.dispatcher.update_lunar_month(period)
+    dispatcher.update_lunar_month(period)
 
 
-def ayanamsa_changed(dropdown, _pspec, sidepane):
+def ayanamsa_changed(dropdown, _pspec, dispatcher):
     idx = dropdown.get_selected()
-    ayanamsas = sidepane.app.dispatcher.AYANAMSAS
+    ayanamsas = dispatcher.AYANAMSAS
     key = list(ayanamsas.keys())[idx]
     is_custom = key == 255
-    sidepane.subsub_custom_ayan.set_sensitive(is_custom)
-    sidepane.app.dispatcher.update_ayanamsa(key)
+    dispatcher.subsub_custom_ayan.set_sensitive(is_custom)
+    dispatcher.update_ayanamsa(key)
 
 
-def custom_ayanamsa_changed(entry, key, sidepane):
+def custom_ayanamsa_changed(entry, key, dispatcher):
     text = entry.get_text().strip()
     try:
-        val = float(text)
+        value = float(text)
         entry.remove_css_class("entry-warning")
-        sidepane.app.dispatcher.update_custom_ayanamsa(key, val)
+        dispatcher.update_custom_ayanamsa(key, value)
     except ValueError:
         entry.add_css_class("entry-warning")
 
 
-def files_changed(entry, key, sidepane):
-    val = entry.get_text().strip()
-    sidepane.app.dispatcher.update_file_path(key, val)
+def files_changed(entry, key, dispatcher):
+    value = entry.get_text().strip()
+    dispatcher.update_file_path(key, value)

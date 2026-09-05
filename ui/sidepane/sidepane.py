@@ -55,8 +55,6 @@ class SidepaneManager:
         # get events data from app
         if app is not None:
             self.app = app
-        # select event for objects button
-        self.selected_objects_event = self.app.dispatcher.selected_event
         # debug
         # log.debug(
         #     f"\nhasselfselectedevent : {hasattr(self, 'selected_event')}",
@@ -114,7 +112,7 @@ class SidepaneManager:
         # 2 events : True/False = set expanded on/off on init
         self.clp_event_one = setup_event(self, "e1", True)
         self.clp_event_two = setup_event(self, "e2", False)
-        if self.selected_objects_event == "e1":
+        if self.app.dispatcher.selected_objects_event == "e1":
             self.clp_event_one.add_title_css_class("label-event-selected")
         else:
             self.clp_event_two.add_title_css_class("label-event-selected")

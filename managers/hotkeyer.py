@@ -4,8 +4,8 @@ import logging
 
 log = logging.getLogger(__name__)
 # logging : messages sent from where & to which recipients
-extra = {"source": "hotkeyer", "route": ["terminal"]}
-# import inspect
+source = "hotkeyer"
+routing = {"source": source, "route": ["terminal"]}
 import gi
 
 gi.require_version("Gtk", "4.0")
@@ -101,4 +101,5 @@ class Hotkeyer:
             self.window, action_name, None
         )
         if callable(action):
-            action(button)
+            action()
+            # action(button)

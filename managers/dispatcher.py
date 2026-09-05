@@ -30,11 +30,14 @@ class Dispatcher:
         self.astro_data = {"e1": {}, "e2": {}}
         # grab user settings & default events database
         # default event 1 mandatory data & default e2 optional data
+        # already set in sidepane event
         # self.e1 = eventsdb.DEFAULT_E1
         # self.e2 = eventsdb.DEFAULT_E2
         # todo from eventsdb collect event 1 & 2 data : location name datetime
         # explicit selected event : the one arrived last or be user-selected
         self.selected_event = "e1"
+        # select event for objects button
+        self.selected_objects_event = self.selected_event
         self.SWE_FLAGS = usersett.SWE_FLAGS
         self.active_flags = [
             flag for flag, data in usersett.SWE_FLAGS.items() if data[0]
@@ -90,19 +93,19 @@ class Dispatcher:
         self.chart_info = usersett.CHART_SETTINGS["chart info"][0]
         self.chart_info_extra = usersett.CHART_SETTINGS["chart info extra"][0]
         # chart outer rings
-        self.e2_rings = {
+        self.E2_RINGS = {
             k: v[0] for k, v in usersett.CHART_SETTINGS["event 2 rings"].items()
         }
         # rings
-        self.rings_settings = {
-            "transit": self.e2_rings["transit"],
-            "transit varga": self.e2_rings["transit varga"],
-            "p2 progress": self.e2_rings["p2 progress"],
-            "p3 progress": self.e2_rings["p3 progress"],
-            "p3m progress": self.e2_rings["p3m progress"],
-            "d1 direction": self.e2_rings["d1 direction"],
-            "lunar return": self.e2_rings["lunar return"],
-            "solar return": self.e2_rings["solar return"],
+        self.rings = {
+            "transit": self.E2_RINGS["transit"],
+            "transit varga": self.E2_RINGS["transit varga"],
+            "p2 progress": self.E2_RINGS["p2 progress"],
+            "p3 progress": self.E2_RINGS["p3 progress"],
+            "p3m progress": self.E2_RINGS["p3m progress"],
+            "d1 direction": self.E2_RINGS["d1 direction"],
+            "lunar return": self.E2_RINGS["lunar return"],
+            "solar return": self.E2_RINGS["solar return"],
         }
         # ephe path & astro font & mono font & events database & graph data & filename
         self.FILES = usersett.FILES
@@ -115,9 +118,7 @@ class Dispatcher:
         # signals
         self.app.signaler.connect("event changed", self.on_event_change)
         self.app.signaler.connect("e2 cleared", self.on_e2_clear)
-        self.app.signaler.connect(
-            "chart settings changed", self.on_chart_settings_change
-        )
+        self.app.signaler.connect("settings changed", self.on_settings_change)
         log.debug(
             f"selobjs1={self.selected_objects_e1}"
             f"\nselobjs2={self.selected_objects_e2}"
@@ -134,10 +135,13 @@ class Dispatcher:
             self.e2_active = True
         self.recalculate(event_id)
 
-    def on_chart_settings_change(self, sett_data: dict):
-        # todo merge with below similar function ???
-        # update_chart_setting
-        pass
+    def on_settings_change(self, setting: str, value):
+        # update chart setting for an event & trigger recalculation
+        attr_name = setting.replace(" ", "_")
+        if hasattr(self, attr_name):
+            setattr(self, attr_name, value)
+            self.app.signaler.emit("settings changed", {"chart": {setting: value}})
+            self.recalculate(self.selected_event)
 
     def on_e2_clear(self):
         # handle e2 removal
@@ -228,14 +232,6 @@ class Dispatcher:
         self.selected_ayanamsa = ayanamsa
         self.app.signaler.emit("settings changed", {"ayanamsa": ayanamsa})
         self.recalculate("all")
-
-    def update_chart_setting(self, setting: str, value):
-        # update chart setting for an event & trigger recalculation
-        attr_name = setting.replace(" ", "_")
-        if hasattr(self, attr_name):
-            setattr(self, attr_name, value)
-            self.app.signaler.emit("settings changed", {"chart": {setting: value}})
-            self.recalculate(self.selected_event)
 
     def toggle_sweph_flag(self, flag: str, active: bool):
         # toggle sweph flag & recalculate active events

@@ -7,7 +7,6 @@ source = "mainwindow"
 routing = {"source": source, "route": ["terminal"]}
 from typing import Any, Optional
 from .sidepane.sidepane import SidepaneManager
-from .sidepane.sidepanesettings import update_chart_setting_checkbox
 from .uisetup import UISetup
 from managers.hotkeyer import Hotkeyer
 from managers.notifier import NotifyLevel
@@ -31,10 +30,10 @@ class MainWindow(
 
     # setup logger
     DEFAULT_TIMEOUTS = {
-        NotifyLevel.INFO: 3,
-        NotifyLevel.SUCCESS: 3,
-        NotifyLevel.WARNING: 4,
-        NotifyLevel.ERROR: 5,
+        NotifyLevel.INFO: 4,
+        NotifyLevel.SUCCESS: 5,
+        NotifyLevel.WARNING: 5,
+        NotifyLevel.ERROR: 6,
         NotifyLevel.DEBUG: 5,
     }
     FALLBACK_ICONS = {
@@ -177,13 +176,7 @@ class MainWindow(
             "<Shift>r", lambda: self.astro_chart.ruler.toggle()
         )
         # below works for qwertz keyboard, modify according to your keyboard layout
-        # self.hotkeys.register_hotkey("<shift>exclam", self.panes_single)  # shift+1
-        # self.hotkeys.register_hotkey("<shift>exclam", self.panes_single)  # shift+1
-        # self.hotkeys.register_hotkey("<shift>quotedbl", self.panes_double)  # shift+2
-        # self.hotkeys.register_hotkey("<shift>numbersign", self.panes_triple)  # shift+3
-        # self.hotkeys.register_hotkey("<shift>dollar", self.panes_all)  # shift+4
-        # self.hotkeys.register_hotkey("<shift>percent", self.panes_movie)  # shift+5
-        # self.hotkeys.register_hotkey("<shift>ampersand", self.on_data_seq)
+        self.hotkeys.register_hotkey("<Shift>exclam", self.panes_single)  # shift+1
         self.hotkeys.register_hotkey("<Shift>quotedbl", self.panes_double)  # shift+2
         self.hotkeys.register_hotkey("<Shift>numbersign", self.panes_triple)  # shift+3
         self.hotkeys.register_hotkey("<Shift>dollar", self.panes_all)  # shift+4
@@ -206,51 +199,92 @@ class MainWindow(
         self.hotkeys.register_hotkey(
             "<Control>e",
             lambda: self.app.dispatcher.event_selection(
-                "e2"
-                if self.app.dispatcher.app_settings.get("selected event") == "e1"
-                else "e2"
+                "e2" if self.app.dispatcher.selected_event == "e1" else "e1"
             ),
         )
         # astro chart drawing
         self.hotkeys.register_hotkey(
-            "<Control>g", lambda: self.toggle_chart_setting("enable glyphs")
+            "<Control>g",
+            lambda: self.app.dispatcher.update_chart_setting(
+                "enable glyphs", not self.app.dispatcher.enable_glyphs
+            ),
         )
         self.hotkeys.register_hotkey(
-            "<Control>f", lambda: self.toggle_chart_setting("fixed asc")
+            "<Control>f",
+            lambda: self.app.dispatcher.update_chart_setting(
+                "fixed asc", not self.app.dispatcher.fixed_asc
+            ),
         )
         # toggle rasi / varga / harmonic aspects table
         self.hotkeys.register_hotkey(
-            "<Control>h", lambda: self.toggle_chart_setting("use varga aspects")
+            "<Control>h",
+            lambda: self.app.dispatcher.update_chart_setting(
+                "varga aspects", not self.app.dispatcher.varga_aspects
+            ),
         )
         # astro chart outer rings for event 2
         # transit|varga|p2|p3|p3m|d1|lunar|solar return|naksatras ring
         self.hotkeys.register_hotkey(
-            "<Control>1", lambda: self.toggle_chart_setting("transit")
+            "<Control>1",
+            lambda: self.app.dispatcher.update_ring(
+                "transit",
+                not self.app.dispatcher.rings["transit"],
+            ),
+        )
+        log.debug(
+            f"setuphotkeys : rings.transit={self.app.dispatcher.rings['transit']}",
+            extra=routing,
         )
         self.hotkeys.register_hotkey(
-            "<Control>2", lambda: self.toggle_chart_setting("transit varga")
+            "<Control>2",
+            lambda: self.app.dispatcher.update_ring(
+                "transit varga", not self.app.dispatcher.rings["transit varga"]
+            ),
         )
         self.hotkeys.register_hotkey(
-            "<Control>3", lambda: self.toggle_chart_setting("p2 progress")
+            "<Control>3",
+            lambda: self.app.dispatcher.update_ring(
+                "p2 progress", not self.app.dispatcher.rings["p2 progress"]
+            ),
         )
         self.hotkeys.register_hotkey(
-            "<Control>4", lambda: self.toggle_chart_setting("p3 progress")
+            "<Control>4",
+            lambda: self.app.dispatcher.update_ring(
+                "p3 progress", not self.app.dispatcher.rings["p3 progress"]
+            ),
         )
         self.hotkeys.register_hotkey(
-            "<Control>5", lambda: self.toggle_chart_setting("p3m progress")
+            "<Control>5",
+            lambda: self.app.dispatcher.update_ring(
+                "p3m progress", not self.app.dispatcher.rings["p3m progress"]
+            ),
         )
         self.hotkeys.register_hotkey(
-            "<Control>6", lambda: self.toggle_chart_setting("d1 direction")
+            "<Control>6",
+            lambda: self.app.dispatcher.update_ring(
+                "d1 direction", not self.app.dispatcher.rings["d1 direction"]
+            ),
         )
         self.hotkeys.register_hotkey(
-            "<Control>7", lambda: self.toggle_chart_setting("lunar return")
+            "<Control>7",
+            lambda: self.app.dispatcher.update_ring(
+                "lunar return", not self.app.dispatcher.rings["lunar return"]
+            ),
         )
         self.hotkeys.register_hotkey(
-            "<Control>8", lambda: self.toggle_chart_setting("solar return")
+            "<Control>8",
+            lambda: self.app.dispatcher.update_ring(
+                "solar return", not self.app.dispatcher.rings["solar return"]
+            ),
         )
         # astro chart naksatras ring
         self.hotkeys.register_hotkey(
-            "<Control>9", lambda: self.toggle_chart_setting("naksatras ring")
+            "<Control>9",
+            lambda: self.app.dispatcher.update_naksatras_settings(
+                not self.app.dispatcher.naksatras_ring,
+                self.app.dispatcher.mansions_28,
+                self.app.dispatcher.first_naksatra,
+            ),
         )
 
     # help / manual
@@ -294,24 +328,24 @@ class MainWindow(
             "\nshift+r : toggle astro chart angle ruler",
             # "\n\nnote : if entry / text field is focused, hotkeys will not work"
             # "\n\t(text field will 'consume' key press)",
-            source="help",
+            source="manual",
             timeout=5,
             route=["user"],
         )
 
-    def toggle_chart_setting(self, setting):
-        # hotkey callback to toggle chart setting & checkbox
-        current_val = self.app.chart_settings.get(setting, False)
-        new_val = not current_val
-        self.app.chart_settings[setting] = new_val
-        # update checkbox
-        update_chart_setting_checkbox(self, setting, new_val)
-        self.app.signaler.emit("settings changed", None)
-        self.app.notifier.debug(
-            f"toggled {setting} : {new_val}",
-            source="mainwindow",
-            route=[""],
-        )
+    # def toggle_chart_setting(self, setting):
+    #     # hotkey callback to toggle chart setting & checkbox
+    #     current_val = self.app.chart_settings.get(setting, False)
+    #     new_val = not current_val
+    #     self.app.chart_settings[setting] = new_val
+    #     # update checkbox
+    #     # update_chart_setting_checkbox(self, setting, new_val)
+    #     self.app.signaler.emit("settings changed", None)
+    #     self.app.notifier.debug(
+    #         f"toggled {setting} : {new_val}",
+    #         source="mainwindow",
+    #         route=[""],
+    #     )
 
     def init_panes(self):
         """initialize panes with content"""
@@ -331,7 +365,6 @@ class MainWindow(
     def panes_single(self) -> None:
         """show single pane : bottom left
         shift+single-click / shift+1"""
-        # if self.ORIENTATION == "vertical":
         if hasattr(self, "pnd_main") and hasattr(self, "pnd_btm"):
             # separator position in pixels, from top-left | -ve = unset | default 0
             self.pnd_main.set_position(0)
@@ -349,6 +382,7 @@ class MainWindow(
     def panes_triple(self) -> None:
         """show & center top single & bottom 2 panes
         shift+triple-click / shift+3"""
+        # todo app orientation
         if (
             hasattr(self, "pnd_main")
             and hasattr(self, "pnd_top")
@@ -363,6 +397,7 @@ class MainWindow(
     def panes_all(self) -> None:
         """show & center all 4 main panes
         shift+quadruple-click / shift+4"""
+        # todo app orientation
         if (
             hasattr(self, "pnd_main")
             and hasattr(self, "pnd_top")

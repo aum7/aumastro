@@ -4,8 +4,9 @@
 import logging
 
 log = logging.getLogger(__name__)
-
-routing = {"source": "signaler", "route": ["terminal"]}
+source = "signaler"
+routing = {"source": source, "route": ["terminal"]}
+routingnone = {"source": source, "route": [""]}
 
 
 class Signaler:
@@ -17,7 +18,7 @@ class Signaler:
     def connect(self, signal_name, handler):
         log.debug(
             f"connecting signal : {signal_name}",
-            extra=routing,
+            extra=routingnone,
         )
         if signal_name not in self.handlers:
             self.handlers[signal_name] = []
@@ -31,7 +32,7 @@ class Signaler:
     def emit(self, signal_name, *args, **kwargs):
         log.debug(
             f"emitting signal : {signal_name}",
-            extra=routing,
+            extra=routingnone,
         )
         for handler in self.handlers.get(signal_name, []):
             try:
