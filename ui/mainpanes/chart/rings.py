@@ -53,23 +53,25 @@ class Rings:
     }
 
     def __init__(self, ctx: dict, data: dict):
+        self.data = data or {}
         self.ctx = ctx
         # dispatcher takes care of correct amount of data per ring
-        self.data = data or {}
+        self.app = ctx.get("app")
         self.cx = ctx.get("cx", 0.0)
         self.cy = ctx.get("cy", 0.0)
-        self.font_scale = ctx.get("font_scale", 1.0)
-        self.max_radius = ctx.get("max_radius", 300.0)
+        self.font_scale = ctx.get("font scale", 1.0)
+        self.max_radius = ctx.get("max radius", 300.0)
         self.radius_dict = ctx.get("radius_dict", {})
-        self.outer_rings = ctx.get("outer_rings", [])  # outer rings are togglable
-        self.chart_settings = ctx.get("chart_settings", {})
+        self.outer_rings = ctx.get("outer rings", [])  # outer rings are togglable
+        self.info = ctx.get("info", {})
+        self.chart_settings = ctx.get("chart settings", {})
         self.snap_targets = []
         self.font_size = 22  # default font size
         log.debug(
             f"ctx received : fontscale={self.font_scale} "
-            f"radius_dict={self.radius_dict} "
-            f"outer_rings={self.outer_rings} "
-            f"chart_settings={self.chart_settings} ",
+            f"radius dict={self.radius_dict} "
+            f"outer rings={self.outer_rings} "
+            f"chart settings={self.chart_settings} ",
             extra=routingnone,
         )
 
@@ -104,7 +106,7 @@ class Rings:
         else:
             positions = ring_entry
         _, mid_r, _ = self.get_ring_bounds(ring)
-        print(f"ringsnew : positions={positions}")
+        print(f"rings : positions={positions}")
         # create dict for name lookup
         object_by_name = {}
         for obj in positions:

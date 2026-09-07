@@ -1,12 +1,14 @@
-# managers/cycler.py
+# managers/uicycler.py
 # ruff: noqa: E402
 import logging
 
-log = logging.getLogger(__name__)
-extra = {"source": "cycler", "route": [""]}
-extrauser = {"source": "cycler", "route": ["terminal", "user"]}
-extratimeout4 = {"source": "cycler", "route": ["terminal"], "timeout": "4"}
-extratimeout6 = {"source": "cycler", "route": ["terminal"], "timeout": "6"}
+LOG = logging.getLogger(__name__)
+source = "uicycler"
+routing = {"source": source, "route": ["terminal"]}
+routingnone = {"source": source, "route": [""]}
+routinguser = {"source": source, "route": ["terminal", "user"]}
+routingtimeout4 = {"source": source, "route": ["terminal"], "timeout": "4"}
+routingtimeout6 = {"source": source, "route": ["terminal"], "timeout": "6"}
 import os
 import pandas as pd
 import swisseph as swe
@@ -34,12 +36,11 @@ MEMBERS_ORDER = [
 class Cycler:
     def __init__(self, app=None):
         self.app = app
-        self.notifier = getattr(app, "notifer", None)
-        self.signaler = getattr(app, "signaler", None)
-        log.debug(
-            # f"selfapp : {str(app.__class__.__name__)}",
-            f"hasselfnotifier : {hasattr(self.app, 'notifier')}",
-            extra=extra,
+        # self IS aumastroapp
+        LOG.debug(
+            f"whoisme : {self.app.__class__.__name__}"
+            f"\nhas-selfappnotifier : {hasattr(self.app, 'notifier')}",
+            extra=routingnone,
         )
 
     def file_properties(self, path: str) -> dict:
@@ -103,9 +104,9 @@ class Cycler:
 
     def run(self, query: dict):
         if not self.app or not hasattr(self.app, "files"):
-            log.error(
+            LOG.error(
                 "Data file path missing in app context",
-                extra=extra,
+                extra=routing,
             )
             return
 
@@ -127,9 +128,9 @@ class Cycler:
             start = max(pd.to_datetime(start), pd.to_datetime(file_props["start"]))
             end = min(pd.to_datetime(end), pd.to_datetime(file_props["end"]))
             if start > end:
-                log.warning(
+                LOG.warning(
                     f"cycle time range {start} - {end} is outside file time range",
-                    extrauser,
+                    extra=routinguser,
                 )
                 return
 
@@ -137,9 +138,9 @@ class Cycler:
             file_dataframe.loc[start:end] if start and end else file_dataframe
         )
         if dataframe_range.empty:
-            log.warning(
+            LOG.warning(
                 "missing data for selected range",
-                extrauser,
+                extra=routinguser,
             )
             return
 
@@ -157,9 +158,9 @@ class Cycler:
                 result_df = self.compute_wave(dataframe_range, members, varga)
 
             if result_df is None or result_df.empty:
-                log.warning(
+                LOG.warning(
                     f"rule '{rule_str}' has no data",
-                    extrauser,
+                    extra=routinguser,
                 )
                 continue
 
@@ -177,9 +178,9 @@ class Cycler:
                 "varga": varga,
                 "dataframe": result_df,
             })
-            log.info(
+            LOG.info(
                 f"wave saved : {rule_filename}",
-                extrauser,
+                extra=routinguser,
             )
 
         cycle = {"range": (start, end), "results": results}
@@ -209,9 +210,9 @@ class Cycler:
         return pd.DataFrame({"datetime": df_time_indexed.index, "cycle": out_vals})
 
     def declination_wave(self, tokens, datarange) -> pd.DataFrame:
-        log.debug(
+        LOG.debug(
             f"declination rule called : {tokens}",
-            extra=extra,
+            extra=routing,
         )
         return pd.DataFrame()
 

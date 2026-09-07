@@ -34,26 +34,25 @@ class Hotkeyer:
         }
 
     def register_hotkey(self, shortcut_str: str, callback: Callable) -> None:
-        """
-        Register a window-wide keyboard shortcut using GTK accelerator syntax.
-        Examples: '<Control>Left', '<Control><Shift>a', '<Control>n'
-        """
+        """window-wide keyboard shortcut using gtk accelerator syntax
+        examples : '<Control>Left', '<Control><Shift>a', '<Control>n'"""
         key = shortcut_str.lower()
         if key in self.shortcuts:
             self.unregister_hotkey(key)
 
         trigger = Gtk.ShortcutTrigger.parse_string(shortcut_str)
         if not trigger:
-            log.warning(f"Invalid shortcut string format: {shortcut_str}")
+            log.warning(f"invalid shortcut string format: {shortcut_str}")
+
             return
 
         def _action_wrapper(widget, args):
-            callback()
-            return True  # Prevents further signal propagation
+            result = callback()
+            # consume unless callback explicitly declines
+            return result is not False
 
         action = Gtk.CallbackAction.new(_action_wrapper)
         shortcut = Gtk.Shortcut.new(trigger, action)
-
         self.controller.add_shortcut(shortcut)
         self.shortcuts[key] = shortcut
 

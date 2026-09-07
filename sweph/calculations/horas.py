@@ -1,7 +1,11 @@
 # sweph/calculations/horas.py
 # calculate sunrise & sunset & planetary hour / hora
 # ruff: noqa: E402
-import logging as log
+import logging
+
+LOG = logging.getLogger(__name__)
+source = "horas"
+routing = {"source": source, "route": ["terminal"]}
 from helpers import ok, err
 import swisseph as swe
 from zoneinfo import ZoneInfo
@@ -9,9 +13,6 @@ from timezonefinder import TimezoneFinder
 from sweph.swetime import jd_to_custom_iso as jdtoiso
 from datetime import datetime, timezone
 
-source = "hora"
-route = ["terminal"]
-routing = {"source": source, "route": route}
 # weekday number to name
 WEEKDAY = {
     0: ("mon", "mo"),
@@ -119,13 +120,13 @@ def get_day_horas(jd_ut, lon, lat, alt=0.0, flag=0, tz_name=None):
         )
         srise_next = data[0]
     except swe.Error as e:
-        log.error(
+        LOG.error(
             f"sunrise / set calculation failed : {e}",
             extra=routing,
         )
         return None
     except Exception as e:
-        log.error(
+        LOG.error(
             f"unexpected error in sunrise / set : {e}",
             extra=routing,
         )
@@ -138,7 +139,7 @@ def get_day_horas(jd_ut, lon, lat, alt=0.0, flag=0, tz_name=None):
     #     f"DBG : getdayhoras :\nsrise {sunrise} | sset {sunset} | srnext {sunrise_next}\n"
     # )
     if not (srise < sset < srise_next):
-        log.error(
+        LOG.error(
             f"invalid hora calculation :\n"
             f"\tsunrise : {sunrise}\n"
             f"\tsunset : {sunset}\n"
@@ -176,8 +177,8 @@ def get_day_horas(jd_ut, lon, lat, alt=0.0, flag=0, tz_name=None):
             "lord": lord,
             "start jd": start,
             "end jd": end,
-            "start ev": to_event_str(start),  # type:ignore
-            "end ev": to_event_str(end),  # type:ignore
+            "start event": to_event_str(start),  # type:ignore
+            "end event": to_event_str(end),  # type:ignore
         })
     # print(f"DBG : getdayhoras : horas :\n{horas}")
     return horas

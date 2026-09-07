@@ -2,7 +2,7 @@
 # ruff: noqa: E402
 import logging
 
-log = logging.getLogger(__name__)
+LOG = logging.getLogger(__name__)
 source = "eventlocation"
 routing = {"source": source, "route": ["terminal"]}
 routingnone = {"source": source, "route": [""]}
@@ -17,8 +17,9 @@ class EventLocation:
     def __init__(self, mainwindow=None, app=None):
         if app is not None:
             self.app = app
-        log.debug(
-            f"eventlocation : whoisme={mainwindow.__class__.__name__}",
+        LOG.debug(
+            f"whoisapp={app.__class__.__name__}"
+            f"whoismainwindow={mainwindow.__class__.__name__}",
             extra=routingnone,
         )
         if mainwindow is not None:
@@ -55,17 +56,15 @@ class EventLocation:
         ddn_country,
     ):
         # store entry reference
-        self.mainwindow.entry = ent_city
+        self.entry = ent_city
         city = ent_city.get_text().strip()
         country_index = ddn_country.get_selected()
         country = ddn_country.get_model().get_string(country_index)
         iso3 = self.country_map.get(country)
-
         try:
             # todo hardcoded
             conn = sqlite3.connect("user/atlas/atlas.db")
             cursor = conn.cursor()
-
             cursor.execute(
                 """
                 SELECT name, latitude, longitude, elevation
@@ -75,14 +74,12 @@ class EventLocation:
                 """,
                 (iso3, f"%{city}%"),
             )
-
             cities = cursor.fetchall()
             conn.close()
             self.check_cities(sorted(cities))
-
         except Exception as e:
             self.app.notifier.error(
-                f"atlas db error\n\t{e}",
+                f"atlas db error : {e}",
                 source="eventlocation",
             )
 
@@ -94,13 +91,11 @@ class EventLocation:
                 route=["user"],
             )
             return
-
         elif len(cities) == 1:
             city, lat, lon, alt = cities[0]
             city_str = f"{city}, {lat}, {lon}, {alt}"
             self.selected_city = city_str
             self.update_entries(city_str)
-
         elif len(cities) > 1:
             self.show_city_dialog(cities)
 
@@ -112,10 +107,8 @@ class EventLocation:
         if len(parts) >= 4:
             city_name = parts[0]
             lat, lon, alt = parts[1:4]
-
             if self.entry:
                 self.entry.set_text(city_name)
-
             if self.location_callback:
                 self.location_callback(lat, lon, alt)
 
@@ -127,18 +120,16 @@ class EventLocation:
         )
         dialog.set_transient_for(self.mainwindow)
         dialog.set_default_size(-1, -1)
-
         content = dialog.get_content_area()
-
         scw = Gtk.ScrolledWindow()
         scw.set_propagate_natural_width(True)
         scw.set_propagate_natural_height(True)
         content.append(scw)
-
         listbox = Gtk.ListBox()
         listbox.set_selection_mode(Gtk.SelectionMode.SINGLE)
+        # listbox.set_activate_on_single_click(True)
 
-        def pick_city(row):
+        def pick_city(listbox, row):
             if row and (label := row.get_child()):
                 if isinstance(label, Gtk.Label):
                     selected = label.get_text()
@@ -147,7 +138,6 @@ class EventLocation:
                     dialog.close()
 
         listbox.connect("row-activated", pick_city)
-
         margin_h = 7
         for city in found_cities:
             row = Gtk.ListBoxRow()

@@ -44,12 +44,16 @@ def _decimal_to_ymd(period: float, year_length: float):
     H = int(rem_h)
     if y != 0 and m == 0 and d == 0:
         return f"{y:02} y"
+
     elif y == 0 and m == 0 and d == 0:
         return f"{H:02} h"
+
     elif y == 0 and m == 0:
         return f"{d:02d} d"
+
     elif y == 0:
         return f"{m:02d} m {d:02d} d"
+
     return f"{y:02d} y {m:02d} m {d:02d} d"
 
 
@@ -66,9 +70,13 @@ def _decimal_to_dms(decimal: float):
 
 def _decimal_to_hms(decimal: float):
     # convert decimal hour to hour
-    H = int(decimal)
-    M = int((decimal - H) * 60)
-    S = int((decimal - H - M / 60) * 3600)
+    total_secs = round(decimal * 3600)
+    H = total_secs // 3600
+    M = (total_secs % 3600) // 60
+    S = total_secs % 60
+    # H = int(decimal)
+    # M = int((decimal - H) * 60)
+    # S = int(round(decimal - H - M / 60) * 3600)
     return H, M, S
 
 
@@ -79,6 +87,7 @@ def _decimal_to_ra(decimal: float):
     minute = (hour - H) * 60
     M = int(minute)
     S = int(round((minute - M) * 60))
+
     return H, M, S
 
 

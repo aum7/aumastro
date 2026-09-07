@@ -2,7 +2,7 @@
 # ruff: noqa: E402
 import logging
 
-log = logging.getLogger(__name__)
+LOG = logging.getLogger(__name__)
 source = "datagraph"
 routing = {"source": source, "route": ["terminal"]}
 routingnone = {"source": source, "route": [""]}
@@ -32,10 +32,10 @@ class DataGraph(Gtk.Box):
         super().__init__(**kwargs)
         if app is not None:
             self.app = app
-        log.debug(
-            f"hasselfappnotifier : {hasattr(self.app, 'notifier')}"
-            f"\nhasselfappdispatcher : {hasattr(self.app, 'dispatcher')}",
-            # f"hasselfappsignaler : {hasattr(self.app, 'signaler')}",
+        # app IS aumastroapp
+        LOG.debug(
+            f"whoisapp : {app.__class__.__name__}",
+            # f"\nhasselfappdispatcher : {hasattr(self.app, 'dispatcher')}",
             extra=routingnone,
         )
         self.set_orientation(Gtk.Orientation.VERTICAL)
@@ -110,7 +110,7 @@ class DataGraph(Gtk.Box):
     def data_load(self):
         """load & plot data"""
         filepath = self.app.dispatcher.FILES["data"][0]
-        log.debug(
+        LOG.debug(
             f"dataload : filepath : {filepath}",
             extra=routingnone,
         )
@@ -389,7 +389,7 @@ class DataGraph(Gtk.Box):
                 )
         except Exception as e:
             # fail silently if numeric issues occur
-            log.error(
+            LOG.error(
                 f"failed setting horizontal price lines : {e}",
                 extra=routing,
             )
@@ -507,9 +507,8 @@ class DataGraph(Gtk.Box):
                 # normal click
                 if self.df is not None and 0 <= ix < len(self.df):
                     dt = self.df.index[ix]
-                    selected_e = self.app.dispatcher["selected event"]
+                    selected_e = self.app.dispatcher.selected_event
                     self.app.signaler.emit("datetime captured", (selected_e, dt))
-                    # print(f"datagraph : datetime : {dt}")
 
     def jump_bars(self, bars):
         """fast-jump cca 1 year (on hourly timeframe) forward or backward in data range"""
@@ -518,8 +517,10 @@ class DataGraph(Gtk.Box):
             df_len = len(self.full_df)
         else:
             return
+
         if cur_start is None or cur_end is None:
             return
+
         num = cur_end - cur_start
         if bars < 0 and cur_start == 0:
             self.app.notifier.warning(
@@ -528,6 +529,7 @@ class DataGraph(Gtk.Box):
                 route=["terminal", "user"],
             )
             return
+
         if bars > 0 and cur_end == df_len:
             self.app.notifier.warning(
                 "reached data end",
@@ -535,6 +537,7 @@ class DataGraph(Gtk.Box):
                 route=["terminal", "user"],
             )
             return
+
         new_start = min(max(0, cur_start + bars), df_len - num)
         new_end = new_start + num
         if new_end > df_len:

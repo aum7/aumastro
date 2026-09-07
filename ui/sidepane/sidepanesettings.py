@@ -2,7 +2,7 @@
 # ruff: noqa: E402
 import logging
 
-log = logging.getLogger(__name__)
+LOG = logging.getLogger(__name__)
 source = "sidepanesettings"
 routing = {"source": source, "route": ["terminal"]}  # todo default so no need
 routingnone = {"source": source, "route": [""]}
@@ -15,31 +15,28 @@ from gi.repository import Gtk  # type:ignore
 
 
 class SidepaneSettings(CollapsePanel):
-    def __init__(self, sidepane=None):
+    def __init__(self, mainwindow=None):
         super().__init__(title="settings", expanded=True)
-        if sidepane is not None:
-            self.sidepane = sidepane
-        self.app = getattr(sidepane, "app")
-        # self.app.dispatcher = getattr(sidepane, "dispatcher")
-        log.debug(
-            f"\nhasselfapp : {hasattr(sidepane, 'app')}",
-            # f"\nhasselfdispatcher : {hasattr(sidepane, 'dispatcher')}",
+        # sidepane IS mainwindow
+        if mainwindow is not None:
+            self.mainwindow = mainwindow
+        self.app = getattr(mainwindow, "app")
+        LOG.debug(
+            f"whoisme={mainwindow.__class__.__name__}"
+            f"\nhas-selfapp : {hasattr(mainwindow, 'app')}",
             extra=routingnone,
         )
         self.set_title_tooltip("sweph & application & chart settings")
         margin = 7
-        if self.sidepane:
-            # self.set_margin_start(margin)
+        if self.mainwindow:
             self.set_margin_end(margin)
-            # self.set_margin_top(margin)
-            # self.set_margin_bottom(margin)
         self.app.signaler.connect("settings changed", self.on_settings_change)
         self.build_ui()
 
     def on_settings_change(self, data=None):
         # received settings changed signal
         if not data:
-            log.debug("onsettingschange : data missing : exiting")
+            LOG.debug("onsettingschange : data missing : exiting")
 
             return
 
@@ -50,7 +47,7 @@ class SidepaneSettings(CollapsePanel):
 
     def sync_objects_checkboxes(self, selected):
         if not hasattr(self, "chk_objects"):
-            log.debug("syncobjectcheckboxes : chk_objects is missing : exiting")
+            LOG.debug("syncobjectcheckboxes : chk_objects is missing : exiting")
 
             return
 
@@ -107,9 +104,9 @@ class SidepaneSettings(CollapsePanel):
         )
         box_button.append(btn_none)
         box_objects.append(box_button)
-        # log.debug(f"pnlobjects : has-selfsidepane : {hasattr(self, 'sidepane')}")
-        # log.debug(f"pnlobjects : has-selfsidepaneapp : {hasattr(self.sidepane, 'app')}")
-        # log.debug(f"pnlobjects : whois self : {self.__class__.__name__}")
+        # LOG.debug(f"pnlobjects : has-selfsidepane : {hasattr(self, 'mainwindow')}")
+        # LOG.debug(f"pnlobjects : has-selfsidepaneapp : {hasattr(self.mainwindow, 'app')}")
+        # LOG.debug(f"pnlobjects : whois self : {self.__class__.__name__}")
         # main objects list from dispatcher
         lbx_objects = Gtk.ListBox()
         lbx_objects.set_selection_mode(Gtk.SelectionMode.NONE)
@@ -136,7 +133,7 @@ class SidepaneSettings(CollapsePanel):
             tooltip = data[3]
             row.set_tooltip_text(tooltip)
             check = Gtk.CheckButton(label=name)
-            log.debug(
+            LOG.debug(
                 f"\nselobjs={type(sel_objs)}"
                 f"\n\t{sel_objs}"
                 f"\n\tname={name}"
@@ -155,7 +152,7 @@ class SidepaneSettings(CollapsePanel):
         # sub-sub-panel: lots
         lots = self.app.dispatcher.LOTS
         sel_lots = self.app.dispatcher.selected_lots
-        # log.debug(f"\nsellots={type(sel_lots)}\n\t{sel_lots}")
+        # LOG.debug(f"\nsellots={type(sel_lots)}\n\t{sel_lots}")
         subsub_lots = CollapsePanel(title="lots / parts", indent=21, expanded=False)
         lbx_lots = Gtk.ListBox()
         lbx_lots.set_selection_mode(Gtk.SelectionMode.NONE)
@@ -206,7 +203,7 @@ class SidepaneSettings(CollapsePanel):
     def build_subpnl_housesys(self) -> CollapsePanel:
         subpnl_hsys = CollapsePanel(title="house system", indent=14, expanded=False)
         house_systems = self.app.dispatcher.HOUSE_SYSTEMS
-        # log.debug(f"housesystems={house_systems}")
+        # LOG.debug(f"housesystems={house_systems}")
         housesys_list = Gtk.StringList.new([
             f"({display}) {name}" for _, name, display in house_systems
         ])
@@ -373,7 +370,7 @@ class SidepaneSettings(CollapsePanel):
         )
         # single calculated flag todo ???
         swe_flags = self.app.dispatcher.SWE_FLAGS
-        # log.debug(f"builssubpnlflags : sweflags={swe_flags}")
+        # LOG.debug(f"builssubpnlflags : sweflags={swe_flags}")
         # flags from usersettings
         active_flags = self.app.dispatcher.active_flags
         for flag, data in swe_flags.items():
@@ -461,7 +458,7 @@ class SidepaneSettings(CollapsePanel):
             "activate",
             help.custom_ayanamsa_changed,
             "custom julian day utc",
-            self.sidepane,
+            self.mainwindow,
         )
         box_custom.append(Gtk.Label(label="julian day utc", halign=Gtk.Align.START))
         box_custom.append(ent_jd)
@@ -475,7 +472,7 @@ class SidepaneSettings(CollapsePanel):
             "activate",
             help.custom_ayanamsa_changed,
             "custom ayanamsa",
-            self.sidepane,
+            self.mainwindow,
         )
         box_custom.append(Gtk.Label(label="ayanamsa", halign=Gtk.Align.START))
         box_custom.append(ent_val)
@@ -489,7 +486,7 @@ class SidepaneSettings(CollapsePanel):
         subpnl_files = CollapsePanel(title="files & paths", indent=14, expanded=False)
         grid = Gtk.Grid(column_spacing=12, row_spacing=4)
         files = self.app.dispatcher.FILES
-        # log.debug(f"buildsubpnlfiles : files={files}")
+        # LOG.debug(f"buildsubpnlfiles : files={files}")
         for row, (key, value) in enumerate(files.items()):
             lbl_files = Gtk.Label(label=key, halign=Gtk.Align.START)
             ent_files = Gtk.Entry()

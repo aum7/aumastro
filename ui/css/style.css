@@ -21,7 +21,6 @@ label {
 
 collapse-panel {
   font-size: 16px;
-
   font-family: "opensanslightastro", "ui/font/osla";
   /* font-family: "UbuntuThin"; */
   padding: 3px;
@@ -49,7 +48,7 @@ collapse-panel {
   margin: 0px;
 }
 
-/* event text */
+/* sidepane event text */
 .label-event {
   font-size: 16px;
   padding-top: 0px;
@@ -57,12 +56,22 @@ collapse-panel {
   color: dodgerblue;
 }
 
-/* selected event text */
+/* sidepane selected event text */
 .label-event-selected {
   font-size: 18px;
   padding-top: 0px;
   padding-bottom: 0px;
   color: lime;
+}
+
+/* sidepane settings label */
+.label-settings {
+  color: darkorange;
+}
+
+/* sidepane search label */
+.label-search {
+  color: yellowgreen;
 }
 
 /* sidepane dropdown */

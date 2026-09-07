@@ -3,15 +3,11 @@
 # ruff: noqa: E402
 import logging
 
-log = logging.getLogger(__name__)
+LOG = logging.getLogger(__name__)
 source = "sidepane"
 routing = {"source": source, "route": ["terminal"]}
 routingnone = {"source": source, "route": [""]}
 import re
-import gi
-
-gi.require_version("Gtk", "4.0")
-from gi.repository import Gtk  # type: ignore
 from typing import Optional
 from datetime import datetime, timezone
 from ui.collapsepanel import CollapsePanel
@@ -20,6 +16,10 @@ from .eventinput import setup_event
 from .search import setup_search
 from .sidepanesettings import SidepaneSettings
 from .cycle import setup_cycle
+import gi
+
+gi.require_version("Gtk", "4.0")
+from gi.repository import Gtk  # type: ignore
 
 
 class SidepaneManager:
@@ -53,7 +53,6 @@ class SidepaneManager:
     }
 
     def init_sidepane(self, app=None):
-        # get events data from app
         # self IS mainwindow
         if app is not None:
             self.app = app
@@ -62,13 +61,13 @@ class SidepaneManager:
         # intialize panels
         self.clp_event_one = None
         self.clp_event_two = None
-        self.clp_tools = None
         self.clp_settings = None
+        # self.clp_tools = None
         # debug
-        log.debug(
+        LOG.debug(
             f"\ninitsidepane : whoisme={self.__class__.__name__}"
             f"\ninitsidepane : has-clpeventone={hasattr(self, 'clp_event_one')}",
-            extra=routing,
+            extra=routingnone,
         )
 
     def buttons_from_dict(
@@ -119,11 +118,14 @@ class SidepaneManager:
             self.clp_event_two.add_title_css_class("label-event-selected")
         # settings ie objects to calculate & flags to use etc
         self.clp_settings = SidepaneSettings(self)
+        self.clp_settings.add_title_css_class("label-settings")
         # self.clp_settings = setup_settings(self)
         # search module todo self or self.app ???
         self.clp_search = setup_search(self.app)
+        self.clp_search.add_title_css_class("label-search")
         # cycle wave module
         self.clp_cycle = setup_cycle(self.app)
+        self.clp_cycle.add_title_css_class("label-search")
         # append to box
         box_sidepane.append(self.clp_change_time)
         box_sidepane.append(self.clp_event_one)
@@ -178,7 +180,7 @@ ui/sidepane/sidepane.py"""
         # create dropdown
         self.ddn_time_periods = Gtk.DropDown.new_from_strings(self.time_periods_list)
         self.ddn_time_periods.set_tooltip_text(
-            "select period to use for change time\n(hk : arrow up / down)",
+            "select period to use for change time\n(hk : ctrl+arrow up / down)",
         )
         self.ddn_time_periods.add_css_class("dropdown")
         # set default time period : 1 day ; pick any period
@@ -196,7 +198,7 @@ ui/sidepane/sidepane.py"""
 
         return clp_change_time
 
-    def odd_time_period(self, dropdown):
+    def odd_time_period(self, dropdown, pspec=None):
         """on dropdown time period changed / selected"""
         selected = dropdown.get_selected()
         value = self.time_periods_list[selected]
@@ -255,7 +257,6 @@ ui/sidepane/sidepane.py"""
             dt_now = datetime.now(timezone.utc).replace(microsecond=0)
             # get julian day - verified as side-effect
             if dt_now:
-                # if dt_now is not None:
                 is_valid, jd, dt_corr = custom_iso_to_jd(
                     dt_now.year,
                     dt_now.month,
@@ -267,7 +268,7 @@ ui/sidepane/sidepane.py"""
                     # local_time=None,
                     # lon=None,
                 )
-                log.debug(f"changeeventtime : isvalid={is_valid}")
+                LOG.debug(f"changeeventtime : isvalid={is_valid}")
             # back to string in custom iso format
             if isinstance(jd, float):
                 dt_str = jd_to_custom_iso(jd)
@@ -281,14 +282,14 @@ ui/sidepane/sidepane.py"""
         try:
             current_text = entry.get_text()  # type:ignore
             # convert to verified (side-effect) julian day, keep negative year
-            jd, dt_corr, _ = custom_iso_to_jd(
+            is_valid, jd, dt_corr = custom_iso_to_jd(
                 *map(
                     int,
                     re.sub(r"(?<!^)-", " ", current_text).replace(":", " ").split(),
                 ),
                 calendar=b"g",
             )
-            log.debug(f"dtcorr={dt_corr}")
+            LOG.debug(f"dtcorr={dt_corr}")
             # change time by delta which is in julian days
             jd_new = jd + change_delta
             # back to custom iso format for string

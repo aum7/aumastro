@@ -2,7 +2,7 @@
 # ruff: noqa: E402
 import logging
 
-log = logging.getLogger(__name__)
+LOG = logging.getLogger(__name__)
 source = "mainwindow"
 routing = {"source": source, "route": ["terminal"]}
 from typing import Any, Optional
@@ -136,13 +136,10 @@ class MainWindow(
                 toast.set_timeout(self.DEFAULT_TIMEOUTS[msg.level])
             self.toast_overlay.add_toast(toast)
             # print("[DEBUG TOAST] toast added to overlay")
-
         except Exception as e:
-            log.error(
+            LOG.error(
                 f"error in toast notification : {e}\nmessage was : {msg.full_str()}"
             )
-            # print(f"error in toast notification: {str(e)}")
-            # print(f"message was: {msg.full_str()}")
 
         return False
 
@@ -182,6 +179,7 @@ class MainWindow(
         self.hotkeys.register_hotkey("<Shift>dollar", self.panes_all)  # shift+4
         self.hotkeys.register_hotkey("<Shift>percent", self.panes_movie)  # shift+5
         self.hotkeys.register_hotkey("<Shift>ampersand", self.on_data_seq)
+        self.hotkeys.register_hotkey("Escape", self.on_data_seq_cancel)
         self.hotkeys.register_hotkey("<Control>Up", self.obc_arrow_up)
         self.hotkeys.register_hotkey("<Control>Down", self.obc_arrow_dn)
         self.hotkeys.register_hotkey("<Control>Left", self.obc_arrow_l)
@@ -230,10 +228,6 @@ class MainWindow(
                 "transit",
                 not self.app.dispatcher.rings["transit"],
             ),
-        )
-        log.debug(
-            f"setuphotkeys : rings.transit={self.app.dispatcher.rings['transit']}",
-            extra=routing,
         )
         self.hotkeys.register_hotkey(
             "<Control>2",
@@ -287,14 +281,20 @@ class MainWindow(
             ),
         )
 
+    def on_data_seq_cancel(self):
+        if hasattr(self, "data_seq") and self.data_seq.running:
+            self.data_seq.stop()
+            return True
+        return False
+
     # help / manual
     def show_manual(self):
         self.app.notifier.debug(
-            "manual\n"
+            " ct = change time module at sidepane top"
+            "\ntop info : app name | selected event e1|e2 : date-time | selected ct period (ie 1 Day)"
             "\nhover mouse over buttons & text = show tooltips (aka detailed manual)"
             "\nhover mouse over (ie this) notification message = do not hide message"
             "\nesc : discard notification message"
-            "\n\ntop info bar : app name | selected event (e1/e2) | date-time | selected change time period (ie 1 Day)"
             "\n\nrecommended workflow :"
             "\nenter event 1 data = calculate event / birth chart"
             "\nif you want transit / progression etc (aka event 2) :"
@@ -303,30 +303,30 @@ class MainWindow(
             "\n\t\tnote: can also be simple synastry chart - enable 'transit' ring"
             "\n\tenter custom name 2 (ie 'marriage' - not saved currently)"
             "\ndelete date-time 2 = erase event 2 data (not interested in transit etc)"
-            # "\nnote : event name / title will be used for file saving"
-            "\n\nhotkeys (hk)"
+            "\n\nhotkeys (hk) :"
+            "\ntab/shift+tab or arrow up/down : navigate widgets in side pane"
+            "\nspace/enter : activate button / dropdown / entry when focused"
             "\nctrl+m : show manual / help (this message)"
             "\nctrl+s : toggle side pane"
             "\nctrl+e : toggle selected event"
-            "\n\t(ie for change time / time now & datagraph click (set datetime))"
-            "\narrow keys : up/down = change period"
-            "\n\t\tleft/right = change time <</>> for selected event"
+            "\n\tie for change time / time now & datagraph click (grab datetime)"
+            "\nctrl+arrow keys :"
+            "\n\tup/down = change period"
+            "\n\tleft/right = change time <</>> for selected event"
             "\nctrl+n : set time now for selected event location"
-            "\n\t(your computer time > utc > event location time)"
+            "\n\tyour computer time > utc > event location time"
             "\nctrl+f : toggle fixed ascendant vs ari 0° at zodiac left"
             "\nctrl+g : toggle glyphs visibility"
             "\nctrl+h : toggle harmonic / varga hX vs rasi h1 aspects table"  # harmonic
             "\nctrl+1-9 : toggle"
             "\n\ttransit|transit varga|p2|p3|p3m|d1|lunar|solar return|naksatras ring"
-            "\n\tnote : d1 primary direction goes with chart settings 'harmonic ring 1'"
-            "\ntab/shift+tab : navigate widgets in side pane"
-            "\nspace/enter : activate button / dropdown when focused"
+            "\n\tnote : d1 primary direction goes with chart setting 'harmonic ring 1'"
             "\nshift+1/2/3/4 : show single / double / triple / all panes"
             "\nshift+5 : toggle movie mode"
             "\nshift+6 : run printscreen sequence"
-            "\n\tnote : could take a lot of time ! close app to force stop"
+            "\n\tesc : cancel sequence"
             "\nshift+v : toggle vimsottari level"
-            "\nshift+r : toggle astro chart angle ruler",
+            "\nshift+r : toggle astro chart angle ruler / hover info",
             source="manual",
             timeout=5,
             route=["user"],

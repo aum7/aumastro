@@ -4,7 +4,7 @@
 import logging
 
 # logging : messages sent from where & to which recipients
-log = logging.getLogger(__name__)
+LOG = logging.getLogger(__name__)
 source = "dispatcher"
 routing = {"source": source, "route": ["terminal"]}
 routingnone = {"source": source, "route": [""]}
@@ -26,9 +26,10 @@ class Dispatcher:
     def __init__(self, app=None):
         if app is not None:
             self.app = app
-        # log.debug(f"whoisme={self.__class__.__name__}")
-        # log.debug(f"has-selfappsidepane={hasattr(self.app, 'sidepane')}")
-        self.astro_data = {"e1": {}, "e2": {}}
+        # LOG.debug(f"whoisme={self.__class__.__name__}")
+        # LOG.debug(f"has-selfappsidepane={hasattr(self.app, 'sidepane')}")
+        self.events_data = {"e1": {}, "e2": {}}
+        # self.event_package = {}
         # explicit selected event : the one arrived last or be user-selected
         self.selected_event = "e1"
         # select event for objects button
@@ -115,7 +116,7 @@ class Dispatcher:
         self.app.signaler.connect("event changed", self.on_event_change)
         self.app.signaler.connect("e2 cleared", self.on_e2_clear)
         # self.app.signaler.connect("settings changed", self.on_settings_change)
-        log.debug(
+        LOG.debug(
             f"selobjs1={self.selected_objects_e1}"
             f"\nselobjs2={self.selected_objects_e2}"
             f"\nsellots={self.selected_lots}"
@@ -208,36 +209,14 @@ class Dispatcher:
         self.recalculate(event_id)
 
     def set_event_data(self, event_id: str, dataset: dict):
-        # get sweph & chart data collected todo do we need this ???
-        # calculations are in recalculate : this one sets chart sweph fixed stars
-        # lot eclipses syzygy chart info chart info extra
-        # self.astro_data[event_id]["chart"] = dataset["chart"]
-        # self.astro_data[event_id]["sweph"] = dataset["sweph"]
-        if "chart" in dataset:
-            self.astro_data[event_id]["chart"] = dataset["chart"]
-        if "sweph" in dataset:
-            self.astro_data[event_id]["sweph"] = dataset["sweph"]
-        # collect event 1 extra objects
-        # if event_id == "e1":
-        #     for key in ["fixed stars", "lots", "eclipses", "syzygy"]:
-        #         if key in dataset:
-        #             self.astro_data[event_id][key] = dataset[key]
-        #     if "chart info" in dataset:
-        #         self.astro_data["chart info"] = dataset["chart info"]
-        #     if "chart info extra" in dataset:
-        #         self.astro_data["chart info extra"] = dataset["chart info extra"]
-        # e1_data = self.astro_data["e1"]
-        # # logging
-        # log.debug(
-        #     # f"e1 unpacked :\npos : {len(e1_data.get('positions', {}))}"
-        #     f"\nlots : {len(e1_data.get('lots', {}))}"
-        #     f"\nstars : {len(e1_data.get('stars', {}))}",
-        #     extra=routing,
-        # )
+        # store incoming event data : local calculations only
+        LOG.debug("inside seteventdata")
+        self.events_data[event_id]["chart"] = dataset["chart"]
+        self.events_data[event_id]["sweph"] = dataset["sweph"]
 
     def on_e2_clear(self):
         # handle e2 removal
-        self.astro_data["e2"] = {}
+        self.events_data["e2"] = {}
         self.update_titlebar()
         self.e2_active = False
 
@@ -303,7 +282,6 @@ class Dispatcher:
             self.app.signaler.emit(
                 "settings changed", {"custom_ayanamsa": self.CUSTOM_AYANAMSA}
             )
-            # self.recalculate("all")
             self.recalculate("e1")
             if self.e2_active:
                 self.recalculate("e2")
@@ -331,33 +309,34 @@ class Dispatcher:
             if attr_name not in visual_settintgs:
                 self.recalculate(self.selected_event)
 
-    def update_ring(self):
+    def update_rings(self):
         # todo add code
         pass
 
     def recalculate(self, event_id: str):
         # on event or settings change > recalculate astodata
         # todo separate e1 & e2 func, re-pack duplicated funcs for reuse
+        event_package = {}
         if event_id == "e2" and not self.e2_active:
-            log.debug(
+            LOG.debug(
                 "recalculate : received 'e2' but e2_active is false > investigate",
                 extra=routing,
             )
             return
 
-        sweph = self.astro_data[event_id].get("sweph")
+        sweph = self.events_data[event_id]["sweph"]
         if not sweph:
-            log.debug(
-                f"recalculate : {event_id} has no sweph data yet > exiting",
+            LOG.debug(
+                f"recalculate : {event_id} has no sweph data yet > investigate",
             )
             return
 
-        if not sweph["jd_ut"]:
-            log.debug("recalculate : sweph has no jdut > investigate")
+        if not sweph["jd ut"]:
+            LOG.debug("recalculate : sweph has no jdut > investigate")
 
             return
         # mandatory
-        jdut = sweph["jd_ut"]
+        jdut = sweph["jd ut"]
         lat = sweph["lat"]
         lon = sweph["lon"]
         alt = sweph["alt"] or 0.0
@@ -373,44 +352,55 @@ class Dispatcher:
         # house cusps & ascmc todo
         # calculate all-day horas :from sunrise to sunset | wall clock new day 00:00
         # def calculate_horas(jd_ut=None, geo=(), objs=(), flag=0, params=None):
-        self.astro_data[event_id]["chart"]["horas"] = calculate_horas(
+        horas = calculate_horas(
             jd_ut=jdut, geo=(lon, lat, alt), flag=self.swe_flag, params={33, 14}
         )
+        if horas["status"] != "ok":
+            LOG.error(
+                f"horas calculation failed for {event_id} : {horas['error']}",
+                extra=routing,
+            )
+            return
         # after getting daily horas extract current hora if needed
         # curr_hora1 = self.astro_data["e1"]["chart"]["horas"]["current hora"]
-        self.app.signaler.emit("data calculated", self.astro_data[event_id])
+        # event_package[event_id]["horas"] = horas
+        chart = self.events_data[event_id]["chart"]
+        event_package = {
+            "horas": horas["data"]["horas"],
+            "current hora": horas["data"]["current hora"],
+            "info": {
+                "hsys": self.selected_hsys,
+                "zod": "sid" if "sidereal zodiac" in self.active_flags else "tro",
+                "ayanamsa": self.selected_ayanamsa,
+                "location": chart["location"],
+                "datetime": chart["datetime"],
+            },
+        }
+        self.app.signaler.emit("package ready", event_id, event_package)
         self.update_titlebar()
 
     def update_titlebar(self):
         # grab needed data & construct string to be displayed on mainwindow titlebar
-        event = self.selected_event
-        ad = self.astro_data[event].get("chart")  # .get("datetime") if event else None
-        dt = ad.get("datetime") if ad else None
+        dt1 = self.events_data["e1"]["datetime"]
+        dt2 = self.events_data["e2"]["datetime"]
         # self.app.notifier.debug(f"updatetitlebar : ad={ad} dt={dt}")
         title = "aumastro"
-        if event and dt:
-            title += f" | {event} : {dt}"
-        elif event:
-            title += f" | {event} : no date"
-        sel_year = self.selected_year_period[1]
-        if event and dt:
-            title += f" | {event} : {dt}"
-        elif event:
-            title += f" | {event} : no date"
-        if self.age_years:
-            age_y_str = _decimal_to_ymd(self.age_years, sel_year).replace(" ", "")
-            # remove spaces to save titlebar space
-            # age_y = age_y.replace(" ", "")
-            title += f" | age : {age_y_str}"
-        if self.age_months:
-            title += f" - lun : {self.age_months:.2f}m"
-        # todo check below
-        change_time = self.selected_change_time_period
-        if change_time:
-            title += f" | ct : {change_time}"
-        elif change_time is None:
-            title += " | ct : 1 D"
-            #  send signal & subscribe in mainwindow
+        if dt1:
+            title += f" | e1 : {dt1}"
+        if dt2:
+            title += f" | e2 : {dt2}"
+        if dt1 and dt2:
+            if self.age_years:
+                age_y_str = _decimal_to_ymd(
+                    self.age_years, self.selected_year_period[1]
+                ).replace(" ", "")
+                title += f" ] age : {age_y_str} y"
+            if self.age_months:
+                title += f" - lun : {self.age_months:.2f} m"
+        change_time = self.selected_change_time_period or "1 D"
+        title += f" | ct : {change_time}"
+        #  send signal & subscribe in mainwindow
+        # update titlebar
         self.app.signaler.emit("update titlebar", {"title": title})
 
     def event_selection(self, event_id: str):
@@ -436,7 +426,7 @@ class Dispatcher:
         # todo do we use this ???
         self.app.signaler.emit("event selected", event_id)
         self.update_titlebar()
-        log.debug(
+        LOG.debug(
             f"{event_id} selected",
-            extra=routing,
+            extra=routingnone,
         )

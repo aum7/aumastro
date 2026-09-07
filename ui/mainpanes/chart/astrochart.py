@@ -2,10 +2,12 @@
 # ruff: noqa: E402, F821
 import logging
 
-log = logging.getLogger(__name__)
-extra = {"source": "astrochart", "route": [""]}
-extratimeout4 = {"source": "astrochart", "route": ["terminal"], "timeout": "4"}
-extratimeout6 = {"source": "astrochart", "route": ["terminal"], "timeout": "6"}
+LOG = logging.getLogger(__name__)
+source = "astrochart"
+routing = {"source": source, "route": ["terminal"]}
+routingnone = {"source": source, "route": [""]}
+routingtimeout4 = {"source": source, "route": ["terminal", "user"], "timeout": "4"}
+routingtimeout6 = {"source": source, "route": ["terminal", "user"], "timeout": "6"}
 from ui.mainpanes.chart.chartinspector import ChartInspector
 from ui.mainpanes.chart.rings import Rings
 import gi
@@ -19,16 +21,14 @@ class AstroChart(Gtk.Box):
 
     def __init__(self, app=None, **kwargs):
         super().__init__(**kwargs)
+        # app IS mainwindow
         if app is not None:
             self.app = app
-        log.debug(
-            f"hasselfappnotifier : {hasattr(self.app, 'notifier')}"
-            f"\nhasselfappdispatcher : {hasattr(self.app, 'dispatcher')}",
-            # f"hasselfappsignaler : {hasattr(self.app, 'signaler')}",
-            extra=extra,
+        LOG.debug(
+            f"\nwhoisapp : {app.__class__.__name__}"
+            f"\nwhoisselfapp : {self.app.__class__.__name__}",
+            extra=routingnone,
         )
-        # self.notifier = self.app.notifier
-        # signal = self.app.signaler
         # cairo drawing area
         self.drawing_area = Gtk.DrawingArea()
         self.drawing_area.set_draw_func(self.draw)
@@ -36,43 +36,26 @@ class AstroChart(Gtk.Box):
         self.drawing_area.set_vexpand(True)
         self.append(self.drawing_area)
         # data
-        self.events_data = {}
+        self.event_package = {}
         self.chart_settings = getattr(self.app, "chart_settings", {})
-        self.extra_info = {}
+        # self.extra_info = {}
         # self.snap_targets = []
         # subscribe to signals
-        self.app.signaler.connect("data calculated", self.on_data_calculate)
+        self.app.signaler.connect("package ready", self.on_package_ready)
         # if settings change > data changes > datamanager recalculates & adjusts
         # signal._connect("settings_changed", self.settings_changed)
         self.inspector = ChartInspector(self)
 
-    def on_data_calculate(self, data):
-        log.debug(
-            f"calculated data received : {data}",
-            extra=extra,
+    def on_package_ready(self, event: str, package: dict):
+        if not package and event in self.event_package:
+            del self.event_package[event]
+        else:
+            self.event_package[event] = package
+        LOG.debug(
+            f"event package received : {package}",
+            extra=routing,
         )
-
-    # todo datamanager takes below code & settings_changed
-    # on data received : ...queue_draw()
-    # def data_calculated(self, event: str, data: dict):
-    #     if event not in ("e1", "e2"):
-    #         return
-
-    #     if not data and event in self.events_data:
-    #         del self.events_data[event]
-    #     else:
-    #         self.events_data[event] = data
-    #     self.extra_info["hsys"] = getattr(self.app, "selected_house_sys_str", "")
-    #     self.extra_info["zod"] = (
-    #         "sid" if getattr(self.app, "is_sidereal", False) else "tro"
-    #     )
-    #     self.extra_info["aynm"] = getattr(self.app, "selected_ayan_str", "-") or "-"
-    #     self.drawing_area.queue_draw()
-
-    # def settings_changed(self, arg):
-    #     # grab data & redraw
-    #     self.chart_settings = getattr(self.app, "chart_settings", {})
-    #     self.drawing_area.queue_draw()
+        self.drawing_area.queue_draw()
 
     def draw(self, area, cr, width, height):
         # get center and base radius
@@ -83,7 +66,7 @@ class AstroChart(Gtk.Box):
         font_scale = base / 300.0
         max_radius = base * 0.95
         outer_rings = []
-        e2_active = "e2" in self.events_data and bool(self.events_data["e2"])
+        e2_active = "e2" in self.event_package and bool(self.event_package["e2"])
         if e2_active:
             for key in (
                 "transit",
@@ -138,20 +121,23 @@ class AstroChart(Gtk.Box):
         for ring, portion in inner_portions.items():
             radius_dict[ring] = max_radius * (max_inner * portion)
         # msg += f"\nradiusdict : {radius_dict}"
+        selected_event = self.app.dispatcher.selected_event
+        info = self.event_package.get(selected_event, {}).get("info", {})
         ctx = {
             "cx": cx,
             "cy": cy,
-            "font_scale": font_scale,
-            "max_radius": max_radius,
-            "radius_dict": radius_dict,
-            "outer_rings": outer_rings,
-            "extra_info": self.extra_info,
-            "chart_settings": self.chart_settings,
-            "notify": self.notify,
-            "movie_mode": getattr(self.app, "movie_mode", False),
+            "font scale": font_scale,
+            "max radius": max_radius,
+            "radius dict": radius_dict,
+            "outer rings": outer_rings,
+            "info": info,
+            "chart settings": self.chart_settings,
+            "app": self.app,
+            # "notify": self.notify,
+            # "movie mode": self.app.movie_mode,
         }
         # repeated code : above = already sent via ctx
         # self.max_radius = max_radius
         # self.radius_dict = radius_dict
-        rings = Rings(ctx, self.events_data)  # or we draw in rings.py
+        rings = Rings(ctx, self.event_package)  # or we draw in rings.py
         rings.draw(cr)

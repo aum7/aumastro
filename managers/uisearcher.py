@@ -1,11 +1,13 @@
-# ui/sidepane/searchmanager.py
+# managers/uisearcher.py
 # ruff: noqa: E402
 import logging
 
-log = logging.getLogger(__name__)
-extra = {"source": "searcher", "route": [""]}
-extratimeout4 = {"source": "searcher", "route": ["terminal"], "timeout": "4"}
-extratimeout6 = {"source": "searcher", "route": ["terminal"], "timeout": "6"}
+LOG = logging.getLogger(__name__)
+source = "uisearcher"
+routing = {"source": source, "route": ["terminal"]}
+routingnone = {"source": source, "route": [""]}
+routingtimeout4 = {"source": source, "route": ["terminal"], "timeout": "4"}
+routingtimeout6 = {"source": source, "route": ["terminal"], "timeout": "6"}
 import os
 import swisseph as swe
 import pandas as pd
@@ -16,28 +18,20 @@ from sweph.calculations.transitvarga import get_varga_lon as vargalon
 from datetime import date, timedelta, datetime, timezone
 from zoneinfo import ZoneInfo
 from sweph.swetime import jd_to_custom_iso as jdtoiso
-# import gi
-# gi.require_version("Gtk", "4.0")
-# from gi.repository import Gtk  # type: ignore
 
 
 class Searcher:
     def __init__(self, app=None):
         if app is not None:
             self.app = app
-        self.dispatcher = self.app.dispatcher
-        self.notifier = self.app.notifier
-        self.signaler = self.app.signaler
-        log.debug(
-            # f"selfapp : {self.app.__class__.__name__}",
-            # f"selfapp : {hasattr(self.app, 'app')}",
-            f"hasselfnotifier : {hasattr(self.app, 'notifier')}",
-            extra=extra,
+        # self IS aumastroapp
+        LOG.debug(
+            f"whoisselfapp : {self.app.__class__.__name__}",
+            extra=routingnone,
         )
 
     def file_properties(self, path):
         filename = Path(path).name.lower()
-        # print(f"searchmanager : filename : {filename}")
         timeframe = "h"
         if "_10m" in filename:
             timeframe = "10m"
@@ -60,7 +54,7 @@ class Searcher:
 
     def run(self, query):
         # data file : user/data/ folder
-        file_props = self.dispatcher.app_settings.get("files")
+        file_props = self.app.dispatcher.get("files")
         # file_props = self.file_properties(self.app.files.get("data"))
         # store results to
         save_dir = "user/data/search"
@@ -93,11 +87,11 @@ class Searcher:
                 (file_dataframe.iloc[:, 0] >= start)
                 & (file_dataframe.iloc[:, 0] <= end)
             ].copy()
-        log.info(
+        LOG.info(
             f"running search from {start} to {end}",
-            extra=extra,
+            extra=routing,
         )
-        log.debug(
+        LOG.debug(
             # f"run : query : {query}\n"
             # f"filename : {filename}\n"
             # f"filedataframe : {file_dataframe}\n"
@@ -105,7 +99,7 @@ class Searcher:
             # f"searchdatarange : {search_datarange}\n"
             # f"search timerange : {search_timerange}\n"
             f"parsedrules : {parsed_rules}\n",
-            extra=extra,
+            extra=routing,
         )
         for parsed in parsed_rules:
             rule_str = parsed["rule"]
@@ -117,9 +111,9 @@ class Searcher:
             )
             if is_clear:
                 self.app.signaler.emit("clear search plots")
-                log.info(
+                LOG.info(
                     "clearing search plots",
-                    extra=extra,
+                    extra=routing,
                 )
                 # do not create or save any csv
                 return
@@ -139,9 +133,9 @@ class Searcher:
                 rows = self.sunriseset(start, end)
                 if rows:
                     self.sunrise_json(rows, start, end, outdir=save_dir)
-                    log.info(
+                    LOG.info(
                         f"sunrise result saved to {save_dir} .json file",
-                        extratimeout6,
+                        extra=routingtimeout6,
                     )
                 continue
             # make sure search time range fits into file time range
@@ -149,12 +143,12 @@ class Searcher:
                 start = max(start, file_start)
                 end = min(end, file_end)
                 if start > end:
-                    log.warning(
+                    LOG.warning(
                         f"search time range {start} - {end}"
                         "\n  is outside file time range"
                         f"\nfile {file_start} - {file_end} :"
                         "\n  no search possible : exiting ...",
-                        extra=extra,
+                        extra=routing,
                     )
                     return
             main_place = parsed["place"]
@@ -173,17 +167,17 @@ class Searcher:
                 result.to_csv(os.path.join(save_dir, rule_filename), index=False)
                 # trigger search results plot
                 self.app.signaler.emit("plot search result")
-            log.info(
+            LOG.info(
                 f"search result saved : {rule_filename}",
-                extratimeout6,
+                extra=routingtimeout6,
             )
 
     def sunrise_json(self, rows, start, end, outdir="sunrise"):
-        chart = getattr(self.dispatcher, "e1 chart", None)
+        chart = getattr(self.app.dispatcher, "e1 chart", None)
         if chart is None:
-            log.error(
+            LOG.error(
                 "missing e1 chart data : exiting ...",
-                extra=extra,
+                extra=routing,
             )
             return
         country = chart.get("country", "/")
@@ -208,8 +202,8 @@ class Searcher:
         print(f"searcher : generic rule called : {args}")
 
     def naksatra_lord(self, tokens, datarange):
-        use_28 = self.dispatcher.chart_settings.get("use 28 mansions", False)
-        use_mean_node = self.dispatcher.chart_settings.get("mean node", False)
+        use_28 = self.app.dispatcher.chart_settings.get("use 28 mansions", False)
+        use_mean_node = self.app.dispatcher.chart_settings.get("mean node", False)
         hits = []
         who = next((tvalue for ttype, tvalue in tokens if ttype == "object"), None)
         # where_place = next(
@@ -241,7 +235,7 @@ class Searcher:
             )
             # get object longitude
             if code is not None:
-                result, _ = swe.calc_ut(jd, code, self.dispatcher.swe_flag)
+                result, _ = swe.calc_ut(jd, code, self.app.dispatcher.swe_flag)
                 who_pos = result[0]  # longitude
             # convert to varga longitude
             who_varga_pos = vargalon(who_pos) if who_pos is not None else None
@@ -271,7 +265,7 @@ class Searcher:
         else:
             hits_filter = hits
         search_result = pd.DataFrame(hits_filter)
-        log.debug(
+        LOG.debug(
             # f"\nwho : {who} | whereplace : {where_place} | "
             # f"varga : {varga} | forwho : {for_who}\n"
             # f"jd : {jd}\n"
@@ -279,7 +273,7 @@ class Searcher:
             # f"whopos : {who_pos} | whovargapos : {who_varga_pos}\n",
             # f"v9map :\n{v9_map}",
             f"searchresult : {search_result}",
-            extra=extra,
+            extra=routing,
         )
         return search_result
 
@@ -290,7 +284,7 @@ class Searcher:
         if who is None:
             return pd.DataFrame()
         code, _ = objcode(
-            who, self.dispatcher.chart_settings.get("use mean node", False)
+            who, self.app.dispatcher.chart_settings.get("use mean node", False)
         )
         if code is None:
             return pd.DataFrame()
@@ -302,7 +296,7 @@ class Searcher:
                 dt.year, dt.month, dt.day, dt.hour + dt.minute / 60 + dt.second / 3600
             )
             result, _ = swe.calc_ut(
-                jd, code, self.dispatcher.swe_flag | swe.FLG_EQUATORIAL
+                jd, code, self.app.dispatcher.swe_flag | swe.FLG_EQUATORIAL
             )
             decl = result[1]
             values.append((dt, decl))
@@ -360,14 +354,14 @@ class Searcher:
 
     def sunriseset(self, start, end):
         # app = self.app
-        sweph_flag = getattr(self.dispatcher.swe_settings, "swe flag", 0)
+        sweph_flag = getattr(self.app.dispatcher.swe_settings, "swe flag", 0)
         # need location : event 1
-        sweph = self.dispatcher.events.get("e1", None)
+        sweph = self.app.dispatcher.events.get("e1", None)
         chart = self.app.dispatcher.events.get("chart", None)
         if not sweph or not chart:
-            log.error(
+            LOG.error(
                 "missing e1 data",
-                extra=extra,
+                extra=routing,
             )
             return []
         lon = sweph.get("lon")
@@ -376,9 +370,9 @@ class Searcher:
         tz_name = chart.get("timezone")
         weekdays = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
         jd_start = swe.julday(start.year, start.month, start.day, 0.0)
-        log.debug(
+        LOG.debug(
             f"jdstart : {jdtoiso(jd_start)}",
-            extra=extra,
+            extra=routing,
         )
         jd_end = swe.julday(end.year, end.month, end.day, 0.0)
         rows = []
@@ -398,7 +392,6 @@ class Searcher:
                     attemp=0.0,
                     flags=sweph_flag,
                 )
-
                 ret_set, data_set = swe.rise_trans(
                     jd,
                     swe.SUN,
@@ -409,24 +402,26 @@ class Searcher:
                     flags=sweph_flag,
                 )
                 if ret_rise < 0 or ret_set < 0:
-                    log.error(
+                    LOG.error(
                         f"sunrise / set calculation failed at lat {lat} & lon {lon}",
-                        extra=extra,
+                        extra=routing,
                     )
                 srise = data_rise[0]
                 sset = data_set[0]
             except Exception as e:
-                log.error(
+                LOG.error(
                     f"sunrise / set calculation failed\nerror : {e}",
-                    extra=extra,
+                    extra=routing,
                 )
                 # to utc
-                dt_rise_utc = datetime.strptime(
-                    jdtoiso(srise), "%Y-%m-%d %H:%M:%S"
-                ).replace(tzinfo=timezone.utc)
-                dt_set_utc = datetime.strptime(
-                    jdtoiso(sset), "%Y-%m-%d %H:%M:%S"
-                ).replace(tzinfo=timezone.utc)
+                if srise is not None:
+                    dt_rise_utc = datetime.strptime(
+                        jdtoiso(srise), "%Y-%m-%d %H:%M:%S"
+                    ).replace(tzinfo=timezone.utc)
+                if sset is not None:
+                    dt_set_utc = datetime.strptime(
+                        jdtoiso(sset), "%Y-%m-%d %H:%M:%S"
+                    ).replace(tzinfo=timezone.utc)
             # to local time
             if tz_name and dt_rise_utc and dt_set_utc:
                 dt_rise_event = dt_rise_utc.astimezone(ZoneInfo(tz_name))
@@ -457,7 +452,7 @@ class Searcher:
         outdir="user/data/search",
     ):
         if start is None or end is None:
-            log.warning(
+            LOG.warning(
                 "missing data range",
             )
             return None
@@ -492,14 +487,14 @@ class Searcher:
             filename = f"aspect_{from_obj}_{degree}_v{varga}.csv"
             df.to_csv(os.path.join(outdir, filename), index=False)
             self.app.signaler.emit("plot search result")
-            log.info(
+            LOG.info(
                 "plot aspect signal emitted",
-                extra=extra,
+                extra=routing,
             )
             return df
-        log.info(
+        LOG.info(
             "no aspect found",
-            extra=extra,
+            extra=routing,
         )
         return None
 
