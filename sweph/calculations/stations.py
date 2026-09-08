@@ -1,12 +1,14 @@
 # sweph/calculations/stations.py
 # ruff: noqa: E402, E701
-import logging as log
+import logging
+
+LOG = logging.getLogger(__name__)
+source = "stations"
+routing = {"source": source, "route": ["terminal"]}
 import swisseph as swe
 from helpers import _object_name_to_code as objcode, ok, err
 from sweph.constants import STATION_SPEED, RETRO_DAYS
 
-source = "stations"
-route = ["terminal"]
 last_stations = {}
 
 
@@ -100,36 +102,39 @@ def find_stations(body, jd, flag):
     return s_prev, s_next, curr_dir
 
 
-def calculate_stations(jd_ut=None, geo=(), objs=(), flag=0, params=None):
+def calculate_stations(jd_ut, objs, mean_node, flag=0):
     # calculate retro stations & direction for event
     if jd_ut is None:
         return err("invalid jd_ut")
-    p = params or {}
-    use_mean_node = p.get("use_mean_node", False)
+    mean_node = mean_node
     # if topocentric calculations
     # if (flag & swe.FLG_TOPOCTR) and geo and len(geo) == 3:
     #     swe.set_topo(geo[0], geo[1], geo[2])
     stations = []
     for obj in objs:
-        code, name = objcode(obj, use_mean_node)
+        code, name = objcode(obj, mean_node)
         if code not in STATION_SPEED:
-            log.error(
-                "code not in stations speed",
-                extra={"source": source, "route": route},
+            LOG.error(
+                "code not in stations speed > investigate",
+                extra=routing,
             )
+            # todo return err ???
             continue
         # station previous & next + current direction
         s_prev, s_next, direction = find_stations(code, jd_ut, flag)
         if s_prev is None or s_next is None:
-            log.error(
-                "missing previous or next station",
-                extra={"source": source, "route": route},
+            msg = "missing previous or next station"
+            LOG.error(
+                msg,
+                extra=routing,
             )
-            continue
+            return err(msg)
+            # continue
         stations.append({
             "name": name,
             "prevstation": s_prev,
             "nextstation": s_next,
             "direction": direction,
         })
+
     return ok(stations)

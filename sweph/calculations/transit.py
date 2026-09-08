@@ -4,12 +4,13 @@
 # import logging as log
 from helpers import err
 
-source = "transit"
-route = ["terminal"]
+# source = "transit"
+# route = ["terminal"]
 
 
 # do we need transit as e2 already is calculated
-def calculate_transit(jd_ut=None, geo=(), objs=(), flag=0, params=None):
+def calculate_transit():
+    return err("transit = e2 : already exists")
     # gather transit data
     # check against lumies since e1_sweph can have 0 objects (user-selectable)
     # jd_ut not needed as we already have e2 calculations
@@ -20,4 +21,3 @@ def calculate_transit(jd_ut=None, geo=(), objs=(), flag=0, params=None):
     # pos = p.get("positions")
     # houses = p.get("houses")
     # if isinstance(pos, dict):
-    return err("transit = e2 : already exists")

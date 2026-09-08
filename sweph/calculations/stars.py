@@ -1,27 +1,24 @@
-# sweph/calculations/start.py
+# sweph/calculations/stars.py
 # ruff: noqa: E402
 # swe.fixstar2_ut : star name (catalog or nomenclature), tjd_ut, flags
 # returns : (lon, lat, dist, speeds : lon, lat, dist), star name, flags used
 # eta tauri : ("Alcyone", "Alcyone, Krttika", "etTau"),
-import logging as log
+import logging
+
+LOG = logging.getLogger(__name__)
+source = "stars"
+routing = {"source": source, "route": ["terminal"]}
 from helpers import ok, err
 import swisseph as swe
 
-source = "stars"
-route = ["terminal"]
-routing = {"source": source, "route": route}
 
-
-def calculate_stars(jd_ut=None, geo=(), objs=(), flag=0, params=None):
+def calculate_stars(jd_ut, stars_list, flag=0):
     # calculate positions of stars, listed in user/fixedstars.py
     if jd_ut is None:
         return err("invalid jd_ut")
-
-    p = params or {}
-    stars_list = p.get("stars_list")
+    stars_list = stars_list
     if not stars_list:
         return err("missing stars list")
-
     stars = []
     name, nomencl = None, None
     for star in stars_list:
@@ -37,14 +34,10 @@ def calculate_stars(jd_ut=None, geo=(), objs=(), flag=0, params=None):
                 "lon": lon,
                 "nomencl": nomencl,
             })
-        except swe.Error as e:
-            log.error(
+        except (swe.Error, Exception) as e:
+            LOG.error(
                 f"stars calculation error : {e}",
                 extra=routing,
             )
-        except Exception as e:
-            log.error(
-                f"stars calculation exception : {e}",
-                extra=routing,
-            )
+
     return ok(stars)

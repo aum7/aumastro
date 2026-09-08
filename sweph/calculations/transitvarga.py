@@ -1,12 +1,12 @@
 # sweph/calculations/transitvarga.py
 # simple division by user input
 # ruff: noqa: E402, E701
-import logging as log
-from helpers import ok, err
+import logging
 
+LOG = logging.getLogger(__name__)
 source = "transitvarga"
-route = ["terminal"]
-routing = {"source": source, "route": route}
+routing = {"source": source, "route": ["terminal"]}
+from helpers import ok, err
 
 
 def get_varga_lon(lon, division=9):
@@ -24,26 +24,25 @@ def get_varga_lon(lon, division=9):
     return varga
 
 
-def calculate_transit_varga(jd_ut=None, objs=(), flag=0, params=None):
+def calculate_transit_varga(positions, houses, division):
     # calculate planetary positions & houses & ascmc in varga chart
     # jd_ut is not needed if we receive e2 pos division houses from datamanager
-    p = params or {}
-    division = p.get("division")  # harmonic chart[0]
+    division = division  # harmonic chart[0]
     if division and int(division) < 2:
         return err("division too small - dont send me this")
-    pos = p.get("positions")  # they be e2 as this is transit
-    houses = p.get("houses")
-    if division is None or pos is None or houses is None:
+    positions = positions  # they be e2 as this is transit
+    houses = houses  # also e2 houses
+    if division is None or positions is None or houses is None:
         return err("missing e2 / transit data")
     cusps = houses.get("cusps")
     ascmc = houses.get("ascmc")
-    log.debug(
-        f"types : pos={type(pos)} | cusps={type(cusps)} | ascmc={type(ascmc)}",
+    LOG.debug(
+        f"types : pos={type(positions)} | cusps={type(cusps)} | ascmc={type(ascmc)}",
         extra=routing,
     )
     transit_varga = []
-    if isinstance(pos, dict):
-        for obj in pos:  # todo fix code
+    if isinstance(positions, dict):
+        for obj in positions:  # todo fix code
             name = obj.get("name", "")
             lon = obj.get("lon", 0.0)
             varga = get_varga_lon(lon, division)

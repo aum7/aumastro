@@ -5,15 +5,16 @@
 # actual motion of heavens in hours following birth, brings objects to
 # places in natal chart, unfolding events in years to come; each degree
 # of such motion corresponds to approximately 1 year of life
-import logging as log
+# it is equatorial plane usually in tabular form : todo can we
+# reprocude tables in circular form ie are dates of angles same ???
+import logging
+
+LOG = logging.getLogger(__name__)
+source = "d1"
+routing = {"source": source, "route": ["terminal"]}
 import math
 import swisseph as swe
 from helpers import _object_name_to_code as objcode, ok, err
-
-
-source = "d1"
-route = ["terminal"]
-routing = {"source": source, "route": route}
 
 
 def get_speculum(jd_ut, code, lat, ramc, flag):
@@ -21,7 +22,7 @@ def get_speculum(jd_ut, code, lat, ramc, flag):
     try:
         res = swe.calc_ut(jd_ut, code, flag | swe.FLG_EQUATORIAL)
     except swe.Error as e:
-        log.error(
+        LOG.error(
             f"speculum error : {e}",
             extra=routing,
         )
@@ -57,75 +58,63 @@ def get_speculum(jd_ut, code, lat, ramc, flag):
     }
 
 
-def calculate_d1(jd_ut, geo=(), objs=(), flag=0, params=None):
+def calculate_d1(jd_ut, lat, lon, hsys, objs, mean_node, flag):
     # primary direction calculation
-    if jd_ut is None or len(geo) < 2:
+    if jd_ut is None:
         return err("invalid jd_ut")
-    p = params or {}
-    lat, lon = geo[0], geo[1]
-    hsys = p.get("house_sys", "P")
-    if isinstance(hsys, str):
-        hsys = hsys.encode("ascii")
+    # if isinstance(hsys, str):
+    #     hsys = hsys.encode("ascii")
     try:
         houses = swe.houses(jd_ut, lat, lon, hsys)
     except swe.Error as e:
-        return err(f"sweph houses error in d1 : {e}")
+        return err(e)
     ramc = houses[1][2]
     oa_asc = (ramc + 90.0) % 360.0
-    use_mean_node = p.get("use_mean_node", False)
     directions = []
     # angle directions
     for obj in objs:
-        code, name = objcode(obj, use_mean_node)
+        code, name = objcode(obj, mean_node)
         if code is None:
+            return err(f"unknown object name : {obj}")
+        # try:
+        spec = get_speculum(jd_ut, code, lat, ramc, flag)
+        if spec is None:
             continue
-        try:
-            spec = get_speculum(jd_ut, code, lat, ramc, flag)
-            if spec is not None:
-                # direction to mc
-                arc_mc = (spec["ra"] - ramc) % 360.0
-                directions.append({
-                    "sig": "mc",
-                    "prom": name,
-                    "type": "direct",
-                    "arc": round(arc_mc, 4),
-                    "age": round(arc_mc, 2),
-                })
-                # directions to asc
-                arc_asc = (spec["oa"] - oa_asc) % 360.0
-                directions.append({
-                    "sig": "asc",
-                    "prom": name,
-                    "type": "direct",
-                    "arc": round(arc_asc, 4),
-                    "age": round(arc_asc, 2),
-                })
-        except Exception as e:
-            log.error(
-                f"speculum error for {obj} : {e}",
-                extra=routing,
-            )
-            continue
+        # direction to mc
+        arc_mc = (spec["ra"] - ramc) % 360.0
+        directions.append({
+            "sig": "mc",
+            "prom": name,
+            "type": "direct",
+            "arc": round(arc_mc, 4),
+            "age": round(arc_mc, 2),
+        })
+        # directions to asc
+        arc_asc = (spec["oa"] - oa_asc) % 360.0
+        directions.append({
+            "sig": "asc",
+            "prom": name,
+            "type": "direct",
+            "arc": round(arc_asc, 4),
+            "age": round(arc_asc, 2),
+        })
     # body to body directions (proportional semi-arc)
     speculums = {}
     for obj in objs:
-        code, name = objcode(obj, use_mean_node)
+        code, name = objcode(obj, mean_node)
         if code is None:
-            continue
-        try:
-            speculums[code] = (name, get_speculum(jd_ut, code, lat, ramc, flag))
-        except Exception as e:
-            log.error(
-                f"speculums calculation error : {e}",
-                extra=routing,
-            )
-            continue
+            return err(f"unknown object name : {obj}")
+        # try:
+        speculums[code] = (name, get_speculum(jd_ut, code, lat, ramc, flag))
     codes = list(speculums.keys())
     for i in range(len(codes)):
         for j in range(i + 1, len(codes)):
             c1, c2 = codes[i], codes[j]
             name1, spec1 = speculums[c1]
             name2, spec2 = speculums[c2]
+            if spec1 is None or spec2 is None:
+                # todo breaks ???
+                continue
             if spec1["sa"] != 0:
                 pd1 = spec1["md"] / spec1["sa"]
                 pp2 = spec2["sa"] * pd1
@@ -137,19 +126,21 @@ def calculate_d1(jd_ut, geo=(), objs=(), flag=0, params=None):
                     "arc": round(arc, 4),
                     "age": round(arc, 2),
                 })
+
     return ok(directions)
 
 
-if __name__ == "__main__":
-    # lisa presley test : 1968-02-01 17-01 ut, memphis 35.1495 n 90.049 w
-    jd_lmp = swe.julday(1968, 2, 1, 17.016667)
-    geo_lmp = (35.1495, -90.049, 0.0)
-    objs_test = ["su", "mo", "me", "ve", "ma", "ju", "sa"]
-    res = calculate_d1(jd_lmp, geo=geo_lmp, objs=objs_test, flag=swe.FLG_SWIEPH)
-    print("status :", res["status"])
-    print("directions count :", len(res["data"]))
-    for item in res["data"][:5]:
-        print(item)
+# def run_test():
+#     # if __name__ == "__main__":
+#     # lisa presley test : 1968-02-01 17-01 ut, memphis 35.1495 n 90.049 w
+#     jd_lmp = swe.julday(1968, 2, 1, 17.016667)
+#     geo_lmp = (35.1495, -90.049, 0.0)
+#     objs_test = ["su", "mo", "me", "ve", "ma", "ju", "sa"]
+#     res = calculate_d1(jd_lmp, geo=geo_lmp, objs=objs_test, flag=swe.FLG_SWIEPH)
+#     print("status :", res["status"])
+#     print("directions count :", len(res["data"]))
+#     for item in res["data"][:5]:
+#         print(item)
 
 
 # region lisa marie presley test data

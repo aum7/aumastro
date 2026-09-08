@@ -31,37 +31,32 @@ def get_current_hora(jd_ut, horas):
     if not horas:
         return None
     for hora in horas:
-        if isinstance(hora, dict) and hora.get("start_jd", 0.0) <= jd_ut < hora.get(
-            "end_jd", 0.0
-        ):
-            # return hora # with start & end times ???
-            return hora.get("lord")
+        if hora["start_jd"] <= jd_ut < hora["end_jd"]:
+            # return hora with start & end times
+            return hora["lord"], hora["start event"], hora["end event"]
     return None
 
 
-def jd_to_local_time(jd, lat, lon, tz_name=None):
+def jd_to_local_time(jd, tz_name):
+    # def jd_to_local_time(jd, lat, lon, tz_name):
     # from utc result to event datetime : timezone
     utc_dt = datetime.strptime(jdtoiso(jd), "%Y-%m-%d %H:%M:%S")
     utc_dt = utc_dt.replace(tzinfo=timezone.utc)
-    if tz_name is None:
-        tzf = TimezoneFinder()
-        tz_name = tzf.timezone_at(lat=lat, lng=lon)
     if tz_name:
-        local_dt = utc_dt.astimezone(ZoneInfo(tz_name))
-    else:
-        local_dt = utc_dt
-    return local_dt
+        return utc_dt.astimezone(ZoneInfo(tz_name))
+    return utc_dt
 
 
-def get_day_horas(jd_ut, lon, lat, alt=0.0, flag=0, tz_name=None):
+def get_day_horas(jd_ut, lon, lat, alt, flag):
     # calculate list of all horas of the day : day starts at sunrise ???
-    if tz_name is None:
-        tzf = TimezoneFinder()
-        tz_name = tzf.timezone_at(lat=lat, lng=lon)
+    # if tz_name is None:
+    tzf = TimezoneFinder()
+    tz_name = tzf.timezone_at(lat=lat, lng=lon)
 
-        def to_event_str(jd):
-            dt_event = jd_to_local_time(jd, lat, lon, tz_name)
-            return dt_event.strftime("%Y-%m-%d %H:%M:%S")
+    def to_event_str(jd):
+        # convert to event location time
+        dt_event = jd_to_local_time(jd, tz_name)
+        return dt_event.strftime("%Y-%m-%d %H:%M:%S")
 
     # take start of jd = midnight
     Y, M, D, _ = swe.revjul(jd_ut)
@@ -71,13 +66,12 @@ def get_day_horas(jd_ut, lon, lat, alt=0.0, flag=0, tz_name=None):
         # calculate sunrise
         _, data = swe.rise_trans(
             jd_day,
-            # jd_ut,
             swe.SUN,
             swe.CALC_RISE,
             (lon, lat, alt),
             atpress=0.0,
             attemp=0.0,
-            flag=flag,
+            flags=flag,
         )
         srise = data[0]
         # ensure proper sunrise
@@ -86,13 +80,12 @@ def get_day_horas(jd_ut, lon, lat, alt=0.0, flag=0, tz_name=None):
             jd_day -= 1.0  # start 1 day back
             _, data = swe.rise_trans(
                 jd_day,
-                # jd_ut,
                 swe.SUN,
                 swe.CALC_RISE,
                 (lon, lat, alt),
                 atpress=0.0,
                 attemp=0.0,
-                flag=flag,
+                flags=flag,
             )
         srise = data[0]
         # caluculate sunset
@@ -103,7 +96,7 @@ def get_day_horas(jd_ut, lon, lat, alt=0.0, flag=0, tz_name=None):
             (lon, lat, alt),
             atpress=0.0,
             attemp=0.0,
-            flag=flag,
+            flags=flag,
         )
         sset = data[0]
         _, data = swe.rise_trans(
@@ -116,7 +109,7 @@ def get_day_horas(jd_ut, lon, lat, alt=0.0, flag=0, tz_name=None):
             (lon, lat, alt),
             atpress=0.0,
             attemp=0.0,
-            flag=flag,
+            flags=flag,
         )
         srise_next = data[0]
     except swe.Error as e:
@@ -184,18 +177,16 @@ def get_day_horas(jd_ut, lon, lat, alt=0.0, flag=0, tz_name=None):
     return horas
 
 
-def calculate_horas(jd_ut=None, geo=(), objs=(), flag=0, params=None):
+def calculate_horas(jd_ut, lon, lat, alt, flag):
     # calculate list of horas & current hora from sunrise, sunset, next sunrise
-    if jd_ut is None or len(geo) < 2:
+    if jd_ut is None or lon is None:
         return err("invalid jd_ut or geo coordinates")
-    lon, lat = geo[0], geo[1]
-    alt = geo[2] if len(geo) > 2 else 0.0
-    horas = get_day_horas(jd_ut, lon, lat, alt, flag=flag)
+    alt = alt if alt is not None else 0.0
+    horas = get_day_horas(jd_ut, lon, lat, alt, flag)
     if horas is None:
-        # if not horas:
         return err("failed to calculate horas")
     curr_hora = get_current_hora(jd_ut, horas[1:])
     if curr_hora is None:
-        # if not curr_hora:
         return err("failed to calculate current hora")
+
     return ok({"horas": horas, "current hora": curr_hora})

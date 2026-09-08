@@ -1,38 +1,38 @@
 # sweph/calculations/lunarreturn.py
 # ruff: noqa: E402, E701
-import logging as log
+import logging
+
+LOG = logging.getLogger(__name__)
+source = "returnlunar"
+routing = {"source": source, "route": ["terminal"]}
 import swisseph as swe
 from helpers import _object_name_to_code as objcode, ok, err
-# from sweph.swetime import jd_to_custom_iso as jdtoiso
-
-source = "returnlunar"
-route = ["terminal"]
-routing = {"source": source, "route": route}
 
 
-def calculate_lr(jd_ut=None, geo=(), objs=(), flag=0, params=None):
+def calculate_lr(
+    jd_ut, e2_jd, lat, lon, e1_mo, month_length, hsys, mean_node, objs, flag=0
+):
     # calculate lunar return
     # check against lumies since e1_sweph can have 0 objects (user-selectable)
     # e1 positions for su / mo longitude crosscheck only
     if jd_ut is None:
         return err("invalid jd_ut")
-    p = params or {}
-    e2_jd = p.get("e2_jd")
+    e2_jd = e2_jd
     if e2_jd is None:
         return err("missing e2_jd")
-    e1_mo = p.get("e1_mo")
+    e1_mo = e1_mo
     if e1_mo is None:
         return err("missing natal moon position")
-    month_length = p.get("month_length", 27.321661)
-    hsys = p.get("hsys", "P")
-    use_mean_node = p.get("use_mean_node", False)
+    month_length = month_length
+    hsys = hsys
+    mean_node = mean_node
     try:
         lr_jd = swe.mooncross_ut(e1_mo, e2_jd - month_length, flag)
         if lr_jd > e2_jd:
             lr_jd = swe.mooncross_ut(e1_mo, e2_jd - month_length - 2.0, flag)
         lun_ret = [{"lrjdut": lr_jd}]
         for obj in objs:
-            code, name = objcode(obj, use_mean_node)
+            code, name = objcode(obj, mean_node)
             if code is None:
                 continue
             res = swe.calc_ut(lr_jd, code, flag)
@@ -41,28 +41,27 @@ def calculate_lr(jd_ut=None, geo=(), objs=(), flag=0, params=None):
                 "name": name,
                 "lon": data[0],
             })
-        if len(geo) >= 2:
-            lat, lon = geo[0], geo[1]
-            try:
-                cusps, ascmc = swe.houses_ex(
-                    lr_jd,
-                    lat,
-                    lon,
-                    hsys.encode("ascii"),
-                    flag,
-                )
-                lun_ret.append({"cusps": cusps})
-                lun_ret.append({"name": "asc", "lon": ascmc[0]})
-                lun_ret.append({"name": "mc", "lon": ascmc[1]})
-            except swe.Error as e:
-                log.error(
-                    f"lunar return houses calculation error : {e}",
-                    extra=routing,
-                )
+        # if len(geo) >= 2:
+        lat, lon = lat, lon
+        try:
+            cusps, ascmc = swe.houses_ex(
+                lr_jd,
+                lat,
+                lon,
+                hsys.encode("ascii"),
+                flag,
+            )
+            lun_ret.append({"cusps": cusps})
+            lun_ret.append({"name": "asc", "lon": ascmc[0]})
+            lun_ret.append({"name": "mc", "lon": ascmc[1]})
+        except swe.Error as e:
+            LOG.error(
+                f"lunar return houses calculation error : {e}",
+                extra=routing,
+            )
         return ok(lun_ret)
-    except swe.Error as e:
-        return err(e)
-    except Exception as e:
+
+    except (swe.Error, Exception) as e:
         return err(e)
 
     # DONT DELETE logic might be needed

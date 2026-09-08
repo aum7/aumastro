@@ -1,34 +1,33 @@
 # sweph/calculations/lots.py
 # ruff: noqa: E402, E701
-import logging as log
+import logging
+
+LOG = logging.getLogger(__name__)
+source = "lots"
+routing = {"source": source, "route": ["terminal"]}
 from helpers import ok, err
 
 
-source = "lots"
-route = ["terminal"]
-routing = {"source": source, "route": route}
-
-
-def calculate_lots(jd_ut, geo=(), objs=(), flag=0, params=None):
+def calculate_lots(jd_ut, lots_pckg):
     # calculate arabic parts aka hermetic lots for event
     if jd_ut is None:
         return err("invalid jd_ut")
     # grab existing positions with lon
-    p = params or {}
-    lots_def = p.get("lots_def", p.get("lots", {}))
-    if not lots_def:
+    lots_pckg = lots_pckg
+    if not lots_pckg:
         return err("missing lots definitions")
-    is_day = p.get("is_day", True)
+    is_day = lots_pckg.get("is_day")
     calc_data = {}
-    if "calc_data" in p:
-        calc_data = p["calc_data"]
+    if "calc_data" in lots_pckg:
+        calc_data = lots_pckg["calc_data"]
     else:
-        ascmc = p.get("ascmc", [])
+        ascmc = lots_pckg.get("ascmc", [])
         if len(ascmc) > 0:
             calc_data["asc"] = ascmc[0]
         if len(ascmc) > 1:
             calc_data["mc"] = ascmc[1]
-        positions = p.get("positions", {})
+        positions = lots_pckg.get("positions", {})
+        # todo figure which one below it is & remove other (terminate elif)
         if isinstance(positions, dict):
             for k, v in positions.items():
                 if isinstance(v, dict) and "lon" in v:
@@ -42,13 +41,25 @@ def calculate_lots(jd_ut, geo=(), objs=(), flag=0, params=None):
     if not calc_data:
         return err("missing calculation data for lots")
     lots = []
-    for lot, data in lots_def.items():
+    for lot, data in lots_pckg.items():
         if not isinstance(data, dict):
-            continue
+            msg = "lots package is not dictionary"
+            LOG.error(
+                msg,
+                extra=routing,
+            )
+            return err(msg)
+            # continue
         # night is not implemented - left to others to play with that
-        formula = data.get("day") if is_day else data.get("night", data.get("day"))
+        formula = data.get("day") if is_day else data.get("night")
         if not formula:
-            continue
+            msg = "lot calculation : missing formula"
+            LOG.error(
+                msg,
+                extra=routing,
+            )
+            return err(msg)
+            # continue
         try:
             lot_lon = eval(formula, {"__builtins__": None}, data) % 360.0
             lots.append({
@@ -56,10 +67,11 @@ def calculate_lots(jd_ut, geo=(), objs=(), flag=0, params=None):
                 "lon": lot_lon,
             })
         except Exception as e:
-            log.error(
+            LOG.error(
                 f"lot calculation error for {lot} : {e}",
                 extra=routing,
             )
-            continue
+            return err(e)
+            # continue
 
     return ok(lots)

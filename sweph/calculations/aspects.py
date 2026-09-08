@@ -1,13 +1,13 @@
 # sweph/calculations/aspects.py
 # ruff: noqa: E402, E701
-# import logging as log
+import logging
+
+LOG = logging.getLogger(__name__)
+source = "aspects"
+routing = {"source": source, "route": ["terminal"]}
 from helpers import ok, err
 import math
 from ui.fonts.glyphs import ASPECTS
-
-source = "aspects"
-route = ["terminal"]
-routing = {"source": source, "route": route}
 
 
 def angle_diff(a, b):
@@ -18,11 +18,11 @@ def angle_diff(a, b):
     return diff
 
 
-def normalize_deg(a):
-    # normalize to 0..360, allow tuple input
-    if isinstance(a, tuple):
-        a = a[0]
-    return a % 360.0
+# def normalize_deg(a):
+#     # normalize to 0..360, allow tuple input
+#     if isinstance(a, tuple):
+#         a = a[0]
+#     return a % 360.0
 
 
 def is_applying(lon1, speed1, lon2, speed2, angle):
@@ -95,29 +95,26 @@ def aspects_matrix(objs_map, pos_map, orb):
         matrix.append(row)
     # collect speed for retro character in panetables.py
     speeds = {name: pos_map[name]["lon speed"] for name in objs_map}
+
     return objs_map, matrix, speeds
 
 
-def calculate_aspects(jd_ut=None, geo=(), objs=(), flag=0, params=None):
+def calculate_aspects(positions, orb, varga_aspects):
     # calculate aspectarian for one or both events
-    p = params or {}
-    pos = p.get("positions")
-    if not pos:
+    if not positions:
         return err("missing positions data")
-    orb = p.get("orb", 1.5)
-    use_varga_aspect = p.get("use varga aspect", False)
     draw_order = ["mo", "me", "ve", "su", "ma", "ju", "sa", "ur", "ne", "pl", "ra"]
-    objs_map = [name for name in draw_order if name in pos]
+    objs_map = [name for name in draw_order if name in positions]
     if not objs_map:
         return err("no matching objects found for aspects")
-    if use_varga_aspect:
+    if varga_aspects:
         varga_map = {}
-        for k, v in pos.items():
+        for k, v in positions.items():
             varga_map[k] = v.copy()
-            varga_map[k]["lon"] = v.get("varga", v["lon"])
+            varga_map[k]["lon"] = v["varga"]
         obj_names, aspect_matrix, speeds = aspects_matrix(objs_map, varga_map, orb)
     else:
-        obj_names, aspect_matrix, speeds = aspects_matrix(objs_map, pos, orb)
+        obj_names, aspect_matrix, speeds = aspects_matrix(objs_map, positions, orb)
     return ok({
         "obj names": obj_names,
         "aspects": aspect_matrix,

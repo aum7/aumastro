@@ -1,26 +1,22 @@
 # sweph/calculations/syzygy.py
 # ruff: noqa: E402
-import logging as log
+import logging
+
+LOG = logging.getLogger(__name__)
+source = "syzygy"
+routing = {"source": source, "route": ["terminal"]}
 from helpers import ok, err
 import swisseph as swe
 from sweph.swetime import jd_to_custom_iso as jdtoiso
 
-source = "syzygy"
-route = ["terminal"]
 
-
-def calculate_syzygy(jd_ut=None, geo=(), objs=(), flag=0, params=None):
+def calculate_syzygy(jd_ut, su_lon, mo_lon, flag=0):
     # calculate last prenatal full or new moon - syzygy
     if jd_ut is None:
         return err("invalid jd_ut")
-    p = params or {}
     # get sun & moon longitudes
-    su = p.get("su")
-    mo = p.get("mo")
-    if su is None or mo is None:
-        return err("missing su or mo positions")
-    su_lon = su["lon"]
-    mo_lon = mo["lon"]
+    su_lon = su_lon
+    mo_lon = mo_lon
     try:
         # determine if syzygy was new or full moon
         if su_lon is not None and mo_lon is not None:
@@ -59,8 +55,8 @@ def calculate_syzygy(jd_ut=None, geo=(), objs=(), flag=0, params=None):
                 "datetime": jdtoiso(syzygy_jd),
             })
     except Exception as e:
-        log.error(
+        LOG.error(
             f"syzygy calculation error : {e}",
-            extra={"source": source, "route": route},
+            extra=routing,
         )
         return err(e)

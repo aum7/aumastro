@@ -1,7 +1,12 @@
 # sweph/calculations/vimsottari.py
 # output line num : lvl1-18 lvl2-91 lvl3-763 lvl4-6764 lvl5-61198
 # ruff: noqa: E402, E701
-import logging as log
+import logging
+
+LOG = logging.getLogger(__name__)
+source = "vimsottari"
+routing = {"source": source, "route": ["terminal"]}
+routingtimeout5 = {"source": source, "route": ["terminal", "user"], "timeout": "5"}
 import swisseph as swe
 from helpers import _decimal_to_ymd as decytoymd, ok, err
 from sweph.constants import NAKSATRAS27, DASA_YEARS
@@ -9,12 +14,6 @@ from sweph.constants import NAKSATRAS27, DASA_YEARS
 # get selected year length todo fix below - selected year as app_settings ?
 # toggles with hotkey & mouse click
 YEARLENGTH = 365.2425
-
-source = "vimsottari"
-route = ["terminal"]
-timeout = 5
-routing = {"source": source, "route": route}
-route_timeout = {"source": source, "route": route, "timeout": timeout}
 
 
 def find_naksatra(mo):  # duplicated by naksatras.py ?
@@ -217,6 +216,7 @@ def find_current_dasa_lords(mo, e1_jd, e2_jd_ut, curr_lvl):
                     temp_jd_lvl2 += rem_years_lvl2 * YEARLENGTH
             break  # found lvl1
         temp_jd_lvl1 += rem_years_lvl1 * YEARLENGTH
+
     return target_lvl1_lord, target_lvl2_lord, target_lvl3_lord
 
 
@@ -391,48 +391,46 @@ def vimsottari_table(mo, jd_ut, e2_jd_ut=None, curr_lvl=1, max_lvl=3, year_lengt
                         cur_jd_lvl3 += rem_years_lvl3 * YEARLENGTH
                 cur_jd_lvl2 += rem_years_lvl2 * YEARLENGTH
         cur_jd_lvl1 += rem_years_lvl1 * YEARLENGTH
+
     return header + out.rstrip()
 
 
-def calculate_vimsottari(jd_ut=None, geo=(), objs=(), flag=0, params=None):
+def calculate_vimsottari(jd_ut, e2_jd, mo, curr_level, year_length):
     # grab event 1 data & calculate vimsottari : event 1 is mandatory and only source
     # datamanager needs to know what is needed here & provide proper data
-    p = params or {}
-    if params is None:
-        log.debug("params is none > investigate", extra=routing)
     # get data
-    e2_jd_ut = p.get("e2 jd ut", {})
-    lumies = p.get("lumies", {})
-    jd_ut = lumies.get("jd_jd", 0.0)
-    mo = lumies.get("mo", {})
-    curr_lvl = p.get("curr level", 1)
-    year_length = p.get("year_length", 365.2425)
-    if not jd_ut or mo is None or not lumies:
+    e2_jd = e2_jd
+    jd_ut = jd_ut
+    mo = mo
+    curr_level = curr_level
+    year_length = year_length
+    if not jd_ut or mo is None:
         log_text = "missing vimsottari data"
-        log.error(
+        LOG.error(
             log_text,
             extra=routing,
         )
         return err(log_text)
     # on missing event 2 julian day notify user & cap table levels
-    if e2_jd_ut is None and curr_lvl >= 3:
+    if e2_jd is None and curr_level >= 3:
         log_text = "event 2 datetime required for levels 3-5 : level > 1"
-        log.warning(
+        LOG.warning(
             log_text,
-            extra=route_timeout,
+            extra=routingtimeout5,
         )
         return err(log_text)
     max_lvl = 5
     event_dasas = vimsottari_table(
         mo,
         jd_ut,
-        e2_jd_ut=e2_jd_ut,
-        curr_lvl=curr_lvl,
+        e2_jd_ut=e2_jd,
+        curr_lvl=curr_level,
         max_lvl=max_lvl,
         year_length=year_length,
     )
-    log.debug(
+    LOG.debug(
         "vimsottari finished",
         extra=routing,
     )
+
     return ok(event_dasas)
