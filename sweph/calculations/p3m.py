@@ -26,7 +26,7 @@ def tuple_to_iso(jd):
 
 def calculate_p3m(
     e1_jd,
-    e2_jd,
+    # e2_jd,
     lat,
     lon,
     e1_su,

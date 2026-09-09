@@ -25,11 +25,11 @@ class AstroChart(Gtk.Box):
         # app IS aumastroapp
         if app is not None:
             self.app = app
-        LOG.debug(
-            f"\nwhoisapp : {app.__class__.__name__}"
-            f"\nwhoisselfapp : {self.app.__class__.__name__}",
-            extra=routingnone,
-        )
+        # LOG.debug(
+        #     f"\nwhoisapp : {app.__class__.__name__}"
+        #     f"\nwhoisselfapp : {self.app.__class__.__name__}",
+        #     extra=routingnone,
+        # )
         # cairo drawing area
         self.drawing_area = Gtk.DrawingArea()
         self.drawing_area.set_draw_func(self.draw)
@@ -38,7 +38,6 @@ class AstroChart(Gtk.Box):
         self.append(self.drawing_area)
         # data
         self.event_package = {}
-        # self.snap_targets = []
         # subscribe to signals
         self.app.signaler.connect("package ready", self.on_package_ready)
         # if settings change > data changes > datamanager recalculates & adjusts
@@ -49,10 +48,10 @@ class AstroChart(Gtk.Box):
             del self.event_package[event_id]
         else:
             self.event_package[event_id] = package
-        LOG.debug(
-            f"event package received : {package}",
-            extra=routingnone,
-        )
+        # LOG.debug(
+        #     f"event package received : {package}",
+        #     extra=routing,
+        # )
         self.drawing_area.queue_draw()
 
     def draw(self, area, cr, width, height):

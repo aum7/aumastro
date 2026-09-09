@@ -71,7 +71,7 @@ class Rings:
         self.cy = ctx.get("cy", 0.0)
         self.font_scale = ctx.get("font scale", 1.0)
         self.max_radius = ctx.get("max radius", 300.0)
-        self.radius_dict = ctx.get("radius_dict", {})
+        self.radius_dict = ctx.get("radius dict", {})
         self.outer_rings = ctx.get("outer rings", [])  # outer rings are togglable
         self.info = ctx.get("info", {})
         self.snap_targets = []

@@ -472,7 +472,6 @@ class EventData:
         dataset = {"id": self.id, "chart": self.chart, "sweph": self.sweph}
         LOG.debug(f"ondatetimechange : dataset={dataset}")
         self.app.signaler.emit("event changed", dataset)
-
         LOG.info(
             "datetime input processed",
             extra=routinguser,

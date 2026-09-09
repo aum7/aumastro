@@ -191,6 +191,7 @@ class Dispatcher:
         self.recalculate(event_id)
 
     def on_event_change(self, dataset):
+        # print("oneventchange enter", dataset.get("id"))
         # todo do we need this ??? we are operating with local attributes self.X
         event_id = dataset.get("id")
         # LOG.debug(f"oneventchage : dataset={dataset}")
@@ -496,7 +497,7 @@ class Dispatcher:
                     "p2",
                     calculate_p2,
                     e1_jd,
-                    e2_jd,
+                    # e2_jd,
                     lat,
                     lon,
                     e1_su,
@@ -515,7 +516,7 @@ class Dispatcher:
                     "p3",
                     calculate_p3,
                     e1_jd,
-                    # e2_jd,
+                    e2_jd,
                     lat,
                     lon,
                     e1_su,
