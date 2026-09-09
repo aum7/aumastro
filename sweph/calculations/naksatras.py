@@ -22,6 +22,6 @@ def get_naksatra(lon, mans_28, first_nak):
         nak_num = 27
     raw_idx = int(lon // span)
     idx = ((raw_idx + first_nak - 1) % nak_num) + 1
-    ruler, name = naksatras[idx][0], naksatras[idx][-1]
+    ruler, name = naksatras[idx][0], naksatras[idx][1]
 
     return {"idx": idx, "name": name, "ruler": ruler}

@@ -170,7 +170,7 @@ class MainWindow(
         # toggle vimsottari table level
         self.hotkeys.register_hotkey("<Shift>v", lambda: self.tables.toggle_vimso())
         self.hotkeys.register_hotkey(
-            "<Shift>r", lambda: self.astro_chart.ruler.toggle()
+            "<Shift>r", lambda: self.astro_chart.inspector.toggle()
         )
         # below works for qwertz keyboard, modify according to your keyboard layout
         self.hotkeys.register_hotkey("<Shift>exclam", self.panes_single)  # shift+1
@@ -188,7 +188,7 @@ class MainWindow(
         self.hotkeys.register_hotkey("<Control>n", lambda: self.on_time_now())
         # [ctrl]
         self.hotkeys.register_hotkey(
-            "<Control>c", lambda: self.astro_chart.ruler.angle_to_clipboard()
+            "<Control>c", lambda: self.astro_chart.inspector.angle_to_clipboard()
         )
         # self.hotkeys.register_hotkey("ctrl+m", self.show_manual)
         self.hotkeys.register_hotkey("<Control>m", self.show_manual)
@@ -224,7 +224,7 @@ class MainWindow(
         # transit|varga|p2|p3|p3m|d1|lunar|solar return|naksatras ring
         self.hotkeys.register_hotkey(
             "<Control>1",
-            lambda: self.app.dispatcher.update_ring(
+            lambda: self.app.dispatcher.update_rings(
                 "transit",
                 not self.app.dispatcher.rings["transit"],
             ),

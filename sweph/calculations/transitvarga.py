@@ -10,6 +10,8 @@ from helpers import ok, err
 
 
 def get_varga_lon(lon, division):
+    if division <= 1:
+        return None
     sign = int(lon // 30)
     seg = int((lon % 30) // (30 / division))
     varga_sign = (sign * division + seg) % 12

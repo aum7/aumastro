@@ -33,6 +33,7 @@ def get_current_hora(jd_ut, horas):
         if hora["start jd"] <= jd_ut < hora["end jd"]:
             # return hora with start & end times
             return hora["lord"], hora["start event"], hora["end event"]
+
     return None
 
 

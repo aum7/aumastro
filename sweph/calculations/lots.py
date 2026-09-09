@@ -11,8 +11,8 @@ from helpers import ok, err
 def calculate_lots(lots_package):
     # calculate arabic parts aka hermetic lots for event
     ascmc = lots_package["ascmc"]
-    positions = lots_package("positions")
-    lot_defs = lots_package("lots")
+    positions = lots_package["positions"]
+    lot_defs = lots_package["lots"]
     calc_data = {"asc": ascmc[0], "mc": ascmc[1]}
     for v in positions.values():
         calc_data[v["name"]] = v["lon"]

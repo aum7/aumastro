@@ -34,14 +34,11 @@ def calculate_positions(
         try:
             result = swe.calc_ut(jd_ut, code, flag)
             # todo we know our data
-            LOG.debug(
-                f"result : {result}",
-                extra=routing,
-            )
-            pos = result[0]
+            pos = result[0]  # pos[0] = lon
             naksatra = get_naksatra(pos[0], mans_28, first_nak)
             varga = get_varga_lon(pos[0], division)
             varga_nak = get_naksatra(varga, mans_28, first_nak)
+            # LOG.debug(f"\nlon={pos[0]}")
             positions[code] = {
                 "name": name,
                 "lon": pos[0],

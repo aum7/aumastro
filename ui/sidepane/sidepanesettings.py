@@ -30,13 +30,13 @@ class SidepaneSettings(CollapsePanel):
         margin = 7
         if self.mainwindow:
             self.set_margin_end(margin)
-        self.app.signaler.connect("settings changed", self.on_settings_change)
+        self.app.signaler.connect("setting changed", self.on_setting_change)
         self.build_ui()
 
-    def on_settings_change(self, data=None):
+    def on_setting_change(self, data=None):
         # received settings changed signal
         if not data:
-            LOG.debug("onsettingschange : data missing : exiting")
+            LOG.debug("onsettingchange : data missing : exiting")
 
             return
 

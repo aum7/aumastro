@@ -1,14 +1,19 @@
 # ui/mainpanes/chart/angleruler.py
 # ruff: noqa: E402, F821
+import logging
+
+LOG = logging.getLogger(__name__)
+source = "chartinspector"
+routing = {"source": source, "route": ["terminal"]}
 import math
 import cairo
 import ui.fonts.glyphs as glyphs
+from sweph.constants import NAKSATRAS27, MANSIONS28, TERMS
 import gi
 
 gi.require_version("Gtk", "4.0")
 gi.require_version("Gdk", "4.0")
 from gi.repository import Gtk, Gdk  # type: ignore
-from sweph.constants import NAKSATRAS27, MANSIONS28, TERMS
 
 
 class ChartInspector:
@@ -16,7 +21,14 @@ class ChartInspector:
 
     def __init__(self, chart):
         self.chart = chart
-        self.notify = getattr(self.chart.app, "notify_manager", None)
+        self.app = getattr(self.chart, "app")
+        # self IS chartinspector : selfchart IS astrochart
+        # selfchart HAS app
+        # LOG.debug(
+        #     f"has-selfchartapp : {hasattr(self.chart, 'app')}",
+        #     # f"whois self : {self.__class__.__name__}",
+        #     extra=routing,
+        # )
         self.active = False
         self.dragging = False
         # colors & styling
@@ -105,21 +117,24 @@ class ChartInspector:
 
     def angle_to_clipboard(self):
         # copy angle measurement text to clipboard
-        notify = self.notify
-        if not self.active or not notify:
-            print("angleruler : not active or notify missing : exiting ...")
-            return
+        if not self.active:
+            LOG.info("not active : exiting")
+            return False
+
         to_clipboard = getattr(self, "measure_text", "")
         if not to_clipboard:
-            return
+            return False
+
         clipboard = Gdk.Display.get_default().get_clipboard()
         clipboard.set(to_clipboard)
-        notify.info(
+        self.app.notifier.info(
             f"measured angle text ({to_clipboard}) copied to clipboard",
-            source="angleruler",
+            source="chartinspector",
             route=["user", "terminal"],
             timeout=7,
         )
+        # consume keypress
+        return True
 
     def on_scroll(self, controller, dx, dy):
         if not self.active:
@@ -128,7 +143,7 @@ class ChartInspector:
         dist = math.hypot(self.mouse_x - self.cx, self.mouse_y - self.cy)
         max_radius = getattr(self.chart, "max_radius", 300.0)
         if dist < (max_radius - self.chart_tolerance):
-            print("angleruler : scroll ignored : cursor inside chart")
+            LOG.debug("scroll ignored : cursor inside chart")
             # filter scrolling
             return False
         step = -1 if dy > 0 else 1
@@ -227,12 +242,9 @@ class ChartInspector:
 
     def on_released(self, gesture, n_press, x, y):
         # on mouse button release : drag end
-        notify = self.notify
-        if not self.active or not self.dragging or not notify:
-            print(
-                "angleruler : onreleased : not active or not dragging or "
-                "notify missing : exiting ..."
-            )
+        if not self.active or not self.dragging:
+            LOG.info("onreleased : not active or not dragging : exiting")
+
             return
 
         (x, y), dist = self._clamp_coords(x, y)
@@ -257,10 +269,10 @@ class ChartInspector:
         if self.arc0_lon is not None and self.arc1_lon is not None:
             diff = abs(self.arc1_lon - self.arc0_lon) % 360.0
             _, self.measure_text = self._get_formatted_labels(diff)
-            notify.info(
+            self.app.notifier.info(
                 f"press [ctrl+c] to copy angle text ({self.measure_text}) "
                 "into clipboard",
-                source="angleruler",
+                source="chartinspector",
                 route=["user", "terminal"],
                 timeout=7,
             )
@@ -517,8 +529,8 @@ class ChartInspector:
             "lunar return": getattr(self.chart, "lun_ret_data", None),
             "solar return": getattr(self.chart, "sol_ret_data", None),
         }
-        # print(
-        #     "angleruler : datamap : rings with house cusps :"
+        # LOG.debug(
+        #     "datamap : rings with house cusps :"
         #     f"\n{self.chart.transit_data}"
         #     f"\n{self.chart.lun_ret_data}"
         #     f"\n{self.chart.sol_ret_data}"
@@ -526,7 +538,7 @@ class ChartInspector:
         raw = data_map.get(ring_name)
         if not raw:
             # todo print error
-            # print(f"angleruler : getringobjects : raw data missing\n\traw={raw}")
+            # LOG.debug(f"getringobjects : raw data missing\n\traw={raw}")
             return []
         if isinstance(raw, dict):
             return [v for v in raw.values() if isinstance(v, dict) and "lon" in v]

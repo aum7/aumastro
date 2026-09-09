@@ -1,4 +1,5 @@
 # ui/mainpanes/chart/astrochart.py
+# todo : fixedstars into event (e1) ring with latitude & 0.3 alpha : on top ???
 # ruff: noqa: E402, F821
 import logging
 
@@ -37,23 +38,20 @@ class AstroChart(Gtk.Box):
         self.append(self.drawing_area)
         # data
         self.event_package = {}
-        self.chart_settings = getattr(self.app, "chart_settings", {})
-        # self.extra_info = {}
         # self.snap_targets = []
         # subscribe to signals
         self.app.signaler.connect("package ready", self.on_package_ready)
         # if settings change > data changes > datamanager recalculates & adjusts
-        # signal._connect("settings_changed", self.settings_changed)
         self.inspector = ChartInspector(self)
 
-    def on_package_ready(self, event: str, package: dict):
-        if not package and event in self.event_package:
-            del self.event_package[event]
+    def on_package_ready(self, event_id: str, package: dict):
+        if not package and event_id in self.event_package:
+            del self.event_package[event_id]
         else:
-            self.event_package[event] = package
+            self.event_package[event_id] = package
         LOG.debug(
             f"event package received : {package}",
-            extra=routing,
+            extra=routingnone,
         )
         self.drawing_area.queue_draw()
 
@@ -78,11 +76,13 @@ class AstroChart(Gtk.Box):
                 "solar return",
                 "lunar return",
             ):
-                if self.chart_settings.get(key):
+                # if self.event_package["rings"][key]:
+                if self.app.dispatcher.rings[key]:
                     outer_rings.append(key)
-        if self.chart_settings.get("harmonic ring", "").strip():
+        if self.app.dispatcher.harmonic_ring:
+            # if self.app.dispatcher["harmonic ring"].strip():
             outer_rings.append("harmonic")
-        if self.chart_settings.get("naksatras ring", ""):
+        if self.app.dispatcher.naksatras_ring:
             outer_rings.append("naksatras")
         # draw rings : max diameter of astrochart : determines distance
         # from pane edges
@@ -131,13 +131,8 @@ class AstroChart(Gtk.Box):
             "radius dict": radius_dict,
             "outer rings": outer_rings,
             "info": info,
-            "chart settings": self.chart_settings,
+            "chart settings": self.app.dispatcher.CHART_SETTINGS,
             "app": self.app,
-            # "notify": self.notify,
-            # "movie mode": self.app.movie_mode,
         }
-        # repeated code : above = already sent via ctx
-        # self.max_radius = max_radius
-        # self.radius_dict = radius_dict
         rings = Rings(ctx, self.event_package)  # or we draw in rings.py
         rings.draw(cr)

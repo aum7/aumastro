@@ -5,7 +5,7 @@
 import logging
 
 # signaling
-log = logging.getLogger(__name__)
+LOG = logging.getLogger(__name__)
 source = "eventdata"
 routing = {"source": source, "route": ["terminal"]}
 routinguser = {"source": source, "route": ["terminal", "user"]}
@@ -51,7 +51,7 @@ class EventData:
         self.sweph = {}
         self.app.signaler.connect("datetime captured", self.on_datetime_capture)
         # debug
-        log.debug(
+        LOG.debug(
             f"\nhasselfappsignaler : {hasattr(self.app, 'signaler')}",
             # f"e1 unpacked :\npos : {len(self.astro_data['e1 pos'])}"
             # f"\nlots : {len(self.astro_data['lots'])}"
@@ -66,7 +66,7 @@ class EventData:
 
         if not location:
             if self.id == "e1":
-                log.warning(
+                LOG.warning(
                     f"mandatory data missing : {location_name}",
                     extra=routinguser,
                 )
@@ -79,7 +79,7 @@ class EventData:
                 self.sweph["lon"] = None
                 self.sweph["alt"] = None
                 self.old_location = ""
-                log.info(
+                LOG.info(
                     "event 2 erased",
                     extra=routinguser,
                 )
@@ -192,7 +192,7 @@ class EventData:
 
         except Exception as e:
             # all above errors land here as exception e
-            log.error(
+            LOG.error(
                 f"location calculation failed : {e}",
                 extra=routing,
             )
@@ -236,7 +236,7 @@ class EventData:
         self.sweph["lon"] = lon
         self.sweph["alt"] = int(alt)
         # todo debug
-        log.info(
+        LOG.info(
             "location input processed",
             extra=routinguser,
         )
@@ -247,7 +247,7 @@ class EventData:
         name = entry.get_text().strip()
 
         if self.id == "e1" and not name:
-            log.error(
+            LOG.error(
                 f"mandatory data missing : {name_name}",
                 extra=routinguser,
             )
@@ -255,7 +255,7 @@ class EventData:
         if name == self.old_name:
             return
         if len(name) > 30:
-            log.warning(
+            LOG.warning(
                 f"{name_name} too long : max 30 characters",
                 extra=routinguser,
             )
@@ -263,7 +263,7 @@ class EventData:
 
         self.old_name = name
         self.chart["name"] = name
-        log.info(
+        LOG.info(
             "name input processed",
             extra=routinguser,
         )
@@ -276,12 +276,12 @@ class EventData:
         E1 = self.app.EVENT_ONE
         # log.debug(f"ondatetimechange : E1={E1.name}")
         if E1 is None:
-            log.debug("ondatetimechange : E1 is NONE")
+            LOG.debug("ondatetimechange : E1 is NONE")
         E1_chart = E1.chart
         E1_sweph = E1.sweph
         if self.id == "e1":
             if not self.lon:
-                log.warning(
+                LOG.warning(
                     "event one : set location first",
                     extra=routinguser,
                 )
@@ -290,7 +290,7 @@ class EventData:
             if not E1.sweph.get("lon"):
                 # if not self.app.dispatcher.get("e1", {}).get("sweph", {}).get("lon"):
                 # if not e1_chart.get("location"):
-                log.warning(
+                LOG.warning(
                     "event two : event one must be set first",
                     extra=routinguser,
                 )
@@ -341,7 +341,7 @@ class EventData:
                     calendar=b"g",
                 )
             except Exception as e:
-                log.error(
+                LOG.error(
                     f"{datetime_name} time now failed : {e}",
                     extra=routing,
                 )
@@ -353,7 +353,7 @@ class EventData:
             # entry confirm : not hotkey now
             if not date_time:
                 if self.id == "e1":
-                    log.warning(
+                    LOG.warning(
                         f"mandatory data missing for {datetime_name}",
                         extra=routinguser,
                     )
@@ -367,7 +367,7 @@ class EventData:
                         # todo needed below code ???
                         self.old_date_time = ""
                         self.app.signaler.emit("e2 cleared", "e2")
-                        log.info(
+                        LOG.info(
                             "event 2 cleared",
                             extra=routinguser,
                         )
@@ -381,7 +381,7 @@ class EventData:
                     lon=lon_val,
                 )
                 if error:
-                    log.error("datetime validation failed")
+                    LOG.error("datetime validation failed")
 
                 if dt_data is not None:
                     Y, M, D, h, m, s, cal, _ = dt_data
@@ -420,14 +420,14 @@ class EventData:
                         Yu, Mu, Du, hu, mu, su = dt_utc
                         _, jd_ut = utc_to_jd(Yu, Mu, Du, hu, mu, su, calendar=cal)
             except Exception as e:
-                log.error(
+                LOG.error(
                     f"{datetime_name} error : {e}",
                     extra=routing,
                 )
                 return
 
         if not jd_ut:
-            log.error(
+            LOG.error(
                 "jd_ut is missing",
                 extra=routing,
             )
@@ -465,8 +465,13 @@ class EventData:
                     self.sweph[key] = E1_sweph[key]
 
         dataset = {"id": self.id, "chart": self.chart, "sweph": self.sweph}
+        # LOG.debug(f"dataset={dataset}")
         self.app.signaler.emit("event changed", dataset)
 
+        LOG.info(
+            "datetime input processed",
+            extra=routinguser,
+        )
         return
 
     def on_datetime_capture(self, data):
