@@ -231,43 +231,43 @@ class MainWindow(
         )
         self.hotkeys.register_hotkey(
             "<Control>2",
-            lambda: self.app.dispatcher.update_ring(
+            lambda: self.app.dispatcher.update_rings(
                 "transit varga", not self.app.dispatcher.rings["transit varga"]
             ),
         )
         self.hotkeys.register_hotkey(
             "<Control>3",
-            lambda: self.app.dispatcher.update_ring(
+            lambda: self.app.dispatcher.update_rings(
                 "p2 progress", not self.app.dispatcher.rings["p2 progress"]
             ),
         )
         self.hotkeys.register_hotkey(
             "<Control>4",
-            lambda: self.app.dispatcher.update_ring(
+            lambda: self.app.dispatcher.update_rings(
                 "p3 progress", not self.app.dispatcher.rings["p3 progress"]
             ),
         )
         self.hotkeys.register_hotkey(
             "<Control>5",
-            lambda: self.app.dispatcher.update_ring(
+            lambda: self.app.dispatcher.update_rings(
                 "p3m progress", not self.app.dispatcher.rings["p3m progress"]
             ),
         )
         self.hotkeys.register_hotkey(
             "<Control>6",
-            lambda: self.app.dispatcher.update_ring(
+            lambda: self.app.dispatcher.update_rings(
                 "d1 direction", not self.app.dispatcher.rings["d1 direction"]
             ),
         )
         self.hotkeys.register_hotkey(
             "<Control>7",
-            lambda: self.app.dispatcher.update_ring(
+            lambda: self.app.dispatcher.update_rings(
                 "lunar return", not self.app.dispatcher.rings["lunar return"]
             ),
         )
         self.hotkeys.register_hotkey(
             "<Control>8",
-            lambda: self.app.dispatcher.update_ring(
+            lambda: self.app.dispatcher.update_rings(
                 "solar return", not self.app.dispatcher.rings["solar return"]
             ),
         )

@@ -16,7 +16,7 @@ from gi.repository import Gtk  # type:ignore
 
 class SidepaneSettings(CollapsePanel):
     def __init__(self, mainwindow=None):
-        super().__init__(title="settings", expanded=True)
+        super().__init__(title="settings", expanded=False)
         # sidepane IS mainwindow
         if mainwindow is not None:
             self.mainwindow = mainwindow

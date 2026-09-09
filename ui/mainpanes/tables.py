@@ -83,6 +83,7 @@ class Tables(Gtk.Notebook):
         scroll.set_child(text_view)
         # add page with event label as tab title
         self.append_page(scroll, Gtk.Label.new(event_id))
+        self.set_tab_reorderable(scroll, True)
         self.page_widgets[event_id] = scroll
 
     def update_event_package(self, event_id: str):
@@ -126,18 +127,26 @@ class Tables(Gtk.Notebook):
                 extra=routing,
             )
             return ""
-        pos_map = {k: v for k, v in positions.items() if isinstance(k, int)}
+        # pos_map = {k: v for k, v in positions.items() if isinstance(k, int)}
         cusps = houses["cusps"]
         ascmc = houses["ascmc"]
         if ascmc:
             self.ascendant = ascmc[0]
             self.midheaven = ascmc[1]
             self.armc = ascmc[2]
+        # sort objects to fixed order
+        pos_list = list(positions.values())
+        pos_sorted = sorted(
+            [obj for obj in pos_list if "name" in obj],
+            key=lambda obj: self.order.index(obj["name"])
+            if obj["name"] in self.order
+            else len(self.order),
+        )
         text = ""
         # build header string with house column added
         header = (
             f" positions{self.vic_spc}{self.h_sym * 48}\n"
-            f" obj {self.v_sym}        sign : nak{self.vic_spc}{self.v_sym}"
+            f" obj  {self.v_sym}        sign : nak{self.vic_spc}{self.v_sym}"
             f"       varga : nak{self.vic_spc}{self.v_sym} "
             f"  lat {self.v_sym}   lon {self.v_sym} speed : rel "
             f"{self.v_sym} hs\n"
@@ -145,7 +154,7 @@ class Tables(Gtk.Notebook):
         text += header
         # separ = f"{self.h_sym * 56}\n"
         # loop through positions and calculate houses if possible
-        for key, obj in pos_map.items():
+        for obj in pos_sorted:
             name = obj["name"]
             speed = obj["lon speed"]
             # relative speed
@@ -162,7 +171,7 @@ class Tables(Gtk.Notebook):
             var_idx = var_nak["idx"]
             var_ruler = var_nak["ruler"]
             ln_pos = (
-                f" {name}{retro} {self.v_sym} "
+                f" {name}{retro:<2} {self.v_sym} "
                 f"{decsigndms(lon):10} {nak_idx:02}-{nak_ruler} {self.v_sym} "
                 f"{decsigndms(var_lon):10} {var_idx:02}-{var_ruler} {self.v_sym} "
                 f"{obj['lat']:5.2f} {self.v_sym} "
@@ -171,21 +180,13 @@ class Tables(Gtk.Notebook):
             text += ln_pos
         # houses
         if cusps:
-            # selected = getattr(self.app, "selected_house_sys_str", "")
-            # if isinstance(selected, bytes):
-            #     selected = selected.decode("ascii")
-            # hsys = self.event_package[event_id]["info"]["hsys"]
             # LOG.debug(f"hsys={hsys}")
             hsys_char = None
-            # for sys in HOUSE_SYSTEMS:
-            #     if sys[2] == selected.lower():
-            #         hsys_char = sys[0]
-            #         break
             ln_csps = ""
             raH, raM, raS = decra(self.armc)
             # curr_hora = self.event_package[event_id]["horas"]["current hora"][0]
             curr_hora = self.event_package[event_id]["horas"]["current hora"]["ruler"]
-            LOG.debug(f"currhora={curr_hora}")
+            # LOG.debug(f"currhora={curr_hora}")
             hora_glyph = get_glyph(curr_hora, False)
             # hora_glyph = self.event_package[event_id].get("hora glyph", "")
             weekday = self.event_package[event_id]["horas"]["horas list"][0]["weekday"]
@@ -234,6 +235,12 @@ class Tables(Gtk.Notebook):
         varga_aspects = self.app.dispatcher.varga_aspects
         division = self.app.dispatcher.harmonic_ring
         obj_names = aspects["obj names"]
+        objs_sorted = sorted(
+            obj_names,
+            key=lambda name: self.order.index(name)
+            if name in self.order
+            else len(self.order),
+        )
         speeds = aspects["speeds"]
         name2idx = {n: i for i, n in enumerate(aspects["obj names"])}
         matrix = aspects["aspects"]
@@ -251,7 +258,7 @@ class Tables(Gtk.Notebook):
         # horizontal bottom line : match above text = f"aspects ..."
         self.h_line = f"{self.h_sym * 62}\n"
         # grid
-        for row_name in obj_names:
+        for row_name in objs_sorted:
             i = name2idx[row_name]
             speed = speeds.get(row_name, 0.0)
             retro_char = "R" if speed < 0 else " "
@@ -280,10 +287,10 @@ class Tables(Gtk.Notebook):
             text += "\n"
         # horizontal line at end
         text += self.h_line
-        LOG.debug(
-            f"updateaspects : {text}",
-            extra=routing,
-        )
+        # LOG.debug(
+        #     f"getaspectstext :\n{text}",
+        #     extra=routing,
+        # )
         return text
 
     def update_p2(self, event_id: str, package: dict):
@@ -387,6 +394,7 @@ class Tables(Gtk.Notebook):
         scroll.set_child(text_view)
         # add page with event label as tab title
         self.append_page(scroll, Gtk.Label.new(event_id))
+        self.set_tab_reorderable(scroll, True)
         self.page_widgets[event_id] = scroll
         self.set_current_page(self.get_n_pages() - 1)
 
@@ -490,6 +498,7 @@ class Tables(Gtk.Notebook):
         scroll.set_child(text_view)
         # add page with event label as tab title
         self.append_page(scroll, Gtk.Label.new(event_id))
+        self.set_tab_reorderable(scroll, True)
         self.page_widgets[event_id] = scroll
         self.set_current_page(self.get_n_pages() - 1)
 
@@ -502,7 +511,7 @@ class Tables(Gtk.Notebook):
             )
             return
         separ = f"{self.h_sym * 21}\n"
-        content = " horas should be local time : check\n"
+        content = " horas are event location time\n (aka local (to event) time)\n"
         weekday = horas[0]["weekday"]
         sunrise = horas[0]["sunrise"]
         sunset = horas[0]["sunset"]
@@ -548,6 +557,7 @@ class Tables(Gtk.Notebook):
         scroll.set_child(text_view)
         # add page with event label as tab title
         self.append_page(scroll, Gtk.Label.new(event_id))
+        self.set_tab_reorderable(scroll, True)
         self.page_widgets[event_id] = scroll
 
     def update_vimsottari(self, event_id: str, content: str):

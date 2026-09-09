@@ -273,6 +273,8 @@ class EventData:
         datetime_name = entry.get_name()
         date_time = entry.get_text().strip()
         # todo we are accessing data that this file is supposed to provide
+        if not self.is_hotkey_now and date_time == self.old_date_time:
+            return
         E1 = self.app.EVENT_ONE
         # log.debug(f"ondatetimechange : E1={E1.name}")
         if E1 is None:
@@ -451,7 +453,7 @@ class EventData:
 
         if self.id == "e2" and self.chart.get("datetime"):
             # copy missing location from event 1
-            if self.chart.get("location"):
+            if not self.chart.get("location"):
                 for key in [
                     "country",
                     "city",
@@ -463,9 +465,12 @@ class EventData:
                     self.chart[key] = E1_chart[key]
                 for key in ["lat", "lon", "alt"]:
                     self.sweph[key] = E1_sweph[key]
+            # reuse
+            if not self.chart.get("name"):
+                self.chart["name"] = E1_chart.get("name")
 
         dataset = {"id": self.id, "chart": self.chart, "sweph": self.sweph}
-        # LOG.debug(f"dataset={dataset}")
+        LOG.debug(f"ondatetimechange : dataset={dataset}")
         self.app.signaler.emit("event changed", dataset)
 
         LOG.info(

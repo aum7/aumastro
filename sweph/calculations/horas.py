@@ -119,9 +119,13 @@ def get_day_horas(jd_ut, lon, lat, alt, flag):
         )
         return None
     # validate
-    sunrise = jdtoiso(srise)
-    sunset = jdtoiso(sset)
-    sunrise_next = jdtoiso(srise_next)
+    # sunrise = jdtoiso(srise)
+    # sunset = jdtoiso(sset)
+    # sunrise_next = jdtoiso(srise_next)
+    # convert to event location time
+    sunrise = to_event_str(srise)
+    sunset = to_event_str(sset)
+    sunrise_next = to_event_str(srise_next)
     if not (srise < sset < srise_next):
         LOG.error(
             f"invalid hora calculation :\n"

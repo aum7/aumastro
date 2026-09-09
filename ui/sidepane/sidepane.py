@@ -33,7 +33,7 @@ class SidepaneManager:
         "arrow_dn": "select next time period\n(hk : ctrl+arrow down)",
     }
     # value for selected change time : 1 day as default
-    CHANGE_TIME_SELECTED = 1.0
+    # CHANGE_TIME_SELECTED = 1.0
     # time periods in julian day(s) as keys, used for change time
     CHANGE_TIME_PERIODS = {
         "3652.0": "10 Y",  # 365 * 10 + 2 leap years (approximation)
@@ -62,13 +62,11 @@ class SidepaneManager:
         self.clp_event_one = None
         self.clp_event_two = None
         self.clp_settings = None
-        # self.clp_tools = None
-        # debug
-        LOG.debug(
-            f"\ninitsidepane : whoisme={self.__class__.__name__}"
-            f"\ninitsidepane : has-clpeventone={hasattr(self, 'clp_event_one')}",
-            extra=routingnone,
-        )
+        # LOG.debug(
+        #     f"\ninitsidepane : whoisme={self.__class__.__name__}"
+        #     f"\ninitsidepane : has-clpeventone={hasattr(self, 'clp_event_one')}",
+        #     extra=routingnone,
+        # )
 
     def buttons_from_dict(
         self,
@@ -151,7 +149,7 @@ class SidepaneManager:
         clp_change_time.set_margin_end(self.margin_end)
         clp_change_time.set_title_tooltip(
             """change time (ct) period for selected event (one or two)
-hotkeys (dedicated to app - hold ctrl):
+hotkeys (hold ctrl):
 arrow key up / down : select previous / next time period
 arrow key left / right : move time backward / forward
 
@@ -188,7 +186,6 @@ ui/sidepane/sidepane.py"""
         default_period = self.time_periods_list.index("1 D")
         self.ddn_time_periods.set_selected(default_period)
         # change time selected as julian day / float
-        # self.CHANGE_TIME_SELECTED = 1.0
         self.ddn_time_periods.connect("notify::selected", self.odd_time_period)
         # put label & buttons & dropdown into box
         box_change_time.append(box_time_icons)
@@ -203,7 +200,7 @@ ui/sidepane/sidepane.py"""
         selected = dropdown.get_selected()
         value = self.time_periods_list[selected]
         key = next(k for k, v in self.CHANGE_TIME_PERIODS.items() if v == value)
-        self.CHANGE_TIME_SELECTED = float(key)
+        self.app.dispatcher.set_change_time_period(float(key), value)
 
     def change_time_period(self, direction=1):
         """change time period ; direction -1 / 1 for previous / next"""
@@ -229,12 +226,13 @@ ui/sidepane/sidepane.py"""
             #     f"selected period : {new_value}", source="change time", timeout=3
             # )
             key = next(k for k, v in self.CHANGE_TIME_PERIODS.items() if v == new_value)
-            self.CHANGE_TIME_SELECTED = float(key)
             # store selected change time period for main title update
-            self.app.dispatcher.selected_change_time_str = new_value
-            # self.app.dispatcher["selected change time str"] = new_value
-            # update main window title todo expects dt + x
-            self.app.dispatcher.update_titlebar()
+            self.app.dispatcher.set_change_time_period(float(key), new_value)
+            self.app.notifier.debug(
+                f"changetimeperiod : newvalue={new_value}\nkey={key}",
+                source="sidepane",
+                route=[""],
+            )
 
     def change_event_time(self, change_delta):
         """adjust selected event time by julian day delta"""
@@ -265,8 +263,6 @@ ui/sidepane/sidepane.py"""
                     dt_now.minute,
                     dt_now.second,
                     calendar=b"g",
-                    # local_time=None,
-                    # lon=None,
                 )
                 LOG.debug(f"changeeventtime : isvalid={is_valid}")
             # back to string in custom iso format
@@ -277,7 +273,7 @@ ui/sidepane/sidepane.py"""
             self.app.notifier.info(
                 f"{datetime_name} set to now utc\n\t{dt_str}",  # type:ignore
                 source="sidepane",
-                route=["terminal"],
+                route=["terminal", "user"],
             )
         try:
             current_text = entry.get_text()  # type:ignore
@@ -289,7 +285,10 @@ ui/sidepane/sidepane.py"""
                 ),
                 calendar=b"g",
             )
-            LOG.debug(f"dtcorr={dt_corr}")
+            LOG.debug(
+                f"dtcorr={dt_corr}",
+                extra=routingnone,
+            )
             # change time by delta which is in julian days
             jd_new = jd + change_delta
             # back to custom iso format for string
@@ -311,7 +310,7 @@ ui/sidepane/sidepane.py"""
             self.app.notifier.error(
                 f"\n{datetime_name} error : {e}",  # type:ignore
                 source="sidepane",
-                route=["terminal", "user"],
+                route=["terminal"],
             )
             # return
 
@@ -338,11 +337,11 @@ ui/sidepane/sidepane.py"""
     # change time handlers
     def obc_arrow_l(self, *args):
         """move selected event time backward"""
-        self.change_event_time(-float(self.CHANGE_TIME_SELECTED))
+        self.change_event_time(-self.app.dispatcher.selected_change_time_period)
 
     def obc_arrow_r(self, *args):
         """move selected event time forward"""
-        self.change_event_time(float(self.CHANGE_TIME_SELECTED))
+        self.change_event_time(self.app.dispatcher.selected_change_time_period)
 
     def obc_time_now(self, *args):
         """set time now for selected event"""

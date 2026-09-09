@@ -45,7 +45,9 @@ class Dispatcher:
         self.selected_objects_event = self.selected_event
         self.SWE_FLAGS = usersett.SWE_FLAGS
         # change time < on hotkeys [ctrl+arrow] | button click
-        self.selected_change_time_period = "1 D"
+        self.selected_change_time_period = 1.0
+        # string representation of above
+        self.selected_change_time_label = "1 D"
         self.OBJECTS = usersett.OBJECTS
         self.OBJECTS_2 = usersett.OBJECTS_2
         self.LOTS = usersett.LOTS
@@ -332,7 +334,7 @@ class Dispatcher:
             )
             return
 
-        sweph = self.events_data[event_id]["sweph"]
+        sweph = self.events_data[event_id].get("sweph")
         if not sweph:
             LOG.debug(
                 f"recalculate : {event_id} has no sweph data yet > exiting",
@@ -347,7 +349,7 @@ class Dispatcher:
         jd_ut = sweph["jd ut"]
         lat = sweph["lat"]
         lon = sweph["lon"]
-        alt = sweph["alt"] or 0.0
+        alt = sweph.get("alt", 0.0)
         if "topocentric" in self.active_flags:
             # swisweph mess : lon-lat
             swe.set_topo(lon, lat, alt)
@@ -469,10 +471,11 @@ class Dispatcher:
             e1_mc = e1_houses["ascmc"][1]
             e2_jd = self.events_data["e2"]["sweph"]["jd ut"]
             e2_mo = positions_data[1]["lon"]
-            year_length = self.selected_year_period
-            month_length = self.selected_month_period
-            self.age_years = (e2_jd - e1_jd) / year_length if e1_jd else 0.0
-            self.age_months = (e2_jd - e1_jd) / month_length if e1_jd else 0.0
+            year_length = self.selected_year_period[1]
+            month_length = self.selected_month_period[1]
+            period = e2_jd - e1_jd
+            self.age_years = period / year_length if e1_jd else 0.0
+            self.age_months = period / month_length if e1_jd else 0.0
             if self.rings["d1 direction"] and e1_jd:
                 self.run_calc(
                     event_id,
@@ -599,8 +602,13 @@ class Dispatcher:
 
     def refresh_package(self, event_id: str):
         # get & emit package with cached data - never recompute by itself
-        computed = self.events_data[event_id]["computed"]
-        chart = self.events_data[event_id]["chart"]
+        computed = self.events_data[event_id].get("computed")
+        chart = self.events_data[event_id].get("chart")
+        if computed is None or chart is None:
+            LOG.debug(f"refreshpackage : {event_id} has no computed / chart : exiting")
+
+            return
+
         hsys_str = next(
             (
                 sys[2]
@@ -623,6 +631,12 @@ class Dispatcher:
         self.app.signaler.emit("package ready", event_id, event_package)
         self.update_titlebar()
 
+    def set_change_time_period(self, period: float, label: str):
+        # sync math (float) & display (label) & update titlebar
+        self.selected_change_time_period = period
+        self.selected_change_time_label = label
+        self.update_titlebar()
+
     def update_titlebar(self):
         # grab needed data & construct string to be displayed on mainwindow titlebar
         # todo add enabled rings
@@ -641,7 +655,7 @@ class Dispatcher:
                 title += f" | age : {age_y_str} y"
             if self.age_months:
                 title += f" - lun : {self.age_months:.2f} m"
-        change_time = self.selected_change_time_period or "1 D"
+        change_time = self.selected_change_time_label or "1 D"
         title += f" | ct : {change_time}"
         #  send signal & subscribe in mainwindow
         # update titlebar
