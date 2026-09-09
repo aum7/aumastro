@@ -22,7 +22,7 @@ class AstroChart(Gtk.Box):
 
     def __init__(self, app=None, **kwargs):
         super().__init__(**kwargs)
-        # app IS mainwindow
+        # app IS aumastroapp
         if app is not None:
             self.app = app
         LOG.debug(
@@ -131,8 +131,7 @@ class AstroChart(Gtk.Box):
             "radius dict": radius_dict,
             "outer rings": outer_rings,
             "info": info,
-            "chart settings": self.app.dispatcher.CHART_SETTINGS,
-            "app": self.app,
         }
-        rings = Rings(ctx, self.event_package)  # or we draw in rings.py
+        # pass app for rings to have access to dispatcher
+        rings = Rings(self.app, ctx, self.event_package)
         rings.draw(cr)

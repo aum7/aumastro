@@ -9,7 +9,11 @@ routingtimeout4 = {"source": source, "route": ["terminal", "user"], "timeout": "
 routingtimeout6 = {"source": source, "route": ["terminal", "user"], "timeout": "6"}
 routinguser = {"source": source, "route": ["terminal", "user"]}
 routingnone = {"source": source, "route": [""]}
-from helpers import _decimal_to_sign_dms as decsigndms, _decimal_to_ra as decra
+from helpers import (
+    _decimal_to_sign_dms as decsigndms,
+    _decimal_to_ra as decra,
+    _house_for_lon as hsforlon,
+)
 
 # from user.usersettings import HOUSE_SYSTEMS
 from sweph.swetime import jd_to_custom_iso as jdtoiso
@@ -54,9 +58,7 @@ class Tables(Gtk.Notebook):
         self.app.signaler.connect("package ready", self.on_package_ready)
 
     def on_package_ready(self, event_id: str, package: str):
-        # if event not in ("e1", "e2"):
         # LOG.debug(f"onpackageready : package={package}")
-        #     return
         self.event_package[event_id] = package
         self.current_event = event_id
         self.update_event_package(event_id)
@@ -104,7 +106,7 @@ class Tables(Gtk.Notebook):
         if "vimsottari" in package and event_id == "e1":
             self.update_vimsottari("vimsottari", package["vimsottari"])
         if "horas" in package:
-            self.update_horas(f"{event_id} horas", package["horas"])
+            self.update_horas(f"{event_id} horas", package["horas"]["horas list"])
         if event_id == "e2":
             if "p2 pos" in package:
                 self.update_p2("p2", package)
@@ -115,9 +117,9 @@ class Tables(Gtk.Notebook):
 
     def get_positions_text(self, event_id: str, package: dict):
         # get positions
-        positions = package.get("positions", {})
+        positions = package["positions"]
         # get houses data if available
-        houses = package.get("houses", {})
+        houses = package["houses"]
         if not positions or not houses:
             LOG.error(
                 f"positions or houses missing for {event_id}",
@@ -144,22 +146,26 @@ class Tables(Gtk.Notebook):
         # separ = f"{self.h_sym * 56}\n"
         # loop through positions and calculate houses if possible
         for key, obj in pos_map.items():
-            name = obj.get("name", "name")
-            speed = obj.get("lon speed", 0)
+            name = obj["name"]
+            speed = obj["lon speed"]
             # relative speed
-            speed_rel = obj.get("speed relative", 0)
+            speed_rel = obj["speed relative"]
             # print(f"tables : speed : {speed}")
-            retro = obj.get("retro", "")
-            lon = obj.get("lon", 0)
-            house = obj.get("house", "")
-            nak = obj.get("naksatra", ("", "", ""))
-            var_lon = obj.get("varga", 0)
-            var_nak = obj.get("varga naksatra", ("", "", ""))
+            lon = obj["lon"]
+            retro = obj["retro"]
+            house = hsforlon(obj["lon"], cusps)
+            nak = obj["naksatra"]
+            var_lon = obj["varga"]
+            var_nak = obj["varga naksatra"]
+            nak_idx = nak["idx"]
+            nak_ruler = nak["ruler"]
+            var_idx = var_nak["idx"]
+            var_ruler = var_nak["ruler"]
             ln_pos = (
                 f" {name}{retro} {self.v_sym} "
-                f"{decsigndms(lon):10} {nak[0]:02}-{nak[2]} {self.v_sym} "
-                f"{decsigndms(var_lon):10} {var_nak[0]:02}-{var_nak[2]} {self.v_sym} "
-                f"{obj.get('lat', 0):5.2f} {self.v_sym} "
+                f"{decsigndms(lon):10} {nak_idx:02}-{nak_ruler} {self.v_sym} "
+                f"{decsigndms(var_lon):10} {var_idx:02}-{var_ruler} {self.v_sym} "
+                f"{obj['lat']:5.2f} {self.v_sym} "
                 f"{lon:5.1f} {self.v_sym} {speed:6.3f} {speed_rel:4.0f} {self.v_sym} {house}\n"
             )
             text += ln_pos
@@ -168,7 +174,7 @@ class Tables(Gtk.Notebook):
             # selected = getattr(self.app, "selected_house_sys_str", "")
             # if isinstance(selected, bytes):
             #     selected = selected.decode("ascii")
-            hsys = self.event_package[event_id]["info"]["hsys"]
+            # hsys = self.event_package[event_id]["info"]["hsys"]
             # LOG.debug(f"hsys={hsys}")
             hsys_char = None
             # for sys in HOUSE_SYSTEMS:
@@ -177,16 +183,17 @@ class Tables(Gtk.Notebook):
             #         break
             ln_csps = ""
             raH, raM, raS = decra(self.armc)
-            # todo horas need conversion to event time
-            horas = self.event_package[event_id]["horas"]["horas"]
-            curr_hora = self.event_package[event_id]["horas"]["current hora"]["lord"]
-            LOG.debug(f"horas={horas} currhora={curr_hora}")
+            # curr_hora = self.event_package[event_id]["horas"]["current hora"][0]
+            curr_hora = self.event_package[event_id]["horas"]["current hora"]["ruler"]
+            LOG.debug(f"currhora={curr_hora}")
             hora_glyph = get_glyph(curr_hora, False)
             # hora_glyph = self.event_package[event_id].get("hora glyph", "")
-            weekday = self.event_package[event_id].get("weekday", "")
-            sunrise = self.event_package[event_id].get("sunrise", "")
-            sunset = self.event_package[event_id].get("sunset", "")
-            sunrise_next = self.event_package[event_id].get("sunrise next", "")
+            weekday = self.event_package[event_id]["horas"]["horas list"][0]["weekday"]
+            sunrise = self.event_package[event_id]["horas"]["horas list"][0]["sunrise"]
+            sunset = self.event_package[event_id]["horas"]["horas list"][0]["sunset"]
+            sunrise_next = self.event_package[event_id]["horas"]["horas list"][0][
+                "sunrise next"
+            ]
             if hsys_char in ["E", "D", "W"]:
                 # print(f"selected_hsys : {self.app.selected_house_sys_str}")
                 # if selected in ["eqasc", "eqmc", "wholehs"]:
@@ -224,8 +231,8 @@ class Tables(Gtk.Notebook):
             )
             return ""
 
-        use_varga_aspects = self.app.chart_settings.get("varga aspects", False)
-        division = self.app.chart_settings.get("harmonic ring", "1").strip()
+        varga_aspects = self.app.dispatcher.varga_aspects
+        division = self.app.dispatcher.harmonic_ring
         obj_names = aspects["obj names"]
         speeds = aspects["speeds"]
         name2idx = {n: i for i, n in enumerate(aspects["obj names"])}
@@ -233,7 +240,7 @@ class Tables(Gtk.Notebook):
         # title line
         text = (
             f" aspects{self.vic_spc}[v{division}]{self.vic_spc}{self.h_sym * 52}\n"
-            if use_varga_aspects
+            if varga_aspects
             else f" aspects{self.vic_spc}[v1]{self.vic_spc}{self.h_sym * 52}\n"
         )
         # header row
@@ -446,8 +453,8 @@ class Tables(Gtk.Notebook):
                 if "name" not in station:
                     continue
                 name = station["name"]
-                prev_st = jdtoiso(station.get("prevstation"))
-                next_st = jdtoiso(station.get("nextstation"))
+                prev_st = jdtoiso(station.get("prev station"))
+                next_st = jdtoiso(station.get("next station"))
                 content += f" {name}\n"
                 content += f"   prev : {prev_st}\n"
                 content += f"   next : {next_st}\n"
@@ -490,27 +497,27 @@ class Tables(Gtk.Notebook):
         if not horas:
             self.notifier.error(
                 "missing horas",
-                source="tabels",
+                source="tables",
                 route=["terminal"],
             )
             return
         separ = f"{self.h_sym * 21}\n"
-        content = " horas should be local time : todo\n"
+        content = " horas should be local time : check\n"
         weekday = horas[0]["weekday"]
         sunrise = horas[0]["sunrise"]
         sunset = horas[0]["sunset"]
-        sunrise_next = horas[0]["sunrise_next"]
-        start_hora = horas[1]["lord"]
+        sunrise_next = horas[0]["sunrise next"]
+        start_hora = horas[1]["ruler"]
         content += (
             f" {weekday} | {start_hora} vara\n sunrise {sunrise}\n sunset {sunset}\n"
             f" next sunrise {sunrise_next}\n"
         )
         for hora in horas[1:]:
-            lord = hora["lord"]
-            glyph = get_glyph(lord, False)
+            ruler = hora["ruler"]
+            glyph = get_glyph(ruler, False)
             content += (
                 f" {hora['hour']:2d} - {hora['start'][11:]} "
-                f"- {hora['end'][11:]} {lord} {glyph}\n"
+                f"- {hora['end'][11:]} {ruler} {glyph}\n"
             )
         content += separ
         if page in self.page_widgets:

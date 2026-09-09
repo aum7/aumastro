@@ -19,12 +19,13 @@ from sweph.calculations.lots import calculate_lots
 from sweph.calculations.stars import calculate_stars
 from sweph.calculations.syzygy import calculate_syzygy
 from sweph.calculations.eclipses import calculate_eclipses
+from sweph.calculations.d1 import calculate_d1
 from sweph.calculations.p2 import calculate_p2
 from sweph.calculations.p3 import calculate_p3
 from sweph.calculations.p3m import calculate_p3m
 from sweph.calculations.returnlunar import calculate_lunar_return
 from sweph.calculations.returnsolar import calculate_solar_return
-from sweph.calculations.d1 import calculate_d1
+from sweph.calculations.aspects import calculate_aspects
 import user.usersettings as usersett
 from user.fixedstars import FIXEDSTARS
 
@@ -118,6 +119,7 @@ class Dispatcher:
         self.age_years = 0.0
         self.age_months = 0.0
         self.movie_mode = False
+        self.orb = 1.5
         # if event 2 has datetime > e2 is active ie user interested in transit etc
         self.e2_active = False
         # signals
@@ -189,6 +191,7 @@ class Dispatcher:
     def on_event_change(self, dataset):
         # todo do we need this ??? we are operating with local attributes self.X
         event_id = dataset.get("id")
+        # LOG.debug(f"oneventchage : dataset={dataset}")
         self.set_event_data(event_id, dataset)
         # received e2 data - user is interested in transit progressions transit etc
         if event_id == "e2":
@@ -197,7 +200,6 @@ class Dispatcher:
 
     def set_event_data(self, event_id: str, dataset: dict):
         # store incoming event data : local calculations only
-        # LOG.debug("inside seteventdata")
         self.events_data[event_id]["chart"] = dataset["chart"]
         self.events_data[event_id]["sweph"] = dataset["sweph"]
 
@@ -374,7 +376,7 @@ class Dispatcher:
             self.mean_node,
             self.swe_flag,
         )
-        print("after positions")
+        # print("after positions")
         # house cusps & ascmc todo
         self.run_calc(
             event_id,
@@ -386,15 +388,24 @@ class Dispatcher:
             self.selected_hsys,
             self.swe_flag,
         )
-        print("after houses")
+        # print("after houses")
         # house cusps & ascmc todo
         # calculate all-day horas :from sunrise to sunset | wall clock new day 00:00
         self.run_calc(
             event_id, "horas", calculate_horas, jd_ut, lon, lat, alt, self.swe_flag
         )
-        print("after horas")
+        # print("after horas")
         positions_data = computed["positions"]
         houses_data = computed["houses"]
+        if positions_data:
+            self.run_calc(
+                event_id,
+                "aspects",
+                calculate_aspects,
+                positions_data,
+                self.orb,
+                self.varga_aspects,
+            )
         if event_id == "e1":
             # lots if enabled - needs positions & houses
             lot_defs = {
@@ -405,11 +416,11 @@ class Dispatcher:
             if lot_defs and positions_data and houses_data:
                 lots_package = {
                     "ascmc": houses_data["ascmc"],
-                    "positions": positions_data["positions"],
+                    "positions": positions_data,
                     "lots": lot_defs,
                 }
                 self.run_calc(event_id, "lots", calculate_lots, lots_package)
-            print("after lots")
+            # print("after lots")
             # fixed stars
             if self.selected_stars:
                 self.run_calc(
@@ -420,11 +431,11 @@ class Dispatcher:
                     self.selected_stars,
                     self.swe_flag,
                 )
-            print("after stars")
+            # print("after stars")
             # prenatal syzygy & eclipses
             if positions_data and "syzygy" in self.selected_prenatal:
-                su_lon = positions_data["positions"][0]["lon"]
-                mo_lon = positions_data["positions"][1]["lon"]
+                su_lon = positions_data[0]["lon"]
+                mo_lon = positions_data[1]["lon"]
                 self.run_calc(
                     event_id,
                     "syzygy",
@@ -434,7 +445,7 @@ class Dispatcher:
                     mo_lon,
                     self.swe_flag,
                 )
-            print("after syzygy")
+            # print("after syzygy")
             # eclipses
             if "eclipses" in self.selected_prenatal:
                 self.run_calc(
@@ -444,7 +455,7 @@ class Dispatcher:
                     jd_ut,
                     self.swe_flag,
                 )
-            print("after eclipses")
+            # print("after eclipses")
         if event_id == "e2":
             # progressions returns for event 2
             e1_computed = self.events_data["e1"]["computed"]
@@ -457,9 +468,11 @@ class Dispatcher:
             e1_asc = e1_houses["ascmc"][0]
             e1_mc = e1_houses["ascmc"][1]
             e2_jd = self.events_data["e2"]["sweph"]["jd ut"]
-            e2_mo = positions_data["positions"][1]["lon"]
+            e2_mo = positions_data[1]["lon"]
             year_length = self.selected_year_period
             month_length = self.selected_month_period
+            self.age_years = (e2_jd - e1_jd) / year_length if e1_jd else 0.0
+            self.age_months = (e2_jd - e1_jd) / month_length if e1_jd else 0.0
             if self.rings["d1 direction"] and e1_jd:
                 self.run_calc(
                     event_id,
@@ -487,7 +500,7 @@ class Dispatcher:
                     e1_asc,
                     e1_mc,
                     objs,
-                    year_length,
+                    self.age_years,
                     self.selected_hsys,
                     self.mean_node,
                     self.swe_flag,
@@ -499,7 +512,7 @@ class Dispatcher:
                     "p3",
                     calculate_p3,
                     e1_jd,
-                    e2_jd,
+                    # e2_jd,
                     lat,
                     lon,
                     e1_su,
@@ -520,7 +533,7 @@ class Dispatcher:
                     "p3m",
                     calculate_p3m,
                     e1_jd,
-                    e2_jd,
+                    # e2_jd,
                     lat,
                     lon,
                     e1_su,
@@ -529,7 +542,7 @@ class Dispatcher:
                     e1_mc,
                     objs,
                     month_length,
-                    year_length,
+                    self.age_years,
                     self.exact_lunar_month,
                     self.selected_hsys,
                     self.mean_node,

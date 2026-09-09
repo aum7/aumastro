@@ -32,8 +32,11 @@ def get_current_hora(jd_ut, horas):
     for hora in horas:
         if hora["start jd"] <= jd_ut < hora["end jd"]:
             # return hora with start & end times
-            return hora["lord"], hora["start event"], hora["end event"]
-
+            return {
+                "ruler": hora["ruler"],
+                "start": hora["start"],
+                "end": hora["end"],
+            }
     return None
 
 
@@ -136,7 +139,7 @@ def get_day_horas(jd_ut, lon, lat, alt, flag):
     night_length = srise_next - sset
     day_hour = day_length / 12.0
     night_hour = night_length / 12.0
-    horas: list[dict] = [
+    horas_list: list[dict] = [
         {
             "weekday": weekday,
             "sunrise": sunrise,
@@ -151,16 +154,16 @@ def get_day_horas(jd_ut, lon, lat, alt, flag):
         else:
             start = sset + (i - 12) * night_hour
             end = start + night_hour
-        lord = HORAS_ORDER[(lord_idx + i) % 7]
-        horas.append({
+        ruler = HORAS_ORDER[(lord_idx + i) % 7]
+        horas_list.append({
             "hour": i + 1,
-            "lord": lord,
+            "ruler": ruler,
             "start jd": start,
             "end jd": end,
-            "start event": to_event_str(start),  # type:ignore
-            "end event": to_event_str(end),  # type:ignore
+            "start": to_event_str(start),  # type:ignore
+            "end": to_event_str(end),  # type:ignore
         })
-    return horas
+    return horas_list
 
 
 def calculate_horas(jd_ut, lon, lat, alt, flag):
@@ -168,11 +171,11 @@ def calculate_horas(jd_ut, lon, lat, alt, flag):
     if jd_ut is None or lon is None:
         return err("invalid jd_ut or geo coordinates")
     alt = alt if alt is not None else 0.0
-    horas = get_day_horas(jd_ut, lon, lat, alt, flag)
-    if horas is None:
+    horas_list = get_day_horas(jd_ut, lon, lat, alt, flag)
+    if horas_list is None:
         return err("failed to calculate horas")
-    curr_hora = get_current_hora(jd_ut, horas[1:])
+    curr_hora = get_current_hora(jd_ut, horas_list[1:])
     if curr_hora is None:
         return err("failed to calculate current hora")
 
-    return ok({"horas": horas, "current hora": curr_hora})
+    return ok({"horas list": horas_list, "current hora": curr_hora})

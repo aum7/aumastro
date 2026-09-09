@@ -3,7 +3,7 @@
 # ruff: noqa: E402
 import logging
 
-log = logging.getLogger(__name__)
+LOG = logging.getLogger(__name__)
 source = "rings"
 routing = {"source": source, "route": ["terminal"]}
 routinguser = {"source": source, "route": ["terminal", "user"]}
@@ -11,13 +11,14 @@ routingnone = {"source": source, "route": [""]}
 import cairo
 import ui.fonts.glyphs as glyphs
 from math import pi, radians, cos, sin
-from helpers import _object_name_to_code as objcode, _relative_speed
+
+# from helpers import _object_name_to_code as objcode, _relative_speed
 from sweph.constants import (
     TERMS,
     DRAW_ORDER_REVERSE,
-    PLANETARY_ORDER,
+    # PLANETARY_ORDER,
 )
-from user.usersettings import OBJECTS
+# from user.usersettings import OBJECTS
 # import gi
 # gi.require_version("Gtk", "4.0")
 # from gi.repository import Gtk  # type: ignore
@@ -52,11 +53,20 @@ class Rings:
         "default": (0.5, 0.5, 0.5, 0.5),
     }
 
-    def __init__(self, ctx: dict, data: dict):
-        self.data = data or {}
+    def __init__(self, app, ctx: dict, package: dict):
+        self.app = app
+        # selfapp IS
+        self.package = package or {}
         self.ctx = ctx
-        # dispatcher takes care of correct amount of data per ring
-        self.app = ctx.get("app")
+        # selfapp IS aumastro
+        if self.app is None:
+            LOG.error("selfapp is NONE")
+            # todo return on not return ???
+            return
+        # LOG.debug(
+        #     f"init : whois selfapp : {self.app.__class__.__name__}"
+        #     f"\nhas-selfappdispatcher : {hasattr(self.app, 'dispatcher')}"  # true
+        # )
         self.cx = ctx.get("cx", 0.0)
         self.cy = ctx.get("cy", 0.0)
         self.font_scale = ctx.get("font scale", 1.0)
@@ -64,16 +74,22 @@ class Rings:
         self.radius_dict = ctx.get("radius_dict", {})
         self.outer_rings = ctx.get("outer rings", [])  # outer rings are togglable
         self.info = ctx.get("info", {})
-        self.chart_settings = ctx.get("chart settings", {})
         self.snap_targets = []
         self.font_size = 22  # default font size
-        log.debug(
-            f"ctx received : fontscale={self.font_scale} "
-            f"radius dict={self.radius_dict} "
-            f"outer rings={self.outer_rings} "
-            f"chart settings={self.chart_settings} ",
-            extra=routingnone,
-        )
+        # 1-time init then get fresh from dispatcher
+        # self.fixed_asc = getattr(self.app.dispatcher, "fixed_asc", False)
+        # self.naksatras_ring = getattr(self.app.dispatcher, "naksatras_ring", False)
+        # self.harmonic_ring = getattr(self.app.dispatcher, "harmonic_ring", "")
+        # self.mean_node = getattr(self.app.dispatcher, "mean_node", False)
+        # self.enable_glyphs = getattr(self.app.dispatcher, "enable_glyphs", True)
+        # self.movie_mode = getattr(self.app.dispatcher, "movie_mode", False)
+        # LOG.debug(
+        #     f"ctx received : fontscale={self.font_scale} "
+        #     f"radius dict={self.radius_dict} "
+        #     f"outer rings={self.outer_rings} "
+        #     f"info={self.info} ",
+        #     extra=routing,
+        # )
 
     def get_ring_color(self, ring: str):
         return self.RING_COLORS.get(ring, self.RING_COLORS["default"])
@@ -100,7 +116,7 @@ class Rings:
         # draw objects for any ring
         marker_size = self.scaled_marker_size()
         obj_scale = self.scaled_obj_scale()
-        ring_entry = self.data.get(ring, {})
+        ring_entry = self.package.get(ring, {})
         if isinstance(ring_entry, dict):
             positions = ring_entry.get("positions", [])
         else:
@@ -118,7 +134,7 @@ class Rings:
             obj = object_by_name.get(name)
             if not obj:
                 continue
-            if name in ("p3date", "p3jdut"):
+            if name in ("p3 date", "p3 jdut"):
                 continue
             angle = pi - radians(obj.data.get("lon", 0.0))
             # draw objects with latitude - not desired here
@@ -225,7 +241,9 @@ class Rings:
         cr.set_line_width(1)
         cr.stroke()
         ring_data = (
-            self.data.get(ring, {}) if isinstance(self.data.get(ring), dict) else {}
+            self.package.get(ring, {})
+            if isinstance(self.package.get(ring), dict)
+            else {}
         )
         cusps = ring_data.get("cusps", [])
         for angle in cusps:
@@ -291,7 +309,9 @@ class Rings:
         cr.set_line_width(1)
         cr.stroke()
         ring_data = (
-            self.data.get(ring, {}) if isinstance(self.data.get(ring), dict) else {}
+            self.package.get(ring, {})
+            if isinstance(self.package.get(ring), dict)
+            else {}
         )
         cusps = ring_data.get("cusps", [])
         for angle in cusps:
@@ -318,7 +338,9 @@ class Rings:
         cr.set_line_width(1)
         cr.stroke()
         ring_data = (
-            self.data.get(ring, {}) if isinstance(self.data.get(ring), dict) else {}
+            self.package.get(ring, {})
+            if isinstance(self.package.get(ring), dict)
+            else {}
         )
         cusps = ring_data.get("cusps", [])
         for angle in cusps:
@@ -347,7 +369,9 @@ class Rings:
         cr.stroke()
         # cusps
         ring_data = (
-            self.data.get(ring, {}) if isinstance(self.data.get(ring), dict) else {}
+            self.package.get(ring, {})
+            if isinstance(self.package.get(ring), dict)
+            else {}
         )
         cusps = ring_data.get("cusps", [])
         # positions = ring_data.get("positions")
@@ -393,7 +417,7 @@ class Rings:
         cr.set_source_rgba(1.0, 0.9, 0.2, 0.8)
         # draw stars circle
         stars_diameter = 7.2
-        stars = self.data.get("stars", {})
+        stars = self.package.get("stars", {})
         if stars:
             # todo unpack all attributes > pack into snap targets
             for _, (lon, _) in stars.items():
@@ -422,10 +446,10 @@ class Rings:
         cr.set_line_width(1)
         cr.stroke()
         # houses (match inner radius with outer radius of previous circle)
-        houses = self.data.get("houses", {})
+        houses = self.package.get("houses", {})
         cusps = houses.get("cusps", [])
         ascmc = houses.get("ascmc", [])
-        e1_pos = self.data.get("e1_pos", [])
+        e1_pos = self.package.get("e1_pos", [])
         for angle in cusps:
             angle = pi - radians(angle)
             x1 = self.cx + inner_r * 0.4 * cos(angle)
@@ -495,9 +519,9 @@ class Rings:
                 self.draw_diamond,
             )
         # planets with adjusted radius based on latitude
-        use_mean_node = self.chart_settings.get("mean node", False)
+        mean_node = self.app.dispatcher.mean_node
         for obj in e1_pos:
-            log.debug(
+            LOG.debug(
                 f"draweventring : obj : {obj}",
                 extra=routing,
             )
@@ -513,15 +537,15 @@ class Rings:
             )  # draw guests : astro object
             obj.draw(cr, self.cx, self.cy, radius, self.font_size)
             # if 'enable glyphs' > draw glyphs
-            if self.chart_settings.get("enable glyphs", True):
-                glyph = glyphs.get_glyph(name, use_mean_node)
+            if self.app.dispatcher.enable_glyphs:
+                glyph = glyphs.get_glyph(name, mean_node)
                 if glyph:
                     angle = pi - radians(obj.data.get("lon", 0))
                     x = self.cx + radius * cos(angle)
                     y = self.cy + radius * sin(angle)
                     cr.save()
                     # rotate chart so ascendant is horizon
-                    if self.chart_settings.get("fixed asc", False) and ascmc:
+                    if self.app.dispatcher.fixed_asc and ascmc:
                         cr.translate(x, y)
                         cr.rotate(-radians(ascmc[0]))
                         te = cr.text_extents(glyph)
@@ -540,7 +564,7 @@ class Rings:
                         cr.show_text(glyph)
                         cr.new_path()
                     cr.restore()
-        lots = self.data.get("lots", [])
+        lots = self.package.get("lots", [])
         if lots:
             for lot in lots:
                 # print(f"rings : lot : {lot.data}")
@@ -565,7 +589,7 @@ class Rings:
                     y = self.cy + radius * sin(angle)
                     cr.save()
                     # rotate chart so ascendant is horizon
-                    if self.chart_settings.get("fixed asc", False) and ascmc:
+                    if self.app.dispatcher.fixed_asc and ascmc:
                         cr.translate(x, y)
                         cr.rotate(-radians(ascmc[0]))
                         te = cr.text_extents(glyph)
@@ -584,7 +608,7 @@ class Rings:
                         cr.show_text(glyph)
                         cr.new_path()
                     cr.restore()
-        eclipses = self.data.get("eclipses")
+        eclipses = self.package.get("eclipses")
         if eclipses:
             for eclipse in eclipses:
                 # skip event attribute
@@ -608,7 +632,7 @@ class Rings:
                     y = self.cy + radius * sin(angle)
                     cr.save()
                     # rotate chart so ascendant is horizon
-                    if self.chart_settings.get("fixed asc", False) and ascmc:
+                    if self.app.dispatcher.fixed_asc and ascmc:
                         cr.translate(x, y)
                         cr.rotate(-radians(ascmc[0]))
                         te = cr.text_extents(glyph)
@@ -627,7 +651,7 @@ class Rings:
                         cr.show_text(glyph)
                         cr.new_path()
                     cr.restore()
-        syzygy = self.data.get("syzygy", [])
+        syzygy = self.package.get("syzygy", [])
         if syzygy:
             for lun in syzygy:
                 # ultra smart check
@@ -652,7 +676,7 @@ class Rings:
                     y = self.cy + radius * sin(angle)
                     cr.save()
                     # rotate chart so ascendant is horizon
-                    if self.chart_settings.get("fixed asc", False) and ascmc:
+                    if self.app.dispatcher.fixed_asc and ascmc:
                         self.set_custom_font(cr, font_size=20)
                         cr.translate(x, y)
                         cr.rotate(-radians(ascmc[0]))
@@ -677,11 +701,11 @@ class Rings:
         # center circle with event 1 info text
         ring = "info"
         outer_r, _, _ = self.get_ring_bounds(ring)
-        movie_mode = self.chart_settings.get("movie_mode", False)
-        movie_info = self.chart_settings.get("movie_info", "")
-        use_mean_node = self.chart_settings.get("use_mean_node", False)
-        event = self.data.get("event", {})
-        extra_info = self.data.get("extra info", {})
+        movie_mode = self.app.dispatcher.movie_mode
+        # movie_info = self.app.dispatcher.movie_info
+        # mean_node = self.app.dispatcher.mean_node
+        event = self.package.get("event", {})
+        extra_info = self.package.get("extra info", {})
         cr.arc(self.cx, self.cy, outer_r, 0, 2 * pi)
         if movie_mode:
             # print("rings:draw : moviemodeon")
@@ -702,111 +726,115 @@ class Rings:
         cr.set_source_rgba(1, 1, 1, 1)
         self.set_custom_font(cr, self.font_size)
         # event 1 default chart info string (format)
-        fmt_basic = self.chart_settings.get(
-            "chart info",
-            "{name}\n{date}\n{wday} {time_short}\n{city} @ {country}\n{lat}\n{lon}",
-        )
-        fmt_extra = self.chart_settings.get(
-            "chart info extra",
-            "{hsys} | {zod}\n{aynm}",
-        )
+        fmt_basic = self.app.dispatcher.chart_info
+        # "{name}\n{date}\n{wday} {time_short}\n{city} @ {country}\n{lat}\n{lon}",
+        fmt_extra = self.app.dispatcher.chart_info_extra
+        # "{hsys} | {zod}\n{aynm}",
         # convert raw newline into actual newline
         fmt_basic = fmt_basic.replace(r"\n", "\n")
+        fmt_extra = fmt_extra.replace(r"\n", "\n")
         # make a copy of data so we dont mutate hora / glyph
         data = dict(event)
+        if "hora" in fmt_basic and "hora" in data:
+            data["hora"] = glyphs.get_glyph(data["hora"], False)
         # movie mode info text : naksatra positions & speeds for 7 planets
-        if movie_mode and isinstance(movie_info, dict):
-            try:
-                rows = []
-                rows.append(" vnk spid")
-                colors = []
-                colors.append((1.0, 1.0, 1.0, 1.0))
-                speed_str = ""
-                speed_rel = 100
-                for name in PLANETARY_ORDER:
-                    code, _ = objcode(name, use_mean_node)
-                    data = movie_info.get(code)
-                    if not isinstance(data, dict):
-                        continue
-                    # naksatra tuple : index, name, ruler
-                    varga_nak = data.get("varga naksatra") or ()
-                    try:
-                        idx = int(varga_nak[0]) if varga_nak else None
-                        idx_str = f"{idx:02d}"
-                    except Exception:
-                        idx_str = "--"
-                    speed = data.get("lon speed", 0.0)
-                    if code:
-                        speed_rel = _relative_speed(code, speed)  # if code else None
-                    # glyph
-                    glyph = glyphs.get_glyph(name, False) or name
-                    if speed_rel:
-                        speed_str = f"{speed_rel:+04d}"
-                    rows.append(f"{glyph} {idx_str} {speed_str}")
-                    # text color
-                    default_color = (1.0, 1.0, 1.0, 1.0)  # white
-                    color = default_color
-                    if isinstance(code, int) and code in OBJECTS:
-                        try:
-                            color = OBJECTS[code][4]
-                        except Exception:
-                            print("rings : using default color")
-                            color = default_color
-                    colors.append(color)
-                # draw rows centered in circle
-                if rows:
-                    # slightly smaller font
-                    draw_fs = max(8, int(self.font_size * 0.75))
-                    self.set_custom_font(cr, draw_fs)
-                    line_h = draw_fs * 1.15
-                    total_h = (len(rows) - 1) * line_h if len(rows) > 1 else draw_fs
-                    y = self.cy - total_h / 2
-                    for r, col in zip(rows, colors):
-                        cr.set_source_rgba(*col)
-                        _, _, tw, _, _, _ = cr.text_extents(r)
-                        x = self.cx - tw / 2
-                        cr.move_to(x, y)
-                        cr.show_text(r)
-                        cr.new_path()
-                        y += line_h
-                    # done drawing
-                    return
-            except Exception:
-                pass
-        else:
-            if "hora" in fmt_basic and "hora" in data:
-                # print("rings : hora found in info string ")
-                data["hora"] = glyphs.get_glyph(data["hora"], False)
-            fmt_extra = fmt_extra.replace(r"\n", "\n")
-            try:
-                info_text = (
-                    fmt_basic.format(**data) + "\n" + fmt_extra.format(**extra_info)
-                )
-                log.debug(
-                    f"circleinfo : infotext :\n{info_text}",
-                    extra=routing,
-                )
-            except Exception as e:
-                # fallback to default info string
-                info_text = f"{event.get('name', '')} : {e}"
-            lines = info_text.split("\n")
-            line_spacing = self.font_size * 1.2
-            total_height = (len(lines) - 1) * self.font_size
-            # calculate start y to roughly center text block
-            y = self.cy - total_height / 2
-            for line in lines:
-                _, _, tw, _, _, _ = cr.text_extents(line)
-                x = self.cx - tw / 2
-                cr.move_to(x, y)
-                cr.show_text(line)
-                cr.new_path()  # clear drawn path
-                y += line_spacing
+        # if movie_mode and isinstance(movie_info, dict):
+        try:
+            info_text = fmt_basic.format(**data) + "\n" + fmt_extra.format(**extra_info)
+            LOG.debug(
+                f"inforing : infotext={info_text}",
+                extra=routing,
+            )
+            # rows = []
+            # rows.append(" vnk spid")
+            # colors = []
+            # colors.append((1.0, 1.0, 1.0, 1.0))
+            # speed_str = ""
+            # speed_rel = 100
+            # for name in PLANETARY_ORDER:
+            #     code, _ = objcode(name, _mean_node)
+            #     data = movie_info.get(code)
+            #     if not isinstance(data, dict):
+            #         continue
+            #     # naksatra tuple : index, name, ruler
+            #     varga_nak = data.get("varga naksatra") or ()
+            #     try:
+            #         idx = int(varga_nak[0]) if varga_nak else None
+            #         idx_str = f"{idx:02d}"
+            #     except Exception:
+            #         idx_str = "--"
+            #     speed = data.get("lon speed", 0.0)
+            #     if code:
+            #         speed_rel = _relative_speed(code, speed)  # if code else None
+            #     # glyph
+            #     glyph = glyphs.get_glyph(name, False) or name
+            #     if speed_rel:
+            #         speed_str = f"{speed_rel:+04d}"
+            #     rows.append(f"{glyph} {idx_str} {speed_str}")
+            #     # text color
+            #     default_color = (1.0, 1.0, 1.0, 1.0)  # white
+            #     color = default_color
+            #     if isinstance(code, int) and code in OBJECTS:
+            #         try:
+            #             color = OBJECTS[code][4]
+            #         except Exception:
+            #             print("rings : using default color")
+            #             color = default_color
+            #     colors.append(color)
+            # # draw rows centered in circle
+            # if rows:
+            #     # slightly smaller font
+            #     draw_fs = max(8, int(self.font_size * 0.75))
+            #     self.set_custom_font(cr, draw_fs)
+            #     line_h = draw_fs * 1.15
+            #     total_h = (len(rows) - 1) * line_h if len(rows) > 1 else draw_fs
+            #     y = self.cy - total_h / 2
+            #     for r, col in zip(rows, colors):
+            #         cr.set_source_rgba(*col)
+            #         _, _, tw, _, _, _ = cr.text_extents(r)
+            #         x = self.cx - tw / 2
+            #         cr.move_to(x, y)
+            #         cr.show_text(r)
+            #         cr.new_path()
+            #         y += line_h
+            #     # done drawing
+            #     return
+        except Exception as e:
+            info_text = f"{event.get('name', '')} : {e}"
+        # else:
+        #     if "hora" in fmt_basic and "hora" in data:
+        #         # print("rings : hora found in info string ")
+        #         data["hora"] = glyphs.get_glyph(data["hora"], False)
+        #     fmt_extra = fmt_extra.replace(r"\n", "\n")
+        #     try:
+        #         info_text = (
+        #             fmt_basic.format(**data) + "\n" + fmt_extra.format(**extra_info)
+        #         )
+        #         LOG.debug(
+        #             f"circleinfo : infotext :\n{info_text}",
+        #             extra=routing,
+        #         )
+        #     except Exception as e:
+        #         # fallback to default info string
+        #         info_text = f"{event.get('name', '')} : {e}"
+        lines = info_text.split("\n")
+        line_spacing = self.font_size * 1.2
+        total_height = (len(lines) - 1) * self.font_size
+        # calculate start y to roughly center text block
+        y = self.cy - total_height / 2
+        for line in lines:
+            _, _, tw, _, _, _ = cr.text_extents(line)
+            x = self.cx - tw / 2
+            cr.move_to(x, y)
+            cr.show_text(line)
+            cr.new_path()  # clear drawn path
+            y += line_spacing
 
     def draw_naksatras_ring(self, cr):
         # draw naksatras circle
         ring = "naksatras"
         outer_r, mid_r, _ = self.get_ring_bounds(ring)
-        naksatras = self.data.get("naksatras", {})
+        naksatras = self.package.get("naksatras", {})
         naks_num = naksatras.get("count", 28)
         first_nak = naksatras.get("first", 1)
         cr.arc(self.cx, self.cy, outer_r, 0, 2 * pi)
@@ -846,8 +874,8 @@ class Rings:
         # draw circle
         ring = "harmonic"
         outer_r, mid_r, inner_r = self.get_ring_bounds(ring)
-        harmonic = self.data.get("harmonic", [])
-        harmonic_info = self.data.get("harmonic info", {})
+        harmonic = self.package.get("harmonic", [])
+        harmonic_info = self.package.get("harmonic info", {})
         division = harmonic_info.get("division", 1)
         cr.arc(self.cx, self.cy, outer_r, 0, 2 * pi)
         # background color : dark
@@ -947,9 +975,9 @@ class Rings:
             "solar return": self.draw_solar_return_ring,
         }
         cr.save()
-        houses = self.data.get("houses", {})
+        houses = self.package.get("houses", {})
         ascmc = houses.get("ascmc", [])
-        if self.chart_settings.get("fixed asc", False) and ascmc:
+        if self.app.dispatcher.fixed_asc and ascmc:
             asc_angle = radians(ascmc[0])
             cr.translate(self.cx, self.cy)
             cr.rotate(asc_angle)
@@ -959,9 +987,9 @@ class Rings:
             if func:
                 func(cr)
 
-        if self.chart_settings.get("naksatras ring", ""):
+        if self.app.dispatcher.naksatras_ring:
             self.draw_naksatras_ring(cr)
-        if self.chart_settings.get("harmonic ring", ""):
+        if self.app.dispatcher.harmonic_ring:
             self.draw_harmonic_ring(cr)
         self.draw_signs_ring(cr)
         self.draw_event_ring(cr)

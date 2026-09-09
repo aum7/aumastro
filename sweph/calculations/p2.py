@@ -13,6 +13,7 @@ from helpers import (
     ok,
     err,
 )
+from sweph.calculations.stations import get_retro_phases
 
 
 def tuple_to_iso(jd):
@@ -24,14 +25,14 @@ def tuple_to_iso(jd):
 
 def calculate_p2(
     e1_jd,
-    e2_jd,
+    # e2_jd,
     lat,
     lon,
     e1_su,
     e1_asc,
     e1_mc,
     objs,
-    year_length,
+    age_years,
     hsys,
     mean_node,
     flag,
@@ -39,7 +40,7 @@ def calculate_p2(
     # calculate lunar returns before and after e2 (gives exact lunar month)
     # event 1 & 2 data is mandatory : natal / event & progression chart
     try:
-        age_years = (e2_jd - e1_jd) / year_length
+        # age_years = (e2_jd - e1_jd) / year_length
         # prev_jd = e2_jd - year_length - 0.1  # todo 2.4 h ???
         # sr_prev_jd = swe.solcross_ut(e1_jd, prev_jd, flag)
         # sr_next_jd = swe.solcross_ut(e1_su, e2_jd, flag)
@@ -81,6 +82,12 @@ def calculate_p2(
                 "name": name,
                 "lon": data[0],
                 "lon speed": data[3],
+                "retro": get_retro_phases(
+                    code,
+                    p2_jd,
+                    flag,
+                    curr_speed=data[3],
+                ),
             })
         return ok(p2)
 

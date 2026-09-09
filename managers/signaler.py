@@ -42,7 +42,12 @@ class Signaler:
             try:
                 handler(*args, **kwargs)
             except Exception as e:
+                # upgrade error message for better debug
+                handler_name = getattr(handler, "__qualname__", str(handler))
                 LOG.error(
-                    f"error emitting signal {signal_name} : {e}",
+                    f"error emitting signal {signal_name} in "
+                    f"handler '{handler_name}' : {e}",
                     extra=routing,
+                    # upgrade error message to show more info
+                    exc_info=True,
                 )

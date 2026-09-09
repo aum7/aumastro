@@ -14,6 +14,7 @@ from helpers import (
     ok,
     err,
 )
+from sweph.calculations.stations import get_retro_phases
 
 
 def tuple_to_iso(jd):
@@ -96,6 +97,12 @@ def calculate_p3(
                 "name": name,
                 "lon": data[0],
                 "lon speed": data[3],
+                "retro": get_retro_phases(
+                    code,
+                    p3_jd,
+                    flag,
+                    curr_speed=data[3],
+                ),
             })
         return ok(p3)
 

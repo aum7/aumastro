@@ -14,6 +14,7 @@ from helpers import (
     ok,
     err,
 )
+from sweph.calculations.stations import get_retro_phases
 
 
 def tuple_to_iso(jd):
@@ -34,7 +35,7 @@ def calculate_p3m(
     e1_mc,
     objs,
     month_length,
-    year_length,
+    age_years,
     exact_lunar_month,
     hsys,
     mean_node,
@@ -43,8 +44,8 @@ def calculate_p3m(
     # calculate lunar returns before and after e2 (gives exact lunar month)
     try:
         # todo dispatcher.age_years/age_months ever updated ???
-        period = e2_jd - e1_jd
-        age_years = period / year_length
+        # period = e2_jd - e1_jd
+        # age_years = period / year_length
         if exact_lunar_month and e1_mo is not None:
             # todo weird calculation - why e1_mo - why mo at all
             full_years = int(age_years)
@@ -103,6 +104,12 @@ def calculate_p3m(
                 "name": name,
                 "lon": data[0],
                 "lon speed": data[3],
+                "retro": get_retro_phases(
+                    code,
+                    p3m_jd,
+                    flag,
+                    curr_speed=data[3],
+                ),
             })
         return ok(p3m)
 

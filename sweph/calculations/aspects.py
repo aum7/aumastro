@@ -95,13 +95,17 @@ def aspects_matrix(objs_map, pos_map, orb):
 def calculate_aspects(positions, orb, varga_aspects):
     # calculate aspectarian for one or both events
     draw_order = ["mo", "me", "ve", "su", "ma", "ju", "sa", "ur", "ne", "pl", "ra"]
-    objs_map = [name for name in draw_order if name in positions]
+    by_name = {v["name"]: v for v in positions.values()}
+    objs_map = [name for name in draw_order if name in by_name]
     try:
         if varga_aspects:
             varga_map = {}
-            for k, v in positions.items():
-                varga_map[k] = v.copy()
-                varga_map[k]["lon"] = v["varga"]
+            for name in objs_map:
+                varga_map[name] = by_name[name].copy()
+                varga_map[name]["lon"] = by_name[name]["varga"]
+            # for k, v in positions.items():
+            # varga_map[k] = v.copy()
+            # varga_map[k]["lon"] = v["varga"]
             obj_names, aspect_matrix, speeds = aspects_matrix(objs_map, varga_map, orb)
         else:
             obj_names, aspect_matrix, speeds = aspects_matrix(objs_map, positions, orb)

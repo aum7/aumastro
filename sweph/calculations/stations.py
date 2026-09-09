@@ -12,20 +12,21 @@ from sweph.constants import STATION_SPEED, RETRO_DAYS
 last_stations = {}
 
 
-def get_retro_phases(body, jd_ut, flag):
+def get_retro_phases(body, jd_ut, flag, curr_speed=None):
     if body in (0, 1):
         return " "
-    curr_speed = lon_speed(body, jd_ut, flag)
+    if curr_speed is None:
+        curr_speed = lon_speed(body, jd_ut, flag)
     if body in (10, 11):
-        return "r" if curr_speed < 0 else " "
+        return "R" if curr_speed < 0 else " "
     # used in positions.py & tables todo ???
     treshold = STATION_SPEED.get(body, 0)
     if abs(curr_speed) < treshold:
         speed_next = lon_speed(body, jd_ut + 0.1, flag)
         if speed_next < curr_speed:
-            return "sr"
-        return "sd"
-    return "r" if curr_speed < 0 else " "
+            return "SR"
+        return "SD"
+    return "R" if curr_speed < 0 else " "
 
 
 def lon_speed(body, jd_ut, flag):
