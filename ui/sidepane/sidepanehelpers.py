@@ -32,15 +32,15 @@ def objects_toggled(checkbutton, name, dispatcher):
     # clicking on checkbutton
     active = checkbutton.get_active()
     event = dispatcher.selected_objects_event
-    dispatcher.toggle_object(event, name, active)
+    dispatcher.update_object(event, name, active)
 
 
 def lots_toggled(checkbutton, name, dispatcher):
-    dispatcher.toggle_lot(name, checkbutton.get_active())
+    dispatcher.update_lot(name, checkbutton.get_active())
 
 
 def prenatal_toggled(checkbutton, name, dispatcher):
-    dispatcher.toggle_prenatal(name, checkbutton.get_active())
+    dispatcher.update_prenatal(name, checkbutton.get_active())
 
 
 def house_system_changed(dropdown, _pspec, dispatcher):

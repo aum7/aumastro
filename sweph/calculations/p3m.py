@@ -17,14 +17,14 @@ from helpers import (
 
 
 def tuple_to_iso(jd):
-    date = swe.revjul(jd, swe.GREG_CAL)
-    y, m, d, h = date
-    H, M, S = dectohms(h)
-    return f"{y}-{m:02}-{d:02} {H:02}:{M:02}:{S:02}"
+    Y, M, D, dec_h = swe.revjul(jd, swe.GREG_CAL)
+    h, m, s = dectohms(dec_h)
+
+    return f"{Y:04d}-{M:02d}-{D:02d} {h:02d}:{m:02d}:{s:02d}"
 
 
 def calculate_p3m(
-    jd_ut,
+    e1_jd,
     e2_jd,
     lat,
     lon,
@@ -32,41 +32,21 @@ def calculate_p3m(
     e1_mo,
     e1_asc,
     e1_mc,
-    exact_lunar_month,
-    year_length,
-    month_length,
-    hsys,
     objs,
+    month_length,
+    year_length,
+    exact_lunar_month,
+    hsys,
     mean_node,
-    flag=0,
+    flag,
 ):
     # calculate lunar returns before and after e2 (gives exact lunar month)
-    # check against lumies since e1_sweph can have 0 objects (user-selectable)
-    if jd_ut is None:
-        return err("invalid jd_ut")
-
-    e2_jd = e2_jd
-    if e2_jd is None:
-        return err("missing e2_jd")
-
-    e1_jd = jd_ut
-    e1_su = e1_su
-    e1_mo = e1_mo
-    e1_asc = e1_asc
-    e1_mc = e1_mc
-    exact_lunar_month = exact_lunar_month
-    year_length = year_length
-    month_length = month_length
-    hsys = hsys
-    mean_node = mean_node
-    if e1_su is None:
-        return err("missing natal sun position")
-
     try:
+        # todo dispatcher.age_years/age_months ever updated ???
         period = e2_jd - e1_jd
         age_years = period / year_length
         if exact_lunar_month and e1_mo is not None:
-            # weird calculation logic - why e1_mo - why mo at all
+            # todo weird calculation - why e1_mo - why mo at all
             full_years = int(age_years)
             fract_year = age_years - full_years
             search_jd = e1_jd + (full_years * month_length) - 15
@@ -78,22 +58,23 @@ def calculate_p3m(
             p3m_jd = lr_prev_jd + (fract_year * cycle_length)
             p3m_diff = p3m_jd - e1_jd
         else:
-            # print("p3m : using average lunar month length")
+            LOG.info(
+                "using average lunar month",
+                extra=routing,
+            )
             p3m_diff = age_years * month_length
         p3m_jd = e1_jd + p3m_diff
         p3m_date = tuple_to_iso(p3m_jd)
-        p3m = [{"p3mjdut": p3m_jd}, {"p3mdate": p3m_date}]
+        p3m = [{"p3m jdut": p3m_jd}, {"p3m date": p3m_date}]
         res, _ = swe.calc_ut(p3m_jd, swe.SUN, flag)  # su lon
         # true asc mc positions on progressed day
         p3m_su = res[0]
-        # if len(geo) >= 2:
-        lat, lon = lat, lon
         try:
             _, ascmc = swe.houses_ex(
                 p3m_jd,
                 lat,
                 lon,
-                hsys.encode("ascii"),
+                hsys,
                 flag,
             )
             p3m.append({"name": "tas", "lon": ascmc[0]})
@@ -114,8 +95,8 @@ def calculate_p3m(
         for obj in objs:
             code, name = objcode(obj, mean_node)
             if code is None:
-                # todo return ???
-                continue
+                return err(f"unknow object name : {obj}")
+
             res = swe.calc_ut(p3m_jd, code, flag)
             data = res[0] if isinstance(res, tuple) else res
             p3m.append({
@@ -126,4 +107,8 @@ def calculate_p3m(
         return ok(p3m)
 
     except (swe.Error, Exception) as e:
+        LOG.error(
+            f"tertiary progression calculation error : {e}",
+            extra=routing,
+        )
         return err(e)

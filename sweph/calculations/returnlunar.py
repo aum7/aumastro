@@ -9,46 +9,32 @@ import swisseph as swe
 from helpers import _object_name_to_code as objcode, ok, err
 
 
-def calculate_lr(
-    jd_ut, e2_jd, lat, lon, e1_mo, month_length, hsys, mean_node, objs, flag=0
+def calculate_lunar_return(
+    e2_jd, lat, lon, e1_mo, objs, month_length, hsys, mean_node, flag
 ):
     # calculate lunar return
-    # check against lumies since e1_sweph can have 0 objects (user-selectable)
-    # e1 positions for su / mo longitude crosscheck only
-    if jd_ut is None:
-        return err("invalid jd_ut")
-    e2_jd = e2_jd
-    if e2_jd is None:
-        return err("missing e2_jd")
-    e1_mo = e1_mo
-    if e1_mo is None:
-        return err("missing natal moon position")
-    month_length = month_length
-    hsys = hsys
-    mean_node = mean_node
     try:
         lr_jd = swe.mooncross_ut(e1_mo, e2_jd - month_length, flag)
         if lr_jd > e2_jd:
             lr_jd = swe.mooncross_ut(e1_mo, e2_jd - month_length - 2.0, flag)
-        lun_ret = [{"lrjdut": lr_jd}]
+        lun_ret = [{"lr jdut": lr_jd}]
         for obj in objs:
             code, name = objcode(obj, mean_node)
             if code is None:
-                continue
+                return err(f"unknow object name  {obj}")
+
             res = swe.calc_ut(lr_jd, code, flag)
             data = res[0] if isinstance(res, tuple) else res
             lun_ret.append({
                 "name": name,
                 "lon": data[0],
             })
-        # if len(geo) >= 2:
-        lat, lon = lat, lon
         try:
             cusps, ascmc = swe.houses_ex(
                 lr_jd,
                 lat,
                 lon,
-                hsys.encode("ascii"),
+                hsys,
                 flag,
             )
             lun_ret.append({"cusps": cusps})

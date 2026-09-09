@@ -8,19 +8,16 @@ source = "vimsottari"
 routing = {"source": source, "route": ["terminal"]}
 routingtimeout5 = {"source": source, "route": ["terminal", "user"], "timeout": "5"}
 import swisseph as swe
-from helpers import _decimal_to_ymd as decytoymd, ok, err
+from helpers import _decimal_to_ymd as decytoymd, _decimal_to_hms as dectohms, ok, err
 from sweph.constants import NAKSATRAS27, DASA_YEARS
 
-# get selected year length todo fix below - selected year as app_settings ?
-# toggles with hotkey & mouse click
-YEARLENGTH = 365.2425
 
-
-def find_naksatra(mo):  # duplicated by naksatras.py ?
-    # naksatra index & fraction from moon longitude
+def find_naksatra(mo_lon):
+    # naksatra index & fraction from mo_lonon longitude
     part = 360 / 27
-    idx = int(mo // part) + 1
-    frac = (mo % part) / part
+    idx = int(mo_lon // part) + 1
+    frac = (mo_lon % part) / part
+
     return idx, frac
 
 
@@ -28,22 +25,23 @@ def get_lord_seq(start_lord):
     # get initial naksatra lord data
     seq = [NAKSATRAS27[i][0] for i in range(1, 10)]
     idx = seq.index(start_lord)
+
     return seq[idx:] + seq[:idx]
 
 
-def jd_to_date(jd):  # probably duplicated somewhere
+def tuple_to_iso(jd):  # duplicated by tuple_to_iso()
     # julian day to year, month, day, hour, minute, second
-    y, m, d, h = swe.revjul(jd, swe.GREG_CAL)
-    H = int(h)
-    M = int((h - H) * 60)
-    S = int((((h - H) * 60) - M) * 60)
-    return f"{y:04d}-{m:02d}-{d:02d} {H:02d}:{M:02d}:{S:02d}"
+    # todo reuse existing function
+    Y, M, D, dec_h = swe.revjul(jd, swe.GREG_CAL)
+    h, m, s = dectohms(dec_h)
+
+    return f"{Y:04d}-{M:02d}-{D:02d} {h:02d}:{m:02d}:{s:02d}"
 
 
-def initial_dasa(mo, cur_lvl=1, max_lvl=3):
-    # calculate 1st dasa length : fractional by moon longitude
+def initial_dasa(mo_lon, cur_lvl=1, max_lvl=3):
+    # calculate 1st dasa length : fractional by mo_lonon longitude
     dy = DASA_YEARS
-    idx, frac = find_naksatra(mo)
+    idx, frac = find_naksatra(mo_lon)
     result = {}
     # level 1 (always calculated)
     lvl1_lord = NAKSATRAS27[idx][0]
@@ -143,15 +141,14 @@ def initial_dasa(mo, cur_lvl=1, max_lvl=3):
     return result
 
 
-def find_current_dasa_lords(mo, e1_jd, e2_jd_ut, curr_lvl):
+def find_current_dasa_lords(mo_lon, e1_jd, e2_jd_ut, curr_lvl, year_length):
     # find periods lords that encapsulate event 2 julian day (ie current period)
-    # if e2_jd_ut is None or curr_lvl < 3:
     if curr_lvl < 3:
         # should not happen - we trust our data - filters plenty in code before
         return None, None, None
     dy = DASA_YEARS
     # calculate initial dasa upto max_lvl for accurate sub-level portions
-    res = initial_dasa(mo, cur_lvl=5, max_lvl=5)
+    res = initial_dasa(mo_lon, cur_lvl=5, max_lvl=5)
     lvl1_lord_initial = res["lvl1"]["lord"]
     lvl1_seq = get_lord_seq(lvl1_lord_initial)
     lvl1_idx_initial = lvl1_seq.index(lvl1_lord_initial)
@@ -164,7 +161,7 @@ def find_current_dasa_lords(mo, e1_jd, e2_jd_ut, curr_lvl):
         years_lvl1 = dy[lord_lvl1]  # should work ok
         # use initial_dasa remaining years for 1st period
         rem_years_lvl1 = res["lvl1"]["rem"] if l1_offset == 0 else years_lvl1
-        end_lvl1 = temp_jd_lvl1 + rem_years_lvl1 * YEARLENGTH
+        end_lvl1 = temp_jd_lvl1 + rem_years_lvl1 * year_length
         if temp_jd_lvl1 <= e2_jd_ut < end_lvl1:
             target_lvl1_lord = lord_lvl1
             temp_jd_lvl2 = temp_jd_lvl1
@@ -184,7 +181,7 @@ def find_current_dasa_lords(mo, e1_jd, e2_jd_ut, curr_lvl):
                         if l1_offset == 0 and l2_actual_idx == lvl2_idx_start
                         else years_lvl2
                     )
-                    end_lvl2 = temp_jd_lvl2 + rem_years_lvl2 * YEARLENGTH
+                    end_lvl2 = temp_jd_lvl2 + rem_years_lvl2 * year_length
                     if temp_jd_lvl2 <= e2_jd_ut < end_lvl2:
                         target_lvl2_lord = lord_lvl2
                         temp_jd_lvl3 = temp_jd_lvl2
@@ -207,26 +204,26 @@ def find_current_dasa_lords(mo, e1_jd, e2_jd_ut, curr_lvl):
                                     and l3_actual_idx == lvl3_idx_start
                                     else years_lvl3
                                 )
-                                end_lvl3 = temp_jd_lvl3 + rem_years_lvl3 * YEARLENGTH
+                                end_lvl3 = temp_jd_lvl3 + rem_years_lvl3 * year_length
                                 if temp_jd_lvl3 <= e2_jd_ut < end_lvl3:
                                     target_lvl3_lord = lord_lvl3
                                     break  # found lvl3
-                                temp_jd_lvl3 += rem_years_lvl3 * YEARLENGTH
+                                temp_jd_lvl3 += rem_years_lvl3 * year_length
                         break  # found lvl2
-                    temp_jd_lvl2 += rem_years_lvl2 * YEARLENGTH
+                    temp_jd_lvl2 += rem_years_lvl2 * year_length
             break  # found lvl1
-        temp_jd_lvl1 += rem_years_lvl1 * YEARLENGTH
+        temp_jd_lvl1 += rem_years_lvl1 * year_length
 
     return target_lvl1_lord, target_lvl2_lord, target_lvl3_lord
 
 
-def vimsottari_table(mo, jd_ut, e2_jd_ut=None, curr_lvl=1, max_lvl=3, year_length=None):
+def vimsottari_table(e1_jd, e2_jd, mo_lon, curr_lvl, max_lvl, year_length):
     # calculate rest of periods, prepare table as plain text
     dy = DASA_YEARS
     # get data for initial dasa by level
-    res = initial_dasa(mo, cur_lvl=curr_lvl, max_lvl=max_lvl)
+    res = initial_dasa(mo_lon, cur_lvl=curr_lvl, max_lvl=max_lvl)
     # prepare header text
-    idx, frac = find_naksatra(mo)
+    idx, frac = find_naksatra(mo_lon)
     nak_lord, nak_name = NAKSATRAS27[idx]
     separ = f"{'-' * 42}\n"
     header = (
@@ -242,9 +239,9 @@ def vimsottari_table(mo, jd_ut, e2_jd_ut=None, curr_lvl=1, max_lvl=3, year_lengt
     lvl1_idx_initial = lvl1_seq.index(lvl1_lord_initial)
     # determine target periods if e2_jd_ut and curr_lvl >= 3
     target_lvl1_lord, target_lvl2_lord, target_lvl3_lord = find_current_dasa_lords(
-        mo, jd_ut, e2_jd_ut, curr_lvl
+        mo_lon, e1_jd, e2_jd, curr_lvl, year_length
     )
-    cur_jd_lvl1 = jd_ut
+    cur_jd_lvl1 = e1_jd
     out = ""
     for l1_offset in range(9):
         lord_lvl1 = lvl1_seq[(lvl1_idx_initial + l1_offset) % 9]
@@ -252,11 +249,11 @@ def vimsottari_table(mo, jd_ut, e2_jd_ut=None, curr_lvl=1, max_lvl=3, year_lengt
         rem_years_lvl1 = res["lvl1"]["rem"] if l1_offset == 0 else years_lvl1
         start_lvl1 = cur_jd_lvl1
         # filtering for lvl3+ to show lvl1 encapsulating e2_jd_ut
-        if curr_lvl >= 3 and e2_jd_ut is not None:
+        if curr_lvl >= 3 and e2_jd is not None:
             if lord_lvl1 != target_lvl1_lord:
-                cur_jd_lvl1 += rem_years_lvl1 * YEARLENGTH
+                cur_jd_lvl1 += rem_years_lvl1 * year_length
                 continue  # skip this period if not target
-        lvl1_str = f" {lord_lvl1:<2} {jd_to_date(start_lvl1)} {decytoymd(rem_years_lvl1, YEARLENGTH)}"
+        lvl1_str = f" {lord_lvl1:<2} {tuple_to_iso(start_lvl1)} {decytoymd(rem_years_lvl1, year_length)}"
         out += lvl1_str + "\n"
         # initialize jd for lvl2 loop
         cur_jd_lvl2 = cur_jd_lvl1
@@ -276,14 +273,14 @@ def vimsottari_table(mo, jd_ut, e2_jd_ut=None, curr_lvl=1, max_lvl=3, year_lengt
                 )
                 start_lvl2 = cur_jd_lvl2
                 # filter for lvl4+ to show lvl2 that encapsulates e2_jd_ut
-                if curr_lvl >= 4 and e2_jd_ut is not None:
+                if curr_lvl >= 4 and e2_jd is not None:
                     if lord_lvl1 == target_lvl1_lord and lord_lvl2 != target_lvl2_lord:
-                        cur_jd_lvl2 += rem_years_lvl2 * YEARLENGTH
+                        cur_jd_lvl2 += rem_years_lvl2 * year_length
                         continue  # skip lvl2 if not target within target lvl1
                 lvl2_str = (
                     f" {lord_lvl2:<2} "
-                    f"{jd_to_date(start_lvl2)} "
-                    f"{decytoymd(rem_years_lvl2, YEARLENGTH)}"
+                    f"{tuple_to_iso(start_lvl2)} "
+                    f"{decytoymd(rem_years_lvl2, year_length)}"
                 )
                 out += " 2 " + lvl2_str + "\n"
                 # initialize jd for lvl3 loop
@@ -308,18 +305,18 @@ def vimsottari_table(mo, jd_ut, e2_jd_ut=None, curr_lvl=1, max_lvl=3, year_lengt
                         )
                         start_lvl3 = cur_jd_lvl3
                         # filter for lvl5+ to show lvl3 that encapsulates e2_jd_ut
-                        if curr_lvl >= 5 and e2_jd_ut is not None:
+                        if curr_lvl >= 5 and e2_jd is not None:
                             if (
                                 lord_lvl1 == target_lvl1_lord
                                 and lord_lvl2 == target_lvl2_lord
                                 and lord_lvl3 != target_lvl3_lord
                             ):
-                                cur_jd_lvl3 += rem_years_lvl3 * YEARLENGTH
+                                cur_jd_lvl3 += rem_years_lvl3 * year_length
                                 continue  # skip lvl3 period if not target
                         lvl3_str = (
                             f" {lord_lvl3:<2} "
-                            f"{jd_to_date(start_lvl3)} "
-                            f"{decytoymd(rem_years_lvl3, YEARLENGTH)}"
+                            f"{tuple_to_iso(start_lvl3)} "
+                            f"{decytoymd(rem_years_lvl3, year_length)}"
                         )
                         out += " 3    " + lvl3_str + "\n"
                         # initialize jd for lvl4 loop
@@ -348,8 +345,8 @@ def vimsottari_table(mo, jd_ut, e2_jd_ut=None, curr_lvl=1, max_lvl=3, year_lengt
                                 start_lvl4 = cur_jd_lvl4
                                 lvl4_str = (
                                     f" {lord_lvl4:<2} "
-                                    f"{jd_to_date(start_lvl4)} "
-                                    f"{decytoymd(rem_years_lvl4, YEARLENGTH)}"
+                                    f"{tuple_to_iso(start_lvl4)} "
+                                    f"{decytoymd(rem_years_lvl4, year_length)}"
                                 )
                                 out += " 4       " + lvl4_str + "\n"
                                 # initialize jd for lvl5 loop
@@ -382,55 +379,52 @@ def vimsottari_table(mo, jd_ut, e2_jd_ut=None, curr_lvl=1, max_lvl=3, year_lengt
                                         start_lvl5 = cur_jd_lvl5
                                         lvl5_str = (
                                             f" {lord_lvl5:<2} "
-                                            f"{jd_to_date(start_lvl5)} "
-                                            f"{decytoymd(rem_years_lvl5, YEARLENGTH)}"
+                                            f"{tuple_to_iso(start_lvl5)} "
+                                            f"{decytoymd(rem_years_lvl5, year_length)}"
                                         )
                                         out += "            " + lvl5_str + "\n"
-                                        cur_jd_lvl5 += rem_years_lvl5 * YEARLENGTH
-                                cur_jd_lvl4 += rem_years_lvl4 * YEARLENGTH
-                        cur_jd_lvl3 += rem_years_lvl3 * YEARLENGTH
-                cur_jd_lvl2 += rem_years_lvl2 * YEARLENGTH
-        cur_jd_lvl1 += rem_years_lvl1 * YEARLENGTH
+                                        cur_jd_lvl5 += rem_years_lvl5 * year_length
+                                cur_jd_lvl4 += rem_years_lvl4 * year_length
+                        cur_jd_lvl3 += rem_years_lvl3 * year_length
+                cur_jd_lvl2 += rem_years_lvl2 * year_length
+        cur_jd_lvl1 += rem_years_lvl1 * year_length
 
     return header + out.rstrip()
 
 
-def calculate_vimsottari(jd_ut, e2_jd, mo, curr_level, year_length):
+def calculate_vimsottari(e1_jd, e2_jd, mo_lon, curr_level, year_length):
+    # YEARLENGTH = 365.2425
     # grab event 1 data & calculate vimsottari : event 1 is mandatory and only source
     # datamanager needs to know what is needed here & provide proper data
-    # get data
-    e2_jd = e2_jd
-    jd_ut = jd_ut
-    mo = mo
-    curr_level = curr_level
-    year_length = year_length
-    if not jd_ut or mo is None:
-        log_text = "missing vimsottari data"
-        LOG.error(
-            log_text,
+    # on missing event 2 julian day notify user & cap table levels
+    try:
+        # todo below block goes to dispatcher
+        if e2_jd is None and curr_level >= 3:
+            msg = "event 2 datetime required for levels 3-5 : level > 1"
+            LOG.warning(
+                msg,
+                extra=routingtimeout5,
+            )
+            return err(msg)
+
+        max_level = 5
+        event_dasas = vimsottari_table(
+            e1_jd,
+            e2_jd,
+            mo_lon,
+            curr_level,
+            max_level,
+            year_length,
+        )
+        LOG.debug(
+            "vimsottari finished",
             extra=routing,
         )
-        return err(log_text)
-    # on missing event 2 julian day notify user & cap table levels
-    if e2_jd is None and curr_level >= 3:
-        log_text = "event 2 datetime required for levels 3-5 : level > 1"
-        LOG.warning(
-            log_text,
-            extra=routingtimeout5,
-        )
-        return err(log_text)
-    max_lvl = 5
-    event_dasas = vimsottari_table(
-        mo,
-        jd_ut,
-        e2_jd_ut=e2_jd,
-        curr_lvl=curr_level,
-        max_lvl=max_lvl,
-        year_length=year_length,
-    )
-    LOG.debug(
-        "vimsottari finished",
-        extra=routing,
-    )
+        return ok(event_dasas)
 
-    return ok(event_dasas)
+    except Exception as e:
+        LOG.error(
+            f"vimsottari calculations error : {e}",
+            extra=routing,
+        )
+        return err(e)

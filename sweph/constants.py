@@ -1,4 +1,5 @@
 # sweph/constants.py
+
 # 9 maha dasa year lengths
 DASA_YEARS = {
     "ke": 7,
@@ -11,6 +12,8 @@ DASA_YEARS = {
     "sa": 19,
     "me": 17,
 }
+# order of planetary hours
+HORAS_ORDER = ["sa", "ju", "ma", "su", "ve", "me", "mo"]
 # standard planetary order
 PLANETARY_ORDER = (
     "su",

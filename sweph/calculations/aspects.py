@@ -18,13 +18,6 @@ def angle_diff(a, b):
     return diff
 
 
-# def normalize_deg(a):
-#     # normalize to 0..360, allow tuple input
-#     if isinstance(a, tuple):
-#         a = a[0]
-#     return a % 360.0
-
-
 def is_applying(lon1, speed1, lon2, speed2, angle):
     # is applying vs separating aspect
     diff = angle_diff(lon1, lon2)
@@ -101,25 +94,29 @@ def aspects_matrix(objs_map, pos_map, orb):
 
 def calculate_aspects(positions, orb, varga_aspects):
     # calculate aspectarian for one or both events
-    if not positions:
-        return err("missing positions data")
     draw_order = ["mo", "me", "ve", "su", "ma", "ju", "sa", "ur", "ne", "pl", "ra"]
     objs_map = [name for name in draw_order if name in positions]
-    if not objs_map:
-        return err("no matching objects found for aspects")
-    if varga_aspects:
-        varga_map = {}
-        for k, v in positions.items():
-            varga_map[k] = v.copy()
-            varga_map[k]["lon"] = v["varga"]
-        obj_names, aspect_matrix, speeds = aspects_matrix(objs_map, varga_map, orb)
-    else:
-        obj_names, aspect_matrix, speeds = aspects_matrix(objs_map, positions, orb)
-    return ok({
-        "obj names": obj_names,
-        "aspects": aspect_matrix,
-        "speeds": speeds,
-    })
+    try:
+        if varga_aspects:
+            varga_map = {}
+            for k, v in positions.items():
+                varga_map[k] = v.copy()
+                varga_map[k]["lon"] = v["varga"]
+            obj_names, aspect_matrix, speeds = aspects_matrix(objs_map, varga_map, orb)
+        else:
+            obj_names, aspect_matrix, speeds = aspects_matrix(objs_map, positions, orb)
+
+        return ok({
+            "obj names": obj_names,
+            "aspects": aspect_matrix,
+            "speeds": speeds,
+        })
+    except Exception as e:
+        LOG.error(
+            f"aspects calculation error : {e}",
+            extra=routing,
+        )
+        return err(e)
 
 
 # region terminal print

@@ -17,46 +17,28 @@ from helpers import (
 
 
 def tuple_to_iso(jd):
-    date = swe.revjul(jd, swe.GREG_CAL)
-    y, m, d, h = date
-    H, M, S = dectohms(h)
-    return f"{y}-{m:02}-{d:02} {H:02}:{M:02}:{S:02}"
+    Y, M, D, dec_h = swe.revjul(jd, swe.GREG_CAL)
+    h, m, s = dectohms(dec_h)
+
+    return f"{Y:04d}-{M:02d}-{D:02d} {h:02d}:{m:02d}:{s:02d}"
 
 
 def calculate_p3(
-    jd_ut,
+    e1_jd,
     e2_jd,
     lat,
     lon,
-    e1_jd,
     e1_su,
     e1_asc,
     e1_mc,
     e2_mo,
     objs,
-    exact_lun_month,
     month_length,
+    exact_lunar_month,
     hsys,
     mean_node,
-    flag=0,
+    flag,
 ):
-    # calculate lunar returns before and after e2 (gives exact lunar month)
-    if jd_ut is None:
-        return err("invalid jd_ut")
-    e2_jd = e2_jd
-    if e2_jd is None:
-        return err("missing e2_jd")
-    e1_jd = jd_ut
-    e1_su = e1_su
-    e1_asc = e1_asc
-    e1_mc = e1_mc
-    e2_mo = e2_mo
-    exact_lunar_month = exact_lun_month
-    month_length = month_length
-    hsys = hsys
-    mean_node = mean_node
-    if e1_su is None:
-        return err("missing natal sun position")
     try:
         # period elapsed from birth in years : needs event 2 datetime
         period = e2_jd - e1_jd
@@ -77,22 +59,16 @@ def calculate_p3(
         # main calculation of progress in days
         p3_jd = e1_jd + p3_diff
         p3_date = tuple_to_iso(p3_jd)
-        # msg += p3_date
-        p3 = [
-            {"p3jdut": p3_jd},
-            {"p3date": p3_date},
-        ]
+        p3 = [{"p3 jdut": p3_jd}, {"p3 date": p3_date}]
         # todo for error do we need returned swe error ???
         res, _ = swe.calc_ut(p3_jd, swe.SUN, flag)  # su lon
         p3_su = res[0]
-        # if len(geo) >= 2:
-        lat, lon = lat, lon
         try:
             _, ascmc = swe.houses_ex(
                 p3_jd,
                 lat,
                 lon,
-                hsys.encode("ascii"),
+                hsys,
                 flag,
             )
             p3.append({"name": "tas", "lon": ascmc[0]})
@@ -112,9 +88,10 @@ def calculate_p3(
         for obj in objs:
             code, name = objcode(obj, mean_node)
             if code is None:
-                continue
+                return err(f"unknown object name : {obj}")
+
             res = swe.calc_ut(p3_jd, code, flag)
-            data = res[0] if isinstance(res, tuple) else res
+            data = res[0]
             p3.append({
                 "name": name,
                 "lon": data[0],

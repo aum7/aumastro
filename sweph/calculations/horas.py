@@ -12,6 +12,7 @@ from zoneinfo import ZoneInfo
 from timezonefinder import TimezoneFinder
 from sweph.swetime import jd_to_custom_iso as jdtoiso
 from datetime import datetime, timezone
+from sweph.constants import HORAS_ORDER
 
 # weekday number to name
 WEEKDAY = {
@@ -23,22 +24,19 @@ WEEKDAY = {
     5: ("sat", "sa"),
     6: ("sun", "su"),
 }
-# order of planetary hours
-ORDER = ["sa", "ju", "ma", "su", "ve", "me", "mo"]
 
 
 def get_current_hora(jd_ut, horas):
     if not horas:
         return None
     for hora in horas:
-        if hora["start_jd"] <= jd_ut < hora["end_jd"]:
+        if hora["start jd"] <= jd_ut < hora["end jd"]:
             # return hora with start & end times
             return hora["lord"], hora["start event"], hora["end event"]
     return None
 
 
 def jd_to_local_time(jd, tz_name):
-    # def jd_to_local_time(jd, lat, lon, tz_name):
     # from utc result to event datetime : timezone
     utc_dt = datetime.strptime(jdtoiso(jd), "%Y-%m-%d %H:%M:%S")
     utc_dt = utc_dt.replace(tzinfo=timezone.utc)
@@ -49,7 +47,6 @@ def jd_to_local_time(jd, tz_name):
 
 def get_day_horas(jd_ut, lon, lat, alt, flag):
     # calculate list of all horas of the day : day starts at sunrise ???
-    # if tz_name is None:
     tzf = TimezoneFinder()
     tz_name = tzf.timezone_at(lat=lat, lng=lon)
 
@@ -61,7 +58,6 @@ def get_day_horas(jd_ut, lon, lat, alt, flag):
     # take start of jd = midnight
     Y, M, D, _ = swe.revjul(jd_ut)
     jd_day = swe.julday(Y, M, D, 0.0)
-    # print(f"DBG : getdayhoras :\n\tjdut {jdtoiso(jd_ut)}\n\tjd0.0 {jdtoiso(jd_day)}")
     try:
         # calculate sunrise
         _, data = swe.rise_trans(
@@ -112,15 +108,9 @@ def get_day_horas(jd_ut, lon, lat, alt, flag):
             flags=flag,
         )
         srise_next = data[0]
-    except swe.Error as e:
+    except (swe.Error, Exception) as e:
         LOG.error(
             f"sunrise / set calculation failed : {e}",
-            extra=routing,
-        )
-        return None
-    except Exception as e:
-        LOG.error(
-            f"unexpected error in sunrise / set : {e}",
             extra=routing,
         )
         return None
@@ -128,9 +118,6 @@ def get_day_horas(jd_ut, lon, lat, alt, flag):
     sunrise = jdtoiso(srise)
     sunset = jdtoiso(sset)
     sunrise_next = jdtoiso(srise_next)
-    # print(
-    #     f"DBG : getdayhoras :\nsrise {sunrise} | sset {sunset} | srnext {sunrise_next}\n"
-    # )
     if not (srise < sset < srise_next):
         LOG.error(
             f"invalid hora calculation :\n"
@@ -142,13 +129,12 @@ def get_day_horas(jd_ut, lon, lat, alt, flag):
     # weekday from sunrise
     wday = swe.day_of_week(srise)
     weekday, weekday_lord = WEEKDAY[wday]
-    lord_idx = ORDER.index(weekday_lord)
+    lord_idx = HORAS_ORDER.index(weekday_lord)
     # compute daylight & night length
     day_length = sset - srise
     night_length = srise_next - sset
     day_hour = day_length / 12.0
     night_hour = night_length / 12.0
-    # type declaration required for horas.append({"hour": i + 1})
     horas: list[dict] = [
         {
             "weekday": weekday,
@@ -164,7 +150,7 @@ def get_day_horas(jd_ut, lon, lat, alt, flag):
         else:
             start = sset + (i - 12) * night_hour
             end = start + night_hour
-        lord = ORDER[(lord_idx + i) % 7]
+        lord = HORAS_ORDER[(lord_idx + i) % 7]
         horas.append({
             "hour": i + 1,
             "lord": lord,
@@ -173,7 +159,6 @@ def get_day_horas(jd_ut, lon, lat, alt, flag):
             "start event": to_event_str(start),  # type:ignore
             "end event": to_event_str(end),  # type:ignore
         })
-    # print(f"DBG : getdayhoras : horas :\n{horas}")
     return horas
 
 

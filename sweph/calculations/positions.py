@@ -11,31 +11,46 @@ from sweph.calculations.naksatras import get_naksatra
 from sweph.calculations.transitvarga import get_varga_lon
 
 
-def calculate_positions(jd_ut, objs, flag, mean_node, mans_28, first_nak, division):
+def calculate_positions(
+    jd_ut,
+    objs,
+    division,
+    mans_28,
+    first_nak,
+    mean_node,
+    flag,
+):
     # let dispatcher worry about delivering proper data
-    if jd_ut is None:
-        return err("invalid jd_ut")
     positions = {}
     for obj in objs:
         code, name = objcode(obj, mean_node)
         if code is None:
-            return err("unknown object code")
+            msg = f"unknown object name : {obj}"
+            LOG.debug(
+                msg,
+                extra=routing,
+            )
+            return err(msg)
         try:
             result = swe.calc_ut(jd_ut, code, flag)
             # todo we know our data
-            positions = result[0]
-            naksatra = get_naksatra(positions[0], mans_28, first_nak)
-            varga = get_varga_lon(positions[0], division)
+            LOG.debug(
+                f"result : {result}",
+                extra=routing,
+            )
+            pos = result[0]
+            naksatra = get_naksatra(pos[0], mans_28, first_nak)
+            varga = get_varga_lon(pos[0], division)
             varga_nak = get_naksatra(varga, mans_28, first_nak)
             positions[code] = {
                 "name": name,
-                "lon": positions[0],
-                "lat": positions[1],
-                "lon speed": positions[3],
+                "lon": pos[0],
+                "lat": pos[1],
+                "lon speed": pos[3],
                 "naksatra": naksatra,
                 "varga": varga,
                 "varga naksatra": varga_nak,
-                "speed relative": _relative_speed(code, positions[3]),
+                "speed relative": _relative_speed(code, pos[3]),
             }
         except swe.Error as e:
             LOG.error(

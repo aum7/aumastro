@@ -27,7 +27,7 @@ def get_speculum(jd_ut, code, lat, ramc, flag):
             extra=routing,
         )
         return None
-    pos = res[0] if isinstance(res, tuple) else res
+    pos = res[0]
     ra = pos[0]
     dec = pos[1]
     tan_val = math.tan(math.radians(dec)) * math.tan(math.radians(lat))
@@ -58,14 +58,10 @@ def get_speculum(jd_ut, code, lat, ramc, flag):
     }
 
 
-def calculate_d1(jd_ut, lat, lon, hsys, objs, mean_node, flag):
+def calculate_d1(e1_jd, lat, lon, objs, hsys, mean_node, flag):
     # primary direction calculation
-    if jd_ut is None:
-        return err("invalid jd_ut")
-    # if isinstance(hsys, str):
-    #     hsys = hsys.encode("ascii")
     try:
-        houses = swe.houses(jd_ut, lat, lon, hsys)
+        houses = swe.houses(e1_jd, lat, lon, hsys)
     except swe.Error as e:
         return err(e)
     ramc = houses[1][2]
@@ -77,7 +73,7 @@ def calculate_d1(jd_ut, lat, lon, hsys, objs, mean_node, flag):
         if code is None:
             return err(f"unknown object name : {obj}")
         # try:
-        spec = get_speculum(jd_ut, code, lat, ramc, flag)
+        spec = get_speculum(e1_jd, code, lat, ramc, flag)
         if spec is None:
             continue
         # direction to mc
@@ -105,7 +101,7 @@ def calculate_d1(jd_ut, lat, lon, hsys, objs, mean_node, flag):
         if code is None:
             return err(f"unknown object name : {obj}")
         # try:
-        speculums[code] = (name, get_speculum(jd_ut, code, lat, ramc, flag))
+        speculums[code] = (name, get_speculum(e1_jd, code, lat, ramc, flag))
     codes = list(speculums.keys())
     for i in range(len(codes)):
         for j in range(i + 1, len(codes)):
@@ -219,8 +215,8 @@ def calculate_d1(jd_ut, lat, lon, hsys, objs, mean_node, flag):
 # examples from calculation table:
 #
 # 1. sig: mc, prom: ju, arc: 25.0000, age: 25.00
-# at age 25, jupiter hits the meridian. expectation: major career advancement, promotion, or high public recognition.
+# at age 25, jupiter hits the meridian. expectation: major career advancement, promotion, or high public recognition
 # 2. sig: asc, prom: ma, arc: 18.4321, age: 18.43
-# at age 18 and 5 months, mars hits the ascendant. expectation: physical injury, surgery, fever, or intense competitive activity affecting the body.
+# at age 18 and 5 months, mars hits the ascendant. expectation: physical injury, surgery, fever, or intense competitive activity affecting the body
 # 3. sig: asc, prom: ve, arc: 22.5000, age: 22.50
-# at age 22 and 6 months, venus hits the ascendant. expectation: marriage, romance, or significant personal harmony.
+# at age 22 and 6 months, venus hits the ascendant. expectation: marriage, romance, or significant personal harmony

@@ -47,7 +47,6 @@ def refine_root(body, bracket, flag):
             b, fb = m, fm
         else:
             a, fa = m, fm
-
     # secant
     for _ in range(5):
         denom = fb - fa
@@ -61,6 +60,7 @@ def refine_root(body, bracket, flag):
             b, fb = m, fm
         else:
             a, fa = m, fm
+
     return 0.5 * (a + b)
 
 
@@ -77,6 +77,7 @@ def find_closest_station(body, start_jd, step, flag):
         if s0 * s <= 0:
             return refine_root(body, (t - step, t), flag)
         s0 = s
+
     return None
 
 
@@ -86,9 +87,6 @@ def find_stations(body, jd, flag):
     cache_key = (body, flag)
     curr_dir = get_retro_phases(body, jd, flag)
     old_prev_s, old_next_s = last_stations.get(cache_key, (None, None))
-    # cached results first
-    # old_prev_s, old_next_s = last_stations.get(cache_key, (None, None))
-    # old_prev_s, old_next_s = last_stations.get(body, (None, None))
     if old_prev_s and old_next_s:
         if old_prev_s < jd_rounded < old_next_s:
             return old_prev_s, old_next_s, curr_dir
@@ -102,23 +100,18 @@ def find_stations(body, jd, flag):
     return s_prev, s_next, curr_dir
 
 
-def calculate_stations(jd_ut, objs, mean_node, flag=0):
+def calculate_stations(jd_ut, objs, mean_node, flag):
     # calculate retro stations & direction for event
-    if jd_ut is None:
-        return err("invalid jd_ut")
-    mean_node = mean_node
-    # if topocentric calculations
-    # if (flag & swe.FLG_TOPOCTR) and geo and len(geo) == 3:
-    #     swe.set_topo(geo[0], geo[1], geo[2])
     stations = []
     for obj in objs:
         code, name = objcode(obj, mean_node)
+        if code is None:
+            return err(f"unknown object name : {obj}")
         if code not in STATION_SPEED:
             LOG.error(
-                "code not in stations speed > investigate",
+                "code not in stations speed : su mo never retro",
                 extra=routing,
             )
-            # todo return err ???
             continue
         # station previous & next + current direction
         s_prev, s_next, direction = find_stations(code, jd_ut, flag)
@@ -129,11 +122,11 @@ def calculate_stations(jd_ut, objs, mean_node, flag=0):
                 extra=routing,
             )
             return err(msg)
-            # continue
+
         stations.append({
             "name": name,
-            "prevstation": s_prev,
-            "nextstation": s_next,
+            "prev station": s_prev,
+            "next station": s_next,
             "direction": direction,
         })
 

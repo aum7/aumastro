@@ -1,23 +1,30 @@
 # managers/dispatcher.py
 # gather event 1 & 2 data, calculate astro data, dispatch to interested parties
 # ruff: noqa: E402
+# logging : messages sent from where & to which recipients
 import logging
 
-# logging : messages sent from where & to which recipients
 LOG = logging.getLogger(__name__)
 source = "dispatcher"
 routing = {"source": source, "route": ["terminal"]}
+routinguser = {"source": source, "route": ["terminal", "user"]}
 routingnone = {"source": source, "route": [""]}
 import swisseph as swe
 from helpers import _decimal_to_ymd
-
-# from sweph.calculations.positions import calculate_positions
+from sweph.calculations.positions import calculate_positions
+from sweph.calculations.houses import calculate_houses
 from sweph.calculations.horas import calculate_horas
+from sweph.calculations.lots import calculate_lots
+from sweph.calculations.stars import calculate_stars
+from sweph.calculations.syzygy import calculate_syzygy
+from sweph.calculations.eclipses import calculate_eclipses
+from sweph.calculations.p2 import calculate_p2
+from sweph.calculations.p3 import calculate_p3
+from sweph.calculations.p3m import calculate_p3m
+from sweph.calculations.returnlunar import calculate_lunar_return
+from sweph.calculations.returnsolar import calculate_solar_return
+from sweph.calculations.d1 import calculate_d1
 import user.usersettings as usersett
-# import user.eventsdb.db as eventsdb
-
-# from sweph.calculations.houses import calculate_houses
-# from sweph.calculations.vimsottari import calculate_vimsottari
 from user.fixedstars import FIXEDSTARS
 
 
@@ -43,7 +50,7 @@ class Dispatcher:
         self.PRENATAL = usersett.PRENATAL
         # ddn list : selected house system & ayanamsa
         self.HOUSE_SYSTEMS = usersett.HOUSE_SYSTEMS
-        self.selected_hsys = self.HOUSE_SYSTEMS[0][0]
+        self.selected_hsys = self.HOUSE_SYSTEMS[0][0].encode("ascii")
         # ddn list
         self.SOLAR_YEARS = usersett.SOLAR_YEARS
         self.selected_year_period = self.SOLAR_YEARS[0]
@@ -139,24 +146,8 @@ class Dispatcher:
         self.swe_flag = swe_flag
 
         return swe_flag
-        # flags_map = self.get_swe_flags_map()
-        # swe_flag = 0
-        # for flag in active_flags:
-        #     if flag in flags_map:
-        #         if (
-        #             isinstance(flag, (tuple, list))
-        #             and len(flag) >= 3
-        #             and isinstance(flag[2], str)
-        #         ):
-        #             clean_flg = flag[2]
-        #             # merge text string into sweph flag name / int
-        #             flag_int = getattr(swe, clean_flg)
-        #             swe_flag |= flag_int
-        # self.swe_flag = swe_flag
 
-        # return swe_flag
-
-    def toggle_sweph_flag(self, flag: str, active: bool):
+    def update_sweph_flag(self, flag: str, active: bool):
         # toggle sweph flag & recalculate active events
         if active and flag not in self.active_flags:
             self.active_flags.append(flag)
@@ -220,7 +211,7 @@ class Dispatcher:
         self.update_titlebar()
         self.e2_active = False
 
-    def toggle_object(self, event_id: str, name: str, active: bool):
+    def update_object(self, event_id: str, name: str, active: bool):
         # target correct set based on event
         target_set = (
             self.selected_objects_e1 if event_id == "e1" else self.selected_objects_e2
@@ -233,7 +224,7 @@ class Dispatcher:
         self.app.signaler.emit("settings changed", {f"objects_{event_id}": target_set})
         self.recalculate(event_id)
 
-    def toggle_lot(self, name: str, active: bool):
+    def update_lot(self, name: str, active: bool):
         # update lots selection : lots are exclusive to event 1
         if active:
             self.selected_lots.add(name)
@@ -242,7 +233,7 @@ class Dispatcher:
         self.app.signaler.emit("settings changed", {"lots": self.selected_lots})
         self.recalculate("e1")
 
-    def toggle_prenatal(self, name: str, active: bool):
+    def update_prenatal(self, name: str, active: bool):
         # update prenatal syzygy & eclipse selecion : exclusive to event 1
         if active:
             self.selected_prenatal.add(name)
@@ -309,14 +300,33 @@ class Dispatcher:
             if attr_name not in visual_settintgs:
                 self.recalculate(self.selected_event)
 
-    def update_rings(self):
+    def update_rings(self, ring: str, value: bool):
         # todo add code
-        pass
+        if ring not in self.rings:
+            LOG.debug(
+                "ring not in rings",
+                extra=routing,
+            )
+            return
+        self.rings[ring] = value
+        self.app.signaler.emit("setting changed", {"chart": {ring: value}})
+        if not self.e2_active:
+            LOG.debug(
+                "e2 not active",
+                extra=routing,
+            )
+            return
+        # ring not yet cached in e2 computed : needs 1 real recalculate to
+        # populate it - then toggling is package-only
+        if value and ring not in self.events_data["e2"].get("computed", {}):
+            self.recalculate("e2")
+        else:
+            self.refresh_package("e2")
 
     def recalculate(self, event_id: str):
         # on event or settings change > recalculate astodata
         # todo separate e1 & e2 func, re-pack duplicated funcs for reuse
-        event_package = {}
+        # event_package = {}
         if event_id == "e2" and not self.e2_active:
             LOG.debug(
                 "recalculate : received 'e2' but e2_active is false > investigate",
@@ -327,7 +337,7 @@ class Dispatcher:
         sweph = self.events_data[event_id]["sweph"]
         if not sweph:
             LOG.debug(
-                f"recalculate : {event_id} has no sweph data yet > investigate",
+                f"recalculate : {event_id} has no sweph data yet > exiting",
             )
             return
 
@@ -336,38 +346,239 @@ class Dispatcher:
 
             return
         # mandatory
-        jdut = sweph["jd ut"]
+        jd_ut = sweph["jd ut"]
         lat = sweph["lat"]
         lon = sweph["lon"]
         alt = sweph["alt"] or 0.0
-        # todo update all sweph/calculations files to receive exactly
-        # what they need & return requested data = abandon unified definitions
-        # positions of planets
-        # pos_calc = calculate_positions(
-        #     jd_ut=jdut, flag=self.swe_flag, params=pos_params
-        # )
-        # if pos_calc:
-        #     self.astro_data[event_id]["positions"] = pos_calc.get("positions", {})
-        #     self.astro_data[event_id]["lumies"] = pos_calc.get("lumies", {})
-        # house cusps & ascmc todo
-        # calculate all-day horas :from sunrise to sunset | wall clock new day 00:00
-        # def calculate_horas(jd_ut=None, geo=(), objs=(), flag=0, params=None):
-        horas = calculate_horas(
-            jd_ut=jdut, geo=(lon, lat, alt), flag=self.swe_flag, params={33, 14}
+        if "topocentric" in self.active_flags:
+            # swisweph mess : lon-lat
+            swe.set_topo(lon, lat, alt)
+        LOG.debug(
+            f"recalculate : jdut={jd_ut} lat={lat} lon={lon} alt={alt}",
+            extra=routing,
         )
-        if horas["status"] != "ok":
+        division = int(self.harmonic_ring) if self.harmonic_ring else 0
+        computed = {}
+        self.events_data[event_id]["computed"] = computed
+        # su & mo always computed
+        selected_objs = (
+            self.selected_objects_e1 if event_id == "e1" else self.selected_objects_e2
+        )
+        objs = selected_objs | {"su", "mo"}
+        # positions of planets
+        self.run_calc(
+            event_id,
+            "positions",
+            calculate_positions,
+            jd_ut,
+            objs,
+            division,
+            self.mansions_28,
+            self.first_naksatra,
+            self.mean_node,
+            self.swe_flag,
+        )
+        # house cusps & ascmc todo
+        self.run_calc(
+            event_id,
+            "houses",
+            calculate_houses,
+            jd_ut,
+            lat,
+            lon,
+            self.selected_hsys,
+            self.swe_flag,
+        )
+        # calculate all-day horas :from sunrise to sunset | wall clock new day 00:00
+        self.run_calc(
+            event_id, "horas", calculate_horas, jd_ut, lon, lat, alt, self.swe_flag
+        )
+        positions_data = computed["positions"]
+        houses_data = computed["houses"]
+        if event_id == "e1":
+            # lots if enabled - needs positions & houses
+            lot_defs = {
+                name: data
+                for name, data in self.LOTS.items()
+                if name in self.selected_lots
+            }
+            if lot_defs and positions_data and houses_data:
+                lots_package = {
+                    "ascmc": houses_data["ascmc"],
+                    "positions": positions_data["positions"],
+                    "lots": lot_defs,
+                }
+                self.run_calc(event_id, "lots", calculate_lots, lots_package)
+            # fixed stars
+            if self.selected_stars:
+                self.run_calc(
+                    event_id,
+                    "stars",
+                    calculate_stars,
+                    jd_ut,
+                    self.selected_stars,
+                    self.swe_flag,
+                )
+            # prenatal syzygy & eclipses
+            if positions_data and "syzygy" in self.selected_prenatal:
+                su_lon = positions_data["positions"][0]["lon"]
+                mo_lon = positions_data["positions"][1]["lon"]
+                self.run_calc(
+                    event_id,
+                    "syzygy",
+                    calculate_syzygy,
+                    jd_ut,
+                    su_lon,
+                    mo_lon,
+                    self.swe_flag,
+                )
+            # eclipses
+            if "eclipses" in self.selected_prenatal:
+                self.run_calc(
+                    event_id,
+                    "eclipses",
+                    calculate_eclipses,
+                    jd_ut,
+                    self.swe_flag,
+                )
+        if event_id == "e2":
+            # progressions returns for event 2
+            e1_computed = self.events_data["e1"]["computed"]
+            e1_positions = e1_computed["positions"]
+            e1_houses = e1_computed["houses"]
+            e1_sweph = self.events_data["e1"]["sweph"]
+            e1_jd = e1_sweph["jd ut"]
+            e1_su = e1_positions[0]["lon"]
+            e1_mo = e1_positions[1]["lon"]
+            e1_asc = e1_houses["ascmc"][0]
+            e1_mc = e1_houses["ascmc"][1]
+            e2_jd = self.events_data["e2"]["sweph"]["jd ut"]
+            e2_mo = positions_data["positions"][1]["lon"]
+            year_length = self.selected_year_period
+            month_length = self.selected_month_period
+            if self.rings["d1 direction"] and e1_jd:
+                self.run_calc(
+                    event_id,
+                    "d1",
+                    calculate_d1,
+                    e1_jd,  # jd_ut,
+                    lat,
+                    lon,
+                    objs,
+                    self.selected_hsys,
+                    self.mean_node,
+                    self.swe_flag,
+                )
+            if self.rings["p2 progress"] and e1_jd and e1_su:
+                self.run_calc(
+                    event_id,
+                    "p2",
+                    calculate_p2,
+                    e1_jd,
+                    e2_jd,
+                    lat,
+                    lon,
+                    e1_su,
+                    e1_asc,
+                    e1_mc,
+                    objs,
+                    year_length,
+                    self.selected_hsys,
+                    self.mean_node,
+                    self.swe_flag,
+                )
+            if self.rings["p3 progress"] and e1_jd and e1_su:
+                self.run_calc(
+                    event_id,
+                    "p3",
+                    calculate_p3,
+                    e1_jd,
+                    e2_jd,
+                    lat,
+                    lon,
+                    e1_su,
+                    e1_asc,
+                    e1_mc,
+                    e2_mo,
+                    objs,
+                    month_length,
+                    self.exact_lunar_month,
+                    self.selected_hsys,
+                    self.mean_node,
+                    self.swe_flag,
+                )
+            if self.rings["p3m progress"] and e1_jd and e1_su:
+                self.run_calc(
+                    event_id,
+                    "p3m",
+                    calculate_p3m,
+                    e1_jd,
+                    e2_jd,
+                    lat,
+                    lon,
+                    e1_su,
+                    e1_mo,
+                    e1_asc,
+                    e1_mc,
+                    objs,
+                    month_length,
+                    year_length,
+                    self.exact_lunar_month,
+                    self.selected_hsys,
+                    self.mean_node,
+                    self.swe_flag,
+                )
+            if self.rings["lunar return"] and e1_mo:
+                self.run_calc(
+                    event_id,
+                    "lunar return",
+                    calculate_lunar_return,
+                    e2_jd,  # jd_ut,
+                    lat,
+                    lon,
+                    e1_mo,
+                    objs,
+                    month_length,
+                    self.selected_hsys,
+                    self.mean_node,
+                    self.swe_flag,
+                )
+            if self.rings["solar return"] and e1_jd and e1_su:
+                self.run_calc(
+                    event_id,
+                    "solar return",
+                    calculate_solar_return,
+                    e1_jd,
+                    e2_jd,
+                    lat,
+                    lon,
+                    e1_su,
+                    objs,
+                    year_length,
+                    self.selected_hsys,
+                    self.mean_node,
+                    self.swe_flag,
+                )
+        self.refresh_package(event_id)
+        self.update_titlebar()
+
+    def run_calc(self, event_id: str, key: str, func, *args):
+        # run one calculation - cache on success
+        # never raise nor blocks rest of package
+        result = func(*args)
+        if result["status"] != "ok":
             LOG.error(
-                f"horas calculation failed for {event_id} : {horas['error']}",
-                extra=routing,
+                f"{key} calculation failed for {event_id} : {result['error']}",
+                extra=routinguser,
             )
             return
-        # after getting daily horas extract current hora if needed
-        # curr_hora1 = self.astro_data["e1"]["chart"]["horas"]["current hora"]
-        # event_package[event_id]["horas"] = horas
+        self.events_data[event_id]["computed"][key] = result["data"]
+
+    def refresh_package(self, event_id: str):
+        # get & emit package with cached data - never recompute by itself
+        computed = self.events_data[event_id]["computed"]
         chart = self.events_data[event_id]["chart"]
         event_package = {
-            "horas": horas["data"]["horas"],
-            "current hora": horas["data"]["current hora"],
             "info": {
                 "hsys": self.selected_hsys,
                 "zod": "sid" if "sidereal zodiac" in self.active_flags else "tro",
@@ -376,13 +587,14 @@ class Dispatcher:
                 "datetime": chart["datetime"],
             },
         }
+        event_package.update(computed)
         self.app.signaler.emit("package ready", event_id, event_package)
         self.update_titlebar()
 
     def update_titlebar(self):
         # grab needed data & construct string to be displayed on mainwindow titlebar
-        dt1 = self.events_data["e1"]["datetime"]
-        dt2 = self.events_data["e2"]["datetime"]
+        dt1 = self.events_data["e1"].get("chart", {}).get("datetime")
+        dt2 = self.events_data["e2"].get("chart", {}).get("datetime")
         # self.app.notifier.debug(f"updatetitlebar : ad={ad} dt={dt}")
         title = "aumastro"
         if dt1:
@@ -394,7 +606,7 @@ class Dispatcher:
                 age_y_str = _decimal_to_ymd(
                     self.age_years, self.selected_year_period[1]
                 ).replace(" ", "")
-                title += f" ] age : {age_y_str} y"
+                title += f" | age : {age_y_str} y"
             if self.age_months:
                 title += f" - lun : {self.age_months:.2f} m"
         change_time = self.selected_change_time_period or "1 D"
@@ -430,3 +642,19 @@ class Dispatcher:
             f"{event_id} selected",
             extra=routingnone,
         )
+
+        # flags_map = self.get_swe_flags_map()
+        # swe_flag = 0
+        # for flag in active_flags:
+        #     if flag in flags_map:
+        #         if (
+        #             isinstance(flag, (tuple, list))
+        #             and len(flag) >= 3
+        #             and isinstance(flag[2], str)
+        #         ):
+        #             clean_flg = flag[2]
+        #             # merge text string into sweph flag name / int
+        #             flag_int = getattr(swe, clean_flg)
+        #             swe_flag |= flag_int
+        # self.swe_flag = swe_flag
+        # return swe_flag

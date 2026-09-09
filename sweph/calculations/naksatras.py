@@ -8,7 +8,6 @@ LOG = logging.getLogger(__name__)
 source = "naksatras"
 routing = {"source": source, "route": ["terminal"]}
 from sweph.constants import NAKSATRAS27, MANSIONS28
-# from helpers import ok, err
 
 
 def get_naksatra(lon, mans_28, first_nak):
@@ -26,28 +25,3 @@ def get_naksatra(lon, mans_28, first_nak):
     ruler, name = naksatras[idx][0], naksatras[idx][-1]
 
     return {"idx": idx, "name": name, "ruler": ruler}
-
-
-# def calculate_naksatras(lon, positions, mans_28, first_nak):
-#     lon = lon
-#     positions = positions
-#     mans_28 = mans_28
-#     first_nak = first_nak
-#     if lon is not None:
-#         return ok(get_naksatra(lon, mans_28, first_nak))
-#     # we trust our data
-#     if isinstance(positions, dict):
-#         res = {}
-#         for k, v in positions.items():
-#             p_lon = v.get("lon") if isinstance(v, dict) else v
-#             if isinstance(p_lon, (int, float)):
-#                 res[k] = get_naksatra(p_lon, mans_28, first_nak)
-
-#         return ok(res)
-
-#     LOG.error(
-#         "invalid positions : expected dict",
-#         extra=routing,
-#     )
-
-#     return err("positions must be a dict")

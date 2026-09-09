@@ -3,7 +3,7 @@
 # log & notify
 import logging
 
-log = logging.getLogger(__name__)
+LOG = logging.getLogger(__name__)
 source = "signaler"
 routing = {"source": source, "route": ["terminal"]}
 routingnone = {"source": source, "route": [""]}
@@ -12,11 +12,15 @@ routingnone = {"source": source, "route": [""]}
 class Signaler:
     def __init__(self, app=None):
         self.app = app
+        LOG.debug(
+            f"whoisapp : {app.__class__.__name__}",
+            extra=routing,
+        )
         # store handlers
         self.handlers = {}
 
     def connect(self, signal_name, handler):
-        log.debug(
+        LOG.debug(
             f"connecting signal : {signal_name}",
             extra=routingnone,
         )
@@ -30,7 +34,7 @@ class Signaler:
             self.handlers[signal_name].remove(handler)
 
     def emit(self, signal_name, *args, **kwargs):
-        log.debug(
+        LOG.debug(
             f"emitting signal : {signal_name}",
             extra=routingnone,
         )
@@ -38,7 +42,7 @@ class Signaler:
             try:
                 handler(*args, **kwargs)
             except Exception as e:
-                log.error(
+                LOG.error(
                     f"error emitting signal {signal_name} : {e}",
                     extra=routing,
                 )

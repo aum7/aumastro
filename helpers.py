@@ -74,9 +74,7 @@ def _decimal_to_hms(decimal: float):
     H = total_secs // 3600
     M = (total_secs % 3600) // 60
     S = total_secs % 60
-    # H = int(decimal)
-    # M = int((decimal - H) * 60)
-    # S = int(round(decimal - H - M / 60) * 3600)
+
     return H, M, S
 
 

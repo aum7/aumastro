@@ -10,13 +10,9 @@ import swisseph as swe
 from sweph.swetime import jd_to_custom_iso as jdtoiso
 
 
-def calculate_syzygy(jd_ut, su_lon, mo_lon, flag=0):
+def calculate_syzygy(jd_ut, su_lon, mo_lon, flag):
     # calculate last prenatal full or new moon - syzygy
-    if jd_ut is None:
-        return err("invalid jd_ut")
     # get sun & moon longitudes
-    su_lon = su_lon
-    mo_lon = mo_lon
     try:
         # determine if syzygy was new or full moon
         if su_lon is not None and mo_lon is not None:

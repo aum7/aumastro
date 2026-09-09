@@ -11,7 +11,6 @@ from helpers import ok, err
 
 def format_eclipse_type(eclflag):
     # convert eclipse flag to human-readable
-    # definitions
     ECL_CENTRAL = 1
     ECL_NONCENTRAL = 2
     ECL_TOTAL = 4
@@ -37,12 +36,10 @@ def format_eclipse_type(eclflag):
     elif eclflag & ECL_PENUMBRAL:
         types.append("penumbral")
 
-    # print(f"eclflag : {eclflag}")
     return " - ".join(types) if types else f"unknown flag : {eclflag}"
 
 
 def find_solar_eclipse(jd_ut, flag):
-    # backwards = search == "prev"
     try:
         # find time of any global eclipse
         any_ecl_type = 0  # any eclipse type
@@ -67,11 +64,9 @@ def find_solar_eclipse(jd_ut, flag):
 
 
 def find_lunar_eclipse(jd_ut, flag):
-    # backwards = search == "prev"
     try:
         # find 1st global occurence of lunar eclipse
         find_type = 0  # any eclipse type
-        # swe_lun_eclipse_when_loc
         ecl_type, result = swe.lun_eclipse_when(jd_ut, flag, find_type, True)
         # julian day of maximum eclipse
         jd_max_ecl = result[0]
@@ -93,18 +88,21 @@ def find_lunar_eclipse(jd_ut, flag):
 
 def calculate_eclipses(jd_ut, flag):
     # calculate (prenatal) solar & lunar eclipses
-    if jd_ut is None:
-        return err("invalid jd_ut")
-    # always search back as those are e1 prenatal eclipses
-    # search = "prev" = True
-    eclipses_data = []
-    # get last solar eclipse before event
-    solar = find_solar_eclipse(jd_ut, flag)
-    if solar:
-        eclipses_data.append(solar)
-    # get last lunar eclipse
-    lunar = find_lunar_eclipse(jd_ut, flag)
-    if lunar:
-        eclipses_data.append(lunar)
+    try:
+        eclipses_data = []
+        # get last solar eclipse before event
+        solar = find_solar_eclipse(jd_ut, flag)
+        if solar:
+            eclipses_data.append(solar)
+        # get last lunar eclipse
+        lunar = find_lunar_eclipse(jd_ut, flag)
+        if lunar:
+            eclipses_data.append(lunar)
 
-    return ok(eclipses_data)
+        return ok(eclipses_data)
+    except Exception as e:
+        LOG.error(
+            f"prenatal eclipses error : {e}",
+            extra=routing,
+        )
+        return err(e)

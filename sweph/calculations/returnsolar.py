@@ -11,22 +11,10 @@ import swisseph as swe
 from helpers import _object_name_to_code as objcode, ok, err
 
 
-def calculate_sr(
-    jd_ut, e2_jd, lat, lon, e1_su, year_length, hsys, mean_node, objs, flag=0
+def calculate_solar_return(
+    e1_jd, e2_jd, lat, lon, e1_su, objs, year_length, hsys, mean_node, flag
 ):
     # calculate solar return - solcross & mooncros always search forward
-    if jd_ut is None:
-        return err("invalid jd_ut")
-    e2_jd = e2_jd
-    if e2_jd is None:
-        return err("missing e2_jd")
-    e1_su = e1_su
-    if e1_su is None:
-        return err("missing natal sun position")
-    e1_jd = jd_ut
-    year_length = year_length
-    hsys = hsys
-    mean_node = mean_node
     try:
         # period elapsed from birth in years : needs event 2 datetime
         period = e2_jd - e1_jd
@@ -41,31 +29,33 @@ def calculate_sr(
         start_jd = frac_jd - 1.0
         # search solar crossing
         sol_ret_jd = swe.solcross_ut(e1_su, start_jd, flag)
-        sol_ret = [{"srjdut": sol_ret_jd}]
+        sol_ret = [{"sr jdut": sol_ret_jd}]
         # calculate positions on solar return
         for obj in objs:
             code, name = objcode(obj, mean_node)
             if code is None:
-                continue
+                return err(f"unknown object name : {obj}")
+
             res = swe.calc_ut(sol_ret_jd, code, flag)
-            data = res[0] if isinstance(res, tuple) else res
+            data = res[0]
             sol_ret.append(
                 {"name": name, "lon": data[0]},
             )
         # calculate houses
-        # if len(geo) >= 2:
-        lat, lon = lat, lon
         try:
             cusps, ascmc = swe.houses_ex(
                 sol_ret_jd,
                 lat,
                 lon,
-                hsys.encode("ascii"),
+                hsys,
                 flag,
             )
             sol_ret.append({"cusps": cusps})
             sol_ret.append({"name": "asc", "lon": ascmc[0]})
             sol_ret.append({"name": "mc", "lon": ascmc[1]})
+
+            return ok(sol_ret)
+
         except swe.Error as e:
             LOG.error(
                 f"lunar return houses calculation error : {e}",
@@ -73,7 +63,5 @@ def calculate_sr(
             )
             return err(e)
 
-        return ok(sol_ret)
-
-    except (swe.Error, Exception) as e:
+    except Exception as e:
         return err(e)

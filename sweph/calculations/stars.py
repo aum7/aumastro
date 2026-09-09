@@ -12,19 +12,15 @@ from helpers import ok, err
 import swisseph as swe
 
 
-def calculate_stars(jd_ut, stars_list, flag=0):
-    # calculate positions of stars, listed in user/fixedstars.py
-    if jd_ut is None:
-        return err("invalid jd_ut")
-    stars_list = stars_list
-    if not stars_list:
-        return err("missing stars list")
+def calculate_stars(jd_ut, stars_list, flag):
+    # calculate positions of stars, listed in dispatcher.
     stars = []
     name, nomencl = None, None
     for star in stars_list:
-        if isinstance(star, (tuple, list)):
-            nomencl = star[0]
-            name = star[1]
+        # todo we know our data : should be list
+        # if isinstance(star, (tuple, list)):
+        nomencl = star[0]
+        name = star[1]
         try:
             # search using name
             pos, _, _ = swe.fixstar2_ut(name, jd_ut, flag)
@@ -34,10 +30,11 @@ def calculate_stars(jd_ut, stars_list, flag=0):
                 "lon": lon,
                 "nomencl": nomencl,
             })
-        except (swe.Error, Exception) as e:
+        except Exception as e:
             LOG.error(
                 f"stars calculation error : {e}",
                 extra=routing,
             )
+            return err(e)
 
     return ok(stars)
