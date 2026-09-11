@@ -21,11 +21,11 @@ class SidepaneSettings(CollapsePanel):
         if mainwindow is not None:
             self.mainwindow = mainwindow
         self.app = getattr(mainwindow, "app")
-        LOG.debug(
-            f"whoisme={mainwindow.__class__.__name__}"
-            f"\nhas-selfapp : {hasattr(mainwindow, 'app')}",
-            extra=routingnone,
-        )
+        # LOG.debug(
+        #     f"whoisme={mainwindow.__class__.__name__}"
+        #     f"\nhas-selfapp : {hasattr(mainwindow, 'app')}",
+        #     extra=routingnone,
+        # )
         self.set_title_tooltip("sweph & application & chart settings")
         margin = 7
         if self.mainwindow:

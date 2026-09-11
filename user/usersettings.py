@@ -424,7 +424,7 @@ sweph/constants.py""",
     ),
     # --- astro chart angle ruler & hover info snapping distance (or angle)
     "snap tolerance": (
-        "9.9",
+        9.9,
         (
             "snap distance for angle ruler\nhk : shift+r (toggle measuring on / off)"
             "\nsnapping works :"

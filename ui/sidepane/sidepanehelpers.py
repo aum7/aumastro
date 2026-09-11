@@ -1,11 +1,11 @@
 # ui/dispatcher/settingshelpers.py
 # ruff: noqa: E402
 import logging
-import re
 
-log = logging.getLogger(__name__)
+LOG = logging.getLogger(__name__)
 source = "sidepanehelpers"
 routing = {"source": source, "route": ["terminal"]}
+import re
 
 
 def objects_select_all_none(button, dispatcher, select_all: bool):
@@ -47,8 +47,8 @@ def house_system_changed(dropdown, _pspec, dispatcher):
     idx = dropdown.get_selected()
     house_systems = dispatcher.HOUSE_SYSTEMS
     hsys, _, _ = house_systems[idx]
-    # hsys, _, short_name = house_systems[idx]
     dispatcher.update_house_system(hsys)
+    # hsys, _, short_name = house_systems[idx]
     # dispatcher.update_house_system(hsys, short_name)
 
 
@@ -157,11 +157,19 @@ def lunar_month_changed(dropdown, _pspec, dispatcher):
 
 
 def ayanamsa_changed(dropdown, _pspec, dispatcher):
+    # dispatcher IS dispatcher & HAS app
+    # we need access mainwindow.sidepane.sub_sub_custom_ayan
+    mainwindow = dispatcher.app.get_default_window()
+    LOG.debug(
+        f"ayanamsachanged : whois dispatcherapp : {dispatcher.app.__class__.__name__}"
+        # f"has-appmainwindow : {hasattr(dispatcher.app, 'MainWindow')}",
+    )
     idx = dropdown.get_selected()
     ayanamsas = dispatcher.AYANAMSAS
-    key = list(ayanamsas.keys())[idx]
+    key = list(ayanamsas)[idx]
+    # key = list(ayanamsas.keys())[idx]
     is_custom = key == 255
-    dispatcher.subsub_custom_ayan.set_sensitive(is_custom)
+    mainwindow.subsub_custom_ayan.set_sensitive(is_custom)
     dispatcher.update_ayanamsa(key)
 
 

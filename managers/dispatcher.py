@@ -246,7 +246,7 @@ class Dispatcher:
     ):
         # called from sidepanehelpers
         # todo access via self.HOUSE_SYSTEMS
-        self.selected_hsys = hsys
+        self.selected_hsys = hsys.encode("ascii")
         # if short_name:
         #     self.selected_hsys_short = short_name
         self.app.signaler.emit("setting changed", {"hsys": hsys})

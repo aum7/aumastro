@@ -133,3 +133,4 @@ class AstroChart(Gtk.Box):
         # pass app for rings to have access to dispatcher
         rings = Rings(self.app, ctx, chart_package)
         rings.draw(cr)
+        self.snap_targets = rings.snap_targets
