@@ -10,6 +10,7 @@ from helpers import ok, err
 
 
 def get_varga_lon(lon, division):
+    # LOG.debug(f"getvargalon : division={division} type={type(division)}")
     if division <= 1:
         return None
     sign = int(lon // 30)

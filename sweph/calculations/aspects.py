@@ -98,7 +98,10 @@ def calculate_aspects(positions, orb, varga_aspects):
     by_name = {v["name"]: v for v in positions.values()}
     objs_map = [name for name in draw_order if name in by_name]
     try:
-        if varga_aspects:
+        use_varga = varga_aspects and all(
+            by_name[name].get("varga") is not None for name in objs_map
+        )
+        if use_varga:
             varga_map = {}
             for name in objs_map:
                 varga_map[name] = by_name[name].copy()
@@ -108,7 +111,7 @@ def calculate_aspects(positions, orb, varga_aspects):
             # varga_map[k]["lon"] = v["varga"]
             obj_names, aspect_matrix, speeds = aspects_matrix(objs_map, varga_map, orb)
         else:
-            obj_names, aspect_matrix, speeds = aspects_matrix(objs_map, positions, orb)
+            obj_names, aspect_matrix, speeds = aspects_matrix(objs_map, by_name, orb)
 
         return ok({
             "obj names": obj_names,

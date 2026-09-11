@@ -26,18 +26,18 @@ WEEKDAY = {
 }
 
 
-def get_current_hora(jd_ut, horas):
-    if not horas:
-        return None
-    for hora in horas:
-        if hora["start jd"] <= jd_ut < hora["end jd"]:
-            # return hora with start & end times
-            return {
-                "ruler": hora["ruler"],
-                "start": hora["start"],
-                "end": hora["end"],
-            }
-    return None
+# def get_current_hora(jd_ut, horas):
+#     if not horas:
+#         return None
+#     for hora in horas:
+#         if hora["start jd"] <= jd_ut < hora["end jd"]:
+#             # return hora with start & end times
+#             return {
+#                 "ruler": hora["ruler"],
+#                 "start": hora["start"],
+#                 "end": hora["end"],
+#             }
+#     return None
 
 
 def jd_to_local_time(jd, tz_name):
@@ -118,10 +118,6 @@ def get_day_horas(jd_ut, lon, lat, alt, flag):
             extra=routing,
         )
         return None
-    # validate
-    # sunrise = jdtoiso(srise)
-    # sunset = jdtoiso(sset)
-    # sunrise_next = jdtoiso(srise_next)
     # convert to event location time
     sunrise = to_event_str(srise)
     sunset = to_event_str(sset)
@@ -151,6 +147,7 @@ def get_day_horas(jd_ut, lon, lat, alt, flag):
             "sunrise next": sunrise_next,
         }
     ]
+    curr_hora: dict = {}
     for i in range(24):
         if i < 12:
             start = srise + i * day_hour
@@ -162,12 +159,19 @@ def get_day_horas(jd_ut, lon, lat, alt, flag):
         horas_list.append({
             "hour": i + 1,
             "ruler": ruler,
-            "start jd": start,
-            "end jd": end,
+            # "start jd": start,
+            # "end jd": end,
             "start": to_event_str(start),  # type:ignore
             "end": to_event_str(end),  # type:ignore
         })
-    return horas_list
+        if start <= jd_ut < end:
+            # return hora with start & end times
+            curr_hora = {
+                "ruler": ruler,
+                "start": to_event_str(start),
+                "end": to_event_str(end),
+            }
+    return horas_list, curr_hora
 
 
 def calculate_horas(jd_ut, lon, lat, alt, flag):
@@ -175,11 +179,12 @@ def calculate_horas(jd_ut, lon, lat, alt, flag):
     if jd_ut is None or lon is None:
         return err("invalid jd_ut or geo coordinates")
     alt = alt if alt is not None else 0.0
-    horas_list = get_day_horas(jd_ut, lon, lat, alt, flag)
-    if horas_list is None:
+    horas = get_day_horas(jd_ut, lon, lat, alt, flag)
+    # print(f"horas : {horas}")
+    if horas is None:
         return err("failed to calculate horas")
-    curr_hora = get_current_hora(jd_ut, horas_list[1:])
-    if curr_hora is None:
-        return err("failed to calculate current hora")
+    # curr_hora = get_current_hora(jd_ut, horas_list[1:])
+    # if curr_hora is None:
+    # return err("failed to calculate current hora")
 
-    return ok({"horas list": horas_list, "current hora": curr_hora})
+    return ok({"horas list": horas[0], "current hora": horas[1]})

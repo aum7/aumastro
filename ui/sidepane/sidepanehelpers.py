@@ -46,8 +46,10 @@ def prenatal_toggled(checkbutton, name, dispatcher):
 def house_system_changed(dropdown, _pspec, dispatcher):
     idx = dropdown.get_selected()
     house_systems = dispatcher.HOUSE_SYSTEMS
-    hsys, _, short_name = house_systems[idx]
-    dispatcher.update_house_system(hsys, short_name)
+    hsys, _, _ = house_systems[idx]
+    # hsys, _, short_name = house_systems[idx]
+    dispatcher.update_house_system(hsys)
+    # dispatcher.update_house_system(hsys, short_name)
 
 
 def setting_toggled(button, setting, dispatcher):
@@ -57,7 +59,6 @@ def setting_toggled(button, setting, dispatcher):
 def naksatras_ring(widget, key, panel, dispatcher):
     val_ring = panel.chk_naks_ring.get_active()
     val_28 = panel.chk_28_naks.get_active()
-
     try:
         val_1st = int(panel.ent_1st_nak.get_text())
     except ValueError:
@@ -66,7 +67,8 @@ def naksatras_ring(widget, key, panel, dispatcher):
     naks_range = 28 if val_28 else 27
     val_1st = max(1, min(naks_range, val_1st))
     panel.ent_1st_nak.set_text(str(val_1st))
-    dispatcher.update_naksatras_settings(val_ring, val_28, val_1st)
+    dispatcher.update_naksatra_settings(val_ring, val_28, val_1st)
+    panel.row_nak_opt.set_sensitive(val_ring)
 
 
 def harmonic_ring(entry, dispatcher):
@@ -75,7 +77,7 @@ def harmonic_ring(entry, dispatcher):
         entry.add_css_class("entry-warning")
         return
     entry.remove_css_class("entry-warning")
-    dispatcher.update_chart_setting("harmonic ring", text)
+    dispatcher.update_chart_setting("harmonic ring", int(text) if text else 0)
 
 
 def fixed_stars(entry, dispatcher):
@@ -131,14 +133,13 @@ def chart_info_string(entry, info, dispatcher):
     entry.remove_css_class("entry-warning")
     if info == "chart info":
         dispatcher.chart_info = value
-    # todo missing chart info extra
     elif info == "chart info extra":
         dispatcher.chart_info_extra = value
 
 
 def flags_toggled(button, flag, dispatcher):
     active = button.get_active()
-    dispatcher.toggle_sweph_flag(flag, active)
+    dispatcher.update_sweph_flag(flag, active)
 
 
 def solar_year_changed(dropdown, _pspec, dispatcher):

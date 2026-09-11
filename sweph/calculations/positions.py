@@ -22,6 +22,7 @@ def calculate_positions(
     flag,
 ):
     # let dispatcher worry about delivering proper data
+    # LOG.debug(f"calculatepositions : division={division} type={type(division)}")
     positions = {}
     for obj in objs:
         code, name = objcode(obj, mean_node)
@@ -38,8 +39,10 @@ def calculate_positions(
             pos = result[0]  # pos[0] = lon
             # get retro label : skip su & mo
             naksatra = get_naksatra(pos[0], mans_28, first_nak)
-            varga = get_varga_lon(pos[0], division)
-            varga_nak = get_naksatra(varga, mans_28, first_nak)
+            varga = get_varga_lon(pos[0], division) if division else None
+            varga_nak = (
+                get_naksatra(varga, mans_28, first_nak) if varga is not None else None
+            )
             # LOG.debug(f"\nlon={pos[0]}")
             positions[code] = {
                 "name": name,

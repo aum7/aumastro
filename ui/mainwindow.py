@@ -274,7 +274,7 @@ class MainWindow(
         # astro chart naksatras ring
         self.hotkeys.register_hotkey(
             "<Control>9",
-            lambda: self.app.dispatcher.update_naksatras_settings(
+            lambda: self.app.dispatcher.update_naksatra_settings(
                 not self.app.dispatcher.naksatras_ring,
                 self.app.dispatcher.mansions_28,
                 self.app.dispatcher.first_naksatra,

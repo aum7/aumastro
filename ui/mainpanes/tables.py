@@ -8,17 +8,14 @@ routing = {"source": source, "route": ["terminal"]}
 routingtimeout4 = {"source": source, "route": ["terminal", "user"], "timeout": "4"}
 routingtimeout6 = {"source": source, "route": ["terminal", "user"], "timeout": "6"}
 routinguser = {"source": source, "route": ["terminal", "user"]}
-routingnone = {"source": source, "route": [""]}
+from sweph.swetime import jd_to_custom_iso as jdtoiso
+from sweph.constants import PLANETARY_ORDER
+from ui.fonts.glyphs import get_glyph
 from helpers import (
     _decimal_to_sign_dms as decsigndms,
     _decimal_to_ra as decra,
     _house_for_lon as hsforlon,
 )
-
-# from user.usersettings import HOUSE_SYSTEMS
-from sweph.swetime import jd_to_custom_iso as jdtoiso
-from sweph.constants import PLANETARY_ORDER
-from ui.fonts.glyphs import get_glyph
 import gi
 
 gi.require_version("Gtk", "4.0")
@@ -33,7 +30,6 @@ class Tables(Gtk.Notebook):
             self.app = app
         # LOG.debug(
         #     f"whoisapp : {app.__class__.__name__}",
-        #     extra=routingnone,
         # )
         # styling and scroll options
         self.add_css_class("no-border")
@@ -55,7 +51,7 @@ class Tables(Gtk.Notebook):
         self.mc = "\u01c1"
         self.order = PLANETARY_ORDER
         # event data widget
-        self.app.signaler.connect("package ready", self.on_package_ready)
+        self.app.signaler.connect("package table ready", self.on_package_ready)
 
     def on_package_ready(self, event_id: str, package: str):
         # LOG.debug(f"onpackageready : package={package}")
@@ -168,12 +164,18 @@ class Tables(Gtk.Notebook):
             var_nak = obj["varga naksatra"]
             nak_idx = nak["idx"]
             nak_ruler = nak["ruler"]
-            var_idx = var_nak["idx"]
-            var_ruler = var_nak["ruler"]
+            var_str = "     -   --"
+            if var_lon is not None and var_nak is not None:
+                var_str = (
+                    f"{decsigndms(var_lon):10}  {var_nak['idx']:02}-{var_nak['ruler']}"
+                )
+            # var_idx = var_nak["idx"]
+            # var_ruler = var_nak["ruler"]
             ln_pos = (
                 f" {name}{retro:<2} {self.v_sym} "
                 f"{decsigndms(lon):10} {nak_idx:02}-{nak_ruler} {self.v_sym} "
-                f"{decsigndms(var_lon):10} {var_idx:02}-{var_ruler} {self.v_sym} "
+                f"{var_str} {self.v_sym}"
+                # f"{decsigndms(var_lon):10} {var_idx:02}-{var_ruler} {self.v_sym} "
                 f"{obj['lat']:5.2f} {self.v_sym} "
                 f"{lon:5.1f} {self.v_sym} {speed:6.3f} {speed_rel:4.0f} {self.v_sym} {house}\n"
             )
@@ -612,6 +614,7 @@ class Tables(Gtk.Notebook):
         # update vimsottari for new level
         if event_id and event_id in self.event_package:
             # emit signal to force recalculation
+            # todo signal never used
             self.app.signaler.emit(
                 "luminaries changed",
                 event_id,

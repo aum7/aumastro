@@ -1,5 +1,5 @@
 # ui/mainpanes/chart/astroobject.py
-from user.settings import OBJECTS
+from user.usersettings import OBJECTS
 from math import pi, radians, cos, sin
 
 
@@ -13,7 +13,6 @@ class AstroObject:
         self.color = (0.1, 0.1, 0.1, 0.5)
         # leave below for proper event ring objects scaling
         self.scale = 1.0
-
         for obj in OBJECTS.values():
             if obj[0].lower() == name:
                 self.color = obj[4]

@@ -6,7 +6,6 @@ import logging
 LOG = logging.getLogger(__name__)
 source = "astrochart"
 routing = {"source": source, "route": ["terminal"]}
-routingnone = {"source": source, "route": [""]}
 routingtimeout4 = {"source": source, "route": ["terminal", "user"], "timeout": "4"}
 routingtimeout6 = {"source": source, "route": ["terminal", "user"], "timeout": "6"}
 from ui.mainpanes.chart.chartinspector import ChartInspector
@@ -27,8 +26,6 @@ class AstroChart(Gtk.Box):
             self.app = app
         # LOG.debug(
         #     f"\nwhoisapp : {app.__class__.__name__}"
-        #     f"\nwhoisselfapp : {self.app.__class__.__name__}",
-        #     extra=routingnone,
         # )
         # cairo drawing area
         self.drawing_area = Gtk.DrawingArea()
@@ -39,7 +36,10 @@ class AstroChart(Gtk.Box):
         # data
         self.event_package = {}
         # subscribe to signals
-        self.app.signaler.connect("package ready", self.on_package_ready)
+        self.app.signaler.connect("package chart ready", self.on_package_ready)
+        self.app.signaler.connect(
+            "redraw chart", lambda *a: self.drawing_area.queue_draw()
+        )
         # if settings change > data changes > datamanager recalculates & adjusts
         self.inspector = ChartInspector(self)
 
@@ -49,7 +49,7 @@ class AstroChart(Gtk.Box):
         else:
             self.event_package[event_id] = package
         # LOG.debug(
-        #     f"event package received : {package}",
+        #     f"event package received for {event_id}: {package}",
         #     extra=routing,
         # )
         self.drawing_area.queue_draw()
@@ -63,26 +63,24 @@ class AstroChart(Gtk.Box):
         font_scale = base / 300.0
         max_radius = base * 0.95
         outer_rings = []
-        e2_active = "e2" in self.event_package and bool(self.event_package["e2"])
-        if e2_active:
+        if self.app.dispatcher.e2_active:
             for key in (
                 "transit",
                 "transit varga",
                 "p2 progress",
                 "p3 progress",
                 "p3m progress",
-                "d1 direction",
-                "solar return",
+                # "d1 direction",
                 "lunar return",
+                "solar return",
             ):
                 # if self.event_package["rings"][key]:
                 if self.app.dispatcher.rings[key]:
                     outer_rings.append(key)
-        if self.app.dispatcher.harmonic_ring:
-            # if self.app.dispatcher["harmonic ring"].strip():
-            outer_rings.append("harmonic")
         if self.app.dispatcher.naksatras_ring:
             outer_rings.append("naksatras")
+        if self.app.dispatcher.harmonic_ring:
+            outer_rings.append("harmonic")
         # draw rings : max diameter of astrochart : determines distance
         # from pane edges
         # outer rings linked to event 2 :
@@ -97,11 +95,11 @@ class AstroChart(Gtk.Box):
             "p2 progress": 0.08,
             "p3 progress": 0.08,
             "p3m progress": 0.08,
-            "d1 direction": 0.08,
+            # "d1 direction": 0.08,
             "lunar return": 0.08,
             "solar return": 0.08,
+            "naksatras": 0.06,
             "harmonic": 0.06,
-            "naksatras": 0.05,
         }
         # mandatory rings for event 1 : circle diameter ratio
         inner_portions = {
@@ -120,8 +118,9 @@ class AstroChart(Gtk.Box):
         for ring, portion in inner_portions.items():
             radius_dict[ring] = max_radius * (max_inner * portion)
         # msg += f"\nradiusdict : {radius_dict}"
-        selected_event = self.app.dispatcher.selected_event
-        info = self.event_package.get(selected_event, {}).get("info", {})
+        # selected_event = self.app.dispatcher.selected_event
+        chart_package = self.event_package.get("e1", {})
+        info = chart_package.get("info", {})
         ctx = {
             "cx": cx,
             "cy": cy,
@@ -132,5 +131,5 @@ class AstroChart(Gtk.Box):
             "info": info,
         }
         # pass app for rings to have access to dispatcher
-        rings = Rings(self.app, ctx, self.event_package)
+        rings = Rings(self.app, ctx, chart_package)
         rings.draw(cr)

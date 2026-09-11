@@ -17,7 +17,7 @@ def calculate_houses(jd_ut, lat, lon, hsys, flag):
         cusps, ascmc = swe.houses_ex(jd_ut, lat, lon, hsys, flag)
         return ok({
             "cusps": list(cusps),
-            "ascmc": list(ascmc),
+            "ascmc": list(ascmc)[:3],  # only asc & mc & armc needed
         })
     except swe.Error as e:
         log.error(

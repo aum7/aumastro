@@ -352,8 +352,8 @@ sweph/constants.py""",
     # --- harmonics division ring : 0 hide | 1 egypt. terms (bounds) |
     # 1+ simple divisions, similar but NOT all equal to varga
     "harmonic ring": (
-        "9",
-        "harmonic (aka varga) ring\nempty : do NOT show | 1 : egypt. terms (bounds)\n2+ : simple harmonic for event 1 *similar* to varga\nterms can be changed in\nsweph/constants.py",
+        9,
+        "harmonic (aka varga) ring\nempty or 0 : do NOT show | 1 : egypt. terms (bounds)\n2+ : simple harmonic for event 1 *similar* to varga\nterms can be changed in\nsweph/constants.py",
     ),
     # --- event 2 astro chart circles : draw progressions (p1 & p3) | returns | transit
     # calculated in sweph / calculations / ...

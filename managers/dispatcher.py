@@ -9,7 +9,6 @@ LOG = logging.getLogger(__name__)
 source = "dispatcher"
 routing = {"source": source, "route": ["terminal"]}
 routinguser = {"source": source, "route": ["terminal", "user"]}
-routingnone = {"source": source, "route": [""]}
 import swisseph as swe
 from helpers import _decimal_to_ymd
 from sweph.calculations.positions import calculate_positions
@@ -19,7 +18,8 @@ from sweph.calculations.lots import calculate_lots
 from sweph.calculations.stars import calculate_stars
 from sweph.calculations.syzygy import calculate_syzygy
 from sweph.calculations.eclipses import calculate_eclipses
-from sweph.calculations.d1 import calculate_d1
+
+# from sweph.calculations.d1 import calculate_d1
 from sweph.calculations.p2 import calculate_p2
 from sweph.calculations.p3 import calculate_p3
 from sweph.calculations.p3m import calculate_p3m
@@ -28,6 +28,7 @@ from sweph.calculations.returnsolar import calculate_solar_return
 from sweph.calculations.aspects import calculate_aspects
 import user.usersettings as usersett
 from user.fixedstars import FIXEDSTARS
+from ui.mainpanes.chart.astroobject import AstroObject
 
 
 class Dispatcher:
@@ -35,10 +36,8 @@ class Dispatcher:
     def __init__(self, app=None):
         if app is not None:
             self.app = app
-        # LOG.debug(f"whoisme={self.__class__.__name__}")
-        # LOG.debug(f"has-selfappsidepane={hasattr(self.app, 'sidepane')}")
+        # LOG.debug(f"whoisme self : {self.__class__.__name__}")
         self.events_data = {"e1": {}, "e2": {}}
-        # self.event_package = {}
         # explicit selected event : the one arrived last or be user-selected
         self.selected_event = "e1"
         # select event for objects button
@@ -127,13 +126,13 @@ class Dispatcher:
         # signals
         self.app.signaler.connect("event changed", self.on_event_change)
         self.app.signaler.connect("e2 cleared", self.on_e2_clear)
-        LOG.debug(
-            f"selobjs1={self.selected_objects_e1}"
-            f"\nselobjs2={self.selected_objects_e2}"
-            f"\nsellots={self.selected_lots}"
-            f"\nselprenatal={self.selected_prenatal}",
-            extra=routingnone,
-        )
+        # LOG.debug(
+        #     f"selobjs1={self.selected_objects_e1}"
+        #     f"\nselobjs2={self.selected_objects_e2}"
+        #     f"\nsellots={self.selected_lots}"
+        #     f"\nselprenatal={self.selected_prenatal}",
+        #     extra=routing,
+        # )
 
     def compute_swe_flag(self, active_flags: list[str]):
         # get active flags & compute swe flag
@@ -164,6 +163,7 @@ class Dispatcher:
             self.recalculate("e2")
 
     def set_selected_objects_event(self, event_id: str):
+        # called from sidepanehelpers
         self.selected_objects_event = event_id
 
     def select_all_objects(self, event_id: str):
@@ -191,26 +191,22 @@ class Dispatcher:
         self.recalculate(event_id)
 
     def on_event_change(self, dataset):
-        # print("oneventchange enter", dataset.get("id"))
-        # todo do we need this ??? we are operating with local attributes self.X
         event_id = dataset.get("id")
         # LOG.debug(f"oneventchage : dataset={dataset}")
-        self.set_event_data(event_id, dataset)
+        # store incoming event data : local calculations only
+        self.events_data[event_id]["chart"] = dataset["chart"]
+        self.events_data[event_id]["sweph"] = dataset["sweph"]
         # received e2 data - user is interested in transit progressions transit etc
         if event_id == "e2":
             self.e2_active = True
         self.recalculate(event_id)
 
-    def set_event_data(self, event_id: str, dataset: dict):
-        # store incoming event data : local calculations only
-        self.events_data[event_id]["chart"] = dataset["chart"]
-        self.events_data[event_id]["sweph"] = dataset["sweph"]
-
-    def on_e2_clear(self):
+    def on_e2_clear(self, event_id=None):
         # handle e2 removal
         self.events_data["e2"] = {}
-        self.update_titlebar()
         self.e2_active = False
+        self.refresh_chart_package()
+        self.update_titlebar()
 
     def update_object(self, event_id: str, name: str, active: bool):
         # target correct set based on event
@@ -235,7 +231,7 @@ class Dispatcher:
         self.recalculate("e1")
 
     def update_prenatal(self, name: str, active: bool):
-        # update prenatal syzygy & eclipse selecion : exclusive to event 1
+        # update prenatal syzygy & eclipse selection : exclusive to event 1
         if active:
             self.selected_prenatal.add(name)
         else:
@@ -243,16 +239,23 @@ class Dispatcher:
         self.app.signaler.emit("setting changed", {"prenatal": self.selected_prenatal})
         self.recalculate("e1")
 
-    def update_house_system(self, hsys: str, short_name: str = ""):
-        # update selected house system : 'O', 'W' etc
+    def update_house_system(
+        self,
+        hsys: str,
+        # short_name: str = "",
+    ):
+        # called from sidepanehelpers
         # todo access via self.HOUSE_SYSTEMS
         self.selected_hsys = hsys
-        if short_name:
-            self.selected_hsys_short = short_name
+        # if short_name:
+        #     self.selected_hsys_short = short_name
         self.app.signaler.emit("setting changed", {"hsys": hsys})
-        self.recalculate(self.selected_event)
+        # self.recalculate(self.selected_event)
+        self.recalculate("e1")
+        if self.e2_active:
+            self.recalculate("e2")
 
-    def update_naksatras_settings(self, val_ring, val_28, val_1st):
+    def update_naksatra_settings(self, val_ring, val_28, val_1st):
         self.naksatras_ring = val_ring
         self.mansions_28 = val_28
         self.first_naksatra = val_1st
@@ -260,13 +263,16 @@ class Dispatcher:
             "setting changed",
             {"naksatras": {"ring": val_ring, "28": val_28, "1st": val_1st}},
         )
+        # LOG.debug(f"updatenaksatrasettings : ring={val_ring} 28={val_28} 1st={val_1st}")
         self.recalculate("e1")
 
     def update_ayanamsa(self, ayanamsa: int):
         # update selected siderael ayanamsa
         self.selected_ayanamsa = ayanamsa
         self.app.signaler.emit("setting changed", {"ayanamsa": ayanamsa})
-        self.recalculate("all")
+        self.recalculate("e1")
+        if self.e2_active:
+            self.recalculate("e2")
 
     def update_custom_ayanamsa(self, key, value):
         if key in self.CUSTOM_AYANAMSA:
@@ -292,23 +298,25 @@ class Dispatcher:
             setattr(self, attr_name, value)
             self.app.signaler.emit("setting changed", {"chart": {setting: value}})
             # filter recalculate() call to math-impacting settings
-            visual_settintgs = [
+            visual_settings = [
                 "enable_glyphs",
                 "chart_info",
                 "chart_info_extra",
                 "snap_tolerance",
             ]
-            if attr_name not in visual_settintgs:
+            if attr_name not in visual_settings:
                 self.recalculate(self.selected_event)
+            else:
+                self.app.signaler.emit("redraw chart")
 
     def update_rings(self, ring: str, value: bool):
-        # todo add code
         if ring not in self.rings:
             LOG.debug(
                 "ring not in rings",
                 extra=routing,
             )
             return
+
         self.rings[ring] = value
         self.app.signaler.emit("setting changed", {"chart": {ring: value}})
         if not self.e2_active:
@@ -317,17 +325,15 @@ class Dispatcher:
                 extra=routing,
             )
             return
-        # ring not yet cached in e2 computed : needs 1 real recalculate to
+        # ring not yet cached in e2 calculated : needs 1 real recalculate to
         # populate it - then toggling is package-only
-        if value and ring not in self.events_data["e2"].get("computed", {}):
+        if value and ring not in self.events_data["e2"].get("calculated", {}):
             self.recalculate("e2")
         else:
-            self.refresh_package("e2")
+            self.refresh_chart_package()
 
     def recalculate(self, event_id: str):
         # on event or settings change > recalculate astodata
-        # todo separate e1 & e2 func, re-pack duplicated funcs for reuse
-        # event_package = {}
         if event_id == "e2" and not self.e2_active:
             LOG.debug(
                 "recalculate : received 'e2' but e2_active is false > investigate",
@@ -344,7 +350,6 @@ class Dispatcher:
 
         if not sweph["jd ut"]:
             LOG.debug("recalculate : sweph has no jdut > investigate")
-
             return
         # mandatory
         jd_ut = sweph["jd ut"]
@@ -358,10 +363,13 @@ class Dispatcher:
         #     f"recalculate : jdut={jd_ut} lat={lat} lon={lon} alt={alt}",
         #     extra=routing,
         # )
-        division = int(self.harmonic_ring) if self.harmonic_ring else 0
-        computed = {}
-        self.events_data[event_id]["computed"] = computed
-        # su & mo always computed
+        if event_id == "e2":
+            division = self.harmonic_ring if self.harmonic_ring > 1 else 9
+        else:
+            division = self.harmonic_ring if self.harmonic_ring else 0
+        calculated = {}
+        self.events_data[event_id]["calculated"] = calculated
+        # su & mo always calculated
         selected_objs = (
             self.selected_objects_e1 if event_id == "e1" else self.selected_objects_e2
         )
@@ -395,11 +403,18 @@ class Dispatcher:
         # house cusps & ascmc todo
         # calculate all-day horas :from sunrise to sunset | wall clock new day 00:00
         self.run_calc(
-            event_id, "horas", calculate_horas, jd_ut, lon, lat, alt, self.swe_flag
+            event_id,
+            "horas",
+            calculate_horas,
+            jd_ut,
+            lon,
+            lat,
+            alt,
+            self.swe_flag,
         )
         # print("after horas")
-        positions_data = computed["positions"]
-        houses_data = computed["houses"]
+        positions_data = calculated["positions"]
+        houses_data = calculated["houses"]
         if positions_data:
             self.run_calc(
                 event_id,
@@ -424,17 +439,6 @@ class Dispatcher:
                 }
                 self.run_calc(event_id, "lots", calculate_lots, lots_package)
             # print("after lots")
-            # fixed stars
-            if self.selected_stars:
-                self.run_calc(
-                    event_id,
-                    "stars",
-                    calculate_stars,
-                    jd_ut,
-                    self.selected_stars,
-                    self.swe_flag,
-                )
-            # print("after stars")
             # prenatal syzygy & eclipses
             if positions_data and "syzygy" in self.selected_prenatal:
                 su_lon = positions_data[0]["lon"]
@@ -459,11 +463,22 @@ class Dispatcher:
                     self.swe_flag,
                 )
             # print("after eclipses")
+            # fixed stars
+            if self.selected_stars:
+                self.run_calc(
+                    event_id,
+                    "stars",
+                    calculate_stars,
+                    jd_ut,
+                    self.selected_stars,
+                    self.swe_flag,
+                )
+            # print("after stars")
         if event_id == "e2":
             # progressions returns for event 2
-            e1_computed = self.events_data["e1"]["computed"]
-            e1_positions = e1_computed["positions"]
-            e1_houses = e1_computed["houses"]
+            e1_calculated = self.events_data["e1"]["calculated"]
+            e1_positions = e1_calculated["positions"]
+            e1_houses = e1_calculated["houses"]
             e1_sweph = self.events_data["e1"]["sweph"]
             e1_jd = e1_sweph["jd ut"]
             e1_su = e1_positions[0]["lon"]
@@ -477,27 +492,13 @@ class Dispatcher:
             period = e2_jd - e1_jd
             self.age_years = period / year_length if e1_jd else 0.0
             self.age_months = period / month_length if e1_jd else 0.0
-            if self.rings["d1 direction"] and e1_jd:
-                self.run_calc(
-                    event_id,
-                    "d1",
-                    calculate_d1,
-                    e1_jd,  # jd_ut,
-                    lat,
-                    lon,
-                    objs,
-                    self.selected_hsys,
-                    self.mean_node,
-                    self.swe_flag,
-                )
-                print("after d1")
+            # todo transit & varga transit rings
             if self.rings["p2 progress"] and e1_jd and e1_su:
                 self.run_calc(
                     event_id,
-                    "p2",
+                    "p2 progress",
                     calculate_p2,
                     e1_jd,
-                    # e2_jd,
                     lat,
                     lon,
                     e1_su,
@@ -509,11 +510,11 @@ class Dispatcher:
                     self.mean_node,
                     self.swe_flag,
                 )
-                print("after p2")
+                # print("after p2")
             if self.rings["p3 progress"] and e1_jd and e1_su:
                 self.run_calc(
                     event_id,
-                    "p3",
+                    "p3 progress",
                     calculate_p3,
                     e1_jd,
                     e2_jd,
@@ -530,14 +531,13 @@ class Dispatcher:
                     self.mean_node,
                     self.swe_flag,
                 )
-                print("after p3")
+                # print("after p3")
             if self.rings["p3m progress"] and e1_jd and e1_su:
                 self.run_calc(
                     event_id,
-                    "p3m",
+                    "p3m progress",
                     calculate_p3m,
                     e1_jd,
-                    # e2_jd,
                     lat,
                     lon,
                     e1_su,
@@ -552,13 +552,27 @@ class Dispatcher:
                     self.mean_node,
                     self.swe_flag,
                 )
-                print("after p3m")
+                # print("after p3m")
+            # if self.rings["d1 direction"] and e1_jd:
+            #     self.run_calc(
+            #         event_id,
+            #         "d1 direction",
+            #         calculate_d1,
+            #         e1_jd,
+            #         lat,
+            #         lon,
+            #         objs,
+            #         self.selected_hsys,
+            #         self.mean_node,
+            #         self.swe_flag,
+            #     )
+            # print("after d1")
             if self.rings["lunar return"] and e1_mo:
                 self.run_calc(
                     event_id,
                     "lunar return",
                     calculate_lunar_return,
-                    e2_jd,  # jd_ut,
+                    e2_jd,
                     lat,
                     lon,
                     e1_mo,
@@ -568,7 +582,7 @@ class Dispatcher:
                     self.mean_node,
                     self.swe_flag,
                 )
-                print("after lunar return")
+                # print("after lunar return")
             if self.rings["solar return"] and e1_jd and e1_su:
                 self.run_calc(
                     event_id,
@@ -585,7 +599,7 @@ class Dispatcher:
                     self.mean_node,
                     self.swe_flag,
                 )
-                print("after solar return")
+                # print("after solar return")
         self.refresh_package(event_id)
         self.update_titlebar()
 
@@ -599,17 +613,50 @@ class Dispatcher:
                 extra=routinguser,
             )
             return
-        self.events_data[event_id]["computed"][key] = result["data"]
+        self.events_data[event_id]["calculated"][key] = result["data"]
+
+    def _prep_ring(self, raw, varga=False):
+        # return prepared data for rings
+        if not raw:
+            return [] if not (isinstance(raw, dict) and "cusps" in raw) else None
+
+        has_cusps = isinstance(raw, dict) and "cusps" in raw
+        items = raw.get("positions", raw) if has_cusps else raw
+        items = items.values() if isinstance(items, dict) else items
+        objects = []
+        for item in items:
+            if not isinstance(item, dict) or "name" not in item:
+                continue
+            if varga:
+                if item.get("varga") is None:
+                    # if "varga" not in item:
+                    continue
+                item = {**item, "lon": item["varga"]}
+            objects.append(AstroObject(item))
+        if has_cusps:
+            return {"positions": objects, "cusps": raw.get("cusps", [])}
+        return objects
 
     def refresh_package(self, event_id: str):
         # get & emit package with cached data - never recompute by itself
-        computed = self.events_data[event_id].get("computed")
+        calculated = self.events_data[event_id].get("calculated")
         chart = self.events_data[event_id].get("chart")
-        if computed is None or chart is None:
-            LOG.debug(f"refreshpackage : {event_id} has no computed / chart : exiting")
-
+        if calculated is None or chart is None:
+            LOG.debug(
+                f"refreshpackage : {event_id} has no calculated / chart : exiting"
+            )
             return
+        self.app.signaler.emit("package table ready", event_id, dict(calculated))
+        if event_id == "e1" or self.e2_active:
+            self.refresh_chart_package()
+        self.update_titlebar()
 
+    def refresh_chart_package(self):
+        e1_calculated = self.events_data["e1"].get("calculated")
+        e1_chart = self.events_data["e1"].get("chart")
+        if e1_calculated is None or e1_chart is None:
+            LOG.error("refreshchartpackage : e1 chart data missing : exiting")
+            return
         hsys_str = next(
             (
                 sys[2]
@@ -617,20 +664,60 @@ class Dispatcher:
                 if sys[0].encode("ascii") == self.selected_hsys
             )
         )
-        event_package = {
-            "info": {
+        e1_curr_hora = e1_calculated["horas"]["current hora"]
+        chart_package = {
+            "info": e1_chart,
+            "current hora": e1_curr_hora,
+            "info extra": {
                 "hsys": hsys_str,
-                # "hsys": self.selected_hsys,
                 "zod": "sid" if "sidereal zodiac" in self.active_flags else "tro",
-                "ayanamsa": self.selected_ayanamsa,
-                "location": chart["location"],
-                "datetime": chart["datetime"],
+                "aynm": self.selected_ayanamsa  # todo move selection to where ???
+                if "sidereal zodiac" in self.active_flags
+                else "",
             },
+            "positions": self._prep_ring(e1_calculated.get("positions")),
+            "houses": {
+                "cusps": e1_calculated.get("houses", {}).get("cusps") or [],
+                "ascmc": e1_calculated.get("houses", {}).get("ascmc") or [],
+            },
+            "lots": self._prep_ring(e1_calculated.get("lots")),
+            "eclipses": self._prep_ring(e1_calculated.get("eclipses")),
+            "stars": self._prep_ring(e1_calculated.get("stars")),
+            "syzygy": self._prep_ring(e1_calculated.get("syzygy")),
         }
-        event_package.update(computed)
-        # LOG.debug(f"refreshpackage : eventpackage={event_package}") # ok
-        self.app.signaler.emit("package ready", event_id, event_package)
-        self.update_titlebar()
+        if self.harmonic_ring:
+            chart_package["harmonic"] = self._prep_ring(
+                e1_calculated.get("positions"), varga=True
+            )
+        # table needs all data for gtk.widgets incl aspects
+        if self.e2_active:
+            e2_calculated = self.events_data["e2"].get("calculated", {})
+            e2_positions = e2_calculated.get("positions")
+            e2_houses = e2_calculated.get("houses")
+            if self.rings.get("transit") and e2_positions:
+                chart_package["transit"] = {
+                    "positions": self._prep_ring(e2_positions),
+                    "cusps": e2_houses.get("cusps") or [],
+                    # "ascmc": e2_houses.get("ascmc"),
+                }
+            if self.rings.get("transit varga") and e2_positions:
+                chart_package["transit varga"] = {
+                    "positions": self._prep_ring(e2_positions, varga=True),
+                }
+            for ring in (
+                "p2 progress",
+                "p3 progress",
+                "p3m progress",
+                "lunar return",
+                "solar return",
+            ):
+                if self.rings.get(ring):
+                    raw = e2_calculated.get(ring)
+                    if raw:
+                        chart_package[ring] = self._prep_ring(raw)
+        # LOG.debug(f"refreshpackage : eventpackage={event_package}")  # ok
+        self.app.signaler.emit("package chart ready", "e1", chart_package)
+        # self.update_titlebar()
 
     def set_change_time_period(self, period: float, label: str):
         # sync math (float) & display (label) & update titlebar
@@ -640,7 +727,6 @@ class Dispatcher:
 
     def update_titlebar(self):
         # grab needed data & construct string to be displayed on mainwindow titlebar
-        # todo add enabled rings
         dt1 = self.events_data["e1"].get("chart", {}).get("datetime")
         dt2 = self.events_data["e2"].get("chart", {}).get("datetime")
         title = "aumastro"
@@ -656,10 +742,9 @@ class Dispatcher:
                 title += f" | age : {age_y_str} y"
             if self.age_months:
                 title += f" - lun : {self.age_months:.2f} m"
-        change_time = self.selected_change_time_label or "1 D"
+        change_time = self.selected_change_time_label  # or "1 D"
         title += f" | ct : {change_time}"
         #  send signal & subscribe in mainwindow
-        # update titlebar
         self.app.signaler.emit("update titlebar", {"title": title})
 
     def event_selection(self, event_id: str):
@@ -680,28 +765,10 @@ class Dispatcher:
         selected_panel.add_title_css_class("label-event-selected")
         other_panel.remove_title_css_class("label-event-selected")
         other_panel.add_title_css_class("label-event")
-        # if self.selected_event != event_id:
-        #     self.selected_event = event_id
         # todo do we use this ???
-        self.app.signaler.emit("event selected", event_id)
+        # self.app.signaler.emit("event selected", event_id)
+        # LOG.debug(
+        #     f"{event_id} selected",
+        #     extra=routingnone,
+        # )
         self.update_titlebar()
-        LOG.debug(
-            f"{event_id} selected",
-            extra=routingnone,
-        )
-
-        # flags_map = self.get_swe_flags_map()
-        # swe_flag = 0
-        # for flag in active_flags:
-        #     if flag in flags_map:
-        #         if (
-        #             isinstance(flag, (tuple, list))
-        #             and len(flag) >= 3
-        #             and isinstance(flag[2], str)
-        #         ):
-        #             clean_flg = flag[2]
-        #             # merge text string into sweph flag name / int
-        #             flag_int = getattr(swe, clean_flg)
-        #             swe_flag |= flag_int
-        # self.swe_flag = swe_flag
-        # return swe_flag

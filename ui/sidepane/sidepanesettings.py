@@ -30,6 +30,7 @@ class SidepaneSettings(CollapsePanel):
         margin = 7
         if self.mainwindow:
             self.set_margin_end(margin)
+        self.chk_settings = {}
         self.app.signaler.connect("setting changed", self.on_setting_change)
         self.build_ui()
 
@@ -37,19 +38,22 @@ class SidepaneSettings(CollapsePanel):
         # received settings changed signal
         if not data:
             LOG.debug("onsettingchange : data missing : exiting")
-
             return
 
         objs_event = self.app.dispatcher.selected_objects_event
         key = f"objects_{objs_event}"
         if key in data:
             self.sync_objects_checkboxes(data[key])
+        if "chart" in data:
+            self.sync_chart_checkboxes(data["chart"])
+        if "naksatras" in data:
+            self.sync_naksatra_checkboxes(data["naksatras"])
 
     def sync_objects_checkboxes(self, selected):
-        if not hasattr(self, "chk_objects"):
-            LOG.debug("syncobjectcheckboxes : chk_objects is missing : exiting")
-
-            return
+        # sync hotkeys & checkboxes
+        # if not hasattr(self, "chk_objects"):
+        #     LOG.debug("syncobjectcheckboxes : chk_objects is missing : exiting")
+        #     return
 
         for short_name, check in self.chk_objects.items():
             should_be_active = short_name in selected
@@ -57,6 +61,36 @@ class SidepaneSettings(CollapsePanel):
                 check.handler_block_by_func(help.objects_toggled)
                 check.set_active(should_be_active)
                 check.handler_unblock_by_func(help.objects_toggled)
+
+    def sync_chart_checkboxes(self, changed: dict):
+        # sync hotkeys & checkboxes
+        for setting, value in changed.items():
+            check = self.chk_settings.get(setting)
+            if check is not None and isinstance(value, bool):
+                if check.get_active() != value:
+                    check.handler_block_by_func(help.setting_toggled)
+                    check.set_active(value)
+                    check.handler_unblock_by_func(help.setting_toggled)
+                continue
+            if setting == "harmonic ring":
+                text = str(value)
+                if self.ent_harm.get_text() != text:
+                    self.ent_harm.set_text(text)
+
+    def sync_naksatra_checkboxes(self, changed: dict):
+        if "ring" in changed and self.chk_naks_ring.get_active() != changed["ring"]:
+            self.chk_naks_ring.handler_block_by_func(help.naksatras_ring)
+            self.chk_naks_ring.set_active(changed["ring"])
+            self.chk_naks_ring.handler_unblock_by_func(help.naksatras_ring)
+        if "28" in changed and self.chk_28_naks.get_active() != changed["28"]:
+            self.chk_28_naks.handler_block_by_func(help.naksatras_ring)
+            self.chk_28_naks.set_active(changed["28"])
+            self.chk_28_naks.handler_unblock_by_func(help.naksatras_ring)
+        if "1st" in changed:
+            text = str(changed["1st"])
+            if self.ent_1st_nak.get_text() != text:
+                self.ent_1st_nak.set_text(text)
+        self.row_nak_opt.set_sensitive(self.chk_naks_ring.get_active())
 
     def build_ui(self):
         box_settings = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5)
@@ -104,9 +138,6 @@ class SidepaneSettings(CollapsePanel):
         )
         box_button.append(btn_none)
         box_objects.append(box_button)
-        # LOG.debug(f"pnlobjects : has-selfsidepane : {hasattr(self, 'mainwindow')}")
-        # LOG.debug(f"pnlobjects : has-selfsidepaneapp : {hasattr(self.mainwindow, 'app')}")
-        # LOG.debug(f"pnlobjects : whois self : {self.__class__.__name__}")
         # main objects list from dispatcher
         lbx_objects = Gtk.ListBox()
         lbx_objects.set_selection_mode(Gtk.SelectionMode.NONE)
@@ -119,7 +150,7 @@ class SidepaneSettings(CollapsePanel):
         )
         # get objects
         objs = self.app.dispatcher.OBJECTS
-        # selected_objects_event=
+        # selected objects event
         sel_objs = (
             self.app.dispatcher.selected_objects_e1
             if self.app.dispatcher.selected_objects_event == "e1"
@@ -133,15 +164,13 @@ class SidepaneSettings(CollapsePanel):
             tooltip = data[3]
             row.set_tooltip_text(tooltip)
             check = Gtk.CheckButton(label=name)
-            LOG.debug(
-                f"\nselobjs={type(sel_objs)}"
-                f"\n\t{sel_objs}"
-                f"\n\tname={name}"
-                f"\n\tdata={data}",
-                extra=routingnone,
-            )
+            # LOG.debug(
+            #     f"\nselobjs={type(sel_objs)}"
+            #     f"\n\t{sel_objs}"
+            #     f"\n\tname={name}"
+            #     f"\n\tdata={data}",
+            # )
             check.set_active(short_name in sel_objs)
-            # check.set_active(data["enable"])
             check.connect(
                 "toggled", help.objects_toggled, short_name, self.app.dispatcher
             )
@@ -167,7 +196,6 @@ class SidepaneSettings(CollapsePanel):
             row.set_tooltip_text(f"{data['day']}\n{data['tooltip']}")
             check = Gtk.CheckButton(label=name)
             check.set_active(name in sel_lots)
-            # check.set_active(data["enable"])
             check.connect("toggled", help.lots_toggled, name, self.app.dispatcher)
             row.set_child(check)
             lbx_lots.append(row)
@@ -189,7 +217,6 @@ class SidepaneSettings(CollapsePanel):
             row.set_tooltip_text(data["tooltip"])
             check = Gtk.CheckButton(label=name)
             check.set_active(name in sel_prenatal)
-            # check.set_active(data["enable"])
             check.connect("toggled", help.prenatal_toggled, name, self.app.dispatcher)
             row.set_child(check)
             lbx_prenatal.append(row)
@@ -244,6 +271,7 @@ class SidepaneSettings(CollapsePanel):
             check = Gtk.CheckButton(label=setting)
             check.set_active(active)
             check.connect("toggled", help.setting_toggled, setting, self.app.dispatcher)
+            self.chk_settings[setting] = check
             row.set_tooltip_text(tooltip)
             row.set_child(check)
             lbx_chart_setts_1.append(row)
@@ -272,6 +300,7 @@ class SidepaneSettings(CollapsePanel):
             check = Gtk.CheckButton(label=setting)
             check.set_active(active)
             check.connect("toggled", help.setting_toggled, setting, self.app.dispatcher)
+            self.chk_settings[setting] = check
             row.set_child(check)
             lbx_draw.append(row)
         # naksatras row
@@ -311,6 +340,8 @@ class SidepaneSettings(CollapsePanel):
         box_nak_opt.append(Gtk.Label(label="1st"))
         box_nak_opt.append(ent_1st_nak)
         row_nak_opt.set_child(box_nak_opt)
+        row_nak_opt.set_sensitive(self.app.dispatcher.naksatras_ring)
+        self.row_nak_opt = row_nak_opt
         lbx_draw.append(row_nak_opt)
         # harmonics row
         row_harm = Gtk.ListBoxRow()
@@ -318,6 +349,7 @@ class SidepaneSettings(CollapsePanel):
         box_harm = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=7)
         box_harm.append(Gtk.Label(label="harmonic ring"))
         ent_harm = Gtk.Entry()
+        self.ent_harm = ent_harm
         ent_harm.set_width_chars(2)
         ent_harm.set_max_width_chars(2)
         ent_harm.set_text(str(self.app.dispatcher.harmonic_ring))

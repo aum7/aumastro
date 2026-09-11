@@ -197,8 +197,8 @@ class Rings:
             cr.stroke()
         cr.restore()
 
-    def draw_outer_ring(self, cr, ring, cusp_color=None, cusp_width=1):
-        # outer ring generator function
+    def draw_transit_ring(self, cr):
+        ring = "transit"
         outer_r, _, inner_r = self.get_ring_bounds(ring)
         cr.arc(self.cx, self.cy, outer_r, 0, 2 * pi)
         cr.set_source_rgba(*self.RING_COLORS[ring])
@@ -206,20 +206,146 @@ class Rings:
         cr.set_source_rgba(0.5, 0.5, 0.5, 0.5)
         cr.set_line_width(1)
         cr.stroke()
-        if cusp_color:
-            ring_data = self.package.get(ring, {})
-            cusps = ring_data.get("cusps", []) if isinstance(ring_data, dict) else []
-            for angle in cusps:
-                angle = pi - radians(angle)
-                x1 = self.cx + inner_r * cos(angle)
-                y1 = self.cy + inner_r * sin(angle)
-                x2 = self.cx + outer_r * cos(angle)
-                y2 = self.cy + outer_r * sin(angle)
-                cr.move_to(x1, y1)
-                cr.line_to(x2, y2)
-                cr.set_source_rgba(*cusp_color)
-                cr.set_line_width(cusp_width)
-                cr.stroke()
+        # todo remove bloat code
+        ring_data = (
+            self.package.get(ring, {})
+            if isinstance(self.package.get(ring), dict)
+            else {}
+        )
+        cusps = ring_data.get("cusps", [])
+        for angle in cusps:
+            angle = pi - radians(angle)
+            x1 = self.cx + inner_r * cos(angle)
+            y1 = self.cy + inner_r * sin(angle)
+            x2 = self.cx + outer_r * cos(angle)
+            y2 = self.cy + outer_r * sin(angle)
+            cr.move_to(x1, y1)
+            cr.line_to(x2, y2)
+            cr.set_source_rgba(0, 1, 0, 1)
+            cr.stroke()
+        self.draw_sign_borders(cr, ring)
+        self.draw_objects(cr, ring)
+
+    def draw_transit_varga_ring(self, cr):
+        ring = "transit varga"
+        outer_r, _, _ = self.get_ring_bounds(ring)
+        cr.arc(self.cx, self.cy, outer_r, 0, 2 * pi)
+        cr.set_source_rgba(*self.RING_COLORS[ring])
+        cr.fill_preserve()
+        cr.set_source_rgba(0.5, 0.5, 0.5, 0.5)
+        cr.set_line_width(1)
+        cr.stroke()
+        self.draw_sign_borders(cr, ring)
+        self.draw_objects(cr, ring)
+
+    def draw_p2_ring(self, cr):
+        ring = "p2 progress"
+        outer_r, _, _ = self.get_ring_bounds(ring)
+        cr.arc(self.cx, self.cy, outer_r, 0, 2 * pi)
+        cr.set_source_rgba(*self.RING_COLORS[ring])
+        cr.fill_preserve()
+        cr.set_source_rgba(0.5, 0.5, 0.5, 0.5)
+        cr.set_line_width(1)
+        cr.stroke()
+        self.draw_sign_borders(cr, ring)
+        self.draw_objects(cr, ring)
+
+    def draw_p3_ring(self, cr):
+        ring = "p3 progress"
+        outer_r, _, _ = self.get_ring_bounds(ring)
+        cr.arc(self.cx, self.cy, outer_r, 0, 2 * pi)
+        cr.set_source_rgba(*self.RING_COLORS[ring])
+        cr.fill_preserve()
+        cr.set_source_rgba(0.5, 0.5, 0.5, 0.5)
+        cr.set_line_width(1)
+        cr.stroke()
+        self.draw_sign_borders(cr, ring)
+        self.draw_objects(cr, ring)
+
+    def draw_p3m_ring(self, cr):
+        ring = "p3m progress"
+        outer_r, _, _ = self.get_ring_bounds(ring)
+        cr.arc(self.cx, self.cy, outer_r, 0, 2 * pi)
+        cr.set_source_rgba(*self.RING_COLORS[ring])
+        cr.fill_preserve()
+        cr.set_source_rgba(0.5, 0.5, 0.5, 0.5)
+        cr.set_line_width(1)
+        cr.stroke()
+        self.draw_sign_borders(cr, ring)
+        self.draw_objects(cr, ring)
+
+    def draw_d1_ring(self, cr):
+        ring = "d1 direction"
+        outer_r, _, _ = self.get_ring_bounds(ring)
+        cr.arc(self.cx, self.cy, outer_r, 0, 2 * pi)
+        # color of ring background
+        cr.set_source_rgba(*self.RING_COLORS[ring])
+        cr.fill_preserve()
+        cr.set_source_rgba(0.5, 0.5, 0.5, 0.5)
+        cr.set_line_width(1)
+        cr.stroke()
+        self.draw_sign_borders(cr, ring)
+        self.draw_objects(cr, ring)
+
+    def draw_lunar_return_ring(self, cr):
+        ring = "lunar return"
+        outer_r, _, inner_r = self.get_ring_bounds(ring)
+        cr.arc(self.cx, self.cy, outer_r, 0, 2 * pi)
+        cr.set_source_rgba(*self.RING_COLORS[ring])
+        cr.fill_preserve()
+        cr.set_source_rgba(0.5, 0.5, 0.5, 0.5)
+        cr.set_line_width(1)
+        cr.stroke()
+        # todo remove bloat code
+        ring_data = (
+            self.package.get(ring, {})
+            if isinstance(self.package.get(ring), dict)
+            else {}
+        )
+        cusps = ring_data.get("cusps", [])
+        for angle in cusps:
+            angle = pi - radians(angle)
+            x1 = self.cx + inner_r * cos(angle)
+            y1 = self.cy + inner_r * sin(angle)
+            x2 = self.cx + outer_r * cos(angle)
+            y2 = self.cy + outer_r * sin(angle)
+            cr.move_to(x1, y1)
+            cr.line_to(x2, y2)
+            cr.set_source_rgba(1, 1, 0.6, 1)
+            cr.stroke()
+        # draw sign borders
+        self.draw_sign_borders(cr, ring)
+        self.draw_objects(cr, ring)
+
+    def draw_solar_return_ring(self, cr):
+        ring = "solar return"
+        outer_r, _, inner_r = self.get_ring_bounds(ring)
+        cr.arc(self.cx, self.cy, outer_r, 0, 2 * pi)
+        cr.set_source_rgba(*self.RING_COLORS[ring])
+        cr.fill_preserve()
+        cr.set_source_rgba(0.5, 0.5, 0.5, 0.5)
+        cr.set_line_width(1)
+        cr.stroke()
+        # cusps
+        # todo remove bloat code
+        ring_data = (
+            self.package.get(ring, {})
+            if isinstance(self.package.get(ring), dict)
+            else {}
+        )
+        cusps = ring_data.get("cusps", [])
+        for angle in cusps:
+            angle = pi - radians(angle)
+            x1 = self.cx + inner_r * cos(angle)
+            y1 = self.cy + inner_r * sin(angle)
+            x2 = self.cx + outer_r * cos(angle)
+            y2 = self.cy + outer_r * sin(angle)
+            cr.move_to(x1, y1)
+            cr.line_to(x2, y2)
+            cr.set_line_width(2)
+            cr.set_source_rgba(1, 1, 0.6, 1)
+            cr.stroke()
+        # sign borders & objects
         self.draw_sign_borders(cr, ring)
         self.draw_objects(cr, ring)
 
@@ -737,20 +863,14 @@ class Rings:
         # unpack & iterate outer_rings, call draw_x function for each item
         # info event signs are mandatory
         outer_rings_map = {
-            "transit": lambda cr: self.draw_outer_ring(
-                cr, "transit", cusp_color=(0, 1, 0, 1)
-            ),
-            "transit varga": lambda cr: self.draw_outer_ring(cr, "transit varga"),
-            "p2 progress": lambda cr: self.draw_outer_ring(cr, "p2 progress"),
-            "p3 progress": lambda cr: self.draw_outer_ring(cr, "p3 progress"),
-            "p3m progress": lambda cr: self.draw_outer_ring(cr, "p3m progress"),
+            "transit": self.draw_transit_ring,
+            "transit varga": self.draw_transit_varga_ring,
+            "p2 progress": self.draw_p2_ring,
+            "p3 progress": self.draw_p3_ring,
+            "p3m progress": self.draw_p3m_ring,
             # "d1 direction": self.draw_d1_ring,
-            "lunar return": lambda cr: self.draw_outer_ring(
-                cr, "lunar return", cusp_color=(1, 1, 0.6, 1), cusp_width=2
-            ),
-            "solar return": lambda cr: self.draw_outer_ring(
-                cr, "solar return", cusp_color=(1, 1, 0.6, 1), cusp_width=2
-            ),
+            "lunar return": self.draw_lunar_return_ring,
+            "solar return": self.draw_solar_return_ring,
         }
         cr.save()
         houses = self.package.get("houses", {})
