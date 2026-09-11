@@ -132,5 +132,10 @@ class AstroChart(Gtk.Box):
         }
         # pass app for rings to have access to dispatcher
         rings = Rings(self.app, ctx, chart_package)
+        self.max_radius = max_radius
+        self.radius_dict = radius_dict
+        self.ascmc = chart_package.get("houses", {}).get("ascmc")
         rings.draw(cr)
         self.snap_targets = rings.snap_targets
+        # call snapping service
+        self.inspector.draw(cr, cx, cy, max_radius)

@@ -9,8 +9,6 @@ routing = {"source": source, "route": ["terminal"]}
 import math
 import cairo
 import ui.fonts.glyphs as glyphs
-
-# from sweph.constants import NAKSATRAS27, MANSIONS28, TERMS
 import gi
 
 gi.require_version("Gtk", "4.0")
@@ -24,8 +22,7 @@ class ChartInspector:
     def __init__(self, chart):
         self.chart = chart
         self.app = getattr(self.chart, "app")
-        # self IS chartinspector : selfchart IS astrochart
-        # selfchart HAS app
+        # self IS chartinspector : selfchart IS astrochart selfchart HAS app
         # LOG.debug(
         #     # f"whois self : {self.__class__.__name__}",
         # )
@@ -73,20 +70,7 @@ class ChartInspector:
         self.hover_lon = None
         # how far inside from astrochart max radius (in px ?) to start rotating rays
         self.chart_tolerance = 7.0
-
         self.setup_controllers()
-
-    def get_snap_tolerance(self):
-        # distance of mouse cursor from snappable object
-        default_snap = self.app.dispatcher.snap_tolerance_
-        chart_settings = getattr(self.chart.app, "chart_settings", {})
-        snap_val = chart_settings.get("snap tolerance", default_snap)
-        if isinstance(snap_val, (tuple, list)):
-            snap_val = snap_val[0]
-        try:
-            return float(snap_val)
-        except (ValueError, TypeError):
-            return default_snap
 
     def setup_controllers(self):
         # setup mouse press release motion controllers
@@ -279,6 +263,7 @@ class ChartInspector:
     def toggle(self):
         # toggle ruler overlay mode
         self.active = not self.active
+        print(f"toggle : active : {self.active}")
         if not self.active:
             self.reset()
             self.update_cursor()
@@ -478,9 +463,9 @@ class ChartInspector:
 
     def _get_rotation_offset(self):
         # calculate rotation offset if fixed ascendant mode is enabled
-        chart_settings = getattr(self.chart.app, "chart_settings", {})
         ascmc = getattr(self.chart, "ascmc", None)
-        if chart_settings.get("fixed asc", False) and ascmc:
+        if self.app.dispatcher.fixed_asc and ascmc:
+            # print(f"getrotationoffset : ascmc : {ascmc}")
             return ascmc[0]
         return 0.0
 
@@ -503,309 +488,9 @@ class ChartInspector:
         y = self.cy + radius * math.sin(angle)
         return x, y
 
-    def _get_ring_objects(self, ring_name):
-        # fetch ring objects from rings data
-        if ring_name == "event":
-            pos = getattr(self.chart, "position", {})
-            if isinstance(pos, dict):
-                # check if nested under event key as a dictionary
-                if "event" in pos and isinstance(pos["event"], dict):
-                    pos = pos["event"]
-                return [v for v in pos.values() if isinstance(v, dict) and "lon" in v]
-            elif isinstance(pos, list):
-                return [
-                    item for item in pos if isinstance(item, dict) and "lon" in item
-                ]
-            return []
-
-        data_map = {
-            "transit": getattr(self.chart, "transit_data", None),
-            "transit varga": getattr(self.chart, "transit_varga_data", None),
-            "p2 progress": getattr(self.chart, "p2_pos", None),
-            "p3 progress": getattr(self.chart, "p3_pos", None),
-            "p3m progress": getattr(self.chart, "p3m_pos", None),
-            "d1 direction": getattr(self.chart, "d1_pos", None),
-            "lunar return": getattr(self.chart, "lun_ret_data", None),
-            "solar return": getattr(self.chart, "sol_ret_data", None),
-        }
-        # LOG.debug(
-        #     "datamap : rings with house cusps :"
-        #     f"\n{self.chart.transit_data}"
-        #     f"\n{self.chart.lun_ret_data}"
-        #     f"\n{self.chart.sol_ret_data}"
-        # )
-        raw = data_map.get(ring_name)
-        if not raw:
-            # todo print error
-            # LOG.debug(f"getringobjects : raw data missing\n\traw={raw}")
-            return []
-        if isinstance(raw, dict):
-            return [v for v in raw.values() if isinstance(v, dict) and "lon" in v]
-        # house cusps list
-        if isinstance(raw, list):
-            return [
-                item
-                for item in raw
-                if (isinstance(item, dict) and "lon" in item)
-                or (isinstance(item, (list, tuple)) and len(item) == 12)
-            ]
-        return []
-
-    def _calculate_object_radius(self, name, lat, radius_dict, max_radius):
-        # print(f"angleruler : radiusdict={radius_dict}")
-        # calculate radial distance - latitude - matching rings.py scaling
-        info_r = radius_dict.get("info", max_radius * 0.4)
-        event_r = radius_dict.get("event", max_radius * 0.85)
-        mid_ring = (info_r + event_r) / 2.0
-        # sun always at 0° latitude : ecliptic
-        if name == "su":
-            return mid_ring
-        try:
-            lat_val = float(lat)
-        except (ValueError, TypeError):
-            lat_val = 0.0
-        # pluto max 18 lat, all other ue 8
-        max_val = 18.0 if name == "pl" else 8.0
-        ratio = lat_val / max_val
-        # clamp ratio to prevent snapping outside ring
-        ratio = max(-1.0, min(1.0, ratio))
-        if lat_val >= 0:
-            return mid_ring + (event_r - mid_ring) * ratio
-        else:
-            return mid_ring + (info_r - mid_ring) * (-ratio)
-
-    def _get_ring_mid_radius(self, ring, radius_dict):
-        # calculate mid-ring radius
-        keys = list(radius_dict.keys())
-        if ring in keys:
-            idx = keys.index(ring)
-            outer_r = radius_dict[ring]
-            inner_r = (
-                radius_dict[keys[idx + 1]]
-                if idx < len(keys) - 1
-                else radius_dict.get("signs", outer_r * 0.92)
-            )
-            return (outer_r + inner_r) / 2.0
-        return radius_dict.get(ring, 0.0)
-
-    def _get_current_ring(self, mouse_r, radius_dict):
-        # find ring mouse cursor is in
-        if not radius_dict:
-            return None
-        keys = list(radius_dict.keys())
-        # return if cursor outside chart
-        if keys and mouse_r > radius_dict[keys[0]]:
-            return None
-        for i, name in enumerate(keys):
-            outer_r = radius_dict[name]
-            inner_r = radius_dict[keys[i + 1]] if i < len(keys) - 1 else 0.0
-            if inner_r <= mouse_r <= outer_r:
-                return name
-        return None
-
     def _get_snappable_targets(self, mouse_r, radius_dict):
         # retrieve snappable targets mapped to mouse radial distance
         return getattr(self.chart, "snap_targets", [])
-        # determine ring occupied by mouse
-        # current_ring = self._get_current_ring(mouse_r, radius_dict)
-        # # dont draw nor snap anything if mouse is inside info central ring
-        # if not current_ring or current_ring == "info":
-        #     return []
-
-        # targets = []
-        # max_radius = getattr(self.chart, "max_radius", 300)
-        # # objects for rings
-        # if current_ring == "event":
-        #     # snap to natal planets
-        #     pos = getattr(self.chart, "positions", {})
-        #     planet_entries = []
-        #     if isinstance(pos, dict):
-        #         if isinstance(pos.get("event"), dict):
-        #             pos = pos["event"]
-        #         planet_entries = [
-        #             v for v in pos.values() if isinstance(v, dict) and "lon" in v
-        #         ]
-        #     elif isinstance(pos, list):
-        #         planet_entries = [
-        #             item for item in pos if isinstance(item, dict) and "lon" in item
-        #         ]
-        #     for data in planet_entries:
-        #         name = data.get("name", "")
-        #         lat = data.get("lat", 0.0)
-        #         glyph = glyphs.get_glyph(name, False) or name
-        #         # match rings.py latitude formula
-        #         rad = self._calculate_object_radius(name, lat, radius_dict, max_radius)
-        #         targets.append((data["lon"], glyph, rad))
-        #     # snap to house cusps
-        #     cusps = getattr(self.chart, "cusps", {})
-        #     if isinstance(cusps, (list, tuple)):
-        #         for idx, lon in enumerate(cusps, start=1):
-        #             glyph = glyphs.EXTRA.get("house")
-        #             targets.append((lon, f"{glyph} {idx}"))
-        # elif current_ring == "signs":
-        #     # add stars
-        #     signs_r = radius_dict.get("signs", max_radius)
-        #     stars_r = signs_r * 0.97
-        #     stars = getattr(self.chart, "stars", {})
-        #     if isinstance(stars, dict):
-        #         for name, info in stars.items():
-        #             if isinstance(info, (list, tuple)) and len(info) >= 1:
-        #                 lon = info[0]
-        #                 designat = info[1]
-        #                 # print(f"angleruler : stars={name} {info}")
-        #                 targets.append((
-        #                     lon,
-        #                     f"{name} {self._format_star_info(designat)}",
-        #                     stars_r,
-        #                 ))
-        #     # snap to signs borders
-        #     for i, sign_tuple in enumerate(glyphs.SIGNS.values()):
-        #         sign_glyph = sign_tuple[0]
-        #         targets.append((i * 30, f" 0° {sign_glyph}"))
-        #     # snap to ascendant & midheaven : they be visually in signs ring
-        #     ascmc = getattr(self.chart, "ascmc", None)
-        #     if ascmc and len(ascmc) >= 2:
-        #         asc = ascmc[0]
-        #         mc = ascmc[1]
-        #         dsc = (asc + 180.0) % 360.0
-        #         ic = (mc + 180.0) % 360.0
-        #         targets.append((asc, glyphs.EXTRA.get("asc", "asc")))
-        #         targets.append((mc, glyphs.EXTRA.get("mc", "mc")))
-        #         targets.append((dsc, glyphs.EXTRA.get("dsc", "dsc")))
-        #         targets.append((ic, glyphs.EXTRA.get("ic", "ic")))
-        #     # snap to extra objects
-        #     for extras in ("lots", "syzygy", "eclipses"):
-        #         data_list = getattr(self.chart, extras, None) or []
-        #         for item in data_list:
-        #             if isinstance(item, dict) and "lon" in item and "name" in item:
-        #                 name = item.get("name", "")
-        #                 label = ""
-        #                 if extras == "syzygy":
-        #                     if name in glyphs.SYZYGY:
-        #                         glyph, tooltip = glyphs.SYZYGY[name]
-        #                         glyph_moon_ph = ""
-        #                         if name == "syznew":
-        #                             glyph_moon_ph = glyphs.MOON_PHASES["new"]
-        #                         elif name == "syzful":
-        #                             glyph_moon_ph = glyphs.MOON_PHASES["full"]
-        #                         label = f"{glyph} {tooltip} {glyph_moon_ph}"
-        #                         targets.append((item["lon"], label))
-        #                 elif extras == "eclipses":
-        #                     ecl_names = {
-        #                         "sol": "prenatal solar eclipse",
-        #                         "lun": "prenatal lunar eclipse",
-        #                     }
-        #                     label = f"{ecl_names.get(name, name)}"
-        #                     targets.append((item["lon"], label))
-        #                 elif extras == "lots":
-        #                     lot_info = glyphs.LOTS.get(name, {})  # gives lot glyph
-        #                     # print(f"angleruler : lotinfo={lot_info}")
-        #                     label = f"{lot_info} {name}"
-        #                     targets.append((item["lon"], label))
-        # elif current_ring == "naksatras":
-        #     chart_settings = getattr(self.chart.app, "chart_settings", {})
-        #     use_28 = chart_settings.get("28 naksatras", False)
-        #     naks_count = 28 if use_28 else 27
-        #     step = 360.0 / naks_count
-        #     source_dict = MANSIONS28 if use_28 else NAKSATRAS27
-        #     start_nak = chart_settings.get("1st naksatra", 1)
-        #     if start_nak and isinstance(start_nak, (tuple, list)):
-        #         start_nak = start_nak[0]
-        #     try:
-        #         start_nak = int(start_nak)
-        #     except (ValueError, TypeError):
-        #         start_nak = 1
-        #     for i in range(naks_count):
-        #         lon_deg = i * step
-        #         idx = ((start_nak - 1 + i) % naks_count) + 1
-        #         # fetch tuple & access ruler
-        #         nak_data = source_dict.get(idx, ("", ""))
-        #         ruler = nak_data[0]
-        #         ruler_glyph = glyphs.get_glyph(ruler, False) or ruler
-        #         targets.append((lon_deg, f"NK {idx} {ruler_glyph}"))
-        # elif current_ring == "harmonic":
-        #     chart_settings = getattr(self.chart.app, "chart_settings", {})
-        #     harmonic_value = chart_settings.get("harmonic ring", "0")
-        #     try:
-        #         division = int(harmonic_value)
-        #     except (ValueError, TypeError):
-        #         division = 0
-        #     # 1 = terms (bounds)
-        #     if division == 1:
-        #         for start_lon, ruler in TERMS.items():
-        #             ruler_glypy = glyphs.get_glyph(ruler, False) or ruler
-        #             targets.append((float(start_lon), f"T {ruler_glypy}"))
-        #     elif division > 1:
-        #         # harmonic objects snap to mid-ring radius
-        #         mid_r = self._get_ring_mid_radius("harmonic", radius_dict)
-        #         # print(f"angleruler : harmonic objects={objects}")
-        #         for item in self.chart.harmonic_data or []:
-        #             if isinstance(item, dict) and "lon" in item:
-        #                 name = item.get("name", "")
-        #                 glyph = glyphs.get_glyph(name, False) or name
-        #                 label = f"{glyph} h{division}"
-        #                 targets.append((item["lon"], label, mid_r))
-        # else:
-        #     # outer rings
-        #     objects = self._get_ring_objects(current_ring)
-        #     mid_r = self._get_ring_mid_radius(current_ring, radius_dict)
-        #     # switch rings to assign ring glyph
-        #     ring = None
-        #     match current_ring:
-        #         case "transit":
-        #             ring = f"{glyphs.EXTRA.get('transit', 'T')}"
-        #         case "transit varga":
-        #             ring = f"{glyphs.EXTRA.get('transit', 'T')}hX"
-        #         case "p2 progress":
-        #             ring = f"{glyphs.EXTRA.get('progressed', 'P')}2"
-        #         case "p3 progress":
-        #             ring = f"{glyphs.EXTRA.get('progressed', 'P')}3"
-        #         case "p3m progress":
-        #             ring = f"{glyphs.EXTRA.get('progressed', 'P')}m"
-        #         case "solar return":
-        #             ring = (
-        #                 f"{glyphs.EXTRA.get('retro', 'R')}"
-        #                 f"{glyphs.PLANETS.get('su', 'su')}"
-        #             )
-        #         case "lunar return":
-        #             ring = (
-        #                 f"{glyphs.EXTRA.get('retro', 'R')}"
-        #                 f"{glyphs.PLANETS.get('mo', 'mo')}"
-        #             )
-        #         case _:
-        #             ring = ""
-        #     label = None
-        #     progressed = glyphs.EXTRA.get("progressed", "P")
-        #     for item in objects:
-        #         if isinstance(item, dict):
-        #             name = item.get("name")
-        #             # dress all asc mc into royal germents
-        #             if name == "tas":
-        #                 glyph = glyphs.EXTRA.get("asc", "true asc")
-        #                 label = f"{glyph} true".strip()
-        #             elif name == "tmc":
-        #                 glyph = glyphs.EXTRA.get("mc", "true mc")
-        #                 label = f"{glyph} true".strip()
-        #             elif name == "asc":
-        #                 glyph = glyphs.EXTRA.get("asc", "asc")
-        #                 label = f"{glyph}{progressed}"
-        #             elif name == "mc":
-        #                 glyph = glyphs.EXTRA.get("mc", "mc")
-        #                 label = f"{glyph}{progressed}"
-        #             else:
-        #                 # planet glyphs
-        #                 glyph = glyphs.get_glyph(name, False) if name else ""
-        #                 label = f"{glyph} {ring}".strip() if glyph else name
-        #             targets.append((item["lon"], label, mid_r))
-        #         # print(f"angleruler : getsnappabletargets : objects={objects}")
-        #         # house cusps for outer rings : transit (both), solar & lunar return
-        #         elif isinstance(item, (list, tuple)) and len(item) == 12:
-        #             # house cusps retain radial line snapping
-        #             glyph = glyphs.EXTRA.get("house", "H")
-        #             for idx, lon in enumerate(item, start=1):
-        #                 targets.append((lon, f"{glyph} {idx}"))
-
-        # return targets
 
     def _find_snap(self, x, y):
         # find objects on chart & snap them with dodgerblue dot
@@ -816,7 +501,7 @@ class ChartInspector:
         if mouse_r < info_r:  # todo do we need this or prev code eliminates info ring ?
             return None, "", "", None
         targets = self._get_snappable_targets(mouse_r, radius_dict)
-        tolerance = self.get_snap_tolerance()
+        tolerance = self.app.dispatcher.snap_tolerance
         best_target = None
         min_dist = tolerance
         for lon, display_label, radius, ring in targets:
@@ -825,12 +510,6 @@ class ChartInspector:
                 tx, ty = self._lon_to_xy(lon, mouse_r)
             else:
                 tx, ty = self._lon_to_xy(lon, radius)
-            # lon = target[0]
-            # displ_label = target[1]
-            # target_r = (
-            #     target[2] if len(target) > 2 and target[2] is not None else mouse_r
-            # )
-            # tx, ty = self._lon_to_xy(lon, target_r)
             d = math.hypot(x - tx, y - ty)
             if d < min_dist:
                 min_dist = d
@@ -841,31 +520,6 @@ class ChartInspector:
         # fallback to free radial line snap
         lon = self._xy_to_lon(x, y)
         return lon, "", "", None
-
-        # info_r = radius_dict.get("info", max_radius * 0.4)
-        # # disable hover over info ring
-        # if mouse_r < info_r:
-        #     return None, "", None
-        # targets = self._get_snappable_targets(mouse_r, radius_dict)
-        # # print(f"angleruler : mouser={mouse_r}")
-        # best_target = None
-        # min_dist = self.get_snap_tolerance()
-        # for item in targets:
-        #     lon = item[0]
-        #     label = item[1]
-        #     target_r = item[2] if len(item) > 2 and item[2] is not None else mouse_r
-        #     # calculate screen coords using object radius
-        #     # snap visual object at mouse radius : snap line
-        #     tx, ty = self._lon_to_xy(lon, target_r)
-        #     dist = math.hypot(x - tx, y - ty)
-        #     if dist < min_dist:
-        #         min_dist = dist
-        #         best_target = (lon, label, (tx, ty))
-        # if best_target:
-        #     return best_target[0], best_target[1], best_target[2]
-        # mouse_lon = self._xy_to_lon(x, y)
-
-        # return mouse_lon, "", None
 
     def _clamp_coords(self, x: float, y: float) -> tuple[tuple[float, float], float]:
         # calculate distance from center & return clamped x y with distance

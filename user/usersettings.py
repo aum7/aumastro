@@ -198,8 +198,8 @@ if checked also select ayanamsa below""",
 # dropdown - top line is default choice
 HOUSE_SYSTEMS = [
     # sweph | name | display
-    ("O", "porphyry", "prp"),
     ("W", "whole sign", "whs"),  # jyotisa & houck
+    ("O", "porphyry", "prp"),
     ("E", "equal asc", "eqa"),
     ("B", "alcabitus", "alc"),  # gansten : close to porphyry
     ("D", "equal mc", "eqm"),

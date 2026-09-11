@@ -156,21 +156,15 @@ def lunar_month_changed(dropdown, _pspec, dispatcher):
     dispatcher.update_lunar_month(period)
 
 
-def ayanamsa_changed(dropdown, _pspec, dispatcher):
+def ayanamsa_changed(dropdown, _pspec, mainwindow):
     # dispatcher IS dispatcher & HAS app
-    # we need access mainwindow.sidepane.sub_sub_custom_ayan
-    mainwindow = dispatcher.app.get_default_window()
-    LOG.debug(
-        f"ayanamsachanged : whois dispatcherapp : {dispatcher.app.__class__.__name__}"
-        # f"has-appmainwindow : {hasattr(dispatcher.app, 'MainWindow')}",
-    )
     idx = dropdown.get_selected()
-    ayanamsas = dispatcher.AYANAMSAS
+    ayanamsas = mainwindow.app.dispatcher.AYANAMSAS
     key = list(ayanamsas)[idx]
     # key = list(ayanamsas.keys())[idx]
     is_custom = key == 255
-    mainwindow.subsub_custom_ayan.set_sensitive(is_custom)
-    dispatcher.update_ayanamsa(key)
+    mainwindow.clp_settings.subsub_custom_ayan.set_sensitive(is_custom)
+    mainwindow.app.dispatcher.update_ayanamsa(key)
 
 
 def custom_ayanamsa_changed(entry, key, dispatcher):

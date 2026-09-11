@@ -1,5 +1,9 @@
 # ui/mainpanes/chart/rings.py
 # ui/fonts/victor/victormonolightastro.ttf
+# reveive dataset from astrochart & draw objects & cusps etc on round chart
+# while drawing objects & elements > save coordinates (lon & radius) of each
+# one - then chartinspector will grab those positions & use them as snapping
+# points for angle ruler & info-popup
 # ruff: noqa: E402
 import logging
 
@@ -56,8 +60,6 @@ class Rings:
         #     f"init : whois selfapp : {self.app.__class__.__name__}"
         # )
         self.package = package
-        # if self.package:
-        #     LOG.debug(f"init : package={package}")
         self.ctx = ctx
         self.cx = ctx.get("cx", 0.0)
         self.cy = ctx.get("cy", 0.0)
@@ -68,9 +70,7 @@ class Rings:
         self.info = ctx.get("info", {})
         self.snap_targets = []
         # LOG.debug(
-        #     f"ctx received : fontscale={self.font_scale} "
-        #     f"info={self.info} ",
-        #     extra=routing,
+        #     f"ctx : cx-cy : {self.cx}-{self.cy} info={self.info} ",
         # )
         self.font_size = 20.0  # default font size : fits signs text size
 
@@ -91,10 +91,6 @@ class Rings:
         mid_r = (outer_r + inner_r) / 2.0
 
         return outer_r, mid_r, inner_r
-
-    def snap(self, lon, label, radius, ring):
-        # add snap target to collection
-        self.snap_targets.append((lon, label, radius, ring))
 
     def draw_objects(self, cr, ring):
         # draw objects for any ring
@@ -138,7 +134,7 @@ class Rings:
                     (1, 1, 1, 1),
                     self.draw_triangle,
                 )
-                self.snap(lon, "true asc", mid_r, ring)
+                self.snap_targets.append((lon, mid_r, "true asc", ring))
             # true mc marker
             elif name == "tmc":
                 self.draw_marker(
@@ -150,7 +146,7 @@ class Rings:
                     (1, 1, 1, 1),
                     self.draw_diamond,
                 )
-                self.snap(lon, "true mc", mid_r, ring)
+                self.snap_targets.append((lon, mid_r, "true mc", ring))
             # asc marker
             elif name == "asc":
                 self.draw_marker(
@@ -162,7 +158,7 @@ class Rings:
                     self.RING_COLORS["asc"],
                     self.draw_triangle,
                 )
-                self.snap(lon, "asc", mid_r, ring)
+                self.snap_targets.append((lon, mid_r, "asc", ring))
             # mc marker
             elif name == "mc":
                 self.draw_marker(
@@ -174,10 +170,10 @@ class Rings:
                     self.RING_COLORS["mc"],
                     self.draw_diamond,
                 )
-                self.snap(lon, "mc", mid_r, ring)
+                self.snap_targets.append((lon, mid_r, "mc", ring))
             else:
                 obj.draw(cr, self.cx, self.cy, mid_r, obj_scale)
-                self.snap(lon, name, mid_r, ring)
+                self.snap_targets.append((lon, mid_r, name, ring))
 
     def draw_sign_borders(
         self, cr, ring="signs", color=RING_COLORS["border light"], line_width=1
@@ -201,7 +197,7 @@ class Rings:
             if ring == "signs":
                 sign_names = list(glyphs.SIGNS.keys())
                 sign_name = sign_names[j] if j < len(sign_names) else str(j)
-                self.snap(j * 30.0, f"0° {sign_name}", None, ring)
+                self.snap_targets.append((j * 30.0, None, f"0° {sign_name}", ring))
         cr.restore()
 
     def draw_outer_ring(self, cr, ring, cusp_color=None, cusp_width=1):
@@ -257,7 +253,12 @@ class Rings:
             cr.line_to(x, y)
             cr.stroke()
             idx = ((i + first_nak - 1) % naks_num) + 1
-            self.snap(i * seg_angle_deg, f"naksatra {idx} border", None, ring)
+            self.snap_targets.append((
+                i * seg_angle_deg,
+                None,
+                f"naksatra {idx} border",
+                ring,
+            ))
         # labels
         self.set_custom_font(cr, self.font_size * self.font_scale * 0.7)
         num_fix = 0.998  # fit ring middle
@@ -311,7 +312,12 @@ class Rings:
                 cr.set_source_rgba(1, 1, 1, 0.5)
                 cr.stroke()
                 # collect snap points
-                self.snap(float(deg), f"term {ruler}", None, "harmonic")
+                self.snap_targets.append((
+                    float(deg),
+                    None,
+                    f"term {ruler}",
+                    "harmonic",
+                ))
                 # glyphs : next border for mid term position
                 next_deg = (
                     360 if i == terms_num - 1 else terms_sorted[(i + 1) % terms_num][0]
@@ -372,7 +378,7 @@ class Rings:
                         mid_r,
                         self.font_size * 0.6,
                     )
-                    self.snap(lon, name, mid_r, "harmonic")
+                    self.snap_targets.append((lon, mid_r, name, "harmonic"))
 
     # inner rings in order from outer-most to central
     def draw_signs_ring(self, cr):
@@ -402,14 +408,20 @@ class Rings:
         stars = self.package.get("stars", {})
         if stars:
             # todo unpack all attributes > pack into snap targets
-            # for _, (lon, _) in stars:
             for star in stars:
-                angle = pi - radians(star.data.get("lon"))
+                lon = star.data.get("lon")
+                angle = pi - radians(lon)
                 x = self.cx + outer_r * 0.97 * cos(angle)
                 y = self.cy + outer_r * 0.97 * sin(angle)
                 cr.new_path()
                 cr.arc(x, y, stars_diameter, 0, 2 * pi)
                 cr.fill()
+                self.snap_targets.append((
+                    lon,
+                    outer_r * 0.97,
+                    star.data.get("name", ""),
+                    "signs",
+                ))
         cr.restore()
 
     def draw_event_ring(self, cr):
@@ -445,7 +457,7 @@ class Rings:
             cr.stroke()
             # collect snap points
 
-            self.snap(cusp_lon, f"house {idx}", None, "event")
+            self.snap_targets.append((cusp_lon, None, f"house {idx}", "event"))
         marker_size = self.scaled_marker_size() * outer_r * 0.0027
         if ascmc:
             radius_factor = 1.04
@@ -465,7 +477,12 @@ class Rings:
                 (1, 1, 1, 0.5),
                 self.draw_triangle,
             )
-            self.snap(ascendant, "asc", outer_r * radius_factor, "event")
+            self.snap_targets.append((
+                ascendant,
+                outer_r * radius_factor,
+                "asc",
+                "event",
+            ))
             dsc_angle = asc_angle + pi
             dsc_x = self.cx + outer_r * radius_factor * cos(dsc_angle)
             dsc_y = self.cy + outer_r * radius_factor * sin(dsc_angle)
@@ -479,9 +496,12 @@ class Rings:
                 (0, 0, 0, 0.7),
                 self.draw_triangle,
             )
-            self.snap(
-                (ascendant + 180.0) % 360.0, "dsc", outer_r * radius_factor, "event"
-            )
+            self.snap_targets.append((
+                (ascendant + 180.0) % 360.0,
+                outer_r * radius_factor,
+                "dsc",
+                "event",
+            ))
             mc_angle = pi - radians(midheaven)
             mc_x = self.cx + outer_r * radius_factor * cos(mc_angle)
             mc_y = self.cy + outer_r * radius_factor * sin(mc_angle)
@@ -495,7 +515,12 @@ class Rings:
                 (0.1176, 0.5647, 1, 0.7),
                 self.draw_diamond,
             )
-            self.snap(midheaven, "mc", outer_r * radius_factor, "event")
+            self.snap_targets.append((
+                midheaven,
+                outer_r * radius_factor,
+                "mc",
+                "event",
+            ))
             ic_angle = mc_angle + pi
             ic_x = self.cx + outer_r * radius_factor * cos(ic_angle)
             ic_y = self.cy + outer_r * radius_factor * sin(ic_angle)
@@ -509,9 +534,12 @@ class Rings:
                 (0, 0, 0, 0.7),
                 self.draw_diamond,
             )
-            self.snap(
-                (midheaven + 180.0) % 360.0, "ic", outer_r * radius_factor, "event"
-            )
+            self.snap_targets.append((
+                (midheaven + 180.0) % 360.0,
+                outer_r * radius_factor,
+                "ic",
+                "event",
+            ))
         # planets with adjusted radius based on latitude
         mean_node = self.app.dispatcher.mean_node
         for obj in e1_pos:
@@ -530,6 +558,7 @@ class Rings:
                 inner_r,
             )  # draw guests : astro object
             obj.draw(cr, self.cx, self.cy, radius, self.font_size)
+            self.snap_targets.append((obj.data.get("lon", 0.0), radius, name, "event"))
             # if 'enable glyphs' > draw glyphs
             if self.app.dispatcher.enable_glyphs:
                 glyph = glyphs.get_glyph(name, mean_node)
@@ -577,7 +606,7 @@ class Rings:
                     color=self.RING_COLORS["lots"],
                     scale=0.7,
                 )
-                self.snap(lon, name, radius, "event")
+                self.snap_targets.append((lon, radius, name, "event"))
                 glyph = glyphs.get_lot_glyph(name)
                 if glyph:
                     angle = pi - radians(lot.data.get("lon", 0))
@@ -622,7 +651,7 @@ class Rings:
                     color=(1, 1, 1, 0.7) if name == "lun" else (1, 1, 0, 0.5),
                     scale=0.7,
                 )
-                self.snap(lon, name, radius, "event")
+                self.snap_targets.append((lon, radius, name, "event"))
                 glyph = glyphs.get_eclipse_glyph(name)
                 if glyph:
                     angle = pi - radians(eclipse.data.get("lon", 0))
@@ -667,7 +696,7 @@ class Rings:
                     color=(1, 1, 1, 0.5),
                     scale=0.5,
                 )
-                self.snap(lon, name, radius, "event")
+                self.snap_targets.append((lon, radius, name, "event"))
                 glyph = glyphs.get_syzygy_glyph(name)
                 if glyph:
                     angle = pi - radians(lun.data.get("lon", 0))
@@ -724,7 +753,6 @@ class Rings:
         if not info:
             return
         cr.set_source_rgba(1, 1, 1, 1)
-        self.set_custom_font(cr, self.font_size * self.font_scale)
         # event 1 default chart info string (format)
         fmt_basic = self.app.dispatcher.chart_info
         # "{name}\n{date}\n{wday} {time_short}\n{city} @ {country}\n{lat}\n{lon}",
@@ -753,8 +781,10 @@ class Rings:
         except Exception as e:
             info_text = f"{info.get('name', '')} : {e}"
         lines = info_text.split("\n")
-        draw_font_size = self.font_size * self.font_scale
+        draw_font_size = self.font_size * self.font_scale * 0.7
         line_spacing = draw_font_size * 1.2
+        # todo fix info text scaling
+        self.set_custom_font(cr, draw_font_size)
         total_height = (len(lines) - 1) * line_spacing
         # calculate start y to roughly center text block
         y = self.cy - total_height / 2 + draw_font_size * 0.35

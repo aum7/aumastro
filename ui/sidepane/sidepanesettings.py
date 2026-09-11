@@ -470,7 +470,7 @@ class SidepaneSettings(CollapsePanel):
         ddn_ayan.set_tooltip_text(
             "add / remove ayanamsas in user/usersettings/AYANAMSAS"
         )
-        ddn_ayan.connect("notify::selected", help.ayanamsa_changed, self.app.dispatcher)
+        ddn_ayan.connect("notify::selected", help.ayanamsa_changed, self.mainwindow)
         box.append(ddn_ayan)
         # sub-sub custom ayanamsa
         subsub_custom_ayan = CollapsePanel(
