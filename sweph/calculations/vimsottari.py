@@ -12,11 +12,11 @@ from helpers import _decimal_to_ymd as decytoymd, _decimal_to_hms as dectohms, o
 from sweph.constants import NAKSATRAS27, DASA_YEARS
 
 
-def find_naksatra(mo_lon):
+def find_naksatra(e1_mo):
     # naksatra index & fraction from mo_lonon longitude
     part = 360 / 27
-    idx = int(mo_lon // part) + 1
-    frac = (mo_lon % part) / part
+    idx = int(e1_mo // part) + 1
+    frac = (e1_mo % part) / part
 
     return idx, frac
 
@@ -38,10 +38,10 @@ def tuple_to_iso(jd):  # duplicated by tuple_to_iso()
     return f"{Y:04d}-{M:02d}-{D:02d} {h:02d}:{m:02d}:{s:02d}"
 
 
-def initial_dasa(mo_lon, cur_lvl=1, max_lvl=3):
+def initial_dasa(e1_mo, cur_lvl=1, max_lvl=3):
     # calculate 1st dasa length : fractional by mo_lonon longitude
     dy = DASA_YEARS
-    idx, frac = find_naksatra(mo_lon)
+    idx, frac = find_naksatra(e1_mo)
     result = {}
     # level 1 (always calculated)
     lvl1_lord = NAKSATRAS27[idx][0]
@@ -141,14 +141,14 @@ def initial_dasa(mo_lon, cur_lvl=1, max_lvl=3):
     return result
 
 
-def find_current_dasa_lords(mo_lon, e1_jd, e2_jd_ut, curr_lvl, year_length):
+def find_current_dasa_lords(e1_jd, e1_mo, e2_jd, curr_lvl, year_length):
     # find periods lords that encapsulate event 2 julian day (ie current period)
     if curr_lvl < 3:
         # should not happen - we trust our data - filters plenty in code before
         return None, None, None
     dy = DASA_YEARS
     # calculate initial dasa upto max_lvl for accurate sub-level portions
-    res = initial_dasa(mo_lon, cur_lvl=5, max_lvl=5)
+    res = initial_dasa(e1_mo, cur_lvl=5, max_lvl=5)
     lvl1_lord_initial = res["lvl1"]["lord"]
     lvl1_seq = get_lord_seq(lvl1_lord_initial)
     lvl1_idx_initial = lvl1_seq.index(lvl1_lord_initial)
@@ -162,7 +162,7 @@ def find_current_dasa_lords(mo_lon, e1_jd, e2_jd_ut, curr_lvl, year_length):
         # use initial_dasa remaining years for 1st period
         rem_years_lvl1 = res["lvl1"]["rem"] if l1_offset == 0 else years_lvl1
         end_lvl1 = temp_jd_lvl1 + rem_years_lvl1 * year_length
-        if temp_jd_lvl1 <= e2_jd_ut < end_lvl1:
+        if temp_jd_lvl1 <= e2_jd < end_lvl1:
             target_lvl1_lord = lord_lvl1
             temp_jd_lvl2 = temp_jd_lvl1
             if curr_lvl >= 4:
@@ -182,7 +182,7 @@ def find_current_dasa_lords(mo_lon, e1_jd, e2_jd_ut, curr_lvl, year_length):
                         else years_lvl2
                     )
                     end_lvl2 = temp_jd_lvl2 + rem_years_lvl2 * year_length
-                    if temp_jd_lvl2 <= e2_jd_ut < end_lvl2:
+                    if temp_jd_lvl2 <= e2_jd < end_lvl2:
                         target_lvl2_lord = lord_lvl2
                         temp_jd_lvl3 = temp_jd_lvl2
                         if curr_lvl >= 5:
@@ -205,7 +205,7 @@ def find_current_dasa_lords(mo_lon, e1_jd, e2_jd_ut, curr_lvl, year_length):
                                     else years_lvl3
                                 )
                                 end_lvl3 = temp_jd_lvl3 + rem_years_lvl3 * year_length
-                                if temp_jd_lvl3 <= e2_jd_ut < end_lvl3:
+                                if temp_jd_lvl3 <= e2_jd < end_lvl3:
                                     target_lvl3_lord = lord_lvl3
                                     break  # found lvl3
                                 temp_jd_lvl3 += rem_years_lvl3 * year_length
@@ -217,13 +217,13 @@ def find_current_dasa_lords(mo_lon, e1_jd, e2_jd_ut, curr_lvl, year_length):
     return target_lvl1_lord, target_lvl2_lord, target_lvl3_lord
 
 
-def vimsottari_table(e1_jd, e2_jd, mo_lon, curr_lvl, max_lvl, year_length):
+def vimsottari_table(e1_jd, e1_mo, e2_jd, curr_lvl, max_lvl, year_length):
     # calculate rest of periods, prepare table as plain text
     dy = DASA_YEARS
     # get data for initial dasa by level
-    res = initial_dasa(mo_lon, cur_lvl=curr_lvl, max_lvl=max_lvl)
+    res = initial_dasa(e1_mo, cur_lvl=curr_lvl, max_lvl=max_lvl)
     # prepare header text
-    idx, frac = find_naksatra(mo_lon)
+    idx, frac = find_naksatra(e1_mo)
     nak_lord, nak_name = NAKSATRAS27[idx]
     separ = f"{'-' * 42}\n"
     header = (
@@ -239,7 +239,7 @@ def vimsottari_table(e1_jd, e2_jd, mo_lon, curr_lvl, max_lvl, year_length):
     lvl1_idx_initial = lvl1_seq.index(lvl1_lord_initial)
     # determine target periods if e2_jd_ut and curr_lvl >= 3
     target_lvl1_lord, target_lvl2_lord, target_lvl3_lord = find_current_dasa_lords(
-        mo_lon, e1_jd, e2_jd, curr_lvl, year_length
+        e1_jd, e1_mo, e2_jd, curr_lvl, year_length
     )
     cur_jd_lvl1 = e1_jd
     out = ""
@@ -392,8 +392,7 @@ def vimsottari_table(e1_jd, e2_jd, mo_lon, curr_lvl, max_lvl, year_length):
     return header + out.rstrip()
 
 
-def calculate_vimsottari(e1_jd, e2_jd, mo_lon, curr_level, year_length):
-    # YEARLENGTH = 365.2425
+def calculate_vimsottari(e1_jd, e1_mo, e2_jd, curr_level, year_length):
     # grab event 1 data & calculate vimsottari : event 1 is mandatory and only source
     # datamanager needs to know what is needed here & provide proper data
     # on missing event 2 julian day notify user & cap table levels
@@ -410,16 +409,16 @@ def calculate_vimsottari(e1_jd, e2_jd, mo_lon, curr_level, year_length):
         max_level = 5
         event_dasas = vimsottari_table(
             e1_jd,
+            e1_mo,
             e2_jd,
-            mo_lon,
             curr_level,
             max_level,
             year_length,
         )
-        LOG.debug(
-            "vimsottari finished",
-            extra=routing,
-        )
+        # LOG.debug(
+        #     "vimsottari finished",
+        #     extra=routing,
+        # )
         return ok(event_dasas)
 
     except Exception as e:

@@ -526,7 +526,7 @@ class ChartInspector:
         min_dist = tolerance
         for lon, radius, display_label, ring in targets:
             if radius is None:
-                # spoke target : snap poin directly at mouse radius
+                # spoke target : snap point directly at mouse radius
                 tx, ty = self._lon_to_xy(lon, mouse_r)
             else:
                 tx, ty = self._lon_to_xy(lon, radius)
@@ -535,7 +535,6 @@ class ChartInspector:
                 min_dist = d
                 tag = self.RING_TAGS.get(ring, ring)
                 txt_label = f"{display_label}-{tag}"
-                # txt_label = f"{display_label} [{ring}]"  # self._clean_text(displ_label)
                 best_target = (lon, display_label, txt_label, (tx, ty))
         if best_target:
             return best_target
@@ -608,7 +607,7 @@ class ChartInspector:
                 self._draw_label(cr, displ_label, self.label_pos)
         # render snap marker during active drag
         active_snap = []
-        if self.dragging:  # and self.snap_pos:
+        if self.dragging:
             if getattr(self, "arc0_snap_pos", None):
                 active_snap.append(self.arc0_snap_pos)
             if getattr(self, "arc1_snap_pos", None):

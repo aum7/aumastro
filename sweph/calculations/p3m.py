@@ -26,7 +26,6 @@ def tuple_to_iso(jd):
 
 def calculate_p3m(
     e1_jd,
-    # e2_jd,
     lat,
     lon,
     e1_su,
@@ -43,9 +42,6 @@ def calculate_p3m(
 ):
     # calculate lunar returns before and after e2 (gives exact lunar month)
     try:
-        # todo dispatcher.age_years/age_months ever updated ???
-        # period = e2_jd - e1_jd
-        # age_years = period / year_length
         if exact_lunar_month and e1_mo is not None:
             # todo weird calculation - why e1_mo - why mo at all
             full_years = int(age_years)
@@ -59,10 +55,7 @@ def calculate_p3m(
             p3m_jd = lr_prev_jd + (fract_year * cycle_length)
             p3m_diff = p3m_jd - e1_jd
         else:
-            LOG.info(
-                "using average lunar month",
-                extra=routing,
-            )
+            LOG.info("using average lunar month")
             p3m_diff = age_years * month_length
         p3m_jd = e1_jd + p3m_diff
         p3m_date = tuple_to_iso(p3m_jd)

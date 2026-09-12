@@ -39,13 +39,6 @@ def calculate_p2(
     # calculate lunar returns before and after e2 (gives exact lunar month)
     # event 1 & 2 data is mandatory : natal / event & progression chart
     try:
-        # age_years = (e2_jd - e1_jd) / year_length
-        # prev_jd = e2_jd - year_length - 0.1  # todo 2.4 h ???
-        # sr_prev_jd = swe.solcross_ut(e1_jd, prev_jd, flag)
-        # sr_next_jd = swe.solcross_ut(e1_su, e2_jd, flag)
-        # sr_year = sr_next_jd - sr_prev_jd
-        # p2_diff = (age_years / sr_year) * sr_year
-        # p2_jd = e1_jd + p2_diff
         p2_jd = e1_jd + age_years
         p2_date = tuple_to_iso(p2_jd)
         p2 = [
@@ -63,7 +56,6 @@ def calculate_p2(
         )
         p2.append({"name": "tas", "lon": ascmc[0]})
         p2.append({"name": "tmc", "lon": ascmc[1]})
-
         e1_mc_arc = (e1_mc - e1_su) % 360.0 if e1_mc else 0.0
         e1_asc_arc = (e1_asc - e1_su) % 360.0 if e1_asc else 0.0
         p2_asc = (p2_su + e1_asc_arc) % 360.0

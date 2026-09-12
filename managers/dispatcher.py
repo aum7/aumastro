@@ -26,6 +26,7 @@ from sweph.calculations.p3m import calculate_p3m
 from sweph.calculations.returnlunar import calculate_lunar_return
 from sweph.calculations.returnsolar import calculate_solar_return
 from sweph.calculations.aspects import calculate_aspects
+from sweph.calculations.vimsottari import calculate_vimsottari
 import user.usersettings as usersett
 from user.fixedstars import FIXEDSTARS
 from ui.mainpanes.chart.astroobject import AstroObject
@@ -80,7 +81,7 @@ class Dispatcher:
         self.selected_prenatal = {
             item for item, data in usersett.PRENATAL.items() if data["enable"]
         }
-        # star list if fixed stars list not empty : custom | naksatras | behenian
+        # fixed stars list not empty : custom | naksatras | behenian
         self.fixed_stars = usersett.CHART_SETTINGS["fixed stars"][0]
         self.selected_stars = FIXEDSTARS[self.fixed_stars]
         # swe settings
@@ -110,7 +111,7 @@ class Dispatcher:
             "p2 progress": self.E2_RINGS["p2 progress"],
             "p3 progress": self.E2_RINGS["p3 progress"],
             "p3m progress": self.E2_RINGS["p3m progress"],
-            "d1 direction": self.E2_RINGS["d1 direction"],
+            # "d1 direction": self.E2_RINGS["d1 direction"],
             "lunar return": self.E2_RINGS["lunar return"],
             "solar return": self.E2_RINGS["solar return"],
         }
@@ -126,13 +127,8 @@ class Dispatcher:
         # signals
         self.app.signaler.connect("event changed", self.on_event_change)
         self.app.signaler.connect("e2 cleared", self.on_e2_clear)
-        # LOG.debug(
-        #     f"selobjs1={self.selected_objects_e1}"
-        #     f"\nselobjs2={self.selected_objects_e2}"
-        #     f"\nsellots={self.selected_lots}"
-        #     f"\nselprenatal={self.selected_prenatal}",
-        #     extra=routing,
-        # )
+        self.app.signaler.connect("lumies changed", self.on_lumies_change)
+        # LOG.debug(f"selobjs1={self.selected_objects_e1}")
 
     def compute_swe_flag(self, active_flags: list[str]):
         # get active flags & compute swe flag
@@ -242,15 +238,10 @@ class Dispatcher:
     def update_house_system(
         self,
         hsys: str,
-        # short_name: str = "",
     ):
         # called from sidepanehelpers
-        # todo access via self.HOUSE_SYSTEMS
         self.selected_hsys = hsys.encode("ascii")
-        # if short_name:
-        #     self.selected_hsys_short = short_name
         self.app.signaler.emit("setting changed", {"hsys": hsys})
-        # self.recalculate(self.selected_event)
         self.recalculate("e1")
         if self.e2_active:
             self.recalculate("e2")
@@ -332,6 +323,43 @@ class Dispatcher:
         else:
             self.refresh_chart_package()
 
+    def calc_vimsottari(self):
+        # vimsottari needs e1_mo : for level 3+ needs e2_jd :
+        # calculate_vimsottari manages levels
+        e1_calculated = self.events_data["e1"].get("calculated")
+        e1_sweph = self.events_data["e1"].get("sweph")
+        if not e1_calculated or not e1_sweph:
+            LOG.debug("missing e1calculated or e1sweph : exiting")
+            return
+
+        positions_data = e1_calculated.get("positions")
+        if not positions_data:
+            LOG.debug("missing positions data : exiting")
+            return
+
+        e1_jd = e1_sweph["jd ut"]
+        e1_mo = positions_data[1]["lon"]
+        e2_jd = None
+        if self.e2_active:
+            e2_sweph = self.events_data["e2"].get("sweph")
+            if e2_sweph:
+                e2_jd = e2_sweph["jd ut"]
+        self.run_calc(
+            "e1",
+            "vimsottari",
+            calculate_vimsottari,
+            e1_jd,
+            e1_mo,
+            e2_jd,
+            self.app.current_lvl,
+            self.selected_year_period[1],
+        )
+
+    def on_lumies_change(self):
+        # vimsottari level toggle : recalculate
+        self.calc_vimsottari()
+        self.refresh_package("e1")
+
     def recalculate(self, event_id: str):
         # on event or settings change > recalculate astodata
         if event_id == "e2" and not self.e2_active:
@@ -359,10 +387,7 @@ class Dispatcher:
         if "topocentric" in self.active_flags:
             # swisweph mess : lon-lat
             swe.set_topo(lon, lat, alt)
-        # LOG.debug(
-        #     f"recalculate : jdut={jd_ut} lat={lat} lon={lon} alt={alt}",
-        #     extra=routing,
-        # )
+        # LOG.debug(f"recalculate : jdut={jd_ut} lat={lat} lon={lon} alt={alt}")
         if event_id == "e2":
             division = self.harmonic_ring if self.harmonic_ring > 1 else 9
         else:
@@ -387,8 +412,7 @@ class Dispatcher:
             self.mean_node,
             self.swe_flag,
         )
-        # print("after positions")
-        # house cusps & ascmc todo
+        # house cusps & ascmc
         self.run_calc(
             event_id,
             "houses",
@@ -399,9 +423,7 @@ class Dispatcher:
             self.selected_hsys,
             self.swe_flag,
         )
-        # print("after houses")
-        # house cusps & ascmc todo
-        # calculate all-day horas :from sunrise to sunset | wall clock new day 00:00
+        # calculate all-day horas : from sunrise to sunset | wall clock new day 00:00
         self.run_calc(
             event_id,
             "horas",
@@ -412,7 +434,6 @@ class Dispatcher:
             alt,
             self.swe_flag,
         )
-        # print("after horas")
         positions_data = calculated["positions"]
         houses_data = calculated["houses"]
         if positions_data:
@@ -438,7 +459,6 @@ class Dispatcher:
                     "lots": lot_defs,
                 }
                 self.run_calc(event_id, "lots", calculate_lots, lots_package)
-            # print("after lots")
             # prenatal syzygy & eclipses
             if positions_data and "syzygy" in self.selected_prenatal:
                 su_lon = positions_data[0]["lon"]
@@ -452,7 +472,6 @@ class Dispatcher:
                     mo_lon,
                     self.swe_flag,
                 )
-            # print("after syzygy")
             # eclipses
             if "eclipses" in self.selected_prenatal:
                 self.run_calc(
@@ -462,7 +481,6 @@ class Dispatcher:
                     jd_ut,
                     self.swe_flag,
                 )
-            # print("after eclipses")
             # fixed stars
             if self.selected_stars:
                 self.run_calc(
@@ -473,7 +491,7 @@ class Dispatcher:
                     self.selected_stars,
                     self.swe_flag,
                 )
-            # print("after stars")
+            self.calc_vimsottari()
         if event_id == "e2":
             # progressions returns for event 2
             e1_calculated = self.events_data["e1"]["calculated"]
@@ -510,7 +528,6 @@ class Dispatcher:
                     self.mean_node,
                     self.swe_flag,
                 )
-                # print("after p2")
             if self.rings["p3 progress"] and e1_jd and e1_su:
                 self.run_calc(
                     event_id,
@@ -531,7 +548,6 @@ class Dispatcher:
                     self.mean_node,
                     self.swe_flag,
                 )
-                # print("after p3")
             if self.rings["p3m progress"] and e1_jd and e1_su:
                 self.run_calc(
                     event_id,
@@ -552,7 +568,6 @@ class Dispatcher:
                     self.mean_node,
                     self.swe_flag,
                 )
-                # print("after p3m")
             # if self.rings["d1 direction"] and e1_jd:
             #     self.run_calc(
             #         event_id,
@@ -566,7 +581,6 @@ class Dispatcher:
             #         self.mean_node,
             #         self.swe_flag,
             #     )
-            # print("after d1")
             if self.rings["lunar return"] and e1_mo:
                 self.run_calc(
                     event_id,
@@ -582,7 +596,6 @@ class Dispatcher:
                     self.mean_node,
                     self.swe_flag,
                 )
-                # print("after lunar return")
             if self.rings["solar return"] and e1_jd and e1_su:
                 self.run_calc(
                     event_id,
@@ -599,13 +612,13 @@ class Dispatcher:
                     self.mean_node,
                     self.swe_flag,
                 )
-                # print("after solar return")
+            self.calc_vimsottari()
+            self.refresh_package("e1")
         self.refresh_package(event_id)
         self.update_titlebar()
 
     def run_calc(self, event_id: str, key: str, func, *args):
-        # run one calculation - cache on success
-        # never raise nor blocks rest of package
+        # run 1 calculation - cache on success : never raise nor block rest of package
         result = func(*args)
         if result["status"] != "ok":
             LOG.error(
@@ -760,15 +773,12 @@ class Dispatcher:
         other_panel = (
             mainwindow.clp_event_two if event_id == "e1" else mainwindow.clp_event_one
         )
-        # add & remove css class to the title
+        # add & remove title css class
         selected_panel.remove_title_css_class("label-event")
         selected_panel.add_title_css_class("label-event-selected")
         other_panel.remove_title_css_class("label-event-selected")
         other_panel.add_title_css_class("label-event")
-        # todo do we use this ???
+        # todo signal never used
         # self.app.signaler.emit("event selected", event_id)
-        # LOG.debug(
-        #     f"{event_id} selected",
-        #     extra=routingnone,
-        # )
+        # LOG.debug(f"{event_id} selected")
         self.update_titlebar()
