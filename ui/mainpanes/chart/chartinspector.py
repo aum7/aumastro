@@ -19,6 +19,21 @@ from gi.repository import Gtk, Gdk  # type: ignore
 class ChartInspector:
     """snapping overlay manager for astro chart : shift+r to toggle"""
 
+    RING_TAGS = {
+        "transit": "T",
+        "transit varga": "TH",
+        "p2 progress": "P2",
+        "p3 progress": "P3",
+        "p3m progress": "P3m",
+        "d1 direction": "D1",
+        "lunar return": "LNR",
+        "solar return": "SLR",
+        "naksatras": "NK",
+        "harmonic": "H",
+        "signs": "SG",
+        "event": "N",
+    }
+
     def __init__(self, chart):
         self.chart = chart
         self.app = getattr(self.chart, "app")
@@ -263,7 +278,6 @@ class ChartInspector:
     def toggle(self):
         # toggle ruler overlay mode
         self.active = not self.active
-        print(f"toggle : active : {self.active}")
         if not self.active:
             self.reset()
             self.update_cursor()
@@ -322,9 +336,15 @@ class ChartInspector:
         # format angle degree minute & join labels
         deg = int(diff_deg)
         minutes = int((diff_deg - deg) * 60)
-        angle_str = f"{deg}° {minutes:02d}'"
-        displ = " ".join(filter(None, [self.arc0_label, angle_str, self.arc1_label]))
-        text = " ".join(filter(None, [self.arc0_text, angle_str, self.arc1_text]))
+        angle_str = f"{deg}°{minutes:02d}'"
+        displ = " ".join([
+            self.arc0_label or "none",
+            angle_str,
+            self.arc1_label or "none",
+        ])
+        text = " ".join([self.arc0_text or "none", angle_str, self.arc1_text or "none"])
+        # displ = " ".join(filter(None, [self.arc0_label, angle_str, self.arc1_label]))
+        # text = " ".join(filter(None, [self.arc0_text, angle_str, self.arc1_text]))
         return displ, text
 
     def _format_star_info(self, designat: str) -> str:
@@ -504,7 +524,7 @@ class ChartInspector:
         tolerance = self.app.dispatcher.snap_tolerance
         best_target = None
         min_dist = tolerance
-        for lon, display_label, radius, ring in targets:
+        for lon, radius, display_label, ring in targets:
             if radius is None:
                 # spoke target : snap poin directly at mouse radius
                 tx, ty = self._lon_to_xy(lon, mouse_r)
@@ -513,7 +533,9 @@ class ChartInspector:
             d = math.hypot(x - tx, y - ty)
             if d < min_dist:
                 min_dist = d
-                txt_label = f"{display_label} [{ring}]"  # self._clean_text(displ_label)
+                tag = self.RING_TAGS.get(ring, ring)
+                txt_label = f"{display_label}-{tag}"
+                # txt_label = f"{display_label} [{ring}]"  # self._clean_text(displ_label)
                 best_target = (lon, display_label, txt_label, (tx, ty))
         if best_target:
             return best_target
