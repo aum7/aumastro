@@ -48,10 +48,7 @@ class AstroChart(Gtk.Box):
             del self.event_package[event_id]
         else:
             self.event_package[event_id] = package
-        # LOG.debug(
-        #     f"event package received for {event_id}: {package}",
-        #     extra=routing,
-        # )
+        # LOG.debug(f"event package received for {event_id}: {package}")
         self.drawing_area.queue_draw()
 
     def draw(self, area, cr, width, height):

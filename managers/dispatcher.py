@@ -23,6 +23,7 @@ from sweph.calculations.eclipses import calculate_eclipses
 from sweph.calculations.p2 import calculate_p2
 from sweph.calculations.p3 import calculate_p3
 from sweph.calculations.p3m import calculate_p3m
+from sweph.calculations.stations import calculate_stations
 from sweph.calculations.returnlunar import calculate_lunar_return
 from sweph.calculations.returnsolar import calculate_solar_return
 from sweph.calculations.aspects import calculate_aspects
@@ -127,7 +128,7 @@ class Dispatcher:
         # signals
         self.app.signaler.connect("event changed", self.on_event_change)
         self.app.signaler.connect("e2 cleared", self.on_e2_clear)
-        self.app.signaler.connect("lumies changed", self.on_lumies_change)
+        self.app.signaler.connect("vimsottari toggled", self.on_vimsottari_toggle)
         # LOG.debug(f"selobjs1={self.selected_objects_e1}")
 
     def compute_swe_flag(self, active_flags: list[str]):
@@ -355,7 +356,7 @@ class Dispatcher:
             self.selected_year_period[1],
         )
 
-    def on_lumies_change(self):
+    def on_vimsottari_toggle(self):
         # vimsottari level toggle : recalculate
         self.calc_vimsottari()
         self.refresh_package("e1")
@@ -510,7 +511,7 @@ class Dispatcher:
             period = e2_jd - e1_jd
             self.age_years = period / year_length if e1_jd else 0.0
             self.age_months = period / month_length if e1_jd else 0.0
-            # todo transit & varga transit rings
+            # transit & varga transit rings are handled by rings
             if self.rings["p2 progress"] and e1_jd and e1_su:
                 self.run_calc(
                     event_id,
@@ -528,6 +529,22 @@ class Dispatcher:
                     self.mean_node,
                     self.swe_flag,
                 )
+                p2_data = calculated.get("p2 progress")
+                p2_jd = (
+                    next((d["p2 jdut"] for d in p2_data if "p2 jdut" in d), None)
+                    if p2_data
+                    else None
+                )
+                if p2_jd:
+                    self.run_calc(
+                        event_id,
+                        "p2 stations",
+                        calculate_stations,
+                        p2_jd,
+                        objs,
+                        self.mean_node,
+                        self.swe_flag,
+                    )
             if self.rings["p3 progress"] and e1_jd and e1_su:
                 self.run_calc(
                     event_id,
@@ -548,6 +565,22 @@ class Dispatcher:
                     self.mean_node,
                     self.swe_flag,
                 )
+                p3_data = calculated.get("p3 progress")
+                p3_jd = (
+                    next((d["p3 jdut"] for d in p3_data if "p3 jdut" in d), None)
+                    if p3_data
+                    else None
+                )
+                if p3_jd:
+                    self.run_calc(
+                        event_id,
+                        "p3 stations",
+                        calculate_stations,
+                        p3_jd,
+                        objs,
+                        self.mean_node,
+                        self.swe_flag,
+                    )
             if self.rings["p3m progress"] and e1_jd and e1_su:
                 self.run_calc(
                     event_id,
@@ -568,6 +601,23 @@ class Dispatcher:
                     self.mean_node,
                     self.swe_flag,
                 )
+                p3m_data = calculated.get("p3m progress")
+                p3m_jd = (
+                    next((d["p3m jdut"] for d in p3m_data if "p3m jdut" in d), None)
+                    if p3m_data
+                    else None
+                )
+                if p3m_jd:
+                    self.run_calc(
+                        event_id,
+                        "p3m stations",
+                        calculate_stations,
+                        p3m_jd,
+                        objs,
+                        self.mean_node,
+                        self.swe_flag,
+                    )
+            # DONTDELETE
             # if self.rings["d1 direction"] and e1_jd:
             #     self.run_calc(
             #         event_id,
@@ -711,7 +761,7 @@ class Dispatcher:
                 chart_package["transit"] = {
                     "positions": self._prep_ring(e2_positions),
                     "cusps": e2_houses.get("cusps") or [],
-                    # "ascmc": e2_houses.get("ascmc"),
+                    "ascmc": e2_houses.get("ascmc"),
                 }
             if self.rings.get("transit varga") and e2_positions:
                 chart_package["transit varga"] = {
@@ -721,6 +771,7 @@ class Dispatcher:
                 "p2 progress",
                 "p3 progress",
                 "p3m progress",
+                # "d1 direction",
                 "lunar return",
                 "solar return",
             ):
@@ -730,7 +781,6 @@ class Dispatcher:
                         chart_package[ring] = self._prep_ring(raw)
         # LOG.debug(f"refreshpackage : eventpackage={event_package}")  # ok
         self.app.signaler.emit("package chart ready", "e1", chart_package)
-        # self.update_titlebar()
 
     def set_change_time_period(self, period: float, label: str):
         # sync math (float) & display (label) & update titlebar

@@ -253,12 +253,12 @@ class MainWindow(
                 "p3m progress", not self.app.dispatcher.rings["p3m progress"]
             ),
         )
-        self.hotkeys.register_hotkey(
-            "<Control>6",
-            lambda: self.app.dispatcher.update_rings(
-                "d1 direction", not self.app.dispatcher.rings["d1 direction"]
-            ),
-        )
+        # self.hotkeys.register_hotkey(
+        #     "<Control>6",
+        #     lambda: self.app.dispatcher.update_rings(
+        #         "d1 direction", not self.app.dispatcher.rings["d1 direction"]
+        #     ),
+        # )
         self.hotkeys.register_hotkey(
             "<Control>7",
             lambda: self.app.dispatcher.update_rings(

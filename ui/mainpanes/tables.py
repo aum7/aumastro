@@ -119,6 +119,7 @@ class Tables(Gtk.Notebook):
         if not vadj or vadj.get_value() <= 0:
             return None
         it, _ = text_view.get_line_at_y(int(vadj.get_value()))
+        LOG.debug(f"anchorcapture :\nvady={vadj}\nit={it}")
         line_end = it.copy()
         anchor = text_view.get_buffer().get_text(it, line_end, False)
 
@@ -183,10 +184,7 @@ class Tables(Gtk.Notebook):
         # get houses data if available
         houses = package["houses"]
         if not positions or not houses:
-            LOG.error(
-                f"positions or houses missing for {event_id}",
-                extra=routing,
-            )
+            LOG.error(f"positions or houses missing for {event_id}")
             return ""
 
         cusps = houses["cusps"]
@@ -252,9 +250,8 @@ class Tables(Gtk.Notebook):
             # sunrise_next = self.event_package[event_id]["horas"]["horas list"][0][
             #     "sunrise next"
             # ]
-            if hsys_char in ["E", "D", "W"]:
+            if hsys_char in ["E", "D", "W"]:  # equalasc equalmc wholehouse
                 # print(f"selected_hsys : {self.app.selected_house_sys_str}")
-                # if selected in ["eqasc", "eqmc", "wholehs"]:
                 ln_csps += (
                     f" cross points {self.h_sym * 3}\n"
                     f" {self.asc} :  {decsigndms(self.ascendant)}\n"
@@ -354,12 +351,13 @@ class Tables(Gtk.Notebook):
         if date:
             content += (
                 " all time is utc\n"
-                " tas & tmc - true asc & mc\n"
+                " tas & tmc - true asc & mc on date\n"
+                " asc & mc - progressed asc & mc\n"
                 f"{separ}"
                 f" {key} : {date.strip()}\n"
             )
         content += separ
-        content = f" obj {self.v_sym}        sign\n"
+        content += f" obj  {self.v_sym}        sign\n"
         # sort objects for table
         pos_sorted = self.sort_by_order([obj for obj in pos if "name" in obj])
         for obj in pos_sorted:
@@ -370,11 +368,11 @@ class Tables(Gtk.Notebook):
                 station = next((r for r in stations if r.get("name") == name), None)
             direction = station["direction"] if station else ""
             name_with_dir = f"{name}{direction}"
-            ln_pos = f" {name_with_dir:3} {self.v_sym} {decsigndms(lon):10}\n"
+            ln_pos = f" {name_with_dir:<4} {self.v_sym} {decsigndms(lon):10}\n"
             if name == "tas":
                 ln_pos = (
-                    f" {self.h_sym * 2} {self.v_sym}\n"
-                    f" {name_with_dir:3} {self.v_sym} {decsigndms(lon):10}\n"
+                    f" {self.h_sym * 4}\n"
+                    f" {name_with_dir:4} {self.v_sym} {decsigndms(lon):10}\n"
                 )
             content += ln_pos
         content += separ
@@ -417,7 +415,7 @@ class Tables(Gtk.Notebook):
             ruler = hora["ruler"]
             glyph = get_glyph(ruler, False)
             content += (
-                f" {hora['hour']:2d} - {hora['start'][11:]} "
+                f" {hora['hour']:2d} : {hora['start'][11:]} "
                 f"- {hora['end'][11:]} {ruler} {glyph}\n"
             )
         content += separ
@@ -440,4 +438,4 @@ class Tables(Gtk.Notebook):
         # update vimsottari for new level
         if event_id and event_id in self.event_package:
             # emit signal to force recalculation
-            self.app.signaler.emit("lumies changed")
+            self.app.signaler.emit("vimsottari toggled")

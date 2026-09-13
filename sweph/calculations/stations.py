@@ -109,19 +109,13 @@ def calculate_stations(jd_ut, objs, mean_node, flag):
         if code is None:
             return err(f"unknown object name : {obj}")
         if code not in STATION_SPEED:
-            LOG.error(
-                "code not in stations speed : su mo never retro",
-                extra=routing,
-            )
+            # LOG.error(f"{code} not in stations speed : su mo never retro")
             continue
         # station previous & next + current direction
         s_prev, s_next, direction = find_stations(code, jd_ut, flag)
         if s_prev is None or s_next is None:
             msg = "missing previous or next station"
-            LOG.error(
-                msg,
-                extra=routing,
-            )
+            LOG.error(msg)
             return err(msg)
 
         stations.append({

@@ -307,6 +307,19 @@ class ChartInspector:
         self.hover_pos = None
         self.hover_lon = None
 
+    def _ring_bounds(self, ring, radius_dict, max_radius):
+        keys = list(radius_dict.keys())
+        if ring in keys:
+            idx = keys.index(ring)
+            outer_r = radius_dict[ring]
+            inner_r = (
+                radius_dict[keys[idx + 1]] if idx < len(keys) - 1 else outer_r * 0.92
+            )
+        else:
+            outer_r = max_radius
+            inner_r = outer_r * 0.92
+        return outer_r, inner_r
+
     def _clean_text(self, label):
         # replace font glyphs with plain text
         if not label:
@@ -527,6 +540,9 @@ class ChartInspector:
         for lon, radius, display_label, ring in targets:
             if radius is None:
                 # spoke target : snap point directly at mouse radius
+                outer_r, inner_r = self._ring_bounds(ring, radius_dict, max_radius)
+                if not (inner_r - tolerance <= mouse_r <= outer_r + tolerance):
+                    continue
                 tx, ty = self._lon_to_xy(lon, mouse_r)
             else:
                 tx, ty = self._lon_to_xy(lon, radius)

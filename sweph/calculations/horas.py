@@ -26,20 +26,6 @@ WEEKDAY = {
 }
 
 
-# def get_current_hora(jd_ut, horas):
-#     if not horas:
-#         return None
-#     for hora in horas:
-#         if hora["start jd"] <= jd_ut < hora["end jd"]:
-#             # return hora with start & end times
-#             return {
-#                 "ruler": hora["ruler"],
-#                 "start": hora["start"],
-#                 "end": hora["end"],
-#             }
-#     return None
-
-
 def jd_to_local_time(jd, tz_name):
     # from utc result to event datetime : timezone
     utc_dt = datetime.strptime(jdtoiso(jd), "%Y-%m-%d %H:%M:%S")
@@ -159,8 +145,6 @@ def get_day_horas(jd_ut, lon, lat, alt, flag):
         horas_list.append({
             "hour": i + 1,
             "ruler": ruler,
-            # "start jd": start,
-            # "end jd": end,
             "start": to_event_str(start),  # type:ignore
             "end": to_event_str(end),  # type:ignore
         })
@@ -183,8 +167,5 @@ def calculate_horas(jd_ut, lon, lat, alt, flag):
     # print(f"horas : {horas}")
     if horas is None:
         return err("failed to calculate horas")
-    # curr_hora = get_current_hora(jd_ut, horas_list[1:])
-    # if curr_hora is None:
-    # return err("failed to calculate current hora")
 
     return ok({"horas list": horas[0], "current hora": horas[1]})
