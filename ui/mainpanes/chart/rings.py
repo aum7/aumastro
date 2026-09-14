@@ -27,9 +27,9 @@ class Rings:
         # background color
         "transit": (0.0038, 0.0741, 0, 1),
         "transit varga": (0.0078, 0.0941, 0, 1),
-        "p2 progress": (0.067, 0.504, 1, 1),
-        "p3 progress": (0.097, 0.534, 1, 1),
-        "p3m progress": (0.117, 0.564, 1, 1),
+        "p2 progress": (0.04, 0.14, 0.22, 1),
+        "p3 progress": (0.05, 0.2, 0.26, 1),
+        "p3m progress": (0.06, 0.27, 0.3, 1),
         # "d1 direction": (0.13, 0.13, 0.13, 1.0),
         "lunar return": (0.1386, 0.1269, 0.0092, 1),
         "solar return": (0.1686, 0.1569, 0.0392, 1),
@@ -56,14 +56,17 @@ class Rings:
         "default": (0.5, 0.5, 0.5, 0.5),
     }
     SCALE = {
-        "marker": 0.0001,  # asc mc dsc ic planetmarkers x maxradius
-        "obj": 0.07,  # planet lot eclipse syzygy glyphs x maxradius
-        "harmonic": 0.6,  # harmonic ring
+        "marker": 0.0013,  # asc mc dsc ic planetmarkers x maxradius
+        "obj": 0.13,  # planet lot eclipse syzygy glyphs x maxradius
         "stars dia": 0.02,  # diameter of stars circle
         "signs glyph": 0.06,  # glyph size
         "info text": 1.5,  # info text / font size
+        "outer": 4.0,  # outer rings
+        "harmonic": 4.0,  # harmonic ring
+        "eclipses": 1.9,
+        "lots": 1.9,
     }
-    RADIUS = {  # offset form ring middle positions
+    RADIUS = {  # offset from ring middle positions
         "ascmc": 1.0,
         "lots": 1.0,
         "eclipses": 0.99,
@@ -111,8 +114,8 @@ class Rings:
 
     def draw_objects(self, cr, ring):
         # draw objects for any ring
-        marker_size = self.scaled_marker_size()
-        obj_scale = self.scaled_obj_scale()
+        marker_size = self.scaled_marker_size(ring)
+        obj_scale = self.scaled_obj_size(ring)
         ring_entry = self.package.get(ring, {})
         # todo remove bloat code
         if isinstance(ring_entry, dict):
@@ -190,7 +193,7 @@ class Rings:
                 )
                 self.snap_targets.append((lon, mid_r, "mc", ring))
             else:
-                obj.draw(cr, self.cx, self.cy, mid_r, obj_scale * self.SCALE["obj"])
+                obj.draw(cr, self.cx, self.cy, mid_r, obj_scale * self.SCALE["outer"])
                 self.snap_targets.append((lon, mid_r, name, ring))
 
     def draw_sign_borders(
@@ -259,7 +262,10 @@ class Rings:
             )
             ascmc = ring_data.get("ascmc", []) if isinstance(ring_data, dict) else []
             if ascmc:
-                marker_size = self.scaled_marker_size()
+                marker_size = self.scaled_marker_size(ring)  # * 2.0
+                print(
+                    f"drawouterring : ring : {ring} : ascmc : {ascmc} : markersize : {marker_size} : midr : {mid_r}"
+                )
                 # ascendant
                 asc = ascmc[0]
                 asc_angle = pi - radians(asc)
@@ -290,8 +296,8 @@ class Rings:
                     self.draw_diamond,
                 )
                 self.snap_targets.append((mc, mid_r, "mc", ring))
-            self.draw_sign_borders(cr, ring)
-            self.draw_objects(cr, ring)
+        self.draw_sign_borders(cr, ring)
+        self.draw_objects(cr, ring)
 
     def draw_naksatras_ring(self, cr):
         # draw naksatras circle
@@ -348,8 +354,6 @@ class Rings:
         ring = "harmonic"
         outer_r, mid_r, inner_r = self.get_ring_bounds(ring)
         harmonic = self.package.get("harmonic", [])
-        # harmonic_info = self.package.get("harmonic info", {})
-        # division = harmonic_info.get("division", 1)
         division = self.app.dispatcher.harmonic_ring
         # LOG.debug(f"drawharmonicring : division={division} type={type(division)}")
         if not division:
@@ -407,44 +411,19 @@ class Rings:
             # draw objects
             for name in DRAW_ORDER_REVERSE:
                 obj = object_by_name.get(name)
-                if not obj or obj.data.get("name") is None:
+                if not obj or obj.data.get("name") is None or name in ("asc", "mc"):
                     continue
                 lon = obj.data.get("lon", 0.0)
                 # print(f"{name} : lon={lon} ({decsigndms(lon, use_glyph=False)}) ")
-                angle = pi - radians(lon)
-                x = self.cx + mid_r * cos(angle)
-                y = self.cy + mid_r * sin(angle)
-                # asc & mc of harmonic ring
-                marker_size = 0.6
-                if name == "asc":
-                    self.draw_marker(
-                        cr,
-                        x,
-                        y,
-                        angle,
-                        self.scaled_marker_size() * marker_size,
-                        (1, 1, 1, 0.5),
-                        self.draw_triangle,
-                    )
-                elif name == "mc":
-                    self.draw_marker(
-                        cr,
-                        x,
-                        y,
-                        angle,
-                        self.scaled_marker_size() * marker_size,
-                        (1, 1, 1, 0.5),
-                        self.draw_diamond,
-                    )
-                else:
-                    obj.draw(
-                        cr,
-                        self.cx,
-                        self.cy,
-                        mid_r,
-                        self.scaled_obj_scale() * self.SCALE["harmonic"],
-                    )
-                    self.snap_targets.append((lon, mid_r, name, "harmonic"))
+                # removed asc mc from harmonic ring : not needed
+                obj.draw(
+                    cr,
+                    self.cx,
+                    self.cy,
+                    mid_r,
+                    self.scaled_obj_size(ring) * self.SCALE["harmonic"],
+                )
+                self.snap_targets.append((lon, mid_r, name, "harmonic"))
 
     # inner rings in order from outer-most to central
     def draw_signs_ring(self, cr):
@@ -471,7 +450,7 @@ class Rings:
         houses = self.package.get("houses", {})
         ascmc = houses.get("ascmc", [])
         # asc dsc mc ic markers
-        marker_size = mid_r * self.scaled_marker_size()
+        marker_size = mid_r * self.scaled_marker_size(ring)
         if ascmc:
             radius_factor = self.RADIUS["ascmc"]
             asc = ascmc[0]
@@ -556,15 +535,15 @@ class Rings:
                 name = lot.data.get("name", "").lower()
                 lon = lot.data.get("lon", 0)
                 radius = mid_r * self.RADIUS["lots"]
-                custom_scale = 0.7
+                glyph_fix = 2.7
                 lot.draw(
                     cr,
                     self.cx,
                     self.cy,
                     radius,
-                    self.scaled_obj_scale() * custom_scale,
+                    self.scaled_obj_size(ring) * self.SCALE["lots"],
                     color=self.RING_COLORS["lots"],
-                    scale=custom_scale,
+                    scale=self.SCALE["lots"],
                 )
                 self.snap_targets.append((lon, radius, name, ring))
                 glyph = glyphs.get_lot_glyph(name)
@@ -573,7 +552,12 @@ class Rings:
                     x = self.cx + radius * cos(angle)
                     y = self.cy + radius * sin(angle)
                     self.draw_object_glyph(
-                        cr, glyph, x, y, self.scaled_obj_scale() * custom_scale, ascmc
+                        cr,
+                        glyph,
+                        x,
+                        y,
+                        self.scaled_obj_size(ring) * self.SCALE["lots"] * glyph_fix,
+                        ascmc,
                     )
         eclipses = self.package.get("eclipses")
         if eclipses:
@@ -584,16 +568,15 @@ class Rings:
                 name = eclipse.data.get("name", "").lower()
                 lon = eclipse.data.get("lon", 0)
                 radius = mid_r * self.RADIUS["eclipses"]
-                custom_scale = 0.6
-                circle_r_fix = 1.5
+                glyph_fix = 2.0
                 eclipse.draw(
                     cr,
                     self.cx,
                     self.cy,
                     radius,
-                    self.scaled_obj_scale() * custom_scale,
+                    self.scaled_obj_size(ring) * self.SCALE["eclipses"],
                     color=(1, 1, 1, 0.7) if name == "lun" else (1, 1, 0, 0.5),
-                    scale=custom_scale * circle_r_fix,
+                    scale=self.SCALE["eclipses"],
                 )
                 self.snap_targets.append((lon, radius, name, ring))
                 glyph = glyphs.get_eclipse_glyph(name)
@@ -602,7 +585,12 @@ class Rings:
                     x = self.cx + radius * cos(angle)
                     y = self.cy + radius * sin(angle)
                     self.draw_object_glyph(
-                        cr, glyph, x, y, self.scaled_obj_scale() * custom_scale, ascmc
+                        cr,
+                        glyph,
+                        x,
+                        y,
+                        self.scaled_obj_size(ring) * self.SCALE["eclipses"] * glyph_fix,
+                        ascmc,
                     )
         syzygy = self.package.get("syzygy", [])
         if syzygy:
@@ -618,7 +606,7 @@ class Rings:
                     self.cx,
                     self.cy,
                     radius,
-                    self.scaled_obj_scale(),
+                    self.scaled_obj_size(ring),
                     color=(1, 1, 1, 0.5),
                     scale=0.5,
                 )
@@ -630,7 +618,7 @@ class Rings:
                     x = self.cx + radius * cos(angle)
                     y = self.cy + radius * sin(angle)
                     self.draw_object_glyph(
-                        cr, glyph, x, y, self.scaled_obj_scale(), ascmc
+                        cr, glyph, x, y, self.scaled_obj_size(ring), ascmc
                     )
         # draw stars circle
         stars_diameter = self.SCALE["stars dia"] * self.max_radius
@@ -699,7 +687,7 @@ class Rings:
                 mid_r,
                 inner_r,
             )  # draw guests : astro object
-            obj.draw(cr, self.cx, self.cy, radius, self.scaled_obj_scale())
+            obj.draw(cr, self.cx, self.cy, radius, self.scaled_obj_size(ring))
             self.snap_targets.append((obj.data.get("lon", 0.0), radius, name, "event"))
             # if 'enable glyphs' > draw glyphs
             if self.app.dispatcher.enable_glyphs:
@@ -709,7 +697,7 @@ class Rings:
                     x = self.cx + radius * cos(angle)
                     y = self.cy + radius * sin(angle)
                     self.draw_object_glyph(
-                        cr, glyph, x, y, self.scaled_obj_scale(), ascmc
+                        cr, glyph, x, y, self.scaled_obj_size(ring), ascmc
                     )
 
     def draw_info_ring(self, cr):
@@ -862,14 +850,15 @@ class Rings:
         cr.new_path()
         cr.restore()
 
-    def scaled_marker_size(self):
+    def scaled_marker_size(self, ring):
         # scale marker size so it is constant relative to chart
-        return self.SCALE["marker"] * self.max_radius
+        outer_r, _, inner_r = self.get_ring_bounds(ring)
+        return (outer_r - inner_r) * self.SCALE["marker"]
 
-    def scaled_obj_scale(self):
+    def scaled_obj_size(self, ring):
         # scale object size so it is constant relative to chart
-        outer_ring = self.max_radius
-        return self.SCALE["obj"] * outer_ring
+        outer_r, _, inner_r = self.get_ring_bounds(ring)
+        return (outer_r - inner_r) * self.SCALE["obj"]
 
     def draw_triangle(self, cr, size):
         cr.move_to(0, size)

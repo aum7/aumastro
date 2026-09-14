@@ -38,9 +38,7 @@ class ChartInspector:
         self.chart = chart
         self.app = getattr(self.chart, "app")
         # self IS chartinspector : selfchart IS astrochart selfchart HAS app
-        # LOG.debug(
-        #     # f"whois self : {self.__class__.__name__}",
-        # )
+        # LOG.debug(f"whois self : {self.__class__.__name__}")
         self.active = False
         self.dragging = False
         # colors & styling
