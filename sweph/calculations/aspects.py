@@ -92,24 +92,21 @@ def aspects_matrix(objs_map, pos_map, orb):
     return objs_map, matrix, speeds
 
 
-def calculate_aspects(positions, orb, varga_aspects):
+def calculate_aspects(positions, orb, harmonic_aspects):
     # calculate aspectarian for one or both events
     draw_order = ["mo", "me", "ve", "su", "ma", "ju", "sa", "ur", "ne", "pl", "ra"]
     by_name = {v["name"]: v for v in positions.values()}
     objs_map = [name for name in draw_order if name in by_name]
     try:
-        use_varga = varga_aspects and all(
-            by_name[name].get("varga") is not None for name in objs_map
+        use_harmonic = harmonic_aspects and all(
+            by_name[name].get("harmonic") is not None for name in objs_map
         )
-        if use_varga:
-            varga_map = {}
+        if use_harmonic:
+            harm_map = {}
             for name in objs_map:
-                varga_map[name] = by_name[name].copy()
-                varga_map[name]["lon"] = by_name[name]["varga"]
-            # for k, v in positions.items():
-            # varga_map[k] = v.copy()
-            # varga_map[k]["lon"] = v["varga"]
-            obj_names, aspect_matrix, speeds = aspects_matrix(objs_map, varga_map, orb)
+                harm_map[name] = by_name[name].copy()
+                harm_map[name]["lon"] = by_name[name]["harmonic"]
+            obj_names, aspect_matrix, speeds = aspects_matrix(objs_map, harm_map, orb)
         else:
             obj_names, aspect_matrix, speeds = aspects_matrix(objs_map, by_name, orb)
 

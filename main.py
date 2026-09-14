@@ -4,6 +4,9 @@
 # launch inspector (Ctrl+Shift+I or Ctrl+Shift+D) when app is running
 # os.environ["GTK_DEBUG"] = "keybindings geometry size-request actions constraints"
 # Gtk.Window.set_interactive_debugging(True)
+# app todo :
+#   sidepane sweph setting change > update calculations & chart & tables
+#   outer rings ascmc
 import logging
 
 LOG = logging.getLogger(__name__)

@@ -2,7 +2,7 @@
 # ruff: noqa: E402
 import logging
 
-log = logging.getLogger(__name__)
+LOG = logging.getLogger(__name__)
 source = "search"
 routing = {"source": source, "route": [""]}
 # extratimeout4 = {"source": "search", "route": ["terminal"], "timeout": 4}
@@ -86,7 +86,7 @@ example :
     ve 144 su   [list of rules, newline separated]
     mo in v9 ju nk
 
-v : varga 2-60
+h : harmonic 2-60
 hs : house 1-12
 nk : naksatra 1-27 / mansion 1-28
 
@@ -124,9 +124,9 @@ def collect_tokens(use_28=False):
     _SIGNS = set(SEARCH_TOKENS["sign"].keys())
     _ELEMENTS = set(SEARCH_TOKENS.get("element", []))
     _MODES = set(SEARCH_TOKENS.get("mode", []))
-    # allow also varga / division, house & naksatra search
+    # allow also harmonic / division, house & naksatra search
     DYNAMIC_TOKENS = {
-        "varga": re.compile(r"^v\d+$"),
+        "harmonic": re.compile(r"^v\d+$"),
         "house": re.compile(r"^hs\d+$"),
         "nak": re.compile(r"^nk\d+$"),
     }
@@ -242,11 +242,11 @@ def validate_input(query: str, use_28=False, notify=None):
                             errors.append(f"invalid degree : {token} (valid : 0-360)")
                     elif any(rx.match(token) for rx in DYNAMIC_TOKENS.values()):
                         if token.startswith("v"):
-                            ttype = "varga"
+                            ttype = "harmonic"
                             tvalue = int(token[1:])
                             if not (2 <= tvalue <= 60):
                                 errors.append(
-                                    f"invalid varga / division : {token} (valid : 2-60)"
+                                    f"invalid harmonic / division : {token} (valid : 2-60)"
                                 )
                         elif token.startswith("hs"):
                             ttype = "house"
@@ -279,7 +279,7 @@ def validate_input(query: str, use_28=False, notify=None):
 
 def setup_search(app) -> CollapsePanel:
     # separate search collapse panel
-    log.debug(
+    LOG.debug(
         f"hasappdispatcher : {hasattr(app, 'dispatcher')}",
         extra=routing,
     )
@@ -378,7 +378,7 @@ type 'clear' & execute it to clear all search plots from datagraph
                 # validate search input : minimal validation
                 ok, result = validate_input(query, use_28, app.app.notifier)  # type:ignore
                 if not ok:
-                    log.error(
+                    LOG.error(
                         f"invalid input :\n{result}",
                         extra=routinguser,
                     )

@@ -88,7 +88,7 @@ class Dispatcher:
         # swe settings
         self.mean_node = usersett.CHART_SETTINGS["mean node"][0]
         self.exact_lunar_month = usersett.CHART_SETTINGS["exact lunar month"][0]
-        self.varga_aspects = usersett.CHART_SETTINGS["harmonic aspects"][0]
+        self.harmonic_aspects = usersett.CHART_SETTINGS["harmonic aspects"][0]
         # app settings
         self.APP_ORIENTATION = usersett.APP_ORIENTATION
         self.enable_glyphs = usersett.CHART_SETTINGS["enable glyphs"][0]
@@ -108,7 +108,7 @@ class Dispatcher:
         # rings
         self.rings = {
             "transit": self.E2_RINGS["transit"],
-            "transit varga": self.E2_RINGS["transit varga"],
+            "transit harmonic": self.E2_RINGS["transit harmonic"],
             "p2 progress": self.E2_RINGS["p2 progress"],
             "p3 progress": self.E2_RINGS["p3 progress"],
             "p3m progress": self.E2_RINGS["p3m progress"],
@@ -444,7 +444,7 @@ class Dispatcher:
                 calculate_aspects,
                 positions_data,
                 self.orb,
-                self.varga_aspects,
+                self.harmonic_aspects,
             )
         if event_id == "e1":
             # lots if enabled - needs positions & houses
@@ -511,7 +511,7 @@ class Dispatcher:
             period = e2_jd - e1_jd
             self.age_years = period / year_length if e1_jd else 0.0
             self.age_months = period / month_length if e1_jd else 0.0
-            # transit & varga transit rings are handled by rings
+            # transit & harmonic transit rings are handled by rings
             if self.rings["p2 progress"] and e1_jd and e1_su:
                 self.run_calc(
                     event_id,
@@ -678,7 +678,7 @@ class Dispatcher:
             return
         self.events_data[event_id]["calculated"][key] = result["data"]
 
-    def _prep_ring(self, raw, varga=False):
+    def _prep_ring(self, raw, harmonic=False):
         # return prepared data for rings
         if not raw:
             return [] if not (isinstance(raw, dict) and "cusps" in raw) else None
@@ -690,11 +690,10 @@ class Dispatcher:
         for item in items:
             if not isinstance(item, dict) or "name" not in item:
                 continue
-            if varga:
-                if item.get("varga") is None:
-                    # if "varga" not in item:
+            if harmonic:
+                if item.get("harmonic") is None:
                     continue
-                item = {**item, "lon": item["varga"]}
+                item = {**item, "lon": item["harmonic"]}
             objects.append(AstroObject(item))
         if has_cusps:
             return {"positions": objects, "cusps": raw.get("cusps", [])}
@@ -750,7 +749,7 @@ class Dispatcher:
         }
         if self.harmonic_ring:
             chart_package["harmonic"] = self._prep_ring(
-                e1_calculated.get("positions"), varga=True
+                e1_calculated.get("positions"), harmonic=True
             )
         # table needs all data for gtk.widgets incl aspects
         if self.e2_active:
@@ -763,9 +762,9 @@ class Dispatcher:
                     "cusps": e2_houses.get("cusps") or [],
                     "ascmc": e2_houses.get("ascmc"),
                 }
-            if self.rings.get("transit varga") and e2_positions:
-                chart_package["transit varga"] = {
-                    "positions": self._prep_ring(e2_positions, varga=True),
+            if self.rings.get("transit harmonic") and e2_positions:
+                chart_package["transit harmonic"] = {
+                    "positions": self._prep_ring(e2_positions, harmonic=True),
                 }
             for ring in (
                 "p2 progress",

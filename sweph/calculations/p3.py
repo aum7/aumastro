@@ -80,12 +80,13 @@ def calculate_p3(
                 extra=routing,
             )
             return err(e)
+
         e1_mc_arc = (e1_mc - e1_su) % 360.0 if e1_mc else 0.0
         e1_asc_arc = (e1_asc - e1_su) % 360.0 if e1_asc else 0.0
         p3_asc = (p3_su + e1_asc_arc) % 360.0
         p3_mc = (p3_su + e1_mc_arc) % 360.0
-        p3.append({"name": "asc", "lon": p3_asc})
-        p3.append({"name": "mc", "lon": p3_mc})
+        p3.append({"name": "pas", "lon": p3_asc})
+        p3.append({"name": "pmc", "lon": p3_mc})
         for obj in objs:
             code, name = objcode(obj, mean_node)
             if code is None:

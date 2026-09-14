@@ -217,11 +217,11 @@ class MainWindow(
         self.hotkeys.register_hotkey(
             "<Control>h",
             lambda: self.app.dispatcher.update_chart_setting(
-                "varga aspects", not self.app.dispatcher.varga_aspects
+                "harmonic aspects", not self.app.dispatcher.harmonic_aspects
             ),
         )
         # astro chart outer rings for event 2
-        # transit|varga|p2|p3|p3m|d1|lunar|solar return|naksatras ring
+        # transit|trharmonic|p2|p3|p3m|d1|lunar|solar return|naksatras ring
         self.hotkeys.register_hotkey(
             "<Control>1",
             lambda: self.app.dispatcher.update_rings(
@@ -232,7 +232,7 @@ class MainWindow(
         self.hotkeys.register_hotkey(
             "<Control>2",
             lambda: self.app.dispatcher.update_rings(
-                "transit varga", not self.app.dispatcher.rings["transit varga"]
+                "transit harmonic", not self.app.dispatcher.rings["transit harmonic"]
             ),
         )
         self.hotkeys.register_hotkey(
@@ -319,7 +319,7 @@ class MainWindow(
             "\nctrl+g : toggle glyphs visibility"
             "\nctrl+h : toggle harmonic / varga hX vs rasi h1 aspects table"  # harmonic
             "\nctrl+1-9 : toggle"
-            "\n\ttransit|transit varga|p2|p3|p3m|d1|lunar|solar return|naksatras ring"
+            "\n\ttransit|transit harmonic|p2|p3|p3m|d1|lunar|solar return|naksatras ring"
             "\n\tnote : d1 primary direction goes with chart setting 'harmonic ring 1'"
             "\nshift+1/2/3/4 : show single / double / triple / all panes"
             "\nshift+5 : toggle movie mode"

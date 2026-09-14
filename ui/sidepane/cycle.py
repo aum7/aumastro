@@ -3,10 +3,10 @@
 # ruff: noqa: E402
 import logging
 
-log = logging.getLogger(__name__)
-extra = {"source": "cycle", "route": [""]}
-extratimeout4 = {"source": "cycle", "route": ["terminal"], "timeout": "4"}
-extratimeout6 = {"source": "cycle", "route": ["terminal"], "timeout": "6"}
+LOG = logging.getLogger(__name__)
+source = "cycle"
+routingtimeout4 = {"source": source, "route": ["terminal"], "timeout": "4"}
+routingtimeout6 = {"source": source, "route": ["terminal"], "timeout": "6"}
 import re
 import pandas as pd
 import gi
@@ -46,7 +46,7 @@ example :
     mo decl  [list of members & rules, newline separated]
     pl ne ur sa ju v9
 
-v : varga 2-60
+h : harmonic 2-60
 
 * : can be omitted, cycle range will be derived from data file
     if lots of data > slower calculations
@@ -80,7 +80,7 @@ def collect_tokens():
     _OPERATORS = set(CYCLE_TOKENS.get("operator", []))
     # allow also varga / division
     DYNAMIC_TOKENS = {
-        "varga": re.compile(r"^v\d+$"),
+        "harmonic": re.compile(r"^v\d+$"),
     }
     return {
         "commands": sorted(_COMMANDS),
@@ -169,11 +169,11 @@ def validate_input(query: str, notify=None):
                         ttype = "object"
                     elif any(rx.match(token) for rx in DYNAMIC_TOKENS.values()):
                         if token.startswith("v"):
-                            ttype = "varga"
+                            ttype = "harmonic"
                             tvalue = int(token[1:])
                             if not (2 <= tvalue <= 60):
                                 errors.append(
-                                    f"invalid varga / division : {token} (valid : 2-60)"
+                                    f"invalid harmonic / division : {token} (valid : 2-60)"
                                 )
                     else:
                         errors.append(f"unknown token : {token}")
@@ -192,12 +192,9 @@ def validate_input(query: str, notify=None):
 
 def setup_cycle(app) -> CollapsePanel:
     # separate search panel
-    log.debug(
-        f"sidepane : {str(app.__class__.__name__)}",  # mainwindow
-        extra=extra,
-    )
+    # app IS aumastroapp
+    # LOG.debug(f"setupcycle : {str(app.__class__.__name__)}")
     app.cycle = Cycler(app)
-    # notifier = sidepane.app.notifier
     pad_x = 7
     pad_y = 0
     margin_end = 7
@@ -287,10 +284,7 @@ type 'clear' & execute it to clear all cycles from datagraph
                 # validate search input : minimal validation
                 ok, result = validate_input(query, app.notifier)  # type:ignore
                 if not ok:
-                    log.error(
-                        f"invalid input :\n{result}",
-                        extra=extra,
-                    )
+                    LOG.error(f"invalid input :\n{result}")
                     return True
                 # serve to cycler
                 app.cycle.run(result)

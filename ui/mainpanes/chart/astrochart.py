@@ -24,9 +24,7 @@ class AstroChart(Gtk.Box):
         # app IS aumastroapp
         if app is not None:
             self.app = app
-        # LOG.debug(
-        #     f"\nwhoisapp : {app.__class__.__name__}"
-        # )
+        # LOG.debug(f"\nwhoisapp : {app.__class__.__name__}")
         # cairo drawing area
         self.drawing_area = Gtk.DrawingArea()
         self.drawing_area.set_draw_func(self.draw)
@@ -63,7 +61,7 @@ class AstroChart(Gtk.Box):
         if self.app.dispatcher.e2_active:
             for key in (
                 "transit",
-                "transit varga",
+                "transit harmonic",
                 "p2 progress",
                 "p3 progress",
                 "p3m progress",
@@ -87,16 +85,16 @@ class AstroChart(Gtk.Box):
         # + naksatras & harmonic ring (vX) for event 1
         # factor per ring : e2 first : in below order : circle outer diameter
         outer_portions = {
-            "transit": 0.08,
-            "transit varga": 0.08,
-            "p2 progress": 0.08,
-            "p3 progress": 0.08,
-            "p3m progress": 0.08,
-            # "d1 direction": 0.08,
-            "lunar return": 0.08,
-            "solar return": 0.08,
-            "naksatras": 0.06,
-            "harmonic": 0.06,
+            "transit": 0.06,
+            "transit harmonic": 0.06,
+            "p2 progress": 0.06,
+            "p3 progress": 0.06,
+            "p3m progress": 0.06,
+            # "d1 direction": 0.06,
+            "lunar return": 0.06,
+            "solar return": 0.06,
+            "naksatras": 0.05,
+            "harmonic": 0.05,
         }
         # mandatory rings for event 1 : circle diameter ratio
         inner_portions = {

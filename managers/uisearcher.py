@@ -13,10 +13,10 @@ import swisseph as swe
 import pandas as pd
 import json
 from pathlib import Path
-from helpers import _object_name_to_code as objcode
-from sweph.calculations.transitvarga import get_varga_lon as vargalon
-from datetime import date, timedelta, datetime, timezone
 from zoneinfo import ZoneInfo
+from helpers import _object_name_to_code as objcode
+from sweph.calculations.transitharmonic import get_harmonic_lon as harmlon
+from datetime import date, timedelta, datetime, timezone
 from sweph.swetime import jd_to_custom_iso as jdtoiso
 
 
@@ -25,10 +25,7 @@ class Searcher:
         if app is not None:
             self.app = app
         # self IS aumastroapp
-        LOG.debug(
-            f"whoisselfapp : {self.app.__class__.__name__}",
-            extra=routingnone,
-        )
+        # LOG.debug(f"whois selfapp : {self.app.__class__.__name__}")
 
     def file_properties(self, path):
         filename = Path(path).name.lower()
@@ -44,6 +41,7 @@ class Searcher:
         dataframe.sort_values(by=str(dataframe_col), inplace=True)
         start = dataframe.iloc[0, 0]
         end = dataframe.iloc[-1, 0]
+
         return {
             "filename": filename,
             "dataframe": dataframe,
@@ -87,10 +85,7 @@ class Searcher:
                 (file_dataframe.iloc[:, 0] >= start)
                 & (file_dataframe.iloc[:, 0] <= end)
             ].copy()
-        LOG.info(
-            f"running search from {start} to {end}",
-            extra=routing,
-        )
+        LOG.info(f"running search from {start} to {end}")
         LOG.debug(
             # f"run : query : {query}\n"
             # f"filename : {filename}\n"
@@ -99,7 +94,6 @@ class Searcher:
             # f"searchdatarange : {search_datarange}\n"
             # f"search timerange : {search_timerange}\n"
             f"parsedrules : {parsed_rules}\n",
-            extra=routing,
         )
         for parsed in parsed_rules:
             rule_str = parsed["rule"]
@@ -111,10 +105,7 @@ class Searcher:
             )
             if is_clear:
                 self.app.signaler.emit("clear search plots")
-                LOG.info(
-                    "clearing search plots",
-                    extra=routing,
-                )
+                LOG.info("clearing search plots")
                 # do not create or save any csv
                 return
             # detect sunrise operator
@@ -176,10 +167,10 @@ class Searcher:
         chart = getattr(self.app.dispatcher, "e1 chart", None)
         if chart is None:
             LOG.error(
-                "missing e1 chart data : exiting ...",
-                extra=routing,
+                "missing e1 chart data : exiting",
             )
             return
+
         country = chart.get("country", "/")
         city = chart.get("city", "/")
         location = chart.get("location", "/")
@@ -202,31 +193,33 @@ class Searcher:
         print(f"searcher : generic rule called : {args}")
 
     def naksatra_lord(self, tokens, datarange):
-        use_28 = self.app.dispatcher.chart_settings.get("use 28 mansions", False)
-        use_mean_node = self.app.dispatcher.chart_settings.get("mean node", False)
+        use_28 = self.app.dispatcher.mansions_28
+        mean_node = self.app.dispatcher.chart_settings.get("mean node", False)
         hits = []
         who = next((tvalue for ttype, tvalue in tokens if ttype == "object"), None)
         # where_place = next(
         #     (tvalue for ttype, tvalue in tokens if ttype == "place"), None
         # )
-        varga = next((tvalue for ttype, tvalue in tokens if ttype == "varga"), None)
+        harmonic = next(
+            (tvalue for ttype, tvalue in tokens if ttype == "harmonic"), None
+        )
         for_who = next(
             (tvalue for ttype, tvalue in tokens if ttype == "object" and tvalue != who)
         )
         # calculate search
         code = None
         if who is not None:
-            code, _ = objcode(who, use_mean_node)
+            code, _ = objcode(who, mean_node)
             # todo need below ???
             if code is None:
                 return pd.DataFrame()
-        # get list of forwho naksatras in varga universe
-        v9_map = self.map_varga_naks(
+        # get list of forwho naksatras in harmonic universe
+        v9_map = self.map_harmonic_naks(
             use_28=use_28,
-            varga=varga if varga else 1,
+            harmonic=harmonic if harmonic else 1,
         )
         dt, jd = None, None
-        who_pos, who_varga_pos = None, None
+        who_pos, who_harmonic_pos = None, None
         for _, row in datarange.iterrows():
             dt = row.iloc[0]  # pandas.timestamp
             # get jd
@@ -237,12 +230,14 @@ class Searcher:
             if code is not None:
                 result, _ = swe.calc_ut(jd, code, self.app.dispatcher.swe_flag)
                 who_pos = result[0]  # longitude
-            # convert to varga longitude
-            who_varga_pos = vargalon(who_pos) if who_pos is not None else None
+            # convert to harmonic longitude
+            who_harmonic_pos = (
+                harmlon(who_pos, harmonic) if who_pos is not None else None
+            )
             # mooncross for found positions
             hit_lords = []
-            if who_varga_pos is not None:
-                pos = who_varga_pos % 360.0
+            if who_harmonic_pos is not None:
+                pos = who_harmonic_pos % 360.0
                 for lord, start, end in v9_map:
                     if start <= pos < end:
                         hit_lords.append(lord)
@@ -252,7 +247,7 @@ class Searcher:
                 "datetime": dt,
                 "who": who,
                 "pos": who_pos,
-                "varga pos": who_varga_pos,
+                "harmonic pos": who_harmonic_pos,
                 "hit lords": hit_lords,
             })
         # test print
@@ -267,13 +262,12 @@ class Searcher:
         search_result = pd.DataFrame(hits_filter)
         LOG.debug(
             # f"\nwho : {who} | whereplace : {where_place} | "
-            # f"varga : {varga} | forwho : {for_who}\n"
+            # f"harmonic : {harmonic} | forwho : {for_who}\n"
             # f"jd : {jd}\n"
             # f"dt : {dt}\n"
-            # f"whopos : {who_pos} | whovargapos : {who_varga_pos}\n",
+            # f"whopos : {who_pos} | whoharmonicpos : {who_harmonic_pos}\n",
             # f"v9map :\n{v9_map}",
             f"searchresult : {search_result}",
-            extra=routing,
         )
         return search_result
 
@@ -284,7 +278,7 @@ class Searcher:
         if who is None:
             return pd.DataFrame()
         code, _ = objcode(
-            who, self.app.dispatcher.chart_settings.get("use mean node", False)
+            who, self.app.dispatcher.chart_settings.get("mean node", False)
         )
         if code is None:
             return pd.DataFrame()
@@ -332,18 +326,18 @@ class Searcher:
                 })
         return pd.DataFrame(hits)
 
-    def map_varga_naks(
+    def map_harmonic_naks(
         self,
         use_28: bool = False,
-        varga: int = 1,
+        harmonic: int = 1,
     ) -> list[tuple[str, float, float]]:
         seq_27 = ["ke", "ve", "su", "mo", "ma", "ra", "ju", "sa", "me"]
         seq_28 = ["ve", "sa", "su", "mo", "ma", "me", "ju"]
         naks_num = 28 if use_28 else 27
         seq = seq_28 if use_28 else seq_27
-        slices = naks_num * varga
+        slices = naks_num * harmonic
         slice_size = 360.0 / slices
-        # varga naksatra positions
+        # harmonic naksatra positions
         slots: list[tuple[str, float, float]] = []
         for idx in range(slices):
             lord = seq[idx % len(seq)]
@@ -354,7 +348,7 @@ class Searcher:
 
     def sunriseset(self, start, end):
         # app = self.app
-        sweph_flag = getattr(self.app.dispatcher.swe_settings, "swe flag", 0)
+        sweph_flag = self.app.dispatcher.swe_flag
         # need location : event 1
         sweph = self.app.dispatcher.events.get("e1", None)
         chart = self.app.dispatcher.events.get("chart", None)
@@ -364,16 +358,14 @@ class Searcher:
                 extra=routing,
             )
             return []
+
         lon = sweph.get("lon")
         lat = sweph.get("lat")
         alt = sweph.get("alt")
         tz_name = chart.get("timezone")
         weekdays = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
         jd_start = swe.julday(start.year, start.month, start.day, 0.0)
-        LOG.debug(
-            f"jdstart : {jdtoiso(jd_start)}",
-            extra=routing,
-        )
+        LOG.debug(f"jdstart : {jdtoiso(jd_start)}")
         jd_end = swe.julday(end.year, end.month, end.day, 0.0)
         rows = []
         srise = None
@@ -444,7 +436,7 @@ class Searcher:
         degree: int,
         from_obj: str,
         to_obj: list,
-        varga: int = 1,
+        harmonic: int = 1,
         start=None,
         end=None,
         # step_days=1,
@@ -452,9 +444,7 @@ class Searcher:
         outdir="user/data/search",
     ):
         if start is None or end is None:
-            LOG.warning(
-                "missing data range",
-            )
+            LOG.warning("missing data range")
             return None
         # prepare dataframe
         dt = start
@@ -467,9 +457,9 @@ class Searcher:
             for obj in objects:
                 obj_id = getattr(swe, obj.lower())
                 lon = swe.calc_ut(jd, obj_id)[0]
-                # get varga if aplicable
-                if varga != 1:
-                    lon = vargalon(lon, varga)
+                # get harmonic if aplicable
+                if harmonic != 1:
+                    lon = harmlon(lon, harmonic)
                 pos_map[obj] = lon
             # check exact aspect
             for tp in to_obj:
@@ -484,7 +474,7 @@ class Searcher:
         if results:
             df = pd.DataFrame(results)
             os.makedirs(outdir, exist_ok=True)
-            filename = f"aspect_{from_obj}_{degree}_v{varga}.csv"
+            filename = f"aspect_{from_obj}_{degree}_v{harmonic}.csv"
             df.to_csv(os.path.join(outdir, filename), index=False)
             self.app.signaler.emit("plot search result")
             LOG.info(

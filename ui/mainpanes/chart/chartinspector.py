@@ -21,7 +21,7 @@ class ChartInspector:
 
     RING_TAGS = {
         "transit": "T",
-        "transit varga": "TH",
+        "transit harmonic": "TH",
         "p2 progress": "P2",
         "p3 progress": "P3",
         "p3m progress": "P3m",

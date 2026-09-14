@@ -8,8 +8,8 @@ routing = {"source": source, "route": ["terminal"]}
 import swisseph as swe
 from helpers import _object_name_to_code as objcode, _relative_speed, ok, err
 from sweph.calculations.naksatras import get_naksatra
-from sweph.calculations.transitvarga import get_varga_lon
-from sweph.calculations.stations import get_retro_phases
+from sweph.calculations.transitharmonic import get_harmonic_lon as harmlon
+from sweph.calculations.stations import get_retro_phases as retphas
 
 
 def calculate_positions(
@@ -39,9 +39,11 @@ def calculate_positions(
             pos = result[0]  # pos[0] = lon
             # get retro label : skip su & mo
             naksatra = get_naksatra(pos[0], mans_28, first_nak)
-            varga = get_varga_lon(pos[0], division) if division else None
-            varga_nak = (
-                get_naksatra(varga, mans_28, first_nak) if varga is not None else None
+            harmonic = harmlon(pos[0], division) if division else None
+            harmonic_nak = (
+                get_naksatra(harmonic, mans_28, first_nak)
+                if harmonic is not None
+                else None
             )
             # LOG.debug(f"\nlon={pos[0]}")
             positions[code] = {
@@ -49,10 +51,10 @@ def calculate_positions(
                 "lon": pos[0],
                 "lat": pos[1],
                 "lon speed": pos[3],
-                "retro": get_retro_phases(code, jd_ut, flag, curr_speed=pos[3]),
+                "retro": retphas(code, jd_ut, flag, curr_speed=pos[3]),
                 "naksatra": naksatra,
-                "varga": varga,
-                "varga naksatra": varga_nak,
+                "harmonic": harmonic,
+                "harmonic naksatra": harmonic_nak,
                 "speed relative": _relative_speed(code, pos[3]),
             }
         except swe.Error as e:

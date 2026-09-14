@@ -362,9 +362,9 @@ sweph/constants.py""",
             False,
             "show transit ring for event 2\nhk : ctrl+1",
         ),
-        "transit varga": (
+        "transit harmonic": (
             False,
-            "show (simple) transit varga / harmonic ring for event 2"
+            "show (simple) transit harmonic / varga ring for event 2"
             "\nset varga in above harmonic ring\nhk : ctrl+2",
         ),
         "p2 progress": (
@@ -444,7 +444,7 @@ sweph/constants.py""",
     7: {wday} weekday 8: {country} | 9: {iso3} country code
     10: {city} 11: {location} | 12: {lat}itude
     13: {lon}gitude 14: {timezone} | 15: timezone {offset}
-    16: moon {nak}satra 17: {nakvar} moon varga naksatra
+    16: moon {nak}satra 17: {nakvar} moon harmonic naksatra
     chars: @ | - :
 \n = new line
 example : {name}\n{date}\n{wday} {time_short}\n{city} @ {country}\n{lat}\n{lon}""",

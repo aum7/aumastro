@@ -201,7 +201,7 @@ class Tables(Gtk.Notebook):
         header = (
             f" positions{self.vic_spc}{self.h_sym * 48}\n"
             f" obj  {self.v_sym}        sign : nak{self.vic_spc}{self.v_sym}"
-            f"       varga : nak{self.vic_spc}{self.v_sym} "
+            f"    harmonic : nak{self.vic_spc}{self.v_sym} "
             f"  lat {self.v_sym}   lon {self.v_sym} speed : rel "
             f"{self.v_sym} hs\n"
         )
@@ -218,19 +218,17 @@ class Tables(Gtk.Notebook):
             retro = obj["retro"]
             house = hsforlon(obj["lon"], cusps)
             nak = obj["naksatra"]
-            var_lon = obj["varga"]
-            var_nak = obj["varga naksatra"]
+            harm_lon = obj["harmonic"]
+            harm_nak = obj["harmonic naksatra"]
             nak_idx = nak["idx"]
             nak_ruler = nak["ruler"]
-            var_str = "     -   --"
-            if var_lon is not None and var_nak is not None:
-                var_str = (
-                    f"{decsigndms(var_lon):10}  {var_nak['idx']:02}-{var_nak['ruler']}"
-                )
+            harm_str = "     -   --"
+            if harm_lon is not None and harm_nak is not None:
+                harm_str = f"{decsigndms(harm_lon):10}  {harm_nak['idx']:02}-{harm_nak['ruler']}"
             ln_pos = (
                 f" {name}{retro:<2} {self.v_sym} "
                 f"{decsigndms(lon):10} {nak_idx:02}-{nak_ruler} {self.v_sym} "
-                f"{var_str} {self.v_sym}"
+                f"{harm_str} {self.v_sym}"
                 f"{obj['lat']:5.2f} {self.v_sym} "
                 f"{lon:5.1f} {self.v_sym} {speed:6.3f} {speed_rel:4.0f} {self.v_sym} {house}\n"
             )
@@ -284,7 +282,7 @@ class Tables(Gtk.Notebook):
             )
             return ""
 
-        varga_aspects = self.app.dispatcher.varga_aspects
+        harmonic_aspects = self.app.dispatcher.harmonic_aspects
         division = self.app.dispatcher.harmonic_ring
         obj_names = aspects["obj names"]
         objs_sorted = self.sort_by_order(obj_names, name_fn=lambda n: n)
@@ -294,7 +292,7 @@ class Tables(Gtk.Notebook):
         # title line
         text = (
             f" aspects{self.vic_spc}[v{division}]{self.vic_spc}{self.h_sym * 52}\n"
-            if varga_aspects
+            if harmonic_aspects
             else f" aspects{self.vic_spc}[v1]{self.vic_spc}{self.h_sym * 52}\n"
         )
         # header row

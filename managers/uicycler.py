@@ -14,7 +14,7 @@ import pandas as pd
 import swisseph as swe
 from pathlib import Path
 from helpers import _object_name_to_code as objcode
-from sweph.calculations.transitvarga import get_varga_lon as vargalon
+from sweph.calculations.transitharmonic import get_harmonic_lon as harmlon
 
 
 MEMBERS_ORDER = [
@@ -37,11 +37,7 @@ class Cycler:
     def __init__(self, app=None):
         self.app = app
         # self IS aumastroapp
-        LOG.debug(
-            f"whoisme : {self.app.__class__.__name__}"
-            f"\nhas-selfappnotifier : {hasattr(self.app, 'notifier')}",
-            extra=routingnone,
-        )
+        # LOG.debug(f"whois selfapp : {self.app.__class__.__name__}")
 
     def file_properties(self, path: str) -> dict:
         filename = Path(path).name.lower()
@@ -52,7 +48,6 @@ class Cycler:
             timeframe = "h"
         elif "_d" in filename:
             timeframe = "d"
-
         dataframe = pd.read_csv(path, parse_dates=[0])
         dataframe_col = dataframe.columns[0]
         dataframe.sort_values(by=str(dataframe_col), inplace=True)
@@ -78,23 +73,23 @@ class Cycler:
                 angles.append(shortest)
         return sum(angles)
 
-    def calculate_pos(self, jd: float, members: list[str], varga: int) -> dict:
+    def calculate_pos(self, jd: float, members: list[str], harmonic: int) -> dict:
         pos = {}
-        sweph_flag = getattr(self.app, "sweph_flag", 0)
+        swe_flag = getattr(self.app.dispatcher, "swe_flag", 0)
         mean_node = (
-            self.app.chart_settings.get("mean node", False)
-            if self.app and hasattr(self.app, "chart_settings")
+            self.app.dispatcher.mean_node
+            if self.app and hasattr(self.app.dispatcher, "mean_node")
             else False
         )
 
         for name in members:
             code, norm = objcode(name, mean_node)
-            res = swe.calc_ut(jd, code, sweph_flag)
+            res = swe.calc_ut(jd, code, swe_flag)
             lon = res[0][0]
             if lon is None:
                 continue
-            if varga and varga > 1:
-                lon = vargalon(lon, varga)
+            if harmonic and harmonic > 1:
+                lon = harmlon(lon, harmonic)
             pos[norm] = {"lon": float(lon)}
         return pos
 
@@ -150,12 +145,12 @@ class Cycler:
             rule_str = par["rule"]
             tokens = par["tokens"]
             members = [val for tok, val in tokens if tok == "object"]
-            varga = next((var for tok, var in tokens if tok == "varga"), 1)
+            harmonic = next((var for tok, var in tokens if tok == "harmonic"), 1)
 
             if "decl" in rule_str:
                 result_df = self.declination_wave(tokens, dataframe_range)
             else:
-                result_df = self.compute_wave(dataframe_range, members, varga)
+                result_df = self.compute_wave(dataframe_range, members, harmonic)
 
             if result_df is None or result_df.empty:
                 LOG.warning(
@@ -175,7 +170,7 @@ class Cycler:
             results.append({
                 "rule": rule_str,
                 "members": members,
-                "varga": varga,
+                "harmonic": harmonic,
                 "dataframe": result_df,
             })
             LOG.info(
@@ -188,7 +183,7 @@ class Cycler:
         return cycle
 
     def compute_wave(
-        self, df_time_indexed: pd.DataFrame, members: list[str], varga: int
+        self, df_time_indexed: pd.DataFrame, members: list[str], harmonic: int
     ) -> pd.DataFrame:
         if len(members) < 2:
             return pd.DataFrame({
@@ -204,7 +199,7 @@ class Cycler:
                 dt.day,
                 dt.hour + dt.minute / 60.0 + dt.second / 3600.0,
             )
-            pos_map = self.calculate_pos(jd, members, varga)
+            pos_map = self.calculate_pos(jd, members, harmonic)
             ordered = self.ordered_members(pos_map.keys())
             out_vals.append(self.total_wave(ordered, pos_map))
         return pd.DataFrame({"datetime": df_time_indexed.index, "cycle": out_vals})
@@ -216,16 +211,16 @@ class Cycler:
         )
         return pd.DataFrame()
 
-    def map_varga_naks(
+    def map_harmonic_naks(
         self,
         use_28: bool = False,
-        varga: int = 1,
+        harmonic: int = 1,
     ) -> list[tuple[str, float, float]]:
         seq_27 = ["ke", "ve", "su", "mo", "ma", "ra", "ju", "sa", "me"]
         seq_28 = ["ve", "sa", "su", "mo", "ma", "me", "ju"]
         naks_num = 28 if use_28 else 27
         seq = seq_28 if use_28 else seq_27
-        slices = naks_num * varga
+        slices = naks_num * harmonic
         slice_size = 360.0 / slices
         slots: list[tuple[str, float, float]] = []
         for idx in range(slices):

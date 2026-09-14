@@ -84,8 +84,8 @@ def calculate_p3m(
         e1_asc_arc = (e1_asc - e1_su) % 360.0 if e1_asc else 0.0
         p3m_asc = (p3m_su + e1_asc_arc) % 360.0
         p3m_mc = (p3m_su + e1_mc_arc) % 360.0
-        p3m.append({"name": "asc", "lon": p3m_asc})
-        p3m.append({"name": "mc", "lon": p3m_mc})
+        p3m.append({"name": "pas", "lon": p3m_asc})
+        p3m.append({"name": "pmc", "lon": p3m_mc})
         for obj in objs:
             code, name = objcode(obj, mean_node)
             if code is None:
