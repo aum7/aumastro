@@ -42,26 +42,20 @@ def calculate_solar_return(
                 {"name": name, "lon": data[0]},
             )
         # calculate houses
-        try:
-            cusps, ascmc = swe.houses_ex(
-                sol_ret_jd,
-                lat,
-                lon,
-                hsys,
-                flag,
-            )
-            sol_ret.append({"cusps": cusps})
-            sol_ret.append({"name": "asc", "lon": ascmc[0]})
-            sol_ret.append({"name": "mc", "lon": ascmc[1]})
+        cusps, ascmc = swe.houses_ex(
+            sol_ret_jd,
+            lat,
+            lon,
+            hsys,
+            flag,
+        )
+        sol_ret.append({"name": "asc", "lon": ascmc[0]})
+        sol_ret.append({"name": "mc", "lon": ascmc[1]})
 
-            return ok(sol_ret)
+        return ok({"positions": sol_ret, "cusps": list(cusps)})
 
-        except swe.Error as e:
-            LOG.error(
-                f"lunar return houses calculation error : {e}",
-                extra=routing,
-            )
-            return err(e)
+    except (swe.Error, Exception) as e:
+        msg = f"solar return calculation error : {e}"
+        LOG.error(msg)
 
-    except Exception as e:
         return err(e)

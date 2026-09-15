@@ -9,7 +9,6 @@ LOG = logging.getLogger(__name__)
 source = "eventdata"
 routing = {"source": source, "route": ["terminal"]}
 routinguser = {"source": source, "route": ["terminal", "user"]}
-routingnone = {"source": source, "route": [""]}
 from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
 from timezonefinder import TimezoneFinder
@@ -31,6 +30,7 @@ class EventData:
         # gather & process all user event input data
         if app is not None:
             self.app = app
+        # LOG.debug(f"whois selfapp : {self.app.__class__.__name__}")
         # logging helper
         self.id = id
         self.country = country
@@ -41,29 +41,21 @@ class EventData:
         self.timezone = None
         self.tz_offset = None
         self.lon = None
-        # self.calendar = b"g"
         self.is_hotkey_now = False
+        self.location = ""  # added
+        self.old_location = ""
+        self.name = ""  # added
         self.old_name = ""
         self.old_date_time = ""
-        self.old_location = ""
         # data from calculation
         self.chart = {}
         self.sweph = {}
         self.app.signaler.connect("datetime captured", self.on_datetime_capture)
-        # debug
-        LOG.debug(
-            f"\nhasselfappsignaler : {hasattr(self.app, 'signaler')}",
-            # f"e1 unpacked :\npos : {len(self.astro_data['e1 pos'])}"
-            # f"\nlots : {len(self.astro_data['lots'])}"
-            # f"\nstars : {len(self.astro_data['stars'])}",
-            extra=routingnone,
-        )
 
     def on_location_change(self, entry):
         location_name = entry.get_name()
         location = entry.get_text().strip()
         mainwindow = self.app.get_active_window()
-
         if not location:
             if self.id == "e1":
                 LOG.warning(
@@ -84,17 +76,17 @@ class EventData:
                     extra=routinguser,
                 )
                 return
+
             if location == self.old_location:
                 return
+
         try:
             valid_chars = set("0123456789 -.nsewm")
             invalid_chars = set(location.lower()) - valid_chars
             if invalid_chars:
                 raise ValueError("characters not allowed")
-
             parts = location.lower().split()
             has_direction = any(d in "nsew" for d in location.lower())
-
             if has_direction:
                 lat_dir_idx = -1
                 lon_dir_idx = -1
@@ -105,7 +97,6 @@ class EventData:
                         lon_dir_idx = i
                 if lat_dir_idx == -1 or lon_dir_idx == -1:
                     raise ValueError("missing direction indicators")
-
                 lat_parts = parts[: lat_dir_idx + 1]
                 lon_parts = parts[lat_dir_idx + 1 : lon_dir_idx + 1]
                 alt = "0"
@@ -113,7 +104,6 @@ class EventData:
                     alt = parts[lon_dir_idx + 1]
                     if not int(alt):
                         raise ValueError("altitude invalid")
-
                 if not len(lat_parts) == len(lon_parts):
                     raise ValueError("latitude or longitude missing")
                 elif len(lat_parts) == 2 and len(lon_parts) == 2:
@@ -130,15 +120,12 @@ class EventData:
                     lat_min = int(lat_parts[1])
                     lat_sec = int(lat_parts[2]) if len(lat_parts) > 3 else 0
                     lat_dir = lat_parts[-1]
-
                     lon_deg = int(lon_parts[0])
                     lon_min = int(lon_parts[1])
                     lon_sec = int(lon_parts[2]) if len(lon_parts) > 3 else 0
                     lon_dir = lon_parts[-1]
-
                     lat = lat_deg + lat_min / 60 + lat_sec / 3600
                     lon = lon_deg + lon_min / 60 + lon_sec / 3600
-
                 if lat_dir == "s":
                     lat = -abs(lat)
                 if lon_dir == "w":
@@ -153,7 +140,6 @@ class EventData:
                 lon_dir = "w" if lon < 0 else "e"
                 lat_deg, lat_min, lat_sec = _decimal_to_dms(abs(lat))
                 lon_deg, lon_min, lon_sec = _decimal_to_dms(abs(lon))
-
             if not (0 <= lat_deg <= 89):
                 raise ValueError("latitude degrees must be in 0..89 range")
             if not (0 <= lat_min <= 59) or not (0 <= lat_sec <= 59):
@@ -166,12 +152,10 @@ class EventData:
                 raise ValueError("longitude minutes & seconds must be in 0..59 range")
             if lon_dir not in ["e", "w"]:
                 raise ValueError("longitude direction must be e(ast) or w(est)")
-
             try:
                 int(alt)
             except ValueError:
                 alt = "0"
-
             location_formatted = (
                 f"{lat_deg:02d} {lat_min:02d} {lat_sec:02d} {lat_dir} "
                 f"{lon_deg:03d} {lon_min:02d} {lon_sec:02d} {lon_dir} "
@@ -180,16 +164,13 @@ class EventData:
                 else f"{lat_deg:02d} {lat_min:02d} {lat_sec:02d} {lat_dir} "
                 f"{lon_deg:03d} {lon_min:02d} {lon_sec:02d} {lon_dir} 0 m"
             )
-
             if location != location_formatted:
                 entry.set_text(location_formatted)
-
             tzf = TimezoneFinder()
             timezone_ = tzf.timezone_at(lat=lat, lng=lon)
             if timezone_:
                 self.timezone = timezone_
             self.old_location = location_formatted
-
         except Exception as e:
             # all above errors land here as exception e
             LOG.error(
@@ -200,15 +181,12 @@ class EventData:
 
         if lon:
             self.lon = lon
-
         parts = location_formatted.split()
         lat_str = " ".join(parts[:4])
         lon_str = " ".join(parts[4:8])
-
         country = ""
         city = ""
         iso3 = ""
-
         if self.id == "e1":
             if hasattr(mainwindow, "country_one"):
                 country = mainwindow.country_one.get_selected_item().get_string()
@@ -235,25 +213,24 @@ class EventData:
         self.sweph["lat"] = lat
         self.sweph["lon"] = lon
         self.sweph["alt"] = int(alt)
-        # todo debug
-        LOG.info(
-            "location input processed",
-            extra=routinguser,
-        )
+        self.location = location  # added
+        LOG.info("location input processed", extra=routing)
+
         return
 
     def on_name_change(self, entry):
         name_name = entry.get_name()
         name = entry.get_text().strip()
-
         if self.id == "e1" and not name:
             LOG.error(
                 f"mandatory data missing : {name_name}",
                 extra=routinguser,
             )
             return
+
         if name == self.old_name:
             return
+
         if len(name) > 30:
             LOG.warning(
                 f"{name_name} too long : max 30 characters",
@@ -263,18 +240,27 @@ class EventData:
 
         self.old_name = name
         self.chart["name"] = name
-        LOG.info(
-            "name input processed",
-            extra=routinguser,
-        )
+        self.name = name  # added
+        LOG.info("name input processed", extra=routing)
+
         return
 
     def on_datetime_change(self, entry):
         datetime_name = entry.get_name()
         date_time = entry.get_text().strip()
-        # todo we are accessing data that this file is supposed to provide
-        if not self.is_hotkey_now and date_time == self.old_date_time:
+        # todo below line : why not hotkey now ???
+        if (
+            not self.is_hotkey_now
+            and date_time == self.old_date_time
+            or (
+                date_time == self.old_date_time
+                and (self.name == self.old_name or self.location == self.old_location)
+            )
+        ):
+            # todo let data be processed if location | name changed but
+            # datetime == datetime_old so astrochart etc shall update text
             return
+
         E1 = self.app.EVENT_ONE
         # log.debug(f"ondatetimechange : E1={E1.name}")
         if E1 is None:
@@ -288,34 +274,25 @@ class EventData:
                     extra=routinguser,
                 )
                 return
+
         elif self.id == "e2":
             if not E1.sweph.get("lon"):
-                # if not self.app.dispatcher.get("e1", {}).get("sweph", {}).get("lon"):
-                # if not e1_chart.get("location"):
                 LOG.warning(
                     "event two : event one must be set first",
                     extra=routinguser,
                 )
                 return
-        # log.debug(
-        #     "ondatetimechange : data received :"
-        #     f"\ne1data={e1_data}"
-        #     f"\ne1chart={e1_chart}"
-        #     f"\ne1sweph={e1_sweph}"
-        # )
+
         jd_ut = None
         dt_utc = None
         dt_event = None
         dt_event_str = ""
         weekdays = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
         wday = "-"
-
         if self.is_hotkey_now:
             # on hotkey now
             try:
                 dt_utc = datetime.now(timezone.utc).replace(microsecond=0)
-                #
-                # e1 = getattr(self.app, "EVENT_ONE", None)
                 tz = (
                     self.timezone
                     if self.timezone
@@ -331,7 +308,6 @@ class EventData:
                     days = int(parts[0].split()[0]) if "day" in parts[0] else 0
                     h, m, s = map(int, parts[-1].strip().split(":"))
                     self.tz_offset = days * 24 + h + m / 60 + s / 3600
-
                 _, jd_ut = utc_to_jd(
                     dt_utc.year,
                     dt_utc.month,
@@ -360,7 +336,6 @@ class EventData:
                         extra=routinguser,
                     )
                     return
-
                 # empty e2 datetime = delete e2 data
                 elif self.id == "e2":
                     if self.chart or self.sweph:
@@ -384,7 +359,6 @@ class EventData:
                 )
                 if error:
                     LOG.error("datetime validation failed")
-
                 if dt_data is not None:
                     Y, M, D, h, m, s, cal, _ = dt_data
                     Y, M, D, h, m, s = (
@@ -415,7 +389,6 @@ class EventData:
                     else:
                         self.tz_offset = 0.0
                         wday = "-"
-
                     dt_event_str = f"{Y}-{M:02d}-{D:02d} {h:02d}:{m:02d}:{s:02d}"
                     if self.tz_offset is not None:
                         dt_utc = naive_to_utc(Y, M, D, h, m, s, self.tz_offset)
@@ -437,10 +410,8 @@ class EventData:
 
         if dt_event_str:
             entry.set_text(dt_event_str)
-
         date, time = dt_event_str.split(" ")
         time_short = time[:5]
-
         self.chart["datetime"] = dt_event_str
         self.chart["date"] = date
         self.chart["time"] = time
@@ -448,9 +419,7 @@ class EventData:
         self.chart["weekday"] = wday
         self.chart["offset"] = str(self.tz_offset)
         self.sweph["jd ut"] = jd_ut
-
         self.old_date_time = dt_event_str
-
         if self.id == "e2" and self.chart.get("datetime"):
             # copy missing location from event 1
             if not self.chart.get("location"):
@@ -468,14 +437,10 @@ class EventData:
             # reuse
             if not self.chart.get("name"):
                 self.chart["name"] = E1_chart.get("name")
-
         dataset = {"id": self.id, "chart": self.chart, "sweph": self.sweph}
-        # LOG.debug(f"ondatetimechange : dataset={dataset}")
         self.app.signaler.emit("event changed", dataset)
-        LOG.info(
-            "datetime input processed",
-            extra=routinguser,
-        )
+        LOG.info("datetime input processed", extra=routing)
+
         return
 
     def on_datetime_capture(self, data):

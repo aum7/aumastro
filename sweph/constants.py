@@ -28,24 +28,6 @@ PLANETARY_ORDER = (
     "pl",
     "ra",
 )
-# drawing order for objects in reverse
-DRAW_ORDER_REVERSE = [
-    "ra",
-    "pl",
-    "ne",
-    "ur",
-    "sa",
-    "ju",
-    "ma",
-    "su",
-    "ve",
-    "me",
-    "mo",
-    "tas",  # true p3 ascendant
-    "tmc",  # true p3 midheaven
-    "asc",
-    "mc",
-]
 # retro periods
 # legend :
 #     Rl - average length of retro period

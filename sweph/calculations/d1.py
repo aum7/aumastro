@@ -6,7 +6,7 @@
 # places in natal chart, unfolding events in years to come; each degree
 # of such motion corresponds to approximately 1 year of life
 # it is equatorial plane usually in tabular form : todo can we
-# reprocude tables in circular form ie are dates of angles same ???
+# reproduce tables in circular form ie are dates of angles same ???
 import logging
 
 LOG = logging.getLogger(__name__)

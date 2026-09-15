@@ -6,7 +6,9 @@
 # Gtk.Window.set_interactive_debugging(True)
 # app todo :
 #   sidepane sweph setting change > update calculations & chart & tables
-#   outer rings ascmc
+#   info text on change huge
+#   on event location or name change > process on datetime [confirm] even if
+#       datetime == datetime_old
 import logging
 
 LOG = logging.getLogger(__name__)
