@@ -131,10 +131,7 @@ def chart_info_string(entry, info, dispatcher):
         return
 
     entry.remove_css_class("entry-warning")
-    if info == "chart info":
-        dispatcher.chart_info = value
-    elif info == "chart info extra":
-        dispatcher.chart_info_extra = value
+    dispatcher.update_chart_setting(info, value)
 
 
 def flags_toggled(button, flag, dispatcher):
@@ -144,15 +141,14 @@ def flags_toggled(button, flag, dispatcher):
 
 def solar_year_changed(dropdown, _pspec, dispatcher):
     idx = dropdown.get_selected()
-    solar_years = dispatcher.SOLAR_YEARS
-    period = list(solar_years.values())[idx]
+    period = dispatcher.SOLAR_YEARS[idx]
     dispatcher.update_solar_year(period)
 
 
 def lunar_month_changed(dropdown, _pspec, dispatcher):
     idx = dropdown.get_selected()
-    lunar_months = dispatcher.LUNAR_MONTHS
-    period = list(lunar_months.values())[idx]
+    period = dispatcher.LUNAR_MONTHS[idx]
+    # period = list(lunar_months)[idx]
     dispatcher.update_lunar_month(period)
 
 
@@ -160,7 +156,7 @@ def ayanamsa_changed(dropdown, _pspec, mainwindow):
     # dispatcher IS dispatcher & HAS app
     idx = dropdown.get_selected()
     ayanamsas = mainwindow.app.dispatcher.AYANAMSAS
-    key = list(ayanamsas)[idx]
+    key = ayanamsas[idx][0]
     # key = list(ayanamsas.keys())[idx]
     is_custom = key == 255
     mainwindow.clp_settings.subsub_custom_ayan.set_sensitive(is_custom)

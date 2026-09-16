@@ -54,9 +54,10 @@ def calculate_p3m(
             cycle_length = lr_next_jd - lr_prev_jd
             p3m_jd = lr_prev_jd + (fract_year * cycle_length)
             p3m_diff = p3m_jd - e1_jd
+            LOG.info("using exact lunar month")
         else:
-            LOG.info("using average lunar month")
             p3m_diff = age_years * month_length
+            LOG.info("using average lunar month")
         p3m_jd = e1_jd + p3m_diff
         p3m_date = tuple_to_iso(p3m_jd)
         p3m = [{"p3m jdut": p3m_jd}, {"p3m date": p3m_date}]

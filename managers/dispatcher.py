@@ -297,7 +297,9 @@ class Dispatcher:
                 "snap_tolerance",
             ]
             if attr_name not in visual_settings:
-                self.recalculate(self.selected_event)
+                self.recalculate("e1")
+                if self.e2_active:
+                    self.recalculate("e2")
             else:
                 self.app.signaler.emit("redraw chart")
 

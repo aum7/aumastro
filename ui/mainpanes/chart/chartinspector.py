@@ -539,7 +539,7 @@ class ChartInspector:
             if radius is None:
                 # spoke target : snap point directly at mouse radius
                 outer_r, inner_r = self._ring_bounds(ring, radius_dict, max_radius)
-                if not (inner_r - tolerance <= mouse_r <= outer_r + tolerance):
+                if not (inner_r <= mouse_r <= outer_r):
                     continue
                 tx, ty = self._lon_to_xy(lon, mouse_r)
             else:

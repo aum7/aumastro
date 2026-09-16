@@ -89,9 +89,10 @@ def _decimal_to_ra(decimal: float):
     return H, M, S
 
 
-def _object_name_to_code(name: str, use_mean_node: bool):
+def _object_name_to_code(name: str, mean_node: bool):
     # get object name as int
-    if name == "true node" and use_mean_node:
+    if name == "ra" and mean_node:
+        # if name == "true node" and use_mean_node:
         name = "mean node"
     for code, obj in OBJECTS.items():
         if obj[1] == name or obj[0] == name:

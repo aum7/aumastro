@@ -12,7 +12,6 @@ from sweph.swetime import jd_to_custom_iso as jdtoiso
 
 def calculate_syzygy(jd_ut, su_lon, mo_lon, flag):
     # calculate last prenatal full or new moon - syzygy
-    # get sun & moon longitudes
     try:
         # determine if syzygy was new or full moon
         if su_lon is not None and mo_lon is not None:
@@ -44,12 +43,14 @@ def calculate_syzygy(jd_ut, su_lon, mo_lon, flag):
             final_moon_data, _ = swe.calc_ut(syzygy_jd, 1, flag)
             syzygy_lon = final_moon_data[0]
 
-            return ok({
-                "name": "syzygy",
-                "lun_type": lun_type,
-                "lon": syzygy_lon,
-                "datetime": jdtoiso(syzygy_jd),
-            })
+            return ok([
+                {
+                    "name": "syzygy",
+                    "lun_type": lun_type,
+                    "lon": syzygy_lon,
+                    "datetime": jdtoiso(syzygy_jd),  # todo to event local time
+                }
+            ])
     except Exception as e:
         LOG.error(
             f"syzygy calculation error : {e}",

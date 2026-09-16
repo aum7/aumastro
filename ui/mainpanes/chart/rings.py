@@ -29,7 +29,7 @@ class Rings:
         "transit harmonic": (0.0078, 0.0941, 0, 1),
         "p2 progress": (0, 0, 0.24, 1),
         "p3 progress": (0, 0.1, 0.26, 1),
-        "p3m progress": (0, 0.14, 0.29, 1),
+        "p3m progress": (0, 0.14, 0.28, 1),
         # "d1 direction": (0.13, 0.13, 0.13, 1),
         "lunar return": (0.1386, 0.1269, 0.0092, 1),
         "solar return": (0.1686, 0.1569, 0.0392, 1),
@@ -73,10 +73,10 @@ class Rings:
         "signs glyph": 0.7,  # glyph size
         "lots obj": 0.4,
         "lots glyph": 0.6,
-        "eclipses obj": 0.4,
-        "eclipses glyph": 0.4,
-        "syzygy obj": 0.2,
-        "syzygy glyph": 0.5,
+        "eclipses obj": 0.5,
+        "eclipses glyph": 0.6,
+        "syzygy obj": 0.4,
+        "syzygy glyph": 0.6,
         "stars obj": 0.2,
         "info text": 1.5,  # info text / font size
     }
@@ -131,6 +131,14 @@ class Rings:
         self.info = ctx.get("info", {})
         self.snap_targets = []
         self.font_size = 20.0  # default font size : fits signs text size
+        self.markers = {
+            "tas": (self.draw_triangle, "tas", "true asc"),
+            "tmc": (self.draw_diamond, "tmc", "true mc"),
+            "pas": (self.draw_triangle, "pas", "P asc"),
+            "pmc": (self.draw_diamond, "pmc", "P mc"),
+            "asc": (self.draw_triangle, "asc", "asc"),
+            "mc": (self.draw_diamond, "mc", "mc"),
+        }
 
     def get_ring_bounds(self, ring: str):
         # calculate inner & mid-ring & outer radius
@@ -204,14 +212,6 @@ class Rings:
         ascmc=None,
         skip=(),
     ):
-        markers = {
-            "tas": (self.draw_triangle, "tas", "true asc"),
-            "tmc": (self.draw_diamond, "tmc", "true mc"),
-            "pas": (self.draw_triangle, "pas", "P asc"),
-            "pmc": (self.draw_diamond, "pmc", "P mc"),
-            "asc": (self.draw_triangle, "asc", "asc"),
-            "mc": (self.draw_diamond, "mc", "mc"),
-        }
         draw_glyphs = glyph_size is not None and self.app.dispatcher.enable_glyphs
         mean_node = self.app.dispatcher.mean_node
         object_by_name = {obj.data.get("name", ""): obj for obj in positions}
@@ -226,8 +226,8 @@ class Rings:
             angle = pi - radians(lon)
             x = self.cx + radius * cos(angle)
             y = self.cy + radius * sin(angle)
-            if name in markers:
-                shape_func, color, label = markers[name]
+            if name in self.markers:
+                shape_func, color, label = self.markers[name]
                 self.draw_marker(
                     cr,
                     x,
@@ -511,6 +511,8 @@ class Rings:
                     continue
                 name = lun.data.get("name", "")
                 lon = lun.data.get("lon")
+                syzygy_type = lun.data.get("lun_type")
+                label = glyphs.get_syzygy_glyph(syzygy_type[1])
                 radius = mid_r * self.RADIUS["syzygy"]
                 lun.draw(
                     cr,
@@ -520,8 +522,11 @@ class Rings:
                     obj_size,
                     color=self.RING_COLORS["syzygy"],
                 )
-                self.snap_targets.append((lon, radius, name, ring))
-                glyph = glyphs.get_syzygy_glyph(name)
+                # todo grab glyphs.SYZYGY[1] long description
+                self.snap_targets.append((lon, radius, label, ring))
+                # self.snap_targets.append((lon, radius, syzygy_type, ring))
+                glyph = glyphs.get_syzygy_glyph(syzygy_type)
+                LOG.debug(f"syzygy type : {syzygy_type}")
                 if glyph:
                     angle = pi - radians(lon)
                     x = self.cx + radius * cos(angle)

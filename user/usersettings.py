@@ -92,7 +92,7 @@ LOTS = {  # 7 hermetic lots : many different definitions for lots exist
 # prenatal events : syzygy & eclipses
 PRENATAL = {
     "syzygy": {
-        "enable": False,
+        "enable": True,
         "tooltip": (
             "syzygy - last full or new moon before event 1"
             "\nnote : syzygy might overlap with eclipses (below)"

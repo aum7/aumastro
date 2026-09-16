@@ -490,7 +490,7 @@ class SidepaneSettings(CollapsePanel):
             "activate",
             help.custom_ayanamsa_changed,
             "custom julian day utc",
-            self.mainwindow,
+            self.app.dispatcher,
         )
         box_custom.append(Gtk.Label(label="julian day utc", halign=Gtk.Align.START))
         box_custom.append(ent_jd)
@@ -504,12 +504,13 @@ class SidepaneSettings(CollapsePanel):
             "activate",
             help.custom_ayanamsa_changed,
             "custom ayanamsa",
-            self.mainwindow,
+            self.app.dispatcher,
         )
         box_custom.append(Gtk.Label(label="ayanamsa", halign=Gtk.Align.START))
         box_custom.append(ent_val)
         subsub_custom_ayan.add_widget(box_custom)
         box.append(subsub_custom_ayan)
+        subsub_custom_ayan.set_sensitive(self.app.dispatcher.selected_ayanamsa == 255)
         subpnl_ayanamsa.add_widget(box)
 
         return subpnl_ayanamsa
