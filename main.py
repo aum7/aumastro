@@ -5,10 +5,9 @@
 # os.environ["GTK_DEBUG"] = "keybindings geometry size-request actions constraints"
 # Gtk.Window.set_interactive_debugging(True)
 # app todo :
-#   sidepane sweph setting change > update calculations & chart & tables
 #   info text on change huge
-#   on event location or name change > process on datetime [confirm] even if
-#       datetime == datetime_old
+# 2026-09-16 21-12 - app bumped v0 > v1 - major code redesign & all little bugs
+# terminated
 import logging
 
 LOG = logging.getLogger(__name__)
@@ -16,7 +15,6 @@ source = "main"
 routing = {"source": source, "route": ["terminal"]}
 routinguser = {"source": source, "route": ["terminal", "user"]}
 import os
-
 import swisseph as swe  # type:ignore
 from ui.mainwindow import MainWindow
 from managers.notifier import Notifier
