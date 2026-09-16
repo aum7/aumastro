@@ -29,9 +29,9 @@ class ChartInspector:
         "lunar return": "LNR",
         "solar return": "SLR",
         "naksatras": "NK",
-        "harmonic": "H",
-        "signs": "SG",
         "event": "N",
+        "harmonic": "NH",
+        "signs": "SG",
     }
 
     def __init__(self, chart):
@@ -115,7 +115,7 @@ class ChartInspector:
     def angle_to_clipboard(self):
         # copy angle measurement text to clipboard
         if not self.active:
-            LOG.info("not active : exiting")
+            # LOG.info("not active : exiting")
             return False
 
         to_clipboard = getattr(self, "measure_text", "")

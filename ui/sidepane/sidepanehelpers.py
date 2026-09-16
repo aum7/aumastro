@@ -175,4 +175,5 @@ def custom_ayanamsa_changed(entry, key, dispatcher):
 
 def files_changed(entry, key, dispatcher):
     value = entry.get_text().strip()
+    LOG.debug(f"{key} changed")
     dispatcher.update_files(key, value)

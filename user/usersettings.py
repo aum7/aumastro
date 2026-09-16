@@ -323,15 +323,15 @@ CHART_SETTINGS = {
     "naksatras ring": (
         False,
         """show 27 naksatras ring
-1  asv\t2  bha\t3  krt
-4  roh\t5  mrg\t6  ard
-7  pun\t8  pus\t9  asl
-10 mag\t11 pph\t12 uph
-13 has\t14 cit\t15 sva
-16 vis\t17 anu\t18 jye
-19 mul\t20 pas\t21 uas
-22 sra\t23 dha\t24 sat
-25 pbh\t26 ubh\t27 rev""",
+1  asv\t10 mag\t19 mul
+2  bha\t11 pph\t20 pas
+3  krt\t12 uph\t21 uas
+4  roh\t13 has\t22 sra
+5  mrg\t14 cit\t23 dha
+6  ard\t15 sva\t24 sat
+7  pun\t16 vis\t25 pbh
+8  pus\t17 anu\t26 ubh
+9  asl\t18 jye\t27 rev""",
     ),
     # --- use 28 lunar mansions
     # rulership as per chinese astrology / vivian e robson - fixed stars ...

@@ -229,6 +229,7 @@ only use [space] as separator
         """will be used for filename when saving
     recommended fit : max 14 characters
     max 30 characters
+    note : saving not implemented
 
 [enter] = accept data
 [tab] / [shift-tab] = next / previous entry"""

@@ -368,9 +368,8 @@ class SidepaneSettings(CollapsePanel):
         lbl_info.set_halign(Gtk.Align.START)
         box_info.append(lbl_info)
         ent_info = Gtk.Entry()
-        # ent_info.set_width_chars(30)
-        # ent_info.set_max_width_chars(30)
         ent_info.set_text(str(self.app.dispatcher.chart_info))
+        ent_info.set_tooltip_text(chart_settings["chart info"][1])
         ent_info.connect(
             "activate", help.chart_info_string, "chart info", self.app.dispatcher
         )
@@ -380,6 +379,7 @@ class SidepaneSettings(CollapsePanel):
         box_info.append(lbl_info_extra)
         ent_info_extra = Gtk.Entry()
         ent_info_extra.set_text(str(self.app.dispatcher.chart_info_extra))
+        ent_info_extra.set_tooltip_text(chart_settings["chart info extra"][1])
         ent_info_extra.connect(
             "activate", help.chart_info_string, "chart info extra", self.app.dispatcher
         )
@@ -426,14 +426,13 @@ class SidepaneSettings(CollapsePanel):
         solar_years = self.app.dispatcher.SOLAR_YEARS
         # solar year
         box.append(Gtk.Label(label="solar year", halign=Gtk.Align.START))
-        year_store = Gtk.StringList.new([
-            f"{val[0]} {val[1]} days" for val in solar_years
-        ])
+        year_store = Gtk.StringList.new([f"{val[2]}" for val in solar_years])
         ddn_year = Gtk.DropDown.new(year_store)
-        ddn_year.set_tooltip_text(
-            "select period for solar year"
-            "\nsidereal | gregorian | julian | tropical | lunar"
+        ddn_year.set_tooltip_markup(
+            "select period for solar year\n"
+            + "\n".join(f"<tt>{val[0]:<4}{val[1]:<11} days</tt>" for val in solar_years)
         )
+        # + "\n".join(f"{val[0]}\t{val[1]} days" for val in solar_years)
         ddn_year.connect(
             "notify::selected", help.solar_year_changed, self.app.dispatcher
         )
@@ -441,18 +440,15 @@ class SidepaneSettings(CollapsePanel):
         # lunar month
         box.append(Gtk.Label(label="lunar month", halign=Gtk.Align.START))
         lunar_months = self.app.dispatcher.LUNAR_MONTHS
-        month_store = Gtk.StringList.new([
-            f"{val[0]} {val[1]} days" for val in lunar_months
-        ])
+        month_store = Gtk.StringList.new([f"{val[2]}" for val in lunar_months])
         ddn_month = Gtk.DropDown.new(month_store)
-        ddn_month.set_tooltip_text(
-            "select period for lunar month"
-            "\nsidereal = fixed star"
-            "\nsynodic = new moons"
-            "\ntropical = 0 ari"
-            "\nanomalistic = perigee-apogee"
-            "\ndraconian = lunar nodes"
+        ddn_month.set_tooltip_markup(
+            "select period for lunar month\n"
+            + "\n".join(
+                f"<tt>{val[0]:<4}{val[1]:<11} days</tt>" for val in lunar_months
+            )
         )
+        # + "\n".join(f"{val[0]}\t{val[1]} days" for val in lunar_months)
         ddn_month.connect(
             "notify::selected", help.lunar_month_changed, self.app.dispatcher
         )
@@ -465,7 +461,7 @@ class SidepaneSettings(CollapsePanel):
         subpnl_ayanamsa = CollapsePanel(title="ayanamsa", indent=14, expanded=False)
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
         ayanamsas = self.app.dispatcher.AYANAMSAS
-        ayan_store = Gtk.StringList.new([f"{val[1]}" for val in ayanamsas])
+        ayan_store = Gtk.StringList.new([f"{val[0]} {val[1]}" for val in ayanamsas])
         ddn_ayan = Gtk.DropDown.new(ayan_store)
         ddn_ayan.set_tooltip_text(
             "add / remove ayanamsas in user/usersettings/AYANAMSAS"
@@ -518,6 +514,7 @@ class SidepaneSettings(CollapsePanel):
     def build_subpnl_files(self) -> CollapsePanel:
         subpnl_files = CollapsePanel(title="files & paths", indent=14, expanded=False)
         grid = Gtk.Grid(column_spacing=12, row_spacing=4)
+        subpnl_files.set_title_tooltip("no validation here - dont do stupid things")
         files = self.app.dispatcher.FILES
         # LOG.debug(f"buildsubpnlfiles : files={files}")
         for row, (key, value) in enumerate(files.items()):

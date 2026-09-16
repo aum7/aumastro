@@ -512,7 +512,7 @@ class Rings:
                 name = lun.data.get("name", "")
                 lon = lun.data.get("lon")
                 syzygy_type = lun.data.get("lun_type")
-                label = glyphs.get_syzygy_glyph(syzygy_type[1])
+                label = glyphs.SYZYGY.get(syzygy_type, ("", ""))[1]
                 radius = mid_r * self.RADIUS["syzygy"]
                 lun.draw(
                     cr,
@@ -522,11 +522,8 @@ class Rings:
                     obj_size,
                     color=self.RING_COLORS["syzygy"],
                 )
-                # todo grab glyphs.SYZYGY[1] long description
                 self.snap_targets.append((lon, radius, label, ring))
-                # self.snap_targets.append((lon, radius, syzygy_type, ring))
                 glyph = glyphs.get_syzygy_glyph(syzygy_type)
-                LOG.debug(f"syzygy type : {syzygy_type}")
                 if glyph:
                     angle = pi - radians(lon)
                     x = self.cx + radius * cos(angle)

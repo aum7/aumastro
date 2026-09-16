@@ -31,7 +31,6 @@ class EventData:
         if app is not None:
             self.app = app
         # LOG.debug(f"whois selfapp : {self.app.__class__.__name__}")
-        # logging helper
         self.id = id
         self.country = country
         self.city = city
@@ -50,6 +49,7 @@ class EventData:
         # data from calculation
         self.chart = {}
         self.sweph = {}
+        # on datagraph click datetime will be captured & sent here for processing
         self.app.signaler.connect("datetime captured", self.on_datetime_capture)
 
     def on_location_change(self, entry):
@@ -248,17 +248,12 @@ class EventData:
     def on_datetime_change(self, entry):
         datetime_name = entry.get_name()
         date_time = entry.get_text().strip()
-        # todo below line : why not hotkey now ???
-        if (
-            not self.is_hotkey_now
-            and date_time == self.old_date_time
-            or (
-                date_time == self.old_date_time
-                and (self.name == self.old_name or self.location == self.old_location)
-            )
+        # todo revise ???
+        if not self.is_hotkey_now and (
+            date_time == self.old_date_time
+            and self.name == self.old_name
+            and self.location == self.old_location
         ):
-            # todo let data be processed if location | name changed but
-            # datetime == datetime_old so astrochart etc shall update text
             return
 
         E1 = self.app.EVENT_ONE

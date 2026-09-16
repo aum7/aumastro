@@ -51,6 +51,10 @@ class CollapsePanel(Gtk.Box):
         self.append(self.box_content)
         # connect signals
         self.btn_expand.connect("clicked", self.obc_expand)
+        # toggle by click on label
+        gesture_title = Gtk.GestureClick.new()
+        gesture_title.connect("pressed", lambda g, n, x, y: self.obc_expand(None))
+        self.lbl_title.add_controller(gesture_title)
 
     def obc_expand(self, button):
         expanded = not self.box_content.get_visible()

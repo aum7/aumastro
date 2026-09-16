@@ -65,8 +65,10 @@ class Dispatcher:
         self.selected_month_period = self.LUNAR_MONTHS[0]
         self.AYANAMSAS = usersett.AYANAMSAS
         self.selected_ayanamsa = self.AYANAMSAS[0][0]
+        self.selected_ayanamsa_label = self.AYANAMSAS[0][2]
         # default 2000-01-01 12:00 utc (julian day starts noon) : see usersettings.py
         self.CUSTOM_AYANAMSA = usersett.CUSTOM_AYANAMSA
+        self.set_sid_mode()
         # chart settings attrs
         self.CHART_SETTINGS = usersett.CHART_SETTINGS
         # basic data setting
@@ -258,9 +260,36 @@ class Dispatcher:
         # LOG.debug(f"updatenaksatrasettings : ring={val_ring} 28={val_28} 1st={val_1st}")
         self.recalculate("e1")
 
+    def update_solar_year(self, period):
+        self.selected_year_period = period
+        self.app.signaler.emit("setting changed", {"solar year": period})
+        self.recalculate("e1")
+        if self.e2_active:
+            self.recalculate("e2")
+
+    def update_lunar_month(self, period):
+        self.selected_month_period = period
+        self.app.signaler.emit("setting changed", {"lunar month": period})
+        self.recalculate("e1")
+        if self.e2_active:
+            self.recalculate("e2")
+
+    def set_sid_mode(self):
+        # set swe sidereal mode
+        if self.selected_ayanamsa == 255:
+            t0 = self.CUSTOM_AYANAMSA["custom julian day utc"]
+            ayan_t0 = self.CUSTOM_AYANAMSA["custom ayanamsa"]
+            swe.set_sid_mode(255, t0, ayan_t0)
+        else:
+            swe.set_sid_mode(self.selected_ayanamsa, 0, 0)
+
     def update_ayanamsa(self, ayanamsa: int):
         # update selected siderael ayanamsa
         self.selected_ayanamsa = ayanamsa
+        self.selected_ayanamsa_label = next(
+            (ayan[2] for ayan in self.AYANAMSAS if ayan[0] == ayanamsa), str(ayanamsa)
+        )
+        self.set_sid_mode()
         self.app.signaler.emit("setting changed", {"ayanamsa": ayanamsa})
         self.recalculate("e1")
         if self.e2_active:
@@ -269,6 +298,8 @@ class Dispatcher:
     def update_custom_ayanamsa(self, key, value):
         if key in self.CUSTOM_AYANAMSA:
             self.CUSTOM_AYANAMSA[key] = float(value)
+            if self.selected_ayanamsa == 255:
+                self.set_sid_mode()
             self.app.signaler.emit(
                 "setting changed", {"custom_ayanamsa": self.CUSTOM_AYANAMSA}
             )
@@ -735,7 +766,7 @@ class Dispatcher:
             "info extra": {
                 "hsys": hsys_str,
                 "zod": "sid" if "sidereal zodiac" in self.active_flags else "tro",
-                "aynm": self.selected_ayanamsa  # todo move selection to where ???
+                "aynm": self.selected_ayanamsa_label
                 if "sidereal zodiac" in self.active_flags
                 else "",
             },

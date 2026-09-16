@@ -75,7 +75,7 @@ class DataPrintscreen:
             return
         # load data
         try:
-            gold_path = Path("user/data/gold/gold_d.csv")
+            gold_path = Path(self.app.dispatcher.FILES["data"][0])
             if not gold_path.exists():
                 self.app.notifier.error(
                     f"datagraph data not found : {gold_path}",

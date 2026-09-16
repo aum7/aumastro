@@ -71,12 +71,20 @@ class DataGraph(Gtk.Box):
         # self.cycle_calculated = False # todo move to on_enter_key
         self.cycle_wave = None
         self.app.signaler.connect("plot wave", self.on_plot_wave)
+        self.app.signaler.connect("setting changed", self.on_files_change)
         # init search result plot
         self.search_markers = []
         self.app.signaler.connect("clear search plots", self.on_clear_search_plots)
         self.app.signaler.connect("plot search result", self.on_plot_search_result)
         self.plot_last_n(800)
         self.search_cleared = False
+
+    def on_files_change(self, data=None):
+        # reload data when data filepath changed
+        if not data or "data" not in data.get("files", {}):
+            return
+        if self.data_load():
+            self.plot_last_n(800)
 
     def on_canvas_key(self, controller, keyval, keycode, state):
         # release focus
@@ -110,17 +118,25 @@ class DataGraph(Gtk.Box):
     def data_load(self):
         """load & plot data"""
         filepath = self.app.dispatcher.FILES["data"][0]
-        LOG.debug(
-            f"dataload : filepath : {filepath}",
-            extra=routingnone,
-        )
+        # LOG.debug(f"dataload : filepath : {filepath}")
         # load csv
-        df = pd.read_csv(
-            filepath,
-            parse_dates=["datetime"],
-            index_col="datetime",
-        )
+        try:
+            df = pd.read_csv(
+                filepath,
+                parse_dates=["datetime"],
+                index_col="datetime",
+            )
+        except Exception as e:
+            self.app.notifier.error(
+                f"failed to load data file : {filepath}\n{e}",
+                source="datagraph",
+                route=["terminal", "user"],
+                timeout=6,
+            )
+            return False
+
         self.full_df = df
+        return True
 
     def load_last_search(self):
         data_path = os.path.expanduser("user/data/search/")
