@@ -10,6 +10,7 @@ source = "dispatcher"
 routing = {"source": source, "route": ["terminal"]}
 routinguser = {"source": source, "route": ["terminal", "user"]}
 import swisseph as swe
+import time
 from helpers import _decimal_to_ymd
 from sweph.calculations.positions import calculate_positions
 from sweph.calculations.houses import calculate_houses
@@ -28,6 +29,7 @@ from sweph.calculations.returnlunar import calculate_lunar_return
 from sweph.calculations.returnsolar import calculate_solar_return
 from sweph.calculations.aspects import calculate_aspects
 from sweph.calculations.vimsottari import calculate_vimsottari
+from sweph.calculations.transitharmonic import get_harmonic_lon as harmlon
 import user.usersettings as usersett
 from user.fixedstars import FIXEDSTARS
 from ui.mainpanes.chart.astroobject import AstroObject
@@ -125,6 +127,8 @@ class Dispatcher:
         self.age_months = 0.0
         self.movie_mode = False
         self.orb = 1.5
+        # measure sweph calculation time & adapt key-hold accordingly
+        self.average_calc_ms = 60.0
         # if event 2 has datetime > e2 is active ie user interested in transit etc
         self.e2_active = False
         # signals
@@ -132,6 +136,10 @@ class Dispatcher:
         self.app.signaler.connect("e2 cleared", self.on_e2_clear)
         self.app.signaler.connect("vimsottari toggled", self.on_vimsottari_toggle)
         # LOG.debug(f"selobjs1={self.selected_objects_e1}")
+
+    def get_debounce_ms(self):
+        # never fire faster than 1.5x actual pipeline cost : floor at 80 ms
+        return max(30, int(self.average_calc_ms * 1.1))
 
     def compute_swe_flag(self, active_flags: list[str]):
         # get active flags & compute swe flag
@@ -396,6 +404,7 @@ class Dispatcher:
 
     def recalculate(self, event_id: str):
         # on event or settings change > recalculate astodata
+        t0 = time.perf_counter()
         if event_id == "e2" and not self.e2_active:
             LOG.debug(
                 "recalculate : received 'e2' but e2_active is false > investigate",
@@ -699,6 +708,9 @@ class Dispatcher:
             self.refresh_package("e1")
         self.refresh_package(event_id)
         self.update_titlebar()
+        elapsed_ms = (time.perf_counter() - t0) * 1000
+        # exponent moving average : recent samples weighted more
+        self.average_calc_ms = 0.3 * elapsed_ms + 0.7 * self.average_calc_ms
 
     def run_calc(self, event_id: str, key: str, func, *args):
         # run 1 calculation - cache on success : never raise nor block rest of package
@@ -717,6 +729,7 @@ class Dispatcher:
             return [] if not (isinstance(raw, dict) and "cusps" in raw) else None
 
         has_cusps = isinstance(raw, dict) and "cusps" in raw
+        LOG.debug(f"has houses : {hasattr(raw, 'houses')}")
         items = raw.get("positions", raw) if has_cusps else raw
         items = items.values() if isinstance(items, dict) else items
         objects = []
@@ -784,6 +797,11 @@ class Dispatcher:
             chart_package["harmonic"] = self._prep_ring(
                 e1_calculated.get("positions"), harmonic=True
             )
+            houses = e1_calculated.get("houses", {})
+            ascmc = houses.get("ascmc")
+            if ascmc and len(ascmc) >= 2:
+                chart_package["Has"] = harmlon(ascmc[0], self.harmonic_ring)
+                chart_package["Hmc"] = harmlon(ascmc[1], self.harmonic_ring)
         # table needs all data for gtk.widgets incl aspects
         if self.e2_active:
             e2_calculated = self.events_data["e2"].get("calculated", {})
@@ -799,6 +817,7 @@ class Dispatcher:
                 chart_package["transit harmonic"] = {
                     "positions": self._prep_ring(e2_positions, harmonic=True),
                 }
+
             for ring in (
                 "p2 progress",
                 "p3 progress",

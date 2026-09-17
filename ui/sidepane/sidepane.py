@@ -19,7 +19,7 @@ from .cycle import setup_cycle
 import gi
 
 gi.require_version("Gtk", "4.0")
-from gi.repository import Gtk  # type: ignore
+from gi.repository import Gtk, GLib  # type: ignore
 
 
 class SidepaneManager:
@@ -67,6 +67,8 @@ class SidepaneManager:
         #     f"\ninitsidepane : has-clpeventone={hasattr(self, 'clp_event_one')}",
         #     extra=routingnone,
         # )
+        self.throttle_active = False
+        self.pending_entry = None
 
     def buttons_from_dict(
         self,
@@ -242,12 +244,12 @@ ui/sidepane/sidepane.py"""
             entry = self.app.EVENT_ONE.date_time
         elif self.app.dispatcher.selected_event == "e2" and self.app.EVENT_TWO:
             entry = self.app.EVENT_TWO.date_time
+        if not entry:
+            LOG.debug("changeeventtime : entry missing : exiting")
+            return
         # get datetime string ! datetime is naive here !
-        datetime_name = "DateTime"
-        current_text = ""
-        if entry:
-            datetime_name = entry.get_name()
-            current_text = entry.get_text()
+        datetime_name = entry.get_name()
+        current_text = entry.get_text()
         jd = None
         # jd: float = 0.0
         if not current_text:
@@ -276,7 +278,7 @@ ui/sidepane/sidepane.py"""
                 route=["terminal", "user"],
             )
         try:
-            current_text = entry.get_text()  # type:ignore
+            # current_text = entry.get_text()  # type:ignore
             # convert to verified (side-effect) julian day, keep negative year
             is_valid, jd, dt_corr = custom_iso_to_jd(
                 *map(
@@ -295,24 +297,56 @@ ui/sidepane/sidepane.py"""
             new_text = jd_to_custom_iso(jd_new)
             # present string back to user
             entry.set_text(new_text)  # type:ignore
-            if datetime_name == "datetime one":  # type:ignore
-                # self.app.EVENT_ONE.is_hotkey_arrow = True
-                self.app.EVENT_ONE.on_datetime_change(entry)
-            else:
-                # self.app.EVENT_TWO.is_hotkey_arrow = True
-                self.app.EVENT_TWO.on_datetime_change(entry)
+            # if datetime_name == "datetime one":  # type:ignore
+            #     self.app.EVENT_ONE.on_datetime_change(entry)
+            # else:
+            #     self.app.EVENT_TWO.on_datetime_change(entry)
             # change_time_period = self.time_periods_list[
             #     self.ddn_time_periods.get_selected()
             # ]
             # update main window title
-            self.app.dispatcher.update_titlebar()
+            # self.app.dispatcher.update_titlebar()
         except Exception as e:
             self.app.notifier.error(
                 f"\n{datetime_name} error : {e}",  # type:ignore
                 source="sidepane",
                 route=["terminal"],
             )
-            # return
+            return
+
+        # on key-hold dont recalculate every key-detected
+        self.throttle_commit(entry)
+
+    def throttle_commit(self, entry):
+        # commit now if idle else stash as pending
+        self.pending_entry = entry
+        if self.throttle_active:
+            return  # cooling down : will fire on next tick
+        self.throttle_active = True
+        self.commit_now()
+        interval_ms = self.app.dispatcher.get_debounce_ms()
+        GLib.timeout_add(interval_ms, self.cooldown_tick)
+
+    def commit_now(self):
+        entry = self.pending_entry
+        self.pending_entry = None
+        if entry and entry.get_name() in ("datetime one",):
+            self.app.EVENT_ONE.on_datetime_change(entry)
+        else:
+            self.app.EVENT_TWO.on_datetime_change(entry)
+        self.app.dispatcher.update_titlebar()
+
+    def cooldown_tick(self):
+        # fire 1 throttle interval after last commit
+        if self.pending_entry is not None:
+            self.commit_now()
+            interval_ms = self.app.dispatcher.get_debounce_ms()
+            GLib.timeout_add(interval_ms, self.cooldown_tick)
+            return False
+
+        self.throttle_active = False
+
+        return False
 
     def on_time_now(self):
         """get time now (utc) for computer / app location"""
