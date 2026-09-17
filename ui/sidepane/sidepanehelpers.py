@@ -1,4 +1,4 @@
-# ui/dispatcher/settingshelpers.py
+# ui/sidepane/settingshelpers.py
 # ruff: noqa: E402
 import logging
 

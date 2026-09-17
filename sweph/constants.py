@@ -16,10 +16,10 @@ DASA_YEARS = {
 HORAS_ORDER = ["sa", "ju", "ma", "su", "ve", "me", "mo"]
 # standard planetary order
 PLANETARY_ORDER = (
-    "su",
     "mo",
     "me",
     "ve",
+    "su",
     "ma",
     "ju",
     "sa",

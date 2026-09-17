@@ -6,8 +6,10 @@
 # Gtk.Window.set_interactive_debugging(True)
 # app todo :
 #   info text on change huge
-# 2026-09-16 21-12 - app bumped v0 > v1 - major code redesign & all little bugs
-# terminated
+# LOG
+# 2026-09-16 21-12
+#   app bumped v0 > v1 - major code redesign &
+#   all little bugs terminated + tiny upgrades
 import logging
 
 LOG = logging.getLogger(__name__)

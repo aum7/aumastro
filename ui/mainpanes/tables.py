@@ -119,7 +119,7 @@ class Tables(Gtk.Notebook):
         if not vadj or vadj.get_value() <= 0:
             return None
         it, _ = text_view.get_line_at_y(int(vadj.get_value()))
-        LOG.debug(f"anchorcapture :\nvady={vadj}\nit={it}")
+        # LOG.debug(f"anchorcapture :\nvady={vadj}\nit={it}")
         line_end = it.copy()
         anchor = text_view.get_buffer().get_text(it, line_end, False)
 
@@ -201,8 +201,8 @@ class Tables(Gtk.Notebook):
         header = (
             f" positions{self.vic_spc}{self.h_sym * 48}\n"
             f" obj  {self.v_sym}        sign : nak{self.vic_spc}{self.v_sym}"
-            f"    harmonic : nak{self.vic_spc}{self.v_sym} "
-            f"  lat {self.v_sym}   lon {self.v_sym} speed : rel "
+            f"     harmonic : nak{self.vic_spc}{self.v_sym} "
+            f" lat {self.v_sym}   lon {self.v_sym} speed : rel "
             f"{self.v_sym} hs\n"
         )
         text += header
@@ -243,11 +243,6 @@ class Tables(Gtk.Notebook):
             # LOG.debug(f"currhora={curr_hora}")
             hora_glyph = get_glyph(curr_hora, False)
             weekday = self.event_package[event_id]["horas"]["horas list"][0]["weekday"]
-            # sunrise = self.event_package[event_id]["horas"]["horas list"][0]["sunrise"]
-            # sunset = self.event_package[event_id]["horas"]["horas list"][0]["sunset"]
-            # sunrise_next = self.event_package[event_id]["horas"]["horas list"][0][
-            #     "sunrise next"
-            # ]
             if hsys_char in ["E", "D", "W"]:  # equalasc equalmc wholehouse
                 # print(f"selected_hsys : {self.app.selected_house_sys_str}")
                 ln_csps += (

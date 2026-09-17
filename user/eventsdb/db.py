@@ -1,12 +1,10 @@
 # user/eventsdb/db.py
-# add your event data here, i will be used as default event
+# add your event data here, it will be used as default event
 # default data (state, city, location, name, date-time) for event 1 & 2
 # IMPORTANT ! default country must be enabled in countries.py
 # locations :
 # "51 30 54 n 000 05 56 w" : lse
 # "40 42 25 n 74 0 41 w 10 m" : nyse
-# "datetime": "2025-03-29 10:47:34",  # last solecl
-# "datetime": "2025 8 1 17 1", # trading start
 DEFAULT_E1 = {
     "country": "Slo",
     "city": "ljubljana",
@@ -19,6 +17,8 @@ DEFAULT_E1 = {
     # "city": "london",
     # "location": "51 30 54 n 000 05 56 w 10 m",
     # "name": "lse",  # next solecl
+    # "datetime": "2025-03-29 10:47:34",  # last solecl
+    # "datetime": "2025 8 1 17 1", # trading start
     # "datetime": "2006-03-29 11:11:27",
     # ---
     # "country": "Finland",
@@ -122,7 +122,7 @@ DEFAULT_E2 = {
 # "datetime": "1974 11 29 16 14",
 # "datetime": "1306 02 04", # 1st ecl of series
 # - simon life events
-# 1980-03-22 ciril life end, birth 1943-10-09 ljubljana
+# 1943-10-09 ljubljana father ciril birth (main train station) - 1980-03-22 life end
 # 1948-02-15 mother born opatija home
 # ear surgery
 # fell from height on back
@@ -155,13 +155,6 @@ DEFAULT_E2 = {
 # "location": "35 08 58 n 090 02 56 w 0085 m",
 # "name":"lisa presley",
 # "datetime": "1968 2 1 17 1",
-# --- ljubljana
-# "country": "Slo",
-# "city": "ljubljana",
-# "location": "46 3 8 N 14 27 9 E", # mons casino
-# "location": "46 03 03 n 014 30 18 e 0294 m",
-# "name": "simon",
-# "datetime": "1975 2 8 14 10",
 # --- houck p59 kojak actor
 # "country": "USA",
 # "city": "Garden City",  # ny

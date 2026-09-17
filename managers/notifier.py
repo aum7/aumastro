@@ -58,7 +58,7 @@ class NotifyMessage:
         self.source = source or "sys"
         self.timestamp = timestamp or datetime.now(timezone.utc)
         self.timeout = timeout
-        self.route = route if route is not None else [NotifyRoute.ALL.value]
+        self.route = route if route is not None else [NotifyRoute.TERMINAL.value]
 
     def __str__(self):
         return f"{self.source} : {self.message}"
@@ -111,7 +111,7 @@ class GtkNotificationHandler(logging.Handler):
                 if record.levelno <= logging.DEBUG:
                     route = [NotifyRoute.TERMINAL.value, NotifyRoute.LOG.value]
                 else:
-                    route = [NotifyRoute.ALL.value]
+                    route = [NotifyRoute.TERMINAL.value]
             msg = NotifyMessage(
                 # message=msg_text,
                 message=record.getMessage(),
@@ -135,7 +135,7 @@ class Notifier:
         if log_file is None:
             log_dir = Path.home() / ".aumastro" / "logs"
             log_dir.mkdir(parents=True, exist_ok=True)
-            log_file = str(log_dir / "notifications.log")
+            log_file = str(log_dir / "notifier.log")
         self.log_file = log_file
         self._setup_logging()
         self._set_level()
