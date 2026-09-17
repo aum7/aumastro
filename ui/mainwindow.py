@@ -49,9 +49,6 @@ class MainWindow(
         super().__init__(application=application, **kwargs)
         # store application & core managers centrally
         self.app = application
-        # self.notifier = self.app.notifier
-        # self.signaler = self.app.signaler
-        # self.dispatcher = self.app.dispatcher
         # initialize sidepane ui elements - user input
         self.init_sidepane(self.app)
         # custom info in window title bar

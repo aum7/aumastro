@@ -4,3 +4,7 @@ user/data/_archive/
 user/data/wave/
 user/data/search/
 ui/imgs/_archive
+_*
+**/_*
+!__init__.py
+!**/__init__.py

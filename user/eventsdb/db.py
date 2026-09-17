@@ -2,47 +2,15 @@
 # add your event data here, it will be used as default event
 # default data (state, city, location, name, date-time) for event 1 & 2
 # IMPORTANT ! default country must be enabled in countries.py
-# locations :
-# "51 30 54 n 000 05 56 w" : lse
-# "40 42 25 n 74 0 41 w 10 m" : nyse
 DEFAULT_E1 = {
     "country": "Slo",
     "city": "ljubljana",
-    # "location": "46 3 8 N 14 27 9 E 355 m",  # mons casino
     "location": "46 03 10 n 14 31 26 e 0294 m",  # porodnišnica lj
     "name": "nau",
     "datetime": "1975 2 8 14 10",
-    # ---
-    # "country": "UK",
-    # "city": "london",
-    # "location": "51 30 54 n 000 05 56 w 10 m",
-    # "name": "lse",  # next solecl
-    # "datetime": "2025-03-29 10:47:34",  # last solecl
-    # "datetime": "2025 8 1 17 1", # trading start
-    # "datetime": "2006-03-29 11:11:27",
-    # ---
-    # "country": "Finland",
-    # "city": "turku",
-    # "location": "60 27 n 022 17 w",
-    # "name": "gansten i male",
-    # "datetime": "1973-12-18 10:05:00",  # eet
-    # ---
-    # "country": "Sweden",
-    # "city": "lund",
-    # "location": "55 41 n 013 11 e",
-    # "name": "gansten j male",
-    # "datetime": "1981-10-8 14:21:00",  # cet
-    # --- lisa marie presley
-    # "country": "usa",
-    # "city": "memphis",
-    # "location": "35 9 n 090 3 w",
-    # "name": "lisa presley",
-    # "datetime": "1968-02-01 17:01",  # cst
 }
 DEFAULT_E2 = {
     "datetime": "2026-08-21 19:36:00",  # lisa presley 45th revolution
-    # "datetime": "1973-12-18 10:05:00",  # eet
-    # "datetime": "2007-03-09 14:00:00",
 }
 # --- solar eclipses -----------------------------------------------------------
 # 1999-08-11  11:04:09  145  -total  1999-08-11 12:03:15
@@ -106,131 +74,3 @@ DEFAULT_E2 = {
 # 2025-09-21  19:43:04  154  partial
 # 2026-02-17  12:13:06  121  annular
 # 2026-08-12  17:47:06  126  -total
-# ------------------------------------------------------------------------------
-# --- simon prenatal solar eclipse 152 partial
-# "country": "Slo",
-# "city": "ljubljana",
-# "location": "46 03 10 n 14 31 26 e 0294 m", # porodnišnica lj
-# "name": "simon pse",
-# "datetime": "1974 12 13 17 13",
-# "datetime": "1805 07 26", # 1st ecl of series
-# - simon prenatal lunar eclipse 125 total
-# "country": "Slo",
-# "city": "ljubljana",
-# "location": "46 03 10 n 14 31 26 e 0294 m", # porodnišnica lj
-# "name": "simon pse",
-# "datetime": "1974 11 29 16 14",
-# "datetime": "1306 02 04", # 1st ecl of series
-# - simon life events
-# 1943-10-09 ljubljana father ciril birth (main train station) - 1980-03-22 life end
-# 1948-02-15 mother born opatija home
-# ear surgery
-# fell from height on back
-# 2007-08-22 ljubljana home sold
-# 2011-11-15 globoka home bought, moved into 11-19
-# 2015-05-31 oskar died plD
-# 2020-06-09 name change to aum neD
-# 2023-08-09 globoka sold, moved out 2023-09-11
-# --- lili t
-# "country": "Serbia",
-# "city": "kovin",
-# "location": "44 44 51 n 020 58 33 e 0078 m",
-# "name": "lili t",
-# "datetime": "1942 5 10 15 30",
-# --- intel
-# "country": "usa",
-# "city": "santa clara",  # california
-# "location": "37 23 16 n 121 57 49 e 0038 m",
-# "name":"intel",
-# "datetime": "1968-07-18 10:00:00",
-# --- eurojackpot
-# "country": "finland",
-# "city": "vantaa",  # helsinki
-# "location": "60 17 36 n 25 02 17 e 0038 m",
-# "name":"ejpt",
-# "datetime": "2012 03 23 21 00",
-# ---
-# "country": "usa",
-# "city": "memphis",
-# "location": "35 08 58 n 090 02 56 w 0085 m",
-# "name":"lisa presley",
-# "datetime": "1968 2 1 17 1",
-# --- houck p59 kojak actor
-# "country": "USA",
-# "city": "Garden City",  # ny
-# "location": "40 44 00 n 073 58 00 w 0032 m",
-# "name": "telly savalas",
-# "datetime": "1924-1-20 5:00:00",
-# --- houck p59
-# "country": "USA",
-# "city": "cobleskill",  # ny
-# "location": "42 40 40 n 074 29 07 w 0281 m",
-# "name": "chart # 4",
-# "datetime": "1946-5-30 16:33:00",
-# --- houck p62
-# "country": "USA",
-# "city": "tupelo",  # mississippi
-# "location": "34 15 29 n 088 42 16 w 0089 m",
-# "name": "elvis presley",
-# "datetime": "1935-1-8 16:35:00",  # died 1977-08-16
-# --- houck p65
-# "country": "USA",
-# "city": "milton",  # ma
-# "location": "42 14 58 n 071 03 58 w 0043 m",
-# "name": "george bush",
-# "datetime": "1924-6-12 15:45:30",  # died
-# ---
-# "country": "USA",
-# "city": "Rahway",
-# "location": "40 36 29 n 074 16 39 w 0007 m",
-# "name": "houck # 3",
-# "datetime": "1964-12-13 15:00:00",
-# --- houck usa
-# "country": "USA",
-# "city": "philadelphia, pa",
-# "location": "39 57 08 n 075 09 49 w 0046 m",
-# "name": "usa 4th jul birth",
-# "datetime": "1776-6-19 11:53:00",
-# ---
-# "country": "Morocco",
-# "city": "Agadir",
-# "location": "30 25 12 n 009 35 53 w 0 m",
-# "name": "solitaire",
-# "datetime": "2024-6-19 11:53:00",
-# --- gansten book examples --------------------
-# a. male, 6 january, 1937, 19:14 cet, 56n03, 12e42 helsingborg sweden
-# b. female, 16 october, 1939, 23:40 cet, 56n03, 12e42 helsingborg sweden
-# c. female, 10 october, 1954, 07:30 cet, 53n12, 05e46 leeuwarden netherlands
-# d. male, 2 july, 1955, 14:35 cet, 60n40, 17e10 ga(e)vle sweden
-# e. male, 31 december, 1958, 12:40 cet, 56n03, 12e42 helsingborg sweden
-# f. male, 26 february, 1963, 06:20 cet, 55n42, 12e36 copenhagen denmark
-# g. male, 29 may, 1969, 16:21 cet, 55n35, 13e00 malmo sweden
-# h. female, 10 april, 1970, 00:30 cet, 63n50, 20e15 umea sweden
-# lisa marie presley : 1968 2 1 17 1 (cst) memphis tennesse 35 09 n 90 3 w
-# --- lisa marie presley
-# "country": "usa",
-# "city": "memphis",
-# "location": "35 9 n 090 3 w",
-# "name": "lisa marie presley",
-# "datetime": "1968-02-01 17:01", # cst
-# --- i male, 18 december, 1973, 10:05 eet, 60n27, 22e17 turku finland
-# "country": "finland",
-# "city": "turku",
-# "location": "60 27 n 022 17 w",
-# "name": "gansten i male",
-# "datetime": "1973-12-18 10:05:00", # eet
-# --- j. male, 8 october, 1981, 14:21 cet, 55n41, 13e11 lund sweden
-# "country": "sweden",
-# "city": "lund",
-# "location": "55 41 n 013 11 e",
-# "name": "gansten j male",
-# "datetime": "1981-10-8 14:21:00", # cet
-# --- k. male, 6 november, 1984, 10:46 gmt, 56n24, 03w28 perth scotland uk
-# "country": "uk",
-# "city": "perth",
-# "location": "56 24 n 003 28 w",
-# "name": "gansten k male",
-# "datetime": "1984-11-6 10:46:00", # gmt
-# l. male, 31 august, 1985, 09:05 mdt, 53n17, 110w00 lloydminster alberta/saskatchewan canada
-# presley, lisa marie: 1 february, 1968, 17:01 cst, memphis,
-# tennessee: 35n09, 90w03

@@ -214,7 +214,7 @@ class EventData:
         self.sweph["lon"] = lon
         self.sweph["alt"] = int(alt)
         self.location = location  # added
-        LOG.info("location input processed", extra=routing)
+        # LOG.info("location input processed", extra=routing)
 
         return
 
@@ -241,7 +241,7 @@ class EventData:
         self.old_name = name
         self.chart["name"] = name
         self.name = name  # added
-        LOG.info("name input processed", extra=routing)
+        # LOG.info("name input processed", extra=routing)
 
         return
 
@@ -434,7 +434,7 @@ class EventData:
                 self.chart["name"] = E1_chart.get("name")
         dataset = {"id": self.id, "chart": self.chart, "sweph": self.sweph}
         self.app.signaler.emit("event changed", dataset)
-        LOG.info("datetime input processed", extra=routing)
+        # LOG.info("datetime input processed", extra=routing)
 
         return
 

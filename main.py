@@ -6,6 +6,7 @@
 # Gtk.Window.set_interactive_debugging(True)
 # app todo :
 #   info text on change huge
+#   menu button to titlebar
 # LOG
 # 2026-09-16 21-12
 #   app bumped v0 > v1 - major code redesign &
