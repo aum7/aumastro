@@ -546,6 +546,9 @@ class Rings:
                     continue
                 name = eclipse.data.get("name", "")  # .lower()
                 lon = eclipse.data.get("lon", 0)
+                dt_local = eclipse.data.get("local time")
+                ecl_type = eclipse.data.get("type", "")
+                label = f"{ecl_type} {name} ecl {dt_local}"  # .strip()
                 radius = mid_r * self.RADIUS["eclipses"]
                 eclipse.draw(
                     cr,
@@ -557,7 +560,8 @@ class Rings:
                     if name == "lun"
                     else self.RING_COLORS["eclipse sol"],
                 )
-                self.snap_targets.append((lon, radius, name, ring))
+                self.snap_targets.append((lon, radius, label, ring))
+                # self.snap_targets.append((lon, radius, name, ring))
                 glyph = glyphs.get_eclipse_glyph(name)
                 if glyph:
                     angle = pi - radians(lon)

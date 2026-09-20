@@ -7,6 +7,7 @@ source = "eclipses"
 routing = {"source": source, "route": ["terminal"]}
 import swisseph as swe
 from helpers import ok, err
+from sweph.calculations.horas import jd_to_local_time as toloctime
 
 GESTATION_DAYS = 273.0
 
@@ -114,20 +115,29 @@ def find_all_lunar_eclipses(jd_ut, conception_jd, flag):
     return eclipses
 
 
-def calculate_eclipses(jd_ut, flag):
+def calculate_eclipses(jd_ut, flag, tz_name=None):
     # calculate (prenatal) solar & lunar eclipses
     try:
         conception_jd = jd_ut - GESTATION_DAYS
         eclipses_data = []
+        for ecl in find_all_solar_eclipses(
+            jd_ut, conception_jd, flag
+        ) + find_all_lunar_eclipses(jd_ut, conception_jd, flag):
+            dt_local = toloctime(ecl["jd"], tz_name)
+            ecl["local time"] = (
+                f"{dt_local.year}-{dt_local.month:02d}-{dt_local.day:02d} "
+                f"{dt_local.hour:02d}:{dt_local.minute:02d}"
+            )
+            eclipses_data.append(ecl)
+        return ok(eclipses_data)
         # get last solar eclipse before event
         # solar = find_solar_eclipse(jd_ut, flag)
         # if solar:
-        eclipses_data.extend(find_all_solar_eclipses(jd_ut, conception_jd, flag))
+        # eclipses_data.extend(find_all_solar_eclipses(jd_ut, conception_jd, flag))
         # get last lunar eclipse
         # lunar = find_lunar_eclipse(jd_ut, flag)
         # if lunar:
-        eclipses_data.extend(find_all_lunar_eclipses(jd_ut, conception_jd, flag))
-        return ok(eclipses_data)
+        # eclipses_data.extend(find_all_lunar_eclipses(jd_ut, conception_jd, flag))
 
     except Exception as e:
         LOG.error(f"prenatal eclipses error : {e}", extra=routing)

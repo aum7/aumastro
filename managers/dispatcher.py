@@ -9,8 +9,8 @@ LOG = logging.getLogger(__name__)
 source = "dispatcher"
 routing = {"source": source, "route": ["terminal"]}
 routinguser = {"source": source, "route": ["terminal", "user"]}
-import swisseph as swe
 import time
+import swisseph as swe
 from helpers import _decimal_to_ymd, get_harmonic_lon as harmlon
 from sweph.calculations.positions import calculate_positions
 from sweph.calculations.houses import calculate_houses
@@ -516,12 +516,14 @@ class Dispatcher:
                 )
             # eclipses
             if "eclipses" in self.selected_prenatal:
+                tz_name = self.events_data[event_id].get("chart", {}).get("timezone")
                 self.run_calc(
                     event_id,
                     "eclipses",
                     calculate_eclipses,
                     jd_ut,
                     self.swe_flag,
+                    tz_name,
                 )
             # fixed stars
             if self.selected_stars:
