@@ -8,6 +8,8 @@ routing = {"source": source, "route": ["terminal"]}
 import swisseph as swe
 from helpers import ok, err
 
+GESTATION_DAYS = 273.0
+
 
 def format_eclipse_type(eclflag):
     # convert eclipse flag to human-readable
@@ -63,6 +65,19 @@ def find_solar_eclipse(jd_ut, flag):
         return None
 
 
+def find_all_solar_eclipses(jd_ut, conception_jd, flag):
+    # search backwards from birth to conception for every eclipse
+    eclipses = []
+    search_jd = jd_ut
+    while True:
+        ecl = find_solar_eclipse(search_jd, flag)
+        if not ecl or ecl["jd"] < conception_jd:
+            break
+        eclipses.append(ecl)
+        search_jd = ecl["jd"] - 1.0  # step back for next search
+    return eclipses
+
+
 def find_lunar_eclipse(jd_ut, flag):
     try:
         # find 1st global occurence of lunar eclipse
@@ -86,23 +101,34 @@ def find_lunar_eclipse(jd_ut, flag):
         return None
 
 
+def find_all_lunar_eclipses(jd_ut, conception_jd, flag):
+    # search backwards from birth to conception for every eclipse
+    eclipses = []
+    search_jd = jd_ut
+    while True:
+        ecl = find_lunar_eclipse(search_jd, flag)
+        if not ecl or ecl["jd"] < conception_jd:
+            break
+        eclipses.append(ecl)
+        search_jd = ecl["jd"] - 1.0  # step back for next search
+    return eclipses
+
+
 def calculate_eclipses(jd_ut, flag):
     # calculate (prenatal) solar & lunar eclipses
     try:
+        conception_jd = jd_ut - GESTATION_DAYS
         eclipses_data = []
         # get last solar eclipse before event
-        solar = find_solar_eclipse(jd_ut, flag)
-        if solar:
-            eclipses_data.append(solar)
+        # solar = find_solar_eclipse(jd_ut, flag)
+        # if solar:
+        eclipses_data.extend(find_all_solar_eclipses(jd_ut, conception_jd, flag))
         # get last lunar eclipse
-        lunar = find_lunar_eclipse(jd_ut, flag)
-        if lunar:
-            eclipses_data.append(lunar)
-
+        # lunar = find_lunar_eclipse(jd_ut, flag)
+        # if lunar:
+        eclipses_data.extend(find_all_lunar_eclipses(jd_ut, conception_jd, flag))
         return ok(eclipses_data)
+
     except Exception as e:
-        LOG.error(
-            f"prenatal eclipses error : {e}",
-            extra=routing,
-        )
+        LOG.error(f"prenatal eclipses error : {e}", extra=routing)
         return err(e)
