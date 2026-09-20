@@ -7,6 +7,17 @@ from user.usersettings import OBJECTS
 from sweph.constants import AVG_SPEEDS
 
 
+def get_harmonic_lon(lon, division):
+    if division <= 1:
+        return None
+    sign = int(lon // 30)
+    seg = int((lon % 30) // (30 / division))
+    harmonic_sign = (sign * division + seg) % 12
+    harmonic = (harmonic_sign * 30) + ((lon % (30 / division)) * division)
+
+    return harmonic
+
+
 def _house_for_lon(lon: float, cusps: list):
     if not cusps:
         return ""

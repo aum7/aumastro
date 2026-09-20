@@ -230,9 +230,9 @@ LUNAR_MONTHS = [  # lunar month lengths
 # also arrange order as you please > move line up / down & save file
 # dropdown : top is default
 AYANAMSAS = [
+    (255, "custom (below)", "usr"),  # sidm_user
     (45, "krishnamurti-sent.", "kms (45)"),  # sidm_krishnamurti_vp291
     (17, "gal. center 0 sag", "glc (17)"),  # sidm_galcent_0sag j2000 = 26°50'31.8335
-    (255, "custom (below)", "usr"),  # sidm_user
     # 0: ("Fagan/Bradley", "fbr (00)"),  # SIDM_FAGAN_BRADLEY
     # 1: ("Lahiri 1", "lhr (01)"),  # SIDM_LAHIRI
     # 2: ("De Luce", "dlc (02)"),  # SIDM_DELUCE
@@ -337,7 +337,7 @@ CHART_SETTINGS = {
     # rulership as per chinese astrology / vivian e robson - fixed stars ...
     "28 mansions": (
         True,
-        """use 28 lunar mansions with chinese / arabian name
+        """use 28 lunar mansions with chinese / arabian names
 rulership changes to weekday order !
 can be changed in
 sweph/constants.py""",

@@ -14,8 +14,7 @@ import pandas as pd
 import json
 from pathlib import Path
 from zoneinfo import ZoneInfo
-from helpers import _object_name_to_code as objcode
-from sweph.calculations.transitharmonic import get_harmonic_lon as harmlon
+from helpers import _object_name_to_code as objcode, get_harmonic_lon as harmlon
 from datetime import date, timedelta, datetime, timezone
 from sweph.swetime import jd_to_custom_iso as jdtoiso
 

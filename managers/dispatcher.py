@@ -11,7 +11,7 @@ routing = {"source": source, "route": ["terminal"]}
 routinguser = {"source": source, "route": ["terminal", "user"]}
 import swisseph as swe
 import time
-from helpers import _decimal_to_ymd
+from helpers import _decimal_to_ymd, get_harmonic_lon as harmlon
 from sweph.calculations.positions import calculate_positions
 from sweph.calculations.houses import calculate_houses
 from sweph.calculations.horas import calculate_horas
@@ -29,7 +29,6 @@ from sweph.calculations.returnlunar import calculate_lunar_return
 from sweph.calculations.returnsolar import calculate_solar_return
 from sweph.calculations.aspects import calculate_aspects
 from sweph.calculations.vimsottari import calculate_vimsottari
-from sweph.calculations.transitharmonic import get_harmonic_lon as harmlon
 import user.usersettings as usersett
 from user.fixedstars import FIXEDSTARS
 from ui.mainpanes.chart.astroobject import AstroObject
@@ -138,7 +137,7 @@ class Dispatcher:
         # LOG.debug(f"selobjs1={self.selected_objects_e1}")
 
     def get_debounce_ms(self):
-        # never fire faster than 1.5x actual pipeline cost : floor at 80 ms
+        # never fire faster than X actual pipeline cost : floor at 30 ms
         return max(30, int(self.average_calc_ms * 1.1))
 
     def compute_swe_flag(self, active_flags: list[str]):
@@ -345,7 +344,7 @@ class Dispatcher:
     def update_rings(self, ring: str, value: bool):
         if ring not in self.rings:
             LOG.debug(
-                "ring not in rings",
+                "ring not in rings : exiting",
                 extra=routing,
             )
             return
@@ -354,7 +353,7 @@ class Dispatcher:
         self.app.signaler.emit("setting changed", {"chart": {ring: value}})
         if not self.e2_active:
             LOG.debug(
-                "e2 not active",
+                "e2 not active : exiting",
                 extra=routing,
             )
             return
@@ -553,7 +552,7 @@ class Dispatcher:
             period = e2_jd - e1_jd
             self.age_years = period / year_length if e1_jd else 0.0
             self.age_months = period / month_length if e1_jd else 0.0
-            # transit & harmonic transit rings are handled by rings
+            # transit (pure e2) & harmonic transit rings are handled by rings
             if self.rings["p2 progress"] and e1_jd and e1_su:
                 self.run_calc(
                     event_id,
@@ -729,7 +728,7 @@ class Dispatcher:
             return [] if not (isinstance(raw, dict) and "cusps" in raw) else None
 
         has_cusps = isinstance(raw, dict) and "cusps" in raw
-        LOG.debug(f"has houses : {hasattr(raw, 'houses')}")
+        # LOG.debug(f"has houses : {hasattr(raw, 'houses')}")
         items = raw.get("positions", raw) if has_cusps else raw
         items = items.values() if isinstance(items, dict) else items
         objects = []
@@ -794,14 +793,24 @@ class Dispatcher:
             "syzygy": self._prep_ring(e1_calculated.get("syzygy")),
         }
         if self.harmonic_ring:
-            chart_package["harmonic"] = self._prep_ring(
-                e1_calculated.get("positions"), harmonic=True
-            )
-            houses = e1_calculated.get("houses", {})
-            ascmc = houses.get("ascmc")
-            if ascmc and len(ascmc) >= 2:
-                chart_package["Has"] = harmlon(ascmc[0], self.harmonic_ring)
-                chart_package["Hmc"] = harmlon(ascmc[1], self.harmonic_ring)
+            hx_pos = self._prep_ring(e1_calculated.get("positions"), harmonic=True)
+            if not isinstance(hx_pos, list):
+                hx_pos = []
+            ascmc = e1_calculated.get("houses", {}).get("ascmc")
+            if hx_pos and ascmc and len(ascmc) >= 2:
+                hx_pos.append(
+                    AstroObject({
+                        "name": "asc",
+                        "lon": harmlon(ascmc[0], self.harmonic_ring),
+                    })
+                )
+                hx_pos.append(
+                    AstroObject({
+                        "name": "mc",
+                        "lon": harmlon(ascmc[1], self.harmonic_ring),
+                    })
+                )
+            chart_package["harmonic"] = hx_pos
         # table needs all data for gtk.widgets incl aspects
         if self.e2_active:
             e2_calculated = self.events_data["e2"].get("calculated", {})
@@ -814,10 +823,19 @@ class Dispatcher:
                     "ascmc": e2_houses.get("ascmc"),
                 }
             if self.rings.get("transit harmonic") and e2_positions:
+                ascmc = e2_houses.get("ascmc")
+                thx_ascmc = (
+                    [
+                        harmlon(ascmc[0], self.harmonic_ring),
+                        harmlon(ascmc[1], self.harmonic_ring),
+                    ]
+                    if ascmc and len(ascmc) >= 2
+                    else []
+                )
                 chart_package["transit harmonic"] = {
                     "positions": self._prep_ring(e2_positions, harmonic=True),
+                    "ascmc": thx_ascmc,
                 }
-
             for ring in (
                 "p2 progress",
                 "p3 progress",

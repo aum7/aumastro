@@ -13,8 +13,7 @@ import os
 import pandas as pd
 import swisseph as swe
 from pathlib import Path
-from helpers import _object_name_to_code as objcode
-from sweph.calculations.transitharmonic import get_harmonic_lon as harmlon
+from helpers import _object_name_to_code as objcode, get_harmonic_lon as harmlon
 
 
 MEMBERS_ORDER = [
@@ -35,7 +34,8 @@ MEMBERS_ORDER = [
 
 class Cycler:
     def __init__(self, app=None):
-        self.app = app
+        if app is not None:
+            self.app = app
         # self IS aumastroapp
         # LOG.debug(f"whois selfapp : {self.app.__class__.__name__}")
 
@@ -90,7 +90,8 @@ class Cycler:
                 continue
             if harmonic and harmonic > 1:
                 lon = harmlon(lon, harmonic)
-            pos[norm] = {"lon": float(lon)}
+            pos[norm] = {"lon": float(lon)} if lon is not None else 0.0
+
         return pos
 
     def ordered_members(self, members) -> list[str]:

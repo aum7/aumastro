@@ -292,39 +292,39 @@ class Rings:
                 width=cusp_width,
                 houses_lbl=True,
             )
-            ascmc = ring_data.get("ascmc", []) if isinstance(ring_data, dict) else []
-            if ascmc:
-                marker_size = self.scaled_size(ring, "marker") * 0.9
-                # ascendant
-                asc = ascmc[0]
-                asc_angle = pi - radians(asc)
-                asc_x = self.cx + mid_r * cos(asc_angle)
-                asc_y = self.cy + mid_r * sin(asc_angle)
-                self.draw_marker(
-                    cr,
-                    asc_x,
-                    asc_y,
-                    asc_angle,
-                    marker_size,
-                    self.RING_COLORS["asc"],
-                    self.draw_triangle,
-                )
-                self.snap_targets.append((asc, mid_r, "asc", ring))
-                # midheaven
-                mc = ascmc[1]
-                mc_angle = pi - radians(mc)
-                mc_x = self.cx + mid_r * cos(mc_angle)
-                mc_y = self.cy + mid_r * sin(mc_angle)
-                self.draw_marker(
-                    cr,
-                    mc_x,
-                    mc_y,
-                    mc_angle,
-                    marker_size,
-                    self.RING_COLORS["mc"],
-                    self.draw_diamond,
-                )
-                self.snap_targets.append((mc, mid_r, "mc", ring))
+        ascmc = ring_data.get("ascmc", []) if isinstance(ring_data, dict) else []
+        if ascmc:
+            marker_size = self.scaled_size(ring, "marker") * 0.9
+            # ascendant
+            asc = ascmc[0]
+            asc_angle = pi - radians(asc)
+            asc_x = self.cx + mid_r * cos(asc_angle)
+            asc_y = self.cy + mid_r * sin(asc_angle)
+            self.draw_marker(
+                cr,
+                asc_x,
+                asc_y,
+                asc_angle,
+                marker_size,
+                self.RING_COLORS["asc"],
+                self.draw_triangle,
+            )
+            self.snap_targets.append((asc, mid_r, "asc", ring))
+            # midheaven
+            mc = ascmc[1]
+            mc_angle = pi - radians(mc)
+            mc_x = self.cx + mid_r * cos(mc_angle)
+            mc_y = self.cy + mid_r * sin(mc_angle)
+            self.draw_marker(
+                cr,
+                mc_x,
+                mc_y,
+                mc_angle,
+                marker_size,
+                self.RING_COLORS["mc"],
+                self.draw_diamond,
+            )
+            self.snap_targets.append((mc, mid_r, "mc", ring))
         self.draw_sign_borders(cr, ring)
         self.draw_objects(cr, ring)
 
@@ -441,7 +441,7 @@ class Rings:
                 radius_fn=lambda obj: mid_r,
                 obj_size=self.scaled_size(ring, "harmonic obj"),
                 marker_size=self.scaled_size(ring, "marker"),
-                skip=("asc", "mc"),
+                skip=(),  # ("asc", "mc"),
             )
 
     # inner rings in order from outer-most to central

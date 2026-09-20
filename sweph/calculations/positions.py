@@ -6,9 +6,14 @@ LOG = logging.getLogger(__name__)
 source = "positions"
 routing = {"source": source, "route": ["terminal"]}
 import swisseph as swe
-from helpers import _object_name_to_code as objcode, _relative_speed, ok, err
+from helpers import (
+    _object_name_to_code as objcode,
+    get_harmonic_lon as harmlon,
+    _relative_speed,
+    ok,
+    err,
+)
 from sweph.calculations.naksatras import get_naksatra
-from sweph.calculations.transitharmonic import get_harmonic_lon as harmlon
 from sweph.calculations.stations import get_retro_phases as retphas
 
 
