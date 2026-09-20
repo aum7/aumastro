@@ -5,12 +5,14 @@
 # os.environ["GTK_DEBUG"] = "keybindings geometry size-request actions constraints"
 # Gtk.Window.set_interactive_debugging(True)
 # app todo :
-#   info text on change huge
 #   menu button to titlebar
+#   snap-enabled + ctrl-left/right (change time) > app window goes bziiiiing
+#   above not true : on change time = 27.3 | 29.5 > seems titlebar overflows &
+#   flips window to init / app start position
 # LOG
 # 2026-09-16 21-12
 #   app bumped v0 > v1 - major code redesign &
-#   all little bugs terminated + tiny upgrades
+#   (almost) all little bugs terminated + tiny upgrades
 import logging
 
 LOG = logging.getLogger(__name__)

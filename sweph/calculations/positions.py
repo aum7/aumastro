@@ -14,7 +14,7 @@ from helpers import (
     err,
 )
 from sweph.calculations.naksatras import get_naksatra
-from sweph.calculations.stations import get_retro_phases as retphas
+from sweph.calculations.stations import get_retro_phases as retrphas
 
 
 def calculate_positions(
@@ -56,7 +56,7 @@ def calculate_positions(
                 "lon": pos[0],
                 "lat": pos[1],
                 "lon speed": pos[3],
-                "retro": retphas(code, jd_ut, flag, curr_speed=pos[3]),
+                "retro": retrphas(code, jd_ut, flag, curr_speed=pos[3]),
                 "naksatra": naksatra,
                 "harmonic": harmonic,
                 "harmonic naksatra": harmonic_nak,

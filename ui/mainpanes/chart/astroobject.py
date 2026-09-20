@@ -40,3 +40,6 @@ class AstroObject:
         cr.arc(x, y, obj_size, 0, 2 * pi)
         cr.set_source_rgba(*draw_color)
         cr.fill()
+        # return object position & size : used by rings.py to draw proportionaly
+        # - as set in usersettings.py
+        return x, y, obj_size

@@ -863,11 +863,14 @@ class Dispatcher:
         # grab needed data & construct string to be displayed on mainwindow titlebar
         dt1 = self.events_data["e1"].get("chart", {}).get("datetime")
         dt2 = self.events_data["e2"].get("chart", {}).get("datetime")
-        title = "aumastro"
+        selected = self.app.dispatcher.selected_event
+        title = ""
         if dt1:
-            title += f" | e1 : {dt1}"
+            prefix = ">" if selected == "e1" else ""
+            title += f"{prefix} e1 : {dt1}"
         if dt2:
-            title += f" | e2 : {dt2}"
+            prefix = ">" if selected == "e2" else ""
+            title += f" |{prefix} e2 : {dt2}"
         if dt1 and dt2:
             if self.age_years:
                 age_y_str = _decimal_to_ymd(

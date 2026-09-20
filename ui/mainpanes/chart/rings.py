@@ -4,11 +4,6 @@
 # while drawing objects & elements > save coordinates (lon & radius) of each
 # one - then chartinspector will grab those positions & use them as snapping
 # points for angle ruler & info-popup
-# todo :
-#   limit borders to their ring inner_r - outer_r
-#   figure general scaling design :
-#       ring info text not scaling
-#       elements ratios ie planet circle vs glyph size
 # ruff: noqa: E402
 import logging
 
@@ -62,6 +57,9 @@ class Rings:
         "house cusp": (1, 1, 1, 0.3),
         "border light": (0.8, 0.8, 0.8, 1),
         "border dark": (0.1, 0.1, 0.1, 1),
+        # retro outline circles
+        "retro": (1, 1, 1, 0.5),
+        "stationary": (1, 0, 0, 0.5),
         "default": (0.5, 0.5, 0.5, 0.5),
     }
     SIZES = {
@@ -80,7 +78,7 @@ class Rings:
         "stars obj": 0.2,
         "info text": 1.5,  # info text / font size
     }
-    RADIUS = {  # offset from ring middle positions
+    RADIUS = {  # offset from ring middle positions : signs ring only + house
         "ascmc": 1.0,
         "lots": 1.0,
         "eclipses": 0.99,
@@ -239,14 +237,34 @@ class Rings:
                 )
                 self.snap_targets.append((lon, radius, label, ring))
                 continue
-            obj.draw(
+            x, y, draw_size = obj.draw(
                 cr,
                 self.cx,
                 self.cy,
                 radius,
                 obj_size,
             )
-            self.snap_targets.append((lon, radius, name, ring))
+            # draw object outline for stationary (r or d) &
+            # object center dot
+            retro_state = obj.data.get("retro", " ")
+            label = f"{name} {retro_state}"
+            if retro_state in ("SD", "SR"):
+                cr.save()
+                # white slightly larger object outline
+                cr.set_source_rgba(*self.RING_COLORS["stationary"])
+                cr.set_line_width(1)
+                cr.arc(x, y, draw_size + 2, 0, 2 * pi)
+                cr.stroke()
+                cr.restore()
+            elif retro_state == "R":
+                cr.save()
+                # red slightly larger object outline
+                cr.set_source_rgba(*self.RING_COLORS["retro"])
+                cr.arc(x, y, draw_size + 2, 0, 2 * pi)
+                # cr.fill()
+                cr.stroke()
+                cr.restore()
+            self.snap_targets.append((lon, radius, label, ring))
             if draw_glyphs:
                 glyph = glyphs.get_glyph(name, mean_node)
                 if glyph:
