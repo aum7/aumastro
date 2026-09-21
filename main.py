@@ -6,9 +6,7 @@
 # Gtk.Window.set_interactive_debugging(True)
 # app todo :
 #   menu button to titlebar
-#   snap-enabled + ctrl-left/right (change time) > app window goes bziiiiing
-#   above not true : on change time = 27.3 | 29.5 > seems titlebar overflows &
-#   flips window to init / app start position
+#
 # LOG
 # 2026-09-16 21-12
 #   app bumped v0 > v1 - major code redesign &

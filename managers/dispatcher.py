@@ -866,10 +866,10 @@ class Dispatcher:
         selected = self.app.dispatcher.selected_event
         title = ""
         if dt1:
-            prefix = ">" if selected == "e1" else ""
+            prefix = "*" if selected == "e1" else ""
             title += f"{prefix} e1 : {dt1}"
         if dt2:
-            prefix = ">" if selected == "e2" else ""
+            prefix = "*" if selected == "e2" else ""
             title += f" |{prefix} e2 : {dt2}"
         if dt1 and dt2:
             if self.age_years:

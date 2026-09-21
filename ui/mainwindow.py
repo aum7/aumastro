@@ -55,6 +55,9 @@ class MainWindow(
         self.headerbar = Gtk.HeaderBar()
         self.headerbar.set_show_title_buttons(True)
         self.set_titlebar(self.headerbar)
+        # sidepane toggle button
+        self.setup_menu_button()
+        self.headerbar.pack_start(self.btn_toggle_pane)
         # widget for text align left
         self.title_label = Gtk.Label(label="aumastro")
         self.headerbar.set_title_widget(self.title_label)
@@ -68,7 +71,7 @@ class MainWindow(
         self.hotkeys = Hotkeyer(self)
         self.setup_hotkeys()
         # intercept toggle pane button
-        # self.hotkeys.intercept_button_controller(self.btn_toggle_pane, "toggle_pane")
+        self.hotkeys.intercept_button_controller(self.btn_toggle_pane, "toggle_pane")
         # 4 main panes
         self.astro_chart = AstroChart(self.app)
         self.tables = Tables(self.app)

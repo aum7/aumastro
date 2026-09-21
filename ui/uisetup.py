@@ -13,10 +13,6 @@ from user.usersettings import APP_ORIENTATION
 class UISetup:
     """class for setting up ui components"""
 
-    # toast_overlay: Adw.ToastOverlay
-    # # type hints for inherited attributes
-    # set_title: Callable
-    # set_default_size: Callable
     set_child: Callable
     # grid: Gtk.Grid
     # icon_size: Gtk.IconSize
@@ -24,16 +20,6 @@ class UISetup:
     # btn_toggle_pane: Gtk.Button
     setup_side_pane: Callable
     on_toggle_sidepane: Callable
-    # # type hints for paned widgets
-    # pnd_top_h: Gtk.Paned
-    # pnd_btm_h: Gtk.Paned
-    # pnd_main_v: Gtk.Paned
-
-    # frm_side_pane: Gtk.Frame
-    # frm_top_start_child: Gtk.Frame
-    # frm_top_end_child: Gtk.Frame
-    # frm_btm_start_child: Gtk.Frame
-    # frm_btm_end_child: Gtk.Frame
 
     def setup_css(self) -> None:
         """setup css styling"""
@@ -49,7 +35,6 @@ class UISetup:
 
     def setup_main_panes(self):
         """setup main panes for charts & tables etc"""
-        self.setup_menu_button()
         self.setup_frames()
         self.setup_paned_widgets()
         self.setup_grid()
@@ -84,7 +69,7 @@ class UISetup:
         # self.btn_toggle_pane.set_halign(Gtk.Align.START)
         # self.btn_toggle_pane.set_valign(Gtk.Align.START)
         self.btn_toggle_pane.set_tooltip_text(
-            """toggle side pane (hk : ctrl+s)
+            """left-click : toggle side pane (hk : ctrl+s)
 [shift+1-click] : single pane (hk : shift+1)
 [shift+2-click] : double panes (hk : shift+2)
 [shift+3-click] : triple panes (hk : shift+3)
@@ -140,7 +125,6 @@ class UISetup:
         self.grid.add_css_class("panes")
         self.grid.attach(self.rvl_side_pane, 0, 0, 1, 1)
         self.grid.attach(self.pnd_main, 1, 0, 1, 1)
-        # self.grid.attach(self.ovl_menu, 1, 0, 1, 1)
         self.toast_overlay = Adw.ToastOverlay()
         self.toast_overlay.set_child(self.grid)
         self.set_child(self.toast_overlay)
