@@ -1,6 +1,87 @@
 # sweph/constants.py
-
-# 9 maha dasa year lengths
+# sign lord (own rasi) — 7-planet classical rulership, no rahu/ketu lordship
+# dict order doubles as sign order ar-pi (py3.7+ preserves insertion order)
+SIGN_LORDS = {
+    "ar": "ma",
+    "ta": "ve",
+    "ge": "me",
+    "cn": "mo",
+    "le": "su",
+    "vi": "me",
+    "li": "ve",
+    "sc": "ma",
+    "sg": "ju",
+    "cp": "sa",
+    "aq": "sa",
+    "pi": "ju",
+}
+SIGNS_ORDER = tuple(SIGN_LORDS.keys())
+# exaltation : (sign, exact degree within sign) — bphs 3.50
+# debilitation = 7th sign from exaltation sign, same degree
+EXALTATION = {
+    "su": ("ar", 10.0),
+    "mo": ("ta", 3.0),
+    "ma": ("cp", 28.0),
+    "me": ("vi", 15.0),
+    "ju": ("cn", 5.0),
+    "ve": ("pi", 27.0),
+    "sa": ("li", 20.0),
+}
+# moolatrikona : (sign, deg_start, deg_end)
+# remaining degrees of that sign (outside this range, up to 30) are own-sign
+MOOLATRIKONA = {
+    "su": ("le", 0.0, 20.0),
+    "mo": ("ta", 3.0, 30.0),  # after its own 0-3 exaltation span
+    "ma": ("ar", 0.0, 12.0),
+    "me": ("vi", 15.0, 25.0),  # after its own 0-15 exaltation span
+    "ju": ("sg", 0.0, 20.0),
+    "ve": ("li", 0.0, 20.0),
+    "sa": ("aq", 0.0, 20.0),
+}
+# planetary gender — bphs classical assignment
+GENDER = {  # drekkana bala : male / female / neuter
+    "su": "m",
+    "ma": "m",
+    "ju": "m",
+    "mo": "f",
+    "ve": "f",
+    "me": "n",
+    "sa": "n",
+}
+# trimsamsa (D30) : sign-parity dependent, unequal degree spans, lord per span
+TRIMSAMSA_ODD = [(5.0, "ma"), (10.0, "sa"), (18.0, "ju"), (25.0, "me"), (30.0, "ve")]
+TRIMSAMSA_EVEN = [(5.0, "ve"), (12.0, "me"), (20.0, "ju"), (25.0, "sa"), (30.0, "ma")]
+# naisargika maitri (natural friendship)
+NATURAL_FRIENDS = {  # unlisted planet-pairs default to neutral
+    "su": {"friend": ("mo", "ma", "ju"), "enemy": ("ve", "sa")},
+    "mo": {"friend": ("su", "me"), "enemy": ()},
+    "ma": {"friend": ("su", "mo", "ju"), "enemy": ("me",)},
+    "me": {"friend": ("su", "ve"), "enemy": ("mo",)},
+    "ju": {"friend": ("su", "mo", "ma"), "enemy": ("me", "ve")},
+    "ve": {"friend": ("me", "sa"), "enemy": ("su", "mo")},
+    "sa": {"friend": ("me", "ve"), "enemy": ("su", "mo", "ma")},
+}
+# dig bala reference cusp per planet
+DIG_BALA_REF_CUSP = {
+    "su": 3,
+    "ma": 3,  # bandhu bhava, 4th house
+    "ju": 6,
+    "me": 6,  # yuvati bhava, 7th house
+    "ve": 9,
+    "mo": 9,  # karma bhava, 10th house
+    "sa": 0,  # lagna, 1st house
+}
+# saptavargaja bala : virupas per dignity tier, per division
+SAPTAVARGA_SCALE = {
+    "moolatrikona": 45.0,
+    "own": 30.0,  # svastha
+    "great friend": 20.0,  # pramudita
+    "friend": 15.0,  # santa
+    "neutral": 10.0,  # dina
+    "enemy": 4.0,  # duhkhita
+    "great enemy": 2.0,  # khala
+}
+#  vimsottari - 9 maha dasa year lengths
 DASA_YEARS = {
     "ke": 7,
     "ve": 20,

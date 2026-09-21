@@ -115,6 +115,25 @@ def find_all_lunar_eclipses(jd_ut, conception_jd, flag):
     return eclipses
 
 
+def calculate_last_eclipses(jd_ut, flag, tz_name=None):
+    # used on transit ring
+    try:
+        eclipses_data = []
+        for found in (find_solar_eclipse, find_lunar_eclipse):
+            ecl = found(jd_ut, flag)
+            if ecl:
+                dt_local = toloctime(ecl["jd"], tz_name)
+                ecl["local time"] = (
+                    f"{dt_local.year}-{dt_local.month:02d}-{dt_local.day:02d} "
+                    f"{dt_local.hour:02d}:{dt_local.minute:02d}"
+                )
+                eclipses_data.append(ecl)
+        return ok(eclipses_data)
+    except Exception as e:
+        LOG.error(f"last eclises calculation error : {e}", extra=routing)
+        return err(e)
+
+
 def calculate_eclipses(jd_ut, flag, tz_name=None):
     # calculate (prenatal) solar & lunar eclipses
     try:

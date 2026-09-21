@@ -18,7 +18,7 @@ from sweph.calculations.horas import calculate_horas
 from sweph.calculations.lots import calculate_lots
 from sweph.calculations.stars import calculate_stars
 from sweph.calculations.syzygy import calculate_syzygy
-from sweph.calculations.eclipses import calculate_eclipses
+from sweph.calculations.eclipses import calculate_eclipses, calculate_last_eclipses
 
 # from sweph.calculations.d1 import calculate_d1
 from sweph.calculations.p2 import calculate_p2
@@ -819,10 +819,16 @@ class Dispatcher:
             e2_positions = e2_calculated.get("positions")
             e2_houses = e2_calculated.get("houses")
             if self.rings.get("transit") and e2_positions:
+                e2_tz = self.events_data["e2"].get("chart", {}).get("timezone")
+                e2_jd_ut = self.events_data["e2"]["sweph"]["jd ut"]
+                ecl_result = calculate_last_eclipses(e2_jd_ut, self.swe_flag, e2_tz)
                 chart_package["transit"] = {
                     "positions": self._prep_ring(e2_positions),
                     "cusps": e2_houses.get("cusps") or [],
                     "ascmc": e2_houses.get("ascmc"),
+                    "eclipses": self._prep_ring(ecl_result["data"])
+                    if ecl_result["status"] == "ok"
+                    else [],
                 }
             if self.rings.get("transit harmonic") and e2_positions:
                 ascmc = e2_houses.get("ascmc")

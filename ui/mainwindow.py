@@ -77,7 +77,6 @@ class MainWindow(
         self.tables = Tables(self.app)
         # we pass self.app to datagraph -
         # keeping track for dispatcher signaler notifier access
-        # probably update also astrochart astrodata tables to same syntax
         self.datagraph = DataGraph(self.app)
         # todo we could pass self.datagraph to self.astrodata ???
         self.astrodata = AstroChart(self.app)  # extra astro chart for data overlay

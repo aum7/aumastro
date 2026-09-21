@@ -59,7 +59,7 @@ class Rings:
         "border dark": (0.1, 0.1, 0.1, 1),
         # retro outline circles
         "retro": (1, 1, 1, 0.5),
-        "stationary": (1, 0, 0, 0.5),
+        "stationary": (1, 0, 0, 0.7),
         "default": (0.5, 0.5, 0.5, 0.5),
     }
     SIZES = {
@@ -252,7 +252,7 @@ class Rings:
                 cr.save()
                 # white slightly larger object outline
                 cr.set_source_rgba(*self.RING_COLORS["stationary"])
-                cr.set_line_width(1)
+                cr.set_line_width(2)
                 cr.arc(x, y, draw_size + 2, 0, 2 * pi)
                 cr.stroke()
                 cr.restore()
@@ -343,6 +343,45 @@ class Rings:
                 self.draw_diamond,
             )
             self.snap_targets.append((mc, mid_r, "mc", ring))
+        natal_ascmc = self.package.get("houses", {}).get("ascmc")
+        eclipses = ring_data.get("eclipses") if isinstance(ring_data, dict) else None
+        if eclipses:
+            obj_size = self.scaled_size(ring, "eclipses obj")
+            glyph_size = self.scaled_size(ring, "eclipses glyph")
+            for eclipse in eclipses:
+                if eclipse.data.get("name") is None:
+                    continue
+                name = eclipse.data.get("name", "")
+                lon = eclipse.data.get("lon", "")
+                ecl_type = eclipse.data.get("type", "")
+                dt_local = eclipse.data.get("local time", "")
+                label = f"{ecl_type} {name} ecl {dt_local}"
+                radius = mid_r * self.RADIUS["eclipses"]
+                eclipse.draw(
+                    cr,
+                    self.cx,
+                    self.cy,
+                    radius,
+                    obj_size,
+                    color=self.RING_COLORS["eclipse lun"]
+                    if name == "lun"
+                    else self.RING_COLORS["eclipse sol"],
+                )
+                self.snap_targets.append((lon, radius, label, ring))
+                glyph = glyphs.get_eclipse_glyph(name)
+                if glyph:
+                    angle = pi - radians(lon)
+                    x = self.cx + radius * cos(angle)
+                    y = self.cy + radius * sin(angle)
+                    self.draw_object_glyph(
+                        cr,
+                        glyph,
+                        x,
+                        y,
+                        glyph_size,
+                        natal_ascmc,
+                    )
+
         self.draw_sign_borders(cr, ring)
         self.draw_objects(cr, ring)
 

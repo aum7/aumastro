@@ -131,6 +131,9 @@ def get_day_horas(jd_ut, lon, lat, alt, flag):
             "sunrise": sunrise,
             "sunset": sunset,
             "sunrise next": sunrise_next,
+            "sunrise jd": srise,
+            "sunset jd": sset,
+            "sunrise next jd": srise_next,
         }
     ]
     curr_hora: dict = {}
