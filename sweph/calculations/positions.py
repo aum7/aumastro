@@ -49,9 +49,13 @@ def calculate_positions(
                 else None
             )
             result_equat = swe.calc_ut(jd_ut, code, flag | swe.FLG_EQUATORIAL)
-            ra, decl = result_equat[0], result_equat[1]
+            ra, decl = result_equat[0][0], result_equat[0][1]
             jd_et = jd_ut + swe.deltat(jd_ut)
-            mean_lon = swe.get_orbital_elements(jd_et, code, flag)[0][9]
+            mean_lon = (
+                swe.get_orbital_elements(jd_et, code, flag)[9]
+                if swe.MOON <= code <= swe.SATURN
+                else None
+            )
             # LOG.debug(f"equatorial : {result_equat}")
             positions[code] = {
                 "name": name,

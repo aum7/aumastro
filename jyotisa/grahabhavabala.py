@@ -42,7 +42,7 @@ def paksa_bala(sun, moon):
     sep = (moon - sun) % 360.0
     if sep > 180.0:
         sep = 360.0 - sep
-    benefic_bala = round(sep / 3.0, 4)
+    benefic_bala = round(sep / 3.0, 2)
     malefic_bala = 60.0 - benefic_bala
 
     return {
@@ -83,12 +83,12 @@ def natonnata_bala(jd_ut, lon):
     nata = 30.0 - unnata
 
     return {
-        "mo": 2.0 * nata,
-        "ma": 2.0 * nata,
-        "sa": 2.0 * nata,
-        "su": 2.0 * unnata,
-        "ju": 2.0 * unnata,
-        "ve": 2.0 * unnata,
+        "mo": round(2.0 * nata, 2),
+        "ma": round(2.0 * nata, 2),
+        "sa": round(2.0 * nata, 2),
+        "su": round(2.0 * unnata, 2),
+        "ju": round(2.0 * unnata, 2),
+        "ve": round(2.0 * unnata, 2),
         "me": 60.0,
     }
 
@@ -146,7 +146,7 @@ def dig_bala(code, lon, cusps):
     if diff > 180.0:
         diff = 360.0 - diff
 
-    return round(diff / 3.0, 4)
+    return round(diff / 3.0, 2)
 
 
 def uccha_bala(code, lon):
@@ -158,7 +158,7 @@ def uccha_bala(code, lon):
     exalt_lon = list(SIGN_LORDS.keys()).index(sign) * 30.0 + deg
     sep = abs((lon - exalt_lon + 180.0) % 360.0 - 180.0)
 
-    return round((180.0 - sep) / 3.0, 4)
+    return round((180.0 - sep) / 3.0, 2)
 
 
 def kendradi_bala(house):
@@ -251,7 +251,7 @@ def ayana_bala(positions):
         bala = term * factor
         if code == "su":
             bala *= 2.0
-        result[code] = round(bala, 4)
+        result[code] = round(bala, 2)
 
     return result
 
@@ -326,7 +326,7 @@ def sighrocca(code, positions):
         return positions["su"]["mean lon"]
 
     if code in ("me", "ve"):
-        return positions[code]["mean node"]
+        return positions[code]["mean lon"]
 
     return None
 
@@ -345,7 +345,7 @@ def chesta_kendra(code, positions):
 def chesta_bala(code, positions):
     kendra = chesta_kendra(code, positions)
 
-    return None if kendra is None else round(kendra / 3.0, 4)
+    return None if kendra is None else round(kendra / 3.0, 2)
 
 
 def drik_bala(code, positions):
@@ -363,15 +363,7 @@ def drik_bala(code, positions):
             jume_bonus += val
     adjustment = (0.25 if net_sign >= 0 else -0.25) * pinda
 
-    return round(pinda + adjustment + jume_bonus, 4)
-    # net = 0.0
-    # for giver, gdata in positions.items():
-    #     if giver == code or giver not in NAISARGIKA_BALA:
-    #         continue
-    #     val = dristi_value(giver, gdata["lon"], positions[code]["lon"])
-    #     sign = -1.0 if giver in ("su", "ma", "sa") else 1.0
-    #     net += val * sign
-    # return round(net, 4)
+    return round(pinda + adjustment + jume_bonus, 2)
 
 
 def base_dristi(sep):
@@ -466,11 +458,11 @@ def saptavarga_bala(code, lon, positions):
     tier = "own" if lord == code else compound_relationship(code, lord, positions)
     total += SAPTAVARGA_SCALE[tier]
 
-    return round(total, 4)
+    return round(total, 2)
 
 
 def sum_shadbala(result):
-    return {code: round(sum(parts.values()), 4) for code, parts in result.items()}
+    return {code: round(sum(parts.values()), 2) for code, parts in result.items()}
 
 
 def bhava_ref_cusp_idx(sign, deg_in_sign):
@@ -493,7 +485,7 @@ def bhava_dig_core(bhava_lon, cusps):
     if diff > 180.0:
         diff = 360.0 - diff
 
-    return round(diff / 3.0, 4)
+    return round(diff / 3.0, 2)
 
 
 def bhava_bala(house_num, cusps, positions, grahabala_totals):
@@ -501,7 +493,7 @@ def bhava_bala(house_num, cusps, positions, grahabala_totals):
     core = bhava_dig_core(bhava_lon, cusps)
     receives_benefic = receives_malefic = False
     jume_bonus = 0.0
-    for giver, gdata in positions.iterms():
+    for giver, gdata in positions.items():
         if giver not in NAISARGIKA_BALA:
             continue
         giver_sign = SIGNS_ORDER[int(gdata["lon"] // 30.0) % 12]
@@ -525,9 +517,9 @@ def bhava_bala(house_num, cusps, positions, grahabala_totals):
 
     return {
         "dig core": core,
-        "dristi adjusted": round(adjusted, 4),
-        "bhavadhipati": round(bhavadhipati, 4),
-        "total": round(adjusted + bhavadhipati, 4),
+        "dristi adjusted": round(adjusted, 2),
+        "bhavadhipati": round(bhavadhipati, 2),
+        "total": round(adjusted + bhavadhipati, 2),
     }
 
 
@@ -539,6 +531,7 @@ def by_name(positions):
 
 
 def calculate_bhavabala(cusps, positions, grahabala_result):
+    # LOG.debug("olo bhavabala calculate")
     if not cusps or len(cusps) < 12:
         return err("bhavabala : missing cusps")
     positions = by_name(positions)
@@ -595,7 +588,7 @@ def calculate_grahabala(
         totals = apply_yuddha_bala(totals, positions)
         for code in result:
             result[code]["total virupas"] = totals[code]
-            result[code]["total rupas"] = round(totals[code] / 60.0, 4)
+            result[code]["total rupas"] = round(totals[code] / 60.0, 2)
 
         return ok(result)
 

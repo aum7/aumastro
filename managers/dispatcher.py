@@ -822,6 +822,8 @@ class Dispatcher:
             "syzygy": self._prep_ring(e1_calculated.get("syzygy")),
             "bhavabala": e1_calculated.get("bhavabala") or {},
         }
+        LOG.debug(f"refreshpackage : grahabala : {e1_calculated.get('grahabala')}")
+        # LOG.debug(f"refreshpackage : bhavabala : {e1_calculated.get('bhavabala')}")
         if self.harmonic_ring:
             hx_pos = self._prep_ring(e1_calculated.get("positions"), harmonic=True)
             if not isinstance(hx_pos, list):

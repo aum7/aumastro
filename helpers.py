@@ -1,5 +1,10 @@
 # helpers.py
 # ruff: noqa: E402
+import logging
+
+LOG = logging.getLogger(__name__)
+source = "helpers"
+routing = {"source": source, "route": ["terminal"]}
 from math import modf
 from swisseph import contrib as swh
 from ui.fonts.glyphs import SIGNS
@@ -103,9 +108,9 @@ def _decimal_to_ra(decimal: float):
 def _object_name_to_code(name: str, mean_node: bool):
     # get object name as int
     if name == "ra" and mean_node:
-        # if name == "true node" and use_mean_node:
         name = "mean node"
     for code, obj in OBJECTS.items():
+        # LOG.debug(f"objectnametocode : obj[0] : {obj[0]} | obj[1] : {obj[1]}")
         if obj[1] == name or obj[0] == name:
             # return int & short name
             return code, obj[0]

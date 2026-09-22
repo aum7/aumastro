@@ -974,7 +974,7 @@ class Rings:
     def draw_bhava_tint(self, cr, radius):
         cusps = self.package.get("houses", {}).get("cusps", [])
         bhavabala = self.package.get("bhavabala", {})
-        if not cusps or len(cusps) < 12 or not bhavabala:
+        if not cusps or len(cusps) < 12:
             return
 
         belt_width = 4.0 * self.font_scale

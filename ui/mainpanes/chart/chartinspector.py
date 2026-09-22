@@ -25,7 +25,7 @@ class ChartInspector:
         "p2 progress": "P2",
         "p3 progress": "P3",
         "p3m progress": "P3m",
-        "d1 direction": "D1",
+        # "d1 direction": "D1",
         "lunar return": "LNR",
         "solar return": "SLR",
         "naksatras": "NK",
