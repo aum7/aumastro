@@ -186,6 +186,14 @@ def drekkana_bala(code, lon):
     return 15.0 if drek_idx == target else 0.0
 
 
+def varsha_bala(lord):
+    return {code: (15.0 if code == lord else 0.0) for code in NAISARGIKA_BALA}
+
+
+def masa_bala(lord):
+    return {code: (30.0 if code == lord else 0.0) for code in NAISARGIKA_BALA}
+
+
 def dina_bala(vara_lord):
     return {code: (45.0 if code == vara_lord else 0.0) for code in NAISARGIKA_BALA}
 
@@ -226,14 +234,6 @@ def masa_lord(jd_ut):
     quotient = int(ahargana(jd_ut) // 30)
 
     return remainder_lord((quotient * 2 + 1) % 7)
-
-
-def varsha_bala(lord):
-    return {code: (15.0 if code == lord else 0.0) for code in NAISARGIKA_BALA}
-
-
-def masa_bala(lord):
-    return {code: (30.0 if code == lord else 0.0) for code in NAISARGIKA_BALA}
 
 
 def ayana_bala(positions):
@@ -353,7 +353,7 @@ def drik_bala(code, positions):
     net_sign = 0.0
     jume_bonus = 0.0
     for giver, gdata in positions.items():
-        if giver == code or giver in NAISARGIKA_BALA:
+        if giver == code or giver not in NAISARGIKA_BALA:
             continue
         val = dristi_value(giver, gdata["lon"], positions[code]["lon"])
         is_malefic = giver in ("su", "ma", "sa")
@@ -363,7 +363,7 @@ def drik_bala(code, positions):
             jume_bonus += val
     adjustment = (0.25 if net_sign >= 0 else -0.25) * pinda
 
-    return round(pinda + adjustment + jume_bonus, 2)
+    return round(min(pinda + adjustment + jume_bonus, 60.0), 2)
 
 
 def base_dristi(sep):
