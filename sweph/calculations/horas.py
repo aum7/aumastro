@@ -128,6 +128,7 @@ def get_day_horas(jd_ut, lon, lat, alt, flag):
     horas_list: list[dict] = [
         {
             "weekday": weekday,
+            "vara lord": weekday_lord,
             "sunrise": sunrise,
             "sunset": sunset,
             "sunrise next": sunrise_next,

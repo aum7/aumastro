@@ -11,6 +11,7 @@ routing = {"source": source, "route": ["terminal"]}
 routinguser = {"source": source, "route": ["terminal", "user"]}
 import time
 import swisseph as swe
+import user.usersettings as usersett
 from helpers import _decimal_to_ymd, get_harmonic_lon as harmlon
 from sweph.calculations.positions import calculate_positions
 from sweph.calculations.houses import calculate_houses
@@ -29,7 +30,7 @@ from sweph.calculations.returnlunar import calculate_lunar_return
 from sweph.calculations.returnsolar import calculate_solar_return
 from sweph.calculations.aspects import calculate_aspects
 from sweph.calculations.vimsottari import calculate_vimsottari
-import user.usersettings as usersett
+from jyotisa.grahabhavabala import calculate_grahabala, calculate_bhavabala
 from user.fixedstars import FIXEDSTARS
 from ui.mainpanes.chart.astroobject import AstroObject
 
@@ -535,6 +536,32 @@ class Dispatcher:
                     self.selected_stars,
                     self.swe_flag,
                 )
+            horas_data = calculated.get("horas")
+            if positions_data and houses_data and horas_data:
+                h0 = horas_data["horas list"][0]
+                self.run_calc(
+                    event_id,
+                    "grahabala",
+                    calculate_grahabala,
+                    positions_data,
+                    houses_data,
+                    horas_data,
+                    jd_ut,
+                    lon,
+                    h0["sunrise jd"],
+                    h0["sunset jd"],
+                    h0["sunrise next jd"],
+                )
+                grahabala_data = calculated.get("grahabala")
+                if grahabala_data:
+                    self.run_calc(
+                        event_id,
+                        "bhavabala",
+                        calculate_bhavabala,
+                        houses_data["cusps"],
+                        positions_data,
+                        grahabala_data,
+                    )
             self.calc_vimsottari()
         if event_id == "e2":
             # progressions returns for event 2
@@ -793,6 +820,7 @@ class Dispatcher:
             "eclipses": self._prep_ring(e1_calculated.get("eclipses")),
             "stars": self._prep_ring(e1_calculated.get("stars")),
             "syzygy": self._prep_ring(e1_calculated.get("syzygy")),
+            "bhavabala": e1_calculated.get("bhavabala") or {},
         }
         if self.harmonic_ring:
             hx_pos = self._prep_ring(e1_calculated.get("positions"), harmonic=True)

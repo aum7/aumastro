@@ -40,9 +40,7 @@ def calculate_positions(
             return err(msg)
         try:
             result = swe.calc_ut(jd_ut, code, flag)
-            # todo we know our data
             pos = result[0]  # pos[0] = lon
-            # get retro label : skip su & mo
             naksatra = get_naksatra(pos[0], mans_28, first_nak)
             harmonic = harmlon(pos[0], division) if division else None
             harmonic_nak = (
@@ -50,12 +48,19 @@ def calculate_positions(
                 if harmonic is not None
                 else None
             )
-            # LOG.debug(f"\nlon={pos[0]}")
+            result_equat = swe.calc_ut(jd_ut, code, flag | swe.FLG_EQUATORIAL)
+            ra, decl = result_equat[0], result_equat[1]
+            jd_et = jd_ut + swe.deltat(jd_ut)
+            mean_lon = swe.get_orbital_elements(jd_et, code, flag)[0][9]
+            # LOG.debug(f"equatorial : {result_equat}")
             positions[code] = {
                 "name": name,
                 "lon": pos[0],
                 "lat": pos[1],
                 "lon speed": pos[3],
+                "ra": ra,
+                "declination": decl,
+                "mean lon": mean_lon,
                 "retro": retrphas(code, jd_ut, flag, curr_speed=pos[3]),
                 "naksatra": naksatra,
                 "harmonic": harmonic,

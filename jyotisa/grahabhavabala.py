@@ -8,14 +8,22 @@ routing = {"source": source, "route": ["terminal"]}
 from helpers import ok, err, _house_for_lon as hslon, get_harmonic_lon as harmlon
 from sweph.constants import (
     SIGN_LORDS,
+    SIGNS_ORDER,
     EXALTATION,
     GENDER,
     TRIMSAMSA_ODD,
     TRIMSAMSA_EVEN,
     DIG_BALA_REF_CUSP,
-    # NATURAL_FRIENDS,
-    # MOOLATRIKONA,
-    # SAPTAVARGA_SCALE,
+    AHARGANA_ANCHOR_DAYS,
+    AHARGANA_ANCHOR_JD,
+    WEEKDAY_LORDS,
+    MOVABLE,
+    FIXED,
+    DUAL,
+    NATURAL_FRIENDS,
+    MOOLATRIKONA,
+    SAPTAVARGA_SCALE,
+    BHAVA_DIG_REF,
 )
 
 NAISARGIKA_BALA = {  # fixed, luminosity-ranked, virupas
@@ -27,6 +35,38 @@ NAISARGIKA_BALA = {  # fixed, luminosity-ranked, virupas
     "ma": 17.14,
     "sa": 8.57,
 }
+
+
+def paksa_bala(sun, moon):
+    # lunar phase as sun-moon angular separation
+    sep = (moon - sun) % 360.0
+    if sep > 180.0:
+        sep = 360.0 - sep
+    benefic_bala = round(sep / 3.0, 4)
+    malefic_bala = 60.0 - benefic_bala
+
+    return {
+        "mo": benefic_bala,
+        "me": benefic_bala,
+        "ju": benefic_bala,
+        "ve": benefic_bala,
+        "su": malefic_bala,
+        "ma": malefic_bala,
+        "sa": malefic_bala,
+    }
+
+
+def tribhaga_bala(jd_ut, srise, sset, srise_next):
+    if srise < sset <= jd_ut < srise_next:
+        third = (srise_next - sset) / 3.0
+        idx = int((jd_ut - sset) // third)
+        ruler = ("mo", "ve", "ma")[min(idx, 2)]
+    else:
+        third = (sset - srise) / 3.0
+        idx = int((jd_ut - srise) // third)
+        ruler = ("me", "su", "sa")[min(idx, 2)]
+
+    return {code: (60.0 if code == ruler else 0.0) for code in NAISARGIKA_BALA}
 
 
 def local_midnight_ghati(jd_ut, lon):
@@ -53,7 +93,7 @@ def natonnata_bala(jd_ut, lon):
     }
 
 
-def temp_friend(code, target, positions, cusps):
+def temp_friend(code, target, positions):
     # tatkalika maitri : hs 2 3 4 10 11 12 from planet
     lon_a = positions[code]["lon"]
     lon_b = positions[target]["lon"]
@@ -146,6 +186,14 @@ def drekkana_bala(code, lon):
     return 15.0 if drek_idx == target else 0.0
 
 
+def dina_bala(vara_lord):
+    return {code: (45.0 if code == vara_lord else 0.0) for code in NAISARGIKA_BALA}
+
+
+def hora_bala(hora_lord):
+    return {code: (60.0 if code == hora_lord else 0.0) for code in NAISARGIKA_BALA}
+
+
 def ojha_yugma_bala(code, lon):
     is_female = GENDER.get(code) == "f"
     virupa = 0.0
@@ -158,16 +206,372 @@ def ojha_yugma_bala(code, lon):
     return virupa
 
 
-def calculate_grahabala(positions, houses, jd_ut, geo_lon):
+def ahargana(jd_ut):
+    return AHARGANA_ANCHOR_DAYS + (jd_ut - AHARGANA_ANCHOR_JD)
+
+
+def remainder_lord(remainder):
+    idx = 7 if remainder == 0 else remainder
+
+    return WEEKDAY_LORDS[idx - 1]
+
+
+def varsha_lord(jd_ut):
+    quotient = int(ahargana(jd_ut) // 60)
+
+    return remainder_lord((quotient * 3 + 1) % 7)
+
+
+def masa_lord(jd_ut):
+    quotient = int(ahargana(jd_ut) // 30)
+
+    return remainder_lord((quotient * 2 + 1) % 7)
+
+
+def varsha_bala(lord):
+    return {code: (15.0 if code == lord else 0.0) for code in NAISARGIKA_BALA}
+
+
+def masa_bala(lord):
+    return {code: (30.0 if code == lord else 0.0) for code in NAISARGIKA_BALA}
+
+
+def ayana_bala(positions):
+    obliquity = 23.45
+    factor = 1.2793
+    result = {}
+    for code in NAISARGIKA_BALA:
+        dec = positions[code]["declination"]
+        if code in ("mo", "sa"):
+            term = obliquity - dec
+        elif code == "me":
+            term = obliquity + abs(dec)
+        else:
+            term = obliquity + dec
+        bala = term * factor
+        if code == "su":
+            bala *= 2.0
+        result[code] = round(bala, 4)
+
+    return result
+
+
+WARRING = ("ma", "me", "ju", "ve", "sa")
+
+
+def apply_yuddha_bala(totals, positions):
+    # shadbala total tweaked in place
+    codes = list(WARRING)
+    for i in range(len(codes)):
+        for j in range(i + 1, len(codes)):
+            a, b = codes[i], codes[j]
+            sep = abs(positions[a]["lon"] - positions[b]["lon"]) % 360.0
+            if sep > 180.0:
+                sep = 360.0 - sep
+            if sep >= 1.0:
+                continue
+            # winner = lower ecliptic latitude
+            diff = abs(totals[a] - totals[b])
+            if "ve" in (a, b):
+                winner = "ve"
+                loser = a if b == "ve" else b
+            elif positions[a]["lat"] >= positions[b]["lat"]:
+                winner, loser = a, b
+            else:
+                winner, loser = b, a
+            totals[winner] += diff
+            totals[loser] -= diff
+
+    return totals
+
+
+def dristi_kona(sep):
+    # separation degrees from giver to receiver
+    rasi = sep / 30.0
+    if rasi > 6.0:
+        rasi = 10.0 - rasi
+    deg = rasi * 30.0
+    if rasi > 5.0:
+        return deg * 2.0
+    if rasi > 4.0:
+        return 5.0 * 30.0 - deg
+    if rasi > 3.0:
+        return (4.0 * 30.0 - deg) / 2.0 + 30.0
+    if rasi > 2.0:
+        return deg + 15.0
+    if rasi > 1.0:
+        return deg / 2.0
+
+    return 0.0
+
+
+def build_rasi_dristi():
+    table = {}
+    for sign in SIGN_LORDS:
+        idx = SIGNS_ORDER.index(sign)
+        if sign in MOVABLE:
+            targets, exclude_group, exclude_offset = FIXED, FIXED, 1
+        elif sign in FIXED:
+            targets, exclude_group, exclude_offset = MOVABLE, MOVABLE, -1
+        else:
+            targets, exclude_group, exclude_offset = DUAL, None, 0
+        adjacent = SIGNS_ORDER[(idx + exclude_offset) % 12] if exclude_group else None
+        table[sign] = tuple(s for s in targets if s != adjacent)
+
+    return table
+
+
+def sighrocca(code, positions):
+    if code in ("ma", "ju", "sa"):
+        return positions["su"]["mean lon"]
+
+    if code in ("me", "ve"):
+        return positions[code]["mean node"]
+
+    return None
+
+
+def chesta_kendra(code, positions):
+    sc = sighrocca(code, positions)
+    if sc is None:
+        return None
+
+    data = positions[code]
+    kendra = (sc - (data["mean lon"] + data["lon"]) / 2) % 360.0
+
+    return 360.0 - kendra if kendra > 180.0 else kendra
+
+
+def chesta_bala(code, positions):
+    kendra = chesta_kendra(code, positions)
+
+    return None if kendra is None else round(kendra / 3.0, 4)
+
+
+def drik_bala(code, positions):
+    pinda = 0.0
+    net_sign = 0.0
+    jume_bonus = 0.0
+    for giver, gdata in positions.items():
+        if giver == code or giver in NAISARGIKA_BALA:
+            continue
+        val = dristi_value(giver, gdata["lon"], positions[code]["lon"])
+        is_malefic = giver in ("su", "ma", "sa")
+        pinda += val
+        net_sign += -val if is_malefic else val
+        if giver in ("ju", "me"):
+            jume_bonus += val
+    adjustment = (0.25 if net_sign >= 0 else -0.25) * pinda
+
+    return round(pinda + adjustment + jume_bonus, 4)
+    # net = 0.0
+    # for giver, gdata in positions.items():
+    #     if giver == code or giver not in NAISARGIKA_BALA:
+    #         continue
+    #     val = dristi_value(giver, gdata["lon"], positions[code]["lon"])
+    #     sign = -1.0 if giver in ("su", "ma", "sa") else 1.0
+    #     net += val * sign
+    # return round(net, 4)
+
+
+def base_dristi(sep):
+    if sep <= 30.0 or sep >= 300.0:
+        return 0.0
+
+    if sep <= 60.0:
+        return (sep - 30.0) / 2.0
+
+    if sep <= 90.0:
+        return (sep - 60.0) + 15.0
+
+    if sep <= 120.0:
+        return (120.0 - sep) / 2.0 + 30.0
+
+    if sep <= 150.0:
+        return 150.0 - sep
+
+    if sep <= 180.0:
+        return (sep - 150.0) * 2.0
+
+    return (300.0 - sep) / 2.0
+
+
+SPECIAL_ASPECT_ZONES = {
+    "ma": (15.0, ((90.0, 120.0), (210.0, 240.0))),  # 4th, 8th
+    "ju": (30.0, ((120.0, 150.0), (240.0, 270.0))),  # 5th, 9th
+    "sa": (45.0, ((60.0, 90.0), (270.0, 300.0))),  # 3rd, 10th
+}
+
+
+def dristi_value(code, giver, receiver):
+    sep = receiver - giver
+    value = base_dristi(sep)
+    bonus, zones = SPECIAL_ASPECT_ZONES.get(code, (0.0, ()))
+    for lo, hi in zones:
+        if lo < sep <= hi:
+            value += bonus
+            break
+
+    return min(value, 60.0)
+
+
+def compound_relationship(code, target_code, positions):
+    natural = NATURAL_FRIENDS.get(code, {})
+    is_nat_friend = target_code in natural.get("friend")
+    is_nat_enemy = target_code in natural.get("enemy")
+    is_temp_friend = temp_friend(code, target_code, positions)
+    if is_nat_friend:
+        return "great friend" if is_temp_friend else "neutral"
+
+    if is_nat_enemy:
+        return "neutral" if is_temp_friend else "great enemy"
+
+    return "friend" if is_temp_friend else "enemy"
+
+
+def varga_dignity(code, varga_sign, positions):
+    mltk = MOOLATRIKONA.get(code)
+    if mltk and mltk[0] == varga_sign:
+        return "moolatrikona"
+
+    if SIGN_LORDS[varga_sign] == code:
+        return "own"
+
+    lord = SIGN_LORDS[varga_sign]
+
+    return compound_relationship(code, lord, positions)
+
+
+def harmonic_sign(lon, division):
+    sign = int(lon // 30)
+    seg = int((lon % 30) // (30 / division))
+
+    return SIGNS_ORDER[(sign * division + seg) % 12]
+
+
+def saptavarga_bala(code, lon, positions):
+    total = 0.0
+    signs = (
+        SIGNS_ORDER[int(lon // 30.0) % 12],
+        hora_sign(lon),
+        harmonic_sign(lon, 3),
+        harmonic_sign(lon, 7),
+        harmonic_sign(lon, 9),
+        harmonic_sign(lon, 12),
+    )
+    for vsign in signs:
+        tier = varga_dignity(code, vsign, positions)
+        total += SAPTAVARGA_SCALE[tier]
+    lord = trimsamsa_lord(lon)
+    tier = "own" if lord == code else compound_relationship(code, lord, positions)
+    total += SAPTAVARGA_SCALE[tier]
+
+    return round(total, 4)
+
+
+def sum_shadbala(result):
+    return {code: round(sum(parts.values()), 4) for code, parts in result.items()}
+
+
+def bhava_ref_cusp_idx(sign, deg_in_sign):
+    if sign == "sg":
+        return 3 if deg_in_sign < 15.0 else 0
+
+    if sign == "cp":
+        return 3 if deg_in_sign < 15.0 else 9
+
+    return BHAVA_DIG_REF.get(sign)
+
+
+def bhava_dig_core(bhava_lon, cusps):
+    sign = SIGNS_ORDER[int(bhava_lon // 30.0) % 12]
+    ref_idx = bhava_ref_cusp_idx(sign, bhava_lon % 30.0)
+    if ref_idx is None:
+        return 0.0
+
+    diff = abs(bhava_lon - cusps[ref_idx]) % 360.0
+    if diff > 180.0:
+        diff = 360.0 - diff
+
+    return round(diff / 3.0, 4)
+
+
+def bhava_bala(house_num, cusps, positions, grahabala_totals):
+    bhava_lon = cusps[house_num - 1]
+    core = bhava_dig_core(bhava_lon, cusps)
+    receives_benefic = receives_malefic = False
+    jume_bonus = 0.0
+    for giver, gdata in positions.iterms():
+        if giver not in NAISARGIKA_BALA:
+            continue
+        giver_sign = SIGNS_ORDER[int(gdata["lon"] // 30.0) % 12]
+        bhava_sign = SIGNS_ORDER[int(bhava_lon // 30.0) % 12]
+        if bhava_sign not in RASI_DRISTI.get(giver_sign, ()):
+            continue
+        if giver in ("su", "ma", "sa"):
+            receives_malefic = True
+        else:
+            receives_benefic = True
+        if giver in ("ju", "me"):
+            jume_bonus += grahabala_totals[giver]["drik bala"]
+    adjusted = core
+    if receives_benefic:
+        adjusted += core * 0.25
+    if receives_malefic:
+        adjusted -= core * 0.25
+    adjusted += jume_bonus
+    lord = SIGN_LORDS[SIGNS_ORDER[int(bhava_lon // 30.0) % 12]]
+    bhavadhipati = grahabala_totals[lord]["total virupas"]
+
+    return {
+        "dig core": core,
+        "dristi adjusted": round(adjusted, 4),
+        "bhavadhipati": round(bhavadhipati, 4),
+        "total": round(adjusted + bhavadhipati, 4),
+    }
+
+
+RASI_DRISTI = build_rasi_dristi()
+
+
+def by_name(positions):
+    return {data["name"]: data for data in positions.values()}
+
+
+def calculate_bhavabala(cusps, positions, grahabala_result):
+    if not cusps or len(cusps) < 12:
+        return err("bhavabala : missing cusps")
+    positions = by_name(positions)
+    result = {
+        house_num: bhava_bala(house_num, cusps, positions, grahabala_result)
+        for house_num in range(1, 13)
+    }
+    return ok(result)
+
+
+def calculate_grahabala(
+    positions, houses, horas, jd_ut, geo_lon, srise, sset, srise_next
+):
     try:
+        positions = by_name(positions)
         cusps = houses.get("cusps") if houses else None
         result = {}
         natonnata = natonnata_bala(jd_ut, geo_lon)
+        paksa = paksa_bala(positions["su"]["lon"], positions["mo"]["lon"])
+        tribhaga = tribhaga_bala(jd_ut, srise, sset, srise_next)
+        dina = dina_bala(horas["horas list"][0]["vara lord"])
+        hora = hora_bala(horas["current hora"]["ruler"])
+        ayana = ayana_bala(positions)
+        varsha = varsha_bala(varsha_lord(jd_ut))
+        masa = masa_bala(masa_lord(jd_ut))
         for code, data in positions.items():
             if code not in NAISARGIKA_BALA:
                 continue
             lon = data["lon"]
             house = house_int(lon, cusps) if cusps else None
+            chesta = chesta_bala(code, positions)
+            if chesta is None:
+                chesta = ayana[code] if code == "su" else paksa[code]
             result[code] = {
                 "naisargika bala": NAISARGIKA_BALA[code],
                 "dig bala": dig_bala(code, lon, cusps),
@@ -176,7 +580,23 @@ def calculate_grahabala(positions, houses, jd_ut, geo_lon):
                 "drekkana bala": drekkana_bala(code, lon),
                 "ojha yugma bala": ojha_yugma_bala(code, lon),
                 "natonnata bala": natonnata[code],
+                "paksa bala": paksa[code],
+                "tribhaga bala": tribhaga[code],
+                "dina bala": dina[code],
+                "hora bala": hora[code],
+                "varsha bala": varsha[code],
+                "masa bala": masa[code],
+                "ayana bala": ayana[code],
+                "chesta bala": chesta,
+                "saptavarga bala": saptavarga_bala(code, lon, positions),
+                "drik bala": drik_bala(code, positions),
             }
+        totals = sum_shadbala(result)
+        totals = apply_yuddha_bala(totals, positions)
+        for code in result:
+            result[code]["total virupas"] = totals[code]
+            result[code]["total rupas"] = round(totals[code] / 60.0, 4)
+
         return ok(result)
 
     except Exception as e:

@@ -747,6 +747,7 @@ class Rings:
         cusps = houses.get("cusps", [])
         ascmc = houses.get("ascmc", [])
         e1_pos = self.package.get("positions", [])
+        self.draw_bhava_tint(cr, inner_r)
         self.draw_cusp_lines(
             cr,
             "event",
@@ -969,3 +970,43 @@ class Rings:
         cr.show_text(text)
         cr.new_path()
         cr.restore()
+
+    def draw_bhava_tint(self, cr, radius):
+        cusps = self.package.get("houses", {}).get("cusps", [])
+        bhavabala = self.package.get("bhavabala", {})
+        if not cusps or len(cusps) < 12 or not bhavabala:
+            return
+
+        belt_width = 4.0 * self.font_scale
+        outer = radius + belt_width / 2.0
+        inner = radius - belt_width / 2.0
+        values = [v["total"] for v in bhavabala.values()] if bhavabala else []
+        lo, hi = (min(values), max(values)) if values else (0.0, 1.0)
+        span = (hi - lo) or 1.0
+        for house_num in range(1, 13):
+            lon_start = cusps[house_num - 1]
+            lon_end = cusps[house_num % 12]
+            angle_start = pi - radians(lon_end)
+            angle_end = pi - radians(lon_start)
+            if angle_end < angle_start:
+                angle_end += 2 * pi
+            intensity = (
+                (bhavabala.get(house_num, {}).get("total", lo) - lo) / span
+                if bhavabala
+                else 0.5
+            )
+            cr.new_path()
+            cr.arc(self.cx, self.cy, outer, angle_start, angle_end)
+            cr.arc_negative(self.cx, self.cy, inner, angle_end, angle_start)
+            cr.close_path()
+            cr.set_source_rgba(0.6, 0.15 + intensity * 0.45, 0.1, 0.9)
+            cr.fill()
+            # snap to area center
+            span_lon = (lon_end - lon_start) % 360.0
+            center_lon = (lon_start + span_lon / 2.0) % 360.0
+            self.snap_targets.append((
+                center_lon,
+                radius,
+                f"h {house_num}",
+                "bhava",
+            ))

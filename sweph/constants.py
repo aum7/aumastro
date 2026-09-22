@@ -81,6 +81,35 @@ SAPTAVARGA_SCALE = {
     "enemy": 4.0,  # duhkhita
     "great enemy": 2.0,  # khala
 }
+# ahargana : days elapsed since creation epoch, per burgess/surya siddhanta anchor
+# anchor : 714,404,108,573 days at 1860-01-01 00:00 ut (jd 2400410.5)
+AHARGANA_ANCHOR_JD = 2400410.5
+AHARGANA_ANCHOR_DAYS = 714404108573.0
+WEEKDAY_LORDS = (  # remainder 1..7, 0 treated as 7
+    "su",
+    "mo",
+    "ma",
+    "me",
+    "ju",
+    "ve",
+    "sa",
+)
+# rasi dristi : sign-to-sign aspect
+MOVABLE = ("ar", "cn", "li", "cp")
+FIXED = ("ta", "le", "sc", "aq")
+DUAL = ("ge", "vi", "sg", "pi")
+BHAVA_DIG_REF = {  # sagittarius and capricorn split at 15°
+    "ge": 6,
+    "vi": 6,
+    "li": 6,
+    "aq": 6,  # yuvati bhava, 7th cusp (idx 6)
+    "ar": 3,
+    "ta": 3,
+    "le": 3,  # bandhu bhava, 4th cusp (idx 3)
+    "cn": 0,
+    "sc": 0,  # lagna, 1st cusp (idx 0)
+    "pi": 9,  # karma bhava, 10th cusp (idx 9)
+}
 #  vimsottari - 9 maha dasa year lengths
 DASA_YEARS = {
     "ke": 7,
