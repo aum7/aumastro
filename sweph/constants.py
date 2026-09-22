@@ -110,6 +110,9 @@ BHAVA_DIG_REF = {  # sagittarius and capricorn split at 15°
     "sc": 0,  # lagna, 1st cusp (idx 0)
     "pi": 9,  # karma bhava, 10th cusp (idx 9)
 }
+SIRSHODAYA = ("ge", "le", "vi", "li", "sc", "aq")  # day-birth bonus signs
+PRISHTHODAYA = ("ar", "ta", "cn", "sg", "cp")  # night-birth bonus signs
+# twilight bonus reuses existing DUAL = ("ge","vi","sg","pi")
 #  vimsottari - 9 maha dasa year lengths
 DASA_YEARS = {
     "ke": 7,

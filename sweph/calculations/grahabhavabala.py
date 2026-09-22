@@ -1,10 +1,11 @@
-# jyotisa/grahabhavabala.py
+# sweph/calculations/grahabhavabala.py
 # ruff: noqa: E402
 import logging
 
 LOG = logging.getLogger(__name__)
 source = "grahabhavabala"
 routing = {"source": source, "route": ["terminal"]}
+import swisseph as swe
 from helpers import ok, err, _house_for_lon as hslon, get_harmonic_lon as harmlon
 from sweph.constants import (
     SIGN_LORDS,
@@ -24,6 +25,8 @@ from sweph.constants import (
     MOOLATRIKONA,
     SAPTAVARGA_SCALE,
     BHAVA_DIG_REF,
+    PRISHTHODAYA,
+    SIRSHODAYA,
 )
 
 NAISARGIKA_BALA = {  # fixed, luminosity-ranked, virupas
@@ -35,6 +38,54 @@ NAISARGIKA_BALA = {  # fixed, luminosity-ranked, virupas
     "ma": 17.14,
     "sa": 8.57,
 }
+
+
+def jyotisa_sunrise(jd_ut, lon, lat, alt, flag):
+    Y, M, D, _ = swe.revjul(jd_ut)
+    jd_day = swe.julday(Y, M, D, 0.0)
+    _, data = swe.rise_trans(
+        jd_day,
+        swe.SUN,
+        swe.CALC_RISE | swe.BIT_HINDU_RISING,
+        (lon, lat, alt),
+        atpress=0.0,
+        attemp=0.0,
+        flags=flag,
+    )
+    srise = data[0]
+    if srise > jd_ut:
+        jd_day -= 1.0
+        _, data = swe.rise_trans(
+            jd_day,
+            swe.sun,
+            swe.CALC_RISE | swe.BIT_HINDU_RISING,
+            (lon, lat, alt),
+            atpress=0.0,
+            attemp=0.0,
+            flags=flag,
+        )
+    _, data = swe.rise_trans(
+        srise,
+        swe.SUN,
+        swe.CALC_SET | swe.BIT_HINDU_RISING,
+        (lon, lat, alt),
+        atpress=0.0,
+        attemp=0.0,
+        flags=flag,
+    )
+    sset = data[0]
+    _, data = swe.rise_trans(
+        sset,
+        swe.SUN,
+        swe.CALC_RISE | swe.BIT_HINDU_RISING,
+        (lon, lat, alt),
+        atpress=0.0,
+        attemp=0.0,
+        flags=flag,
+    )
+    srise_next = data[0]
+
+    return srise, sset, srise_next
 
 
 def paksa_bala(sun, moon):
@@ -243,11 +294,12 @@ def ayana_bala(positions):
     for code in NAISARGIKA_BALA:
         dec = positions[code]["declination"]
         if code in ("mo", "sa"):
-            term = obliquity - dec
+            term = obliquity + abs(dec) if dec < 0 else obliquity - abs(dec)
+            # term = obliquity - dec
         elif code == "me":
             term = obliquity + abs(dec)
-        else:
-            term = obliquity + dec
+        else:  # su ma ju ve
+            term = obliquity - abs(dec) if dec < 0 else obliquity + abs(dec)
         bala = term * factor
         if code == "su":
             bala *= 2.0
@@ -268,7 +320,8 @@ def apply_yuddha_bala(totals, positions):
             sep = abs(positions[a]["lon"] - positions[b]["lon"]) % 360.0
             if sep > 180.0:
                 sep = 360.0 - sep
-            if sep >= 1.0:
+            if sep > 1.0:
+                # if sep >= 1.0:
                 continue
             # winner = lower ecliptic latitude
             diff = abs(totals[a] - totals[b])
@@ -321,6 +374,9 @@ def build_rasi_dristi():
     return table
 
 
+RASI_DRISTI = build_rasi_dristi()
+
+
 def sighrocca(code, positions):
     if code in ("ma", "ju", "sa"):
         return positions["su"]["mean lon"]
@@ -349,21 +405,35 @@ def chesta_bala(code, positions):
 
 
 def drik_bala(code, positions):
-    pinda = 0.0
-    net_sign = 0.0
-    jume_bonus = 0.0
+    net = 0.0
     for giver, gdata in positions.items():
         if giver == code or giver not in NAISARGIKA_BALA:
             continue
         val = dristi_value(giver, gdata["lon"], positions[code]["lon"])
-        is_malefic = giver in ("su", "ma", "sa")
-        pinda += val
-        net_sign += -val if is_malefic else val
-        if giver in ("ju", "me"):
-            jume_bonus += val
-    adjustment = (0.25 if net_sign >= 0 else -0.25) * pinda
+        net += -val if giver in ("su", "ma", "sa") else val
+    return round(net, 2)
+    # pinda = 0.0
+    # # net_sign = 0.0
+    # malefic_pinda = 0.0
+    # benefic_pinda = 0.0
+    # jume_pinda = 0.0
+    # for giver, gdata in positions.items():
+    #     if giver == code or giver not in NAISARGIKA_BALA:
+    #         continue
+    #     val = dristi_value(giver, gdata["lon"], positions[code]["lon"])
+    #     # is_malefic = giver in ("su", "ma", "sa")
+    #     pinda += val
+    #     # net_sign += -val if is_malefic else val
+    #     if giver in ("su", "ma", "sa"):
+    #         malefic_pinda += val
+    #     else:
+    #         benefic_pinda += val
+    #     if giver in ("ju", "me"):
+    #         jume_pinda += val
+    # adjustment = (benefic_pinda * 0.25) - (malefic_pinda * 0.25)
+    # adjustment = (0.25 if net=_sign >= 0 else -0.25) * pinda
 
-    return round(min(pinda + adjustment + jume_bonus, 60.0), 2)
+    # return round(min(pinda + adjustment + jume_pinda, 60.0), 2)
 
 
 def base_dristi(sep):
@@ -488,7 +558,40 @@ def bhava_dig_core(bhava_lon, cusps):
     return round(diff / 3.0, 2)
 
 
-def bhava_bala(house_num, cusps, positions, grahabala_totals):
+def occupancy_adjustment(house_num, cusps, positions):
+    bonus = 0.0
+    for code, data in positions.items():
+        if code not in NAISARGIKA_BALA:
+            continue
+        if house_int(data["lon"], cusps) == house_num:
+            if code in ("ju", "me"):
+                bonus += 60.0
+            elif code in ("sa", "ma", "su"):
+                bonus -= 60.0
+
+    return bonus
+
+
+def daynight_phase(jd_ut, srise, sset):
+    twilight = 1.0 / 60.0  # 24 min = 1 ghati
+    if abs(jd_ut - srise) <= twilight or abs(jd_ut - sset) <= twilight:
+        return "twilight"
+
+    return "day" if srise <= jd_ut < sset else "night"
+
+
+def rasi_bonus(bhava_sign, phase):
+    if phase == "day" and bhava_sign in SIRSHODAYA:
+        return 15.0
+    if phase == "twilight" and bhava_sign in DUAL:
+        return 15.0
+    if phase == "night" and bhava_sign in PRISHTHODAYA:
+        return 15.0
+
+    return 0.0
+
+
+def bhava_bala(house_num, cusps, positions, grahabala_totals, phase):
     bhava_lon = cusps[house_num - 1]
     core = bhava_dig_core(bhava_lon, cusps)
     receives_benefic = receives_malefic = False
@@ -505,7 +608,7 @@ def bhava_bala(house_num, cusps, positions, grahabala_totals):
         else:
             receives_benefic = True
         if giver in ("ju", "me"):
-            jume_bonus += grahabala_totals[giver]["drik bala"]
+            jume_bonus += dristi_value(giver, gdata["lon"], bhava_lon)
     adjusted = core
     if receives_benefic:
         adjusted += core * 0.25
@@ -514,42 +617,44 @@ def bhava_bala(house_num, cusps, positions, grahabala_totals):
     adjusted += jume_bonus
     lord = SIGN_LORDS[SIGNS_ORDER[int(bhava_lon // 30.0) % 12]]
     bhavadhipati = grahabala_totals[lord]["total virupas"]
+    occupancy = occupancy_adjustment(house_num, cusps, positions)
+    rasibonus = rasi_bonus(SIGNS_ORDER[int(bhava_lon // 30.0) % 12], phase)
 
     return {
         "dig core": core,
         "dristi adjusted": round(adjusted, 2),
         "bhavadhipati": round(bhavadhipati, 2),
-        "total": round(adjusted + bhavadhipati, 2),
+        "occupancy": occupancy,
+        "rasi bonus": rasibonus,
+        "total": round(adjusted + bhavadhipati + occupancy + rasi_bonus, 2),
     }
-
-
-RASI_DRISTI = build_rasi_dristi()
 
 
 def by_name(positions):
     return {data["name"]: data for data in positions.values()}
 
 
-def calculate_bhavabala(cusps, positions, grahabala_result):
+def calculate_bhavabala(cusps, positions, grahabala_result, jd_ut, lon, lat, alt, flag):
     # LOG.debug("olo bhavabala calculate")
     if not cusps or len(cusps) < 12:
         return err("bhavabala : missing cusps")
     positions = by_name(positions)
+    srise, sset, _ = jyotisa_sunrise(jd_ut, lon, lat, alt, flag)
+    phase = daynight_phase(jd_ut, srise, sset)
     result = {
-        house_num: bhava_bala(house_num, cusps, positions, grahabala_result)
+        house_num: bhava_bala(house_num, cusps, positions, grahabala_result, phase)
         for house_num in range(1, 13)
     }
     return ok(result)
 
 
-def calculate_grahabala(
-    positions, houses, horas, jd_ut, geo_lon, srise, sset, srise_next
-):
+def calculate_grahabala(positions, houses, horas, jd_ut, lon, lat, alt, flag):
     try:
         positions = by_name(positions)
         cusps = houses.get("cusps") if houses else None
+        srise, sset, srise_next = jyotisa_sunrise(jd_ut, lon, lat, alt, flag)
         result = {}
-        natonnata = natonnata_bala(jd_ut, geo_lon)
+        natonnata = natonnata_bala(jd_ut, lon)
         paksa = paksa_bala(positions["su"]["lon"], positions["mo"]["lon"])
         tribhaga = tribhaga_bala(jd_ut, srise, sset, srise_next)
         dina = dina_bala(horas["horas list"][0]["vara lord"])
@@ -564,7 +669,12 @@ def calculate_grahabala(
             house = house_int(lon, cusps) if cusps else None
             chesta = chesta_bala(code, positions)
             if chesta is None:
-                chesta = ayana[code] if code == "su" else paksa[code]
+                # if code == "su":
+                #     chesta = ayana[code]
+                # elif code == "mo":
+                #     chesta = paksa[code]
+                # else:
+                chesta = 0.0
             result[code] = {
                 "naisargika bala": NAISARGIKA_BALA[code],
                 "dig bala": dig_bala(code, lon, cusps),

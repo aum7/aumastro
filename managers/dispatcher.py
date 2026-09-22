@@ -30,7 +30,7 @@ from sweph.calculations.returnlunar import calculate_lunar_return
 from sweph.calculations.returnsolar import calculate_solar_return
 from sweph.calculations.aspects import calculate_aspects
 from sweph.calculations.vimsottari import calculate_vimsottari
-from jyotisa.grahabhavabala import calculate_grahabala, calculate_bhavabala
+from sweph.calculations.grahabhavabala import calculate_grahabala, calculate_bhavabala
 from user.fixedstars import FIXEDSTARS
 from ui.mainpanes.chart.astroobject import AstroObject
 
@@ -561,6 +561,9 @@ class Dispatcher:
                         houses_data["cusps"],
                         positions_data,
                         grahabala_data,
+                        jd_ut,
+                        h0["sunrise jd"],
+                        h0["sunset jd"],
                     )
             self.calc_vimsottari()
         if event_id == "e2":
