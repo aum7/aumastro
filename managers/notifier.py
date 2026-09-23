@@ -123,6 +123,11 @@ class GtkNotificationHandler(logging.Handler):
             )
             self.notifier.route_message(msg)
         except Exception:
+            log.exception(
+                "notification handler failed for %r",
+                record.getMessage(),
+                extra=routing,
+            )
             self.handleError(record)
 
 

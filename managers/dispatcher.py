@@ -538,7 +538,7 @@ class Dispatcher:
                 )
             horas_data = calculated.get("horas")
             if positions_data and houses_data and horas_data:
-                h0 = horas_data["horas list"][0]
+                # h0 = horas_data["horas list"][0]
                 self.run_calc(
                     event_id,
                     "grahabala",
@@ -548,9 +548,9 @@ class Dispatcher:
                     horas_data,
                     jd_ut,
                     lon,
-                    h0["sunrise jd"],
-                    h0["sunset jd"],
-                    h0["sunrise next jd"],
+                    lat,
+                    alt,
+                    self.swe_flag,
                 )
                 grahabala_data = calculated.get("grahabala")
                 if grahabala_data:
@@ -562,8 +562,10 @@ class Dispatcher:
                         positions_data,
                         grahabala_data,
                         jd_ut,
-                        h0["sunrise jd"],
-                        h0["sunset jd"],
+                        lon,
+                        lat,
+                        alt,
+                        self.swe_flag,
                     )
             self.calc_vimsottari()
         if event_id == "e2":
@@ -745,12 +747,19 @@ class Dispatcher:
 
     def run_calc(self, event_id: str, key: str, func, *args):
         # run 1 calculation - cache on success : never raise nor block rest of package
-        result = func(*args)
-        if result["status"] != "ok":
-            LOG.error(
-                f"{key} calculation failed for {event_id} : {result['error']}",
-                extra=routinguser,
+        try:
+            result = func(*args)
+        except Exception:
+            LOG.exception(
+                "uncaught %s error for %s",
+                key,
+                event_id,
             )
+            # if result["status"] != "ok":
+            #         LOG.error(
+            #         f"{key} calculation failed for {event_id} : {result['error']}",
+            #         extra=routinguser,
+            #         )
             return
         self.events_data[event_id]["calculated"][key] = result["data"]
 

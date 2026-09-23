@@ -43,6 +43,7 @@ NAISARGIKA_BALA = {  # fixed, luminosity-ranked, virupas
 def jyotisa_sunrise(jd_ut, lon, lat, alt, flag):
     Y, M, D, _ = swe.revjul(jd_ut)
     jd_day = swe.julday(Y, M, D, 0.0)
+    # LOG.debug(f"calling rise_trans : flags {flag!r}")
     _, data = swe.rise_trans(
         jd_day,
         swe.SUN,
@@ -53,11 +54,20 @@ def jyotisa_sunrise(jd_ut, lon, lat, alt, flag):
         flags=flag,
     )
     srise = data[0]
+    # LOG.debug(
+    # "srise :"
+    # f"\nsrise={srise!r} {type(jd_ut).__name__}",
+    #     f"\nlon={lon!r} {type(lon).__name__}"
+    #     f"\nlat={lat!r} {type(lat).__name__}"
+    #     f"\nalt={alt!r} {type(alt).__name__}"
+    #     f"\nflag={flag!r} {type(flag).__name__}",
+    #     extra=routing,
+    # )
     if srise > jd_ut:
         jd_day -= 1.0
         _, data = swe.rise_trans(
             jd_day,
-            swe.sun,
+            swe.SUN,
             swe.CALC_RISE | swe.BIT_HINDU_RISING,
             (lon, lat, alt),
             atpress=0.0,
@@ -110,12 +120,18 @@ def paksa_bala(sun, moon):
 def tribhaga_bala(jd_ut, srise, sset, srise_next):
     if srise < sset <= jd_ut < srise_next:
         third = (srise_next - sset) / 3.0
-        idx = int((jd_ut - sset) // third)
-        ruler = ("mo", "ve", "ma")[min(idx, 2)]
+        if third <= 0:
+            return {code: 60.0 if code == "su" else 0.0 for code in NAISARGIKA_BALA}
+        idx = max(0, min(2, int((jd_ut - sset) // third)))
+        ruler = ("mo", "ve", "ma")[idx]
+        # idx = int((jd_ut - sset) // third)
+        # ruler = ("mo", "ve", "ma")[min(idx, 2)]
     else:
         third = (sset - srise) / 3.0
-        idx = int((jd_ut - srise) // third)
-        ruler = ("me", "su", "sa")[min(idx, 2)]
+        if third <= 0:
+            return {code: 60.0 if code == "su" else 0.0 for code in NAISARGIKA_BALA}
+        idx = max(0, min(2, int((jd_ut - srise) // third)))
+        ruler = ("me", "su", "sa")[idx]
 
     return {code: (60.0 if code == ruler else 0.0) for code in NAISARGIKA_BALA}
 
@@ -626,7 +642,7 @@ def bhava_bala(house_num, cusps, positions, grahabala_totals, phase):
         "bhavadhipati": round(bhavadhipati, 2),
         "occupancy": occupancy,
         "rasi bonus": rasibonus,
-        "total": round(adjusted + bhavadhipati + occupancy + rasi_bonus, 2),
+        "total": round(adjusted + bhavadhipati + occupancy + rasibonus, 2),
     }
 
 
@@ -636,24 +652,40 @@ def by_name(positions):
 
 def calculate_bhavabala(cusps, positions, grahabala_result, jd_ut, lon, lat, alt, flag):
     # LOG.debug("olo bhavabala calculate")
-    if not cusps or len(cusps) < 12:
-        return err("bhavabala : missing cusps")
-    positions = by_name(positions)
-    srise, sset, _ = jyotisa_sunrise(jd_ut, lon, lat, alt, flag)
-    phase = daynight_phase(jd_ut, srise, sset)
-    result = {
-        house_num: bhava_bala(house_num, cusps, positions, grahabala_result, phase)
-        for house_num in range(1, 13)
-    }
-    return ok(result)
+    stage = "start"
+    try:
+        stage = "validate cusps"
+        if not cusps or len(cusps) < 12:
+            return err("bhavabala : missing cusps")
+        stage = "normalize positions"
+        positions = by_name(positions)
+        stage = "calculate sunrise"
+        srise, sset, _ = jyotisa_sunrise(jd_ut, lon, lat, alt, flag)
+        stage = "daynight phase"
+        phase = daynight_phase(jd_ut, srise, sset)
+        result = {}
+        for house_num in range(1, 13):
+            stage = f"house {house_num}"
+            result[house_num] = bhava_bala(
+                house_num, cusps, positions, grahabala_result, phase
+            )
+        return ok(result)
+
+    except Exception as e:
+        LOG.exception(f"bhavabala failed at stage {stage} : {e}")
+        return err(e)
 
 
 def calculate_grahabala(positions, houses, horas, jd_ut, lon, lat, alt, flag):
+    stage = "start"
     try:
+        stage = "normalize inputs"
         positions = by_name(positions)
         cusps = houses.get("cusps") if houses else None
+        stage = "calculate sunrise"
         srise, sset, srise_next = jyotisa_sunrise(jd_ut, lon, lat, alt, flag)
         result = {}
+        stage = "calculate bala comonents"
         natonnata = natonnata_bala(jd_ut, lon)
         paksa = paksa_bala(positions["su"]["lon"], positions["mo"]["lon"])
         tribhaga = tribhaga_bala(jd_ut, srise, sset, srise_next)
@@ -662,12 +694,18 @@ def calculate_grahabala(positions, houses, horas, jd_ut, lon, lat, alt, flag):
         ayana = ayana_bala(positions)
         varsha = varsha_bala(varsha_lord(jd_ut))
         masa = masa_bala(masa_lord(jd_ut))
+        stage = "planetary totals"
         for code, data in positions.items():
             if code not in NAISARGIKA_BALA:
                 continue
+            stage = f"{code}"
             lon = data["lon"]
             house = house_int(lon, cusps) if cusps else None
             chesta = chesta_bala(code, positions)
+            stage = f"{code} : saptavarga bala"
+            saptavarga = saptavarga_bala(code, lon, positions)
+            stage = f"{code} : drik bala"
+            drik = drik_bala(code, positions)
             if chesta is None:
                 # if code == "su":
                 #     chesta = ayana[code]
@@ -691,9 +729,10 @@ def calculate_grahabala(positions, houses, horas, jd_ut, lon, lat, alt, flag):
                 "masa bala": masa[code],
                 "ayana bala": ayana[code],
                 "chesta bala": chesta,
-                "saptavarga bala": saptavarga_bala(code, lon, positions),
-                "drik bala": drik_bala(code, positions),
+                "saptavarga bala": saptavarga,
+                "drik bala": drik,
             }
+        stage = "sum & adjust totals"
         totals = sum_shadbala(result)
         totals = apply_yuddha_bala(totals, positions)
         for code in result:
@@ -703,5 +742,12 @@ def calculate_grahabala(positions, houses, horas, jd_ut, lon, lat, alt, flag):
         return ok(result)
 
     except Exception as e:
-        LOG.error(f"grahabhavabala calculation error : {e}")
+        LOG.error(
+            "grahabhavabala fail stage=%s : %s",
+            stage,
+            e,
+            extra=routing,
+            # extra={**ro)uting, "route": ["log"]},
+            exc_info=True,
+        )
         return err(e)
