@@ -17,6 +17,10 @@ from sweph.calculations.naksatras import get_naksatra
 from sweph.calculations.stations import get_retro_phases as retrphas
 
 
+# def is_position_entry(item):
+#     return isinstance(item, dict) and "lon" in item
+
+
 def calculate_positions(
     jd_ut,
     objs,
@@ -29,6 +33,7 @@ def calculate_positions(
     # let dispatcher worry about delivering proper data
     # LOG.debug(f"calculatepositions : division={division} type={type(division)}")
     positions = {}
+    # print(f"jdut : {jd_ut}")
     for obj in objs:
         code, name = objcode(obj, mean_node)
         if code is None:

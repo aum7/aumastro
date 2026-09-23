@@ -13,7 +13,12 @@ from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
 from timezonefinder import TimezoneFinder
 from helpers import _decimal_to_dms
-from sweph.swetime import validate_datetime, naive_to_utc, utc_to_jd
+from sweph.swetime import (
+    validate_datetime,
+    naive_to_utc,
+    utc_to_jd,
+    # jd_to_custom_iso as jdiso,
+)
 
 
 class EventData:
@@ -385,6 +390,9 @@ class EventData:
                         self.tz_offset = 0.0
                         wday = "-"
                     dt_event_str = f"{Y}-{M:02d}-{D:02d} {h:02d}:{m:02d}:{s:02d}"
+                    # print("local :", dt_event.isoformat())
+                    # print("offset :", dt_event.utcoffset())
+                    # print("utc : ", dt_event.astimezone(timezone.utc).isoformat())
                     if self.tz_offset is not None:
                         dt_utc = naive_to_utc(Y, M, D, h, m, s, self.tz_offset)
                         Yu, Mu, Du, hu, mu, su = dt_utc
@@ -414,6 +422,7 @@ class EventData:
         self.chart["weekday"] = wday
         self.chart["offset"] = str(self.tz_offset)
         self.sweph["jd ut"] = jd_ut
+        # print(f"offset : {self.tz_offset}\nutc iso : {jdiso(jd_ut)}")
         self.old_date_time = dt_event_str
         if self.id == "e2" and self.chart.get("datetime"):
             # copy missing location from event 1

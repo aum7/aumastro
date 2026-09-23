@@ -106,20 +106,6 @@ PRENATAL = {
         ),
     },
 }
-# SWE_FLAGS_MAP = {
-#     "sidereal zodiac":
-#     "true positions": swe.FLG_TRUEPOS,
-#     "topocentric": swe.FLG_TOPOCTR,
-#     # "heliocentric": swe.FLG_HELCTR,
-#     "default flag": swe.FLG_SWIEPH | swe.FLG_SPEED,
-#     "no nutation": swe.FLG_NONUT,
-#     # "no abberation": swe.FLG_NOABERR,
-#     # "no deflection": swe.FLG_NOGDEFL,
-#     # "equatorial": swe.FLG_EQUATORIAL,
-#     # "cartesian": swe.FLG_XYZ,
-#     # "radians": swe.FLG_RADIANS,
-# }
-
 SWE_FLAGS = {
     # default flags for sweph calculations
     # all flags are duplicated & commented as backup ; user can toggle them in
@@ -336,7 +322,7 @@ CHART_SETTINGS = {
     # --- use 28 lunar mansions
     # rulership as per chinese astrology / vivian e robson - fixed stars ...
     "28 mansions": (
-        True,
+        False,
         """use 28 lunar mansions with chinese / arabian names
 rulership changes to weekday order !
 can be changed in

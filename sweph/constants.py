@@ -113,6 +113,10 @@ BHAVA_DIG_REF = {  # sagittarius and capricorn split at 15°
 SIRSHODAYA = ("ge", "le", "vi", "li", "sc", "aq")  # day-birth bonus signs
 PRISHTHODAYA = ("ar", "ta", "cn", "sg", "cp")  # night-birth bonus signs
 # twilight bonus reuses existing DUAL = ("ge","vi","sg","pi")
+# near SPECIAL_ASPECT_ZONES
+# FULL_DRISTI_GRAHAS = {"me", "ju"}
+# BENEFIC_DRISTI_GRAHAS = {"mo", "ve"}
+# MALEFIC_DRISTI_GRAHAS = {"su", "ma", "sa"}
 #  vimsottari - 9 maha dasa year lengths
 DASA_YEARS = {
     "ke": 7,

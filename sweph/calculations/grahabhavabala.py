@@ -27,6 +27,9 @@ from sweph.constants import (
     BHAVA_DIG_REF,
     PRISHTHODAYA,
     SIRSHODAYA,
+    # FULL_DRISTI_GRAHAS,
+    # MALEFIC_DRISTI_GRAHAS,
+    # BENEFIC_DRISTI_GRAHAS,
 )
 
 NAISARGIKA_BALA = {  # fixed, luminosity-ranked, virupas
@@ -420,36 +423,75 @@ def chesta_bala(code, positions):
     return None if kendra is None else round(kendra / 3.0, 2)
 
 
+def dristi_value(code, giver, receiver):
+    sep = (receiver - giver) % 360.0
+    raw_rasi = sep / 30.0
+    rasi = 12.0 - raw_rasi if raw_rasi > 6.0 else raw_rasi
+    deg = rasi * 30.0
+    # bphs ch 26 general dristi
+    if rasi > 5.0:
+        value = deg * 2.0
+    elif rasi > 4.0:
+        value = 150.0 - deg
+    elif rasi > 3.0:
+        value = ((120.0 - deg) / 2.0) + 30.0
+    elif rasi > 2.0:
+        value = deg + 15.0
+    elif rasi > 1.0:
+        value = deg / 2.0
+    else:
+        value = 0.0
+    if code == "ju":
+        if 3.0 < raw_rasi <= 4.0 or 7.0 < raw_rasi <= 8.0:
+            value = 60.0 - deg
+        elif 2.0 < raw_rasi <= 3.0 or 6.0 < raw_rasi <= 7.0:
+            value = (deg / 2.0) + 15.0
+        # LOG.debug(
+        #     f"aspect {code} sep {sep} rawrasi {raw_rasi} rasi {rasi} value {value}"
+        # )
+    if code == "sa":
+        if raw_rasi > 8.0:
+            value = 30.0 + deg
+        elif 2.0 < raw_rasi <= 3.0:
+            value = 60.0 - (deg / 2.0)
+        elif raw_rasi > 1.0:
+            value = deg * 2.0
+        LOG.debug(
+            f"aspect {code} sep {sep} rawrasi {raw_rasi} rasi {rasi} value {value}"
+        )
+    return round(min(max(value, 0.0), 60.0), 2)
+
+
 def drik_bala(code, positions):
     net = 0.0
-    for giver, gdata in positions.items():
+    # receiver_sign = int(positions[code]["lon"] // 30.0) % 12
+    for giver, data in positions.items():
         if giver == code or giver not in NAISARGIKA_BALA:
             continue
-        val = dristi_value(giver, gdata["lon"], positions[code]["lon"])
-        net += -val if giver in ("su", "ma", "sa") else val
-    return round(net, 2)
-    # pinda = 0.0
-    # # net_sign = 0.0
-    # malefic_pinda = 0.0
-    # benefic_pinda = 0.0
-    # jume_pinda = 0.0
-    # for giver, gdata in positions.items():
-    #     if giver == code or giver not in NAISARGIKA_BALA:
-    #         continue
-    #     val = dristi_value(giver, gdata["lon"], positions[code]["lon"])
-    #     # is_malefic = giver in ("su", "ma", "sa")
-    #     pinda += val
-    #     # net_sign += -val if is_malefic else val
-    #     if giver in ("su", "ma", "sa"):
-    #         malefic_pinda += val
-    #     else:
-    #         benefic_pinda += val
-    #     if giver in ("ju", "me"):
-    #         jume_pinda += val
-    # adjustment = (benefic_pinda * 0.25) - (malefic_pinda * 0.25)
-    # adjustment = (0.25 if net=_sign >= 0 else -0.25) * pinda
+        val = dristi_value(
+            giver,
+            data["lon"],
+            positions[code]["lon"],
+        )
+        if giver in ("me", "ju"):  # FULL_DRISTI_GRAHAS:
+            signed = val
+        elif giver in ("su", "ma", "sa"):  # MALEFIC_DRISTI_GRAHAS:
+            signed = -val / 4.0
+        else:
+            signed = val / 4.0
 
-    # return round(min(pinda + adjustment + jume_pinda, 60.0), 2)
+        net += signed
+        # if code in {"ju", "sa"}:
+        #     LOG.debug(
+        #         f"drik {code} : giver {giver} aspect : {val:.2f} signed {signed:.2f}"
+        #     )
+    result = round(net, 2)
+    if code in {"ju", "sa"}:
+        LOG.debug(
+            f"drik {code} : total {result} positions {positions[code]['lon']:.2f}"
+        )
+
+    return result
 
 
 def base_dristi(sep):
@@ -479,18 +521,6 @@ SPECIAL_ASPECT_ZONES = {
     "ju": (30.0, ((120.0, 150.0), (240.0, 270.0))),  # 5th, 9th
     "sa": (45.0, ((60.0, 90.0), (270.0, 300.0))),  # 3rd, 10th
 }
-
-
-def dristi_value(code, giver, receiver):
-    sep = receiver - giver
-    value = base_dristi(sep)
-    bonus, zones = SPECIAL_ASPECT_ZONES.get(code, (0.0, ()))
-    for lo, hi in zones:
-        if lo < sep <= hi:
-            value += bonus
-            break
-
-    return min(value, 60.0)
 
 
 def compound_relationship(code, target_code, positions):
