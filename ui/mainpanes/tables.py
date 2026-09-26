@@ -90,7 +90,8 @@ class Tables(Gtk.Notebook):
     def create_table_widget(self, key, content, focus=False):
         # create a scrollable text view for event e1 or e2
         scroll = Gtk.ScrolledWindow()
-        scroll.set_name(f"package_scroll_{key}")
+        scroll.set_name(f"scroll_{key}")
+        # scroll.set_name(f"package_scroll_{key}")
         scroll.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
         scroll.set_hexpand(False)
         scroll.set_vexpand(True)
@@ -200,8 +201,8 @@ class Tables(Gtk.Notebook):
         # build header string with house column added
         header = (
             f" positions{self.vic_spc}{self.h_sym * 48}\n"
-            f" obj  {self.v_sym}        sign : nak{self.vic_spc}{self.v_sym}"
-            f"     harmonic : nak{self.vic_spc}{self.v_sym} "
+            f" obj  {self.v_sym}       sign : nak {self.vic_spc}{self.v_sym}"
+            f"   harmonic : nak {self.vic_spc}{self.v_sym} "
             f" lat {self.v_sym}   lon {self.v_sym} speed : rel "
             f"{self.v_sym} hs\n"
         )
@@ -224,7 +225,7 @@ class Tables(Gtk.Notebook):
             nak_ruler = nak["ruler"]
             harm_str = "     -   --"
             if harm_lon is not None and harm_nak is not None:
-                harm_str = f"{decsigndms(harm_lon):10}  {harm_nak['idx']:02}-{harm_nak['ruler']}"
+                harm_str = f"{decsigndms(harm_lon):10} {harm_nak['idx']:02}-{harm_nak['ruler']}"
             ln_pos = (
                 f" {name}{retro:<2} {self.v_sym} "
                 f"{decsigndms(lon):10} {nak_idx:02}-{nak_ruler} {self.v_sym} "
@@ -419,11 +420,11 @@ class Tables(Gtk.Notebook):
         event_id = "e1"
         if self.app.current_lvl == 1:
             self.app.current_lvl = 2
-        elif self.app.current_lvl == 2:
+        elif self.app.current_lvl == 2 and self.app.dispatcher.e2_active:
             self.app.current_lvl = 3
-        elif self.app.current_lvl == 3:
+        elif self.app.current_lvl == 3 and self.app.dispatcher.e2_active:
             self.app.current_lvl = 4
-        elif self.app.current_lvl == 4:
+        elif self.app.current_lvl == 4 and self.app.dispatcher.e2_active:
             self.app.current_lvl = 5
         else:
             self.app.current_lvl = 1

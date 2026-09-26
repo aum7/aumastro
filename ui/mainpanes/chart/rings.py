@@ -244,13 +244,13 @@ class Rings:
                 radius,
                 obj_size,
             )
-            # draw object outline for stationary (r or d) &
-            # object center dot
+            # draw object outline a) red for stationary (sr or sd)
+            # b) white for retro - stationary speed in sweph/constants.py
             retro_state = obj.data.get("retro", " ")
             label = f"{name} {retro_state}"
             if retro_state in ("SD", "SR"):
                 cr.save()
-                # white slightly larger object outline
+                # red slightly larger object outline
                 cr.set_source_rgba(*self.RING_COLORS["stationary"])
                 cr.set_line_width(2)
                 cr.arc(x, y, draw_size + 2, 0, 2 * pi)
@@ -258,10 +258,9 @@ class Rings:
                 cr.restore()
             elif retro_state == "R":
                 cr.save()
-                # red slightly larger object outline
+                # white slightly larger object outline
                 cr.set_source_rgba(*self.RING_COLORS["retro"])
                 cr.arc(x, y, draw_size + 2, 0, 2 * pi)
-                # cr.fill()
                 cr.stroke()
                 cr.restore()
             self.snap_targets.append((lon, radius, label, ring))
@@ -288,7 +287,7 @@ class Rings:
             marker_size=self.scaled_size(ring, "marker"),
         )
 
-    def draw_outer_ring(self, cr, ring, cusp_color=None, cusp_width=1):
+    def draw_outer_ring(self, cr, ring, cusp_color=None, cusp_width=2):
         # outer ring generator function
         outer_r, mid_r, inner_r = self.get_ring_bounds(ring)
         cr.arc(self.cx, self.cy, outer_r, 0, 2 * pi)

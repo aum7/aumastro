@@ -378,6 +378,8 @@ def dristi_kona(sep):
 
 
 def build_rasi_dristi():
+    # make table of rasi dristis : planets occupying a sign -inherit- sign aspects
+    # might be bhava dristi also ???
     table = {}
     for sign in SIGN_LORDS:
         idx = SIGNS_ORDER.index(sign)
@@ -456,9 +458,9 @@ def dristi_value(code, giver, receiver):
             value = 60.0 - (deg / 2.0)
         elif raw_rasi > 1.0:
             value = deg * 2.0
-        LOG.debug(
-            f"aspect {code} sep {sep} rawrasi {raw_rasi} rasi {rasi} value {value}"
-        )
+        # LOG.debug(
+        #     f"aspect {code} sep {sep} rawrasi {raw_rasi} rasi {rasi} value {value}"
+        # )
     return round(min(max(value, 0.0), 60.0), 2)
 
 
@@ -486,10 +488,10 @@ def drik_bala(code, positions):
         #         f"drik {code} : giver {giver} aspect : {val:.2f} signed {signed:.2f}"
         #     )
     result = round(net, 2)
-    if code in {"ju", "sa"}:
-        LOG.debug(
-            f"drik {code} : total {result} positions {positions[code]['lon']:.2f}"
-        )
+    # if code in {"ju", "sa"}:
+    # LOG.debug(
+    #     f"drik {code} : total {result} positions {positions[code]['lon']:.2f}"
+    # )
 
     return result
 

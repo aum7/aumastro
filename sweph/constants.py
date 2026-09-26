@@ -182,7 +182,7 @@ STATION_SPEED = {  # stationary speed
     8: 0.002777778,  # "ne"
     9: 0.002777778,  # "pl"
 }
-# average planet speeds
+# average planet speeds : rotational degree per day
 AVG_SPEEDS = {
     0: 0.9856,  # sun
     1: 13.1764,  # moon

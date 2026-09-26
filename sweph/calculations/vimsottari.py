@@ -229,7 +229,7 @@ def vimsottari_table(e1_jd, e1_mo, e2_jd, curr_lvl, max_lvl, year_length):
     header = (
         f"\n 'shift+v' : toggle dasas level\n"
         " level 1 & 2 : complete dasas\n"
-        " levels 3-5 : event 2 datetime maha dasa only\n"
+        " levels 3-5 : >event 2 datetime< maha dasa only\n"
         f"{separ}"
         f" nak {idx:02} {nak_name} {nak_lord} | traversed "
         f"{frac * 100:.2f} % | lvl {curr_lvl}\n{separ}"

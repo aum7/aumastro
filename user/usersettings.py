@@ -184,8 +184,8 @@ if checked also select ayanamsa below""",
 # dropdown - top line is default choice
 HOUSE_SYSTEMS = [
     # sweph | name | display
-    ("E", "equal asc", "eqa"),
     ("W", "whole sign", "whs"),  # jyotisa & houck
+    ("E", "equal asc", "eqa"),
     ("O", "porphyry", "prp"),
     ("B", "alcabitus", "alc"),  # gansten : close to porphyry
     ("D", "equal mc", "eqm"),
@@ -197,8 +197,8 @@ HOUSE_SYSTEMS = [
 # --- time constants ---
 # dropdown : top is default
 SOLAR_YEARS = [  # (solar) year lengths in days
-    ("sid", 365.256363, "sidereal"),
     ("gre", 365.2425, "gregorian"),
+    ("sid", 365.256363, "sidereal"),
     ("jul", 365.25, "julian"),
     ("trp", 365.24219, "tropical"),
     ("lun", 354.37, "lunar"),  # 12 * synodic lunar month
@@ -216,8 +216,8 @@ LUNAR_MONTHS = [  # lunar month lengths
 # also arrange order as you please > move line up / down & save file
 # dropdown : top is default
 AYANAMSAS = [
-    (1, "lahiri", "lhr (01)"),  # SIDM_LAHIRI
     (255, "custom (below)", "usr"),  # sidm_user
+    (1, "lahiri", "lhr (01)"),  # SIDM_LAHIRI
     (45, "krishnamurti-sent.", "kms (45)"),  # sidm_krishnamurti_vp291
     (17, "gal. center 0 sag", "glc (17)"),  # sidm_galcent_0sag j2000 = 26°50'31.8335
     # (0, "Fagan/Bradley", "fbr (00)"),  # SIDM_FAGAN_BRADLEY
@@ -273,18 +273,18 @@ CUSTOM_AYANAMSA = {
     "custom julian day utc": 2451545.00000,
     # user-defined custom ayanamsa : must be decimal degrees
     # default is 23.76694445 (23° 46' 01"), as per richard houck's book
-    # 'astrology of death', for 2000-01-01
+    # 'astrology of death', for 2000-01-01 (above)
     "custom ayanamsa": 23.76694444,
 }
 CHART_SETTINGS = {
     # --- use mean node else true node
     "mean node": (
-        True,
+        False,
         "calculate mean node (vs default true node)",
     ),
     # ---
     "exact lunar month": (
-        False,
+        True,
         "calculate exact (vs average) lunar month length for progressions",
     ),
     # --- toggle glyphs visibility (shortcut)
@@ -409,6 +409,7 @@ sweph/constants.py""",
         ),
     ),
     # --- astro chart angle ruler & hover info snapping distance (or angle)
+    # not exposed to user
     "snap tolerance": (
         9.9,
         (
@@ -450,6 +451,7 @@ example : {hsys} | {zod}\n{aynm}""",
     ),
 }
 FILES = {
+    # USER IS EXPECTED NOT TO CHANGE BELOW DEFAULTS : only 'data' is implemented
     # --- path to ephemerides folder, with min semo_18.se1 & sepl_18.se1 files, or
     # a complete ephe folder https://github.com/aloistr/swisseph/tree/master/ephe
     # todo separate path for linux & mswindows : do we need to ?
@@ -482,7 +484,7 @@ FILES = {
     # 1: event {name} | 2: event {date} | 3: {time}
     # separate fields with '_' underscore ; for short time format (no seconds)
     # use {time_short} ; see default value as example
-    # todo unused
+    # todo : not saving - using this -defaults- file instead + /eventsdb/db.py
     "filename": (
         r"{name}_{date}_{time_short}",
         "construct your own 'save filename' format : allowed fields"

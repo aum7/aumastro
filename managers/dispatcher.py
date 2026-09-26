@@ -207,6 +207,8 @@ class Dispatcher:
         if event_id == "e2":
             self.e2_active = True
         self.recalculate(event_id)
+        if event_id == "e1" and self.e2_active:
+            self.recalculate("e2")
 
     def on_e2_clear(self, event_id=None):
         # handle e2 removal
@@ -739,6 +741,7 @@ class Dispatcher:
                 )
             self.calc_vimsottari()
             self.refresh_package("e1")
+            # self.update_titlebar() # not updating ageyears nor agemonths
         self.refresh_package(event_id)
         self.update_titlebar()
         elapsed_ms = (time.perf_counter() - t0) * 1000
@@ -834,8 +837,8 @@ class Dispatcher:
             "syzygy": self._prep_ring(e1_calculated.get("syzygy")),
             "bhavabala": e1_calculated.get("bhavabala") or {},
         }
-        LOG.debug(f"refreshpackage : grahabala : {e1_calculated.get('grahabala')}")
-        LOG.debug(f"refreshpackage : bhavabala : {e1_calculated.get('bhavabala')}")
+        # LOG.debug(f"refreshpackage : grahabala : {e1_calculated.get('grahabala')}")
+        # LOG.debug(f"refreshpackage : bhavabala : {e1_calculated.get('bhavabala')}")
         if self.harmonic_ring:
             hx_pos = self._prep_ring(e1_calculated.get("positions"), harmonic=True)
             if not isinstance(hx_pos, list):

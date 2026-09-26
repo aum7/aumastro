@@ -6,7 +6,7 @@
 # Gtk.Window.set_interactive_debugging(True)
 # app todo :
 #   menu button to titlebar
-#
+#   ageyear nor month wont update on event 1 or 2 datetime change
 # LOG
 # 2026-09-16 21-12
 #   app bumped v0 > v1 - major code redesign &
