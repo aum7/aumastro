@@ -30,7 +30,8 @@ from sweph.calculations.returnlunar import calculate_lunar_return
 from sweph.calculations.returnsolar import calculate_solar_return
 from sweph.calculations.aspects import calculate_aspects
 from sweph.calculations.vimsottari import calculate_vimsottari
-from sweph.calculations.grahabhavabala import calculate_grahabala, calculate_bhavabala
+
+# from sweph.calculations.grahabhavabala import calculate_grahabala, calculate_bhavabala
 from user.fixedstars import FIXEDSTARS
 from ui.mainpanes.chart.astroobject import AstroObject
 
@@ -538,37 +539,37 @@ class Dispatcher:
                     self.selected_stars,
                     self.swe_flag,
                 )
-            horas_data = calculated.get("horas")
-            if positions_data and houses_data and horas_data:
-                # h0 = horas_data["horas list"][0]
-                self.run_calc(
-                    event_id,
-                    "grahabala",
-                    calculate_grahabala,
-                    positions_data,
-                    houses_data,
-                    horas_data,
-                    jd_ut,
-                    lon,
-                    lat,
-                    alt,
-                    self.swe_flag,
-                )
-                grahabala_data = calculated.get("grahabala")
-                if grahabala_data:
-                    self.run_calc(
-                        event_id,
-                        "bhavabala",
-                        calculate_bhavabala,
-                        houses_data["cusps"],
-                        positions_data,
-                        grahabala_data,
-                        jd_ut,
-                        lon,
-                        lat,
-                        alt,
-                        self.swe_flag,
-                    )
+            # horas_data = calculated.get("horas")
+            # if positions_data and houses_data and horas_data:
+            #     # h0 = horas_data["horas list"][0]
+            #     self.run_calc(
+            #         event_id,
+            #         "grahabala",
+            #         calculate_grahabala,
+            #         positions_data,
+            #         houses_data,
+            #         horas_data,
+            #         jd_ut,
+            #         lon,
+            #         lat,
+            #         alt,
+            #         self.swe_flag,
+            #     )
+            #     grahabala_data = calculated.get("grahabala")
+            #     if grahabala_data:
+            #         self.run_calc(
+            #             event_id,
+            #             "bhavabala",
+            #             calculate_bhavabala,
+            #             houses_data["cusps"],
+            #             positions_data,
+            #             grahabala_data,
+            #             jd_ut,
+            #             lon,
+            #             lat,
+            #             alt,
+            #             self.swe_flag,
+            #         )
             self.calc_vimsottari()
         if event_id == "e2":
             # progressions returns for event 2
@@ -835,7 +836,7 @@ class Dispatcher:
             "eclipses": self._prep_ring(e1_calculated.get("eclipses")),
             "stars": self._prep_ring(e1_calculated.get("stars")),
             "syzygy": self._prep_ring(e1_calculated.get("syzygy")),
-            "bhavabala": e1_calculated.get("bhavabala") or {},
+            # "bhavabala": e1_calculated.get("bhavabala") or {},
         }
         # LOG.debug(f"refreshpackage : grahabala : {e1_calculated.get('grahabala')}")
         # LOG.debug(f"refreshpackage : bhavabala : {e1_calculated.get('bhavabala')}")

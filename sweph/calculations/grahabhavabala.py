@@ -44,6 +44,7 @@ NAISARGIKA_BALA = {  # fixed, luminosity-ranked, virupas
 
 
 def jyotisa_sunrise(jd_ut, lon, lat, alt, flag):
+    # calculate separate -hindu- sunrise/set & leave horas.py as they be born
     Y, M, D, _ = swe.revjul(jd_ut)
     jd_day = swe.julday(Y, M, D, 0.0)
     # LOG.debug(f"calling rise_trans : flags {flag!r}")
@@ -414,7 +415,7 @@ def chesta_kendra(code, positions):
         return None
 
     data = positions[code]
-    kendra = (sc - (data["mean lon"] + data["lon"]) / 2) % 360.0
+    kendra = (sc - (data["mean lon"] + data["lon"]) / 2 + 180.0) % 360.0
 
     return 360.0 - kendra if kendra > 180.0 else kendra
 
@@ -427,41 +428,45 @@ def chesta_bala(code, positions):
 
 def dristi_value(code, giver, receiver):
     sep = (receiver - giver) % 360.0
-    raw_rasi = sep / 30.0
-    rasi = 12.0 - raw_rasi if raw_rasi > 6.0 else raw_rasi
-    deg = rasi * 30.0
-    # bphs ch 26 general dristi
-    if rasi > 5.0:
-        value = deg * 2.0
-    elif rasi > 4.0:
-        value = 150.0 - deg
-    elif rasi > 3.0:
-        value = ((120.0 - deg) / 2.0) + 30.0
-    elif rasi > 2.0:
-        value = deg + 15.0
-    elif rasi > 1.0:
-        value = deg / 2.0
-    else:
-        value = 0.0
-    if code == "ju":
-        if 3.0 < raw_rasi <= 4.0 or 7.0 < raw_rasi <= 8.0:
-            value = 60.0 - deg
-        elif 2.0 < raw_rasi <= 3.0 or 6.0 < raw_rasi <= 7.0:
-            value = (deg / 2.0) + 15.0
-        # LOG.debug(
-        #     f"aspect {code} sep {sep} rawrasi {raw_rasi} rasi {rasi} value {value}"
-        # )
-    if code == "sa":
-        if raw_rasi > 8.0:
-            value = 30.0 + deg
-        elif 2.0 < raw_rasi <= 3.0:
-            value = 60.0 - (deg / 2.0)
-        elif raw_rasi > 1.0:
-            value = deg * 2.0
-        # LOG.debug(
-        #     f"aspect {code} sep {sep} rawrasi {raw_rasi} rasi {rasi} value {value}"
-        # )
+    value = base_dristi(sep)
+    bonus, zones = SPECIAL_ASPECT_ZONES.get(code, (0.0, ()))
+    if any(lo <= sep <= hi for lo, hi in zones):
+        value += bonus
     return round(min(max(value, 0.0), 60.0), 2)
+    # raw_rasi = sep / 30.0
+    # rasi = 12.0 - raw_rasi if raw_rasi > 6.0 else raw_rasi
+    # deg = rasi * 30.0
+    # # bphs ch 26 general dristi
+    # if rasi > 5.0:
+    #     value = deg * 2.0
+    # elif rasi > 4.0:
+    #     value = 150.0 - deg
+    # elif rasi > 3.0:
+    #     value = ((120.0 - deg) / 2.0) + 30.0
+    # elif rasi > 2.0:
+    #     value = deg + 15.0
+    # elif rasi > 1.0:
+    #     value = deg / 2.0
+    # else:
+    #     value = 0.0
+    # if code == "ju":
+    #     if 3.0 < raw_rasi <= 4.0 or 7.0 < raw_rasi <= 8.0:
+    #         value = 60.0 - deg
+    #     elif 2.0 < raw_rasi <= 3.0 or 6.0 < raw_rasi <= 7.0:
+    #         value = (deg / 2.0) + 15.0
+    #     # LOG.debug(
+    #     #     f"aspect {code} sep {sep} rawrasi {raw_rasi} rasi {rasi} value {value}"
+    #     # )
+    # if code == "sa":
+    #     if raw_rasi > 8.0:
+    #         value = 30.0 + deg
+    #     elif 2.0 < raw_rasi <= 3.0:
+    #         value = 60.0 - (deg / 2.0)
+    #     elif raw_rasi > 1.0:
+    #         value = deg * 2.0
+    # LOG.debug(
+    #     f"aspect {code} sep {sep} rawrasi {raw_rasi} rasi {rasi} value {value}"
+    # )
 
 
 def drik_bala(code, positions):
@@ -475,9 +480,9 @@ def drik_bala(code, positions):
             data["lon"],
             positions[code]["lon"],
         )
-        if giver in ("me", "ju"):  # FULL_DRISTI_GRAHAS:
-            signed = val
-        elif giver in ("su", "ma", "sa"):  # MALEFIC_DRISTI_GRAHAS:
+        # if giver in ("me", "ju"):  # FULL_DRISTI_GRAHAS:
+        #     signed = val
+        if giver in ("su", "ma", "sa"):  # MALEFIC_DRISTI_GRAHAS:
             signed = -val / 4.0
         else:
             signed = val / 4.0
@@ -779,7 +784,6 @@ def calculate_grahabala(positions, houses, horas, jd_ut, lon, lat, alt, flag):
             stage,
             e,
             extra=routing,
-            # extra={**ro)uting, "route": ["log"]},
             exc_info=True,
         )
         return err(e)
