@@ -8,10 +8,12 @@ source = "horas"
 routing = {"source": source, "route": ["terminal"]}
 from helpers import ok, err
 import swisseph as swe
-from zoneinfo import ZoneInfo
+
+# from zoneinfo import ZoneInfo
 from timezonefinder import TimezoneFinder
-from sweph.swetime import jd_to_custom_iso as jdtoiso
-from datetime import datetime, timezone
+from sweph.swetime import jd_to_local_time as jdtoloc  # jd_to_custom_iso as jdtoiso
+
+# from datetime import datetime, timezone
 from sweph.constants import HORAS_ORDER
 
 # weekday number to name
@@ -26,13 +28,13 @@ WEEKDAY = {
 }
 
 
-def jd_to_local_time(jd, tz_name):
-    # from utc result to event datetime : timezone
-    utc_dt = datetime.strptime(jdtoiso(jd), "%Y-%m-%d %H:%M:%S")
-    utc_dt = utc_dt.replace(tzinfo=timezone.utc)
-    if tz_name:
-        return utc_dt.astimezone(ZoneInfo(tz_name))
-    return utc_dt
+# def jd_to_local_time(jd, tz_name):
+#     # from utc result to event datetime : timezone
+#     utc_dt = datetime.strptime(jdtoiso(jd), "%Y-%m-%d %H:%M:%S")
+#     utc_dt = utc_dt.replace(tzinfo=timezone.utc)
+#     if tz_name:
+#         return utc_dt.astimezone(ZoneInfo(tz_name))
+#     return utc_dt
 
 
 def get_day_horas(jd_ut, lon, lat, alt, flag):
@@ -41,8 +43,9 @@ def get_day_horas(jd_ut, lon, lat, alt, flag):
     tz_name = tzf.timezone_at(lat=lat, lng=lon)
 
     def to_event_str(jd):
-        # convert to event location time
-        dt_event = jd_to_local_time(jd, tz_name)
+        # convert to eventlocation time
+        dt_event = jdtoloc(jd, tz_name)
+        # dt_event = jd_to_local_time(jd, tz_name)
         return dt_event.strftime("%Y-%m-%d %H:%M:%S")
 
     # take start of jd = midnight

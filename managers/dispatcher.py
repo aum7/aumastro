@@ -383,7 +383,8 @@ class Dispatcher:
             return
 
         e1_jd = e1_sweph["jd ut"]
-        e1_mo = positions_data[1]["lon"]
+        # e1_mo = positions_data[1]["lon"]
+        e1_mo = swe.calc_ut(e1_jd, swe.MOON, self.swe_flag & ~swe.FLG_TOPOCTR)[0][0]
         e2_jd = None
         if self.e2_active:
             e2_sweph = self.events_data["e2"].get("sweph")
@@ -398,6 +399,7 @@ class Dispatcher:
             e2_jd,
             self.app.current_lvl,
             self.selected_year_period[1],
+            self.events_data["e1"].get("chart", {}).get("timezone"),
         )
 
     def on_vimsottari_toggle(self):

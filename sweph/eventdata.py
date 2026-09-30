@@ -17,7 +17,7 @@ from sweph.swetime import (
     validate_datetime,
     naive_to_utc,
     utc_to_jd,
-    # jd_to_custom_iso as jdiso,
+    utc_offset_hours,
 )
 
 
@@ -302,12 +302,13 @@ class EventData:
                     dt_event = dt_utc.astimezone(ZoneInfo(tz))
                     wday = weekdays[dt_event.weekday()]
                     dt_event_str = dt_event.strftime("%Y-%m-%d %H:%M:%S")
-                    tz_offset_ = dt_event.utcoffset()
-                    tz_offset_str = str(tz_offset_)
-                    parts = [p for p in tz_offset_str.split(",") if p]
-                    days = int(parts[0].split()[0]) if "day" in parts[0] else 0
-                    h, m, s = map(int, parts[-1].strip().split(":"))
-                    self.tz_offset = days * 24 + h + m / 60 + s / 3600
+                    self.tz_offset = utc_offset_hours(dt_event)
+                    # tz_offset_ = dt_event.utcoffset()
+                    # tz_offset_str = str(tz_offset_)
+                    # parts = [p for p in tz_offset_str.split(",") if p]
+                    # days = int(parts[0].split()[0]) if "day" in parts[0] else 0
+                    # h, m, s = map(int, parts[-1].strip().split(":"))
+                    # self.tz_offset = days * 24 + h + m / 60 + s / 3600
                 _, jd_ut = utc_to_jd(
                     dt_utc.year,
                     dt_utc.month,
@@ -360,7 +361,8 @@ class EventData:
                 if error:
                     LOG.error("datetime validation failed")
                 if dt_data is not None:
-                    Y, M, D, h, m, s, cal, _ = dt_data
+                    Y, M, D, h, m, s, cal, jd_lmt = dt_data
+                    # Y, M, D, h, m, s, cal, _ = dt_data
                     Y, M, D, h, m, s = (
                         int(Y),
                         int(M),
@@ -380,12 +382,13 @@ class EventData:
                         if tz:
                             dt_event = datetime(Y, M, D, h, m, s, tzinfo=ZoneInfo(tz))
                             wday = weekdays[dt_event.weekday()]
-                            tz_offset = dt_event.utcoffset()
-                            tz_offset_str = str(tz_offset)
-                            parts = [p for p in tz_offset_str.split(",") if p]
-                            days_ = int(parts[0].split()[0]) if "day" in parts[0] else 0
-                            h_, m_, s_ = map(int, parts[-1].strip().split(":"))
-                            self.tz_offset = days_ * 24 + h_ + m_ / 60 + s_ / 3600
+                            self.tz_offset = utc_offset_hours(dt_event)
+                            # tz_offset = dt_event.utcoffset()
+                            # tz_offset_str = str(tz_offset)
+                            # parts = [p for p in tz_offset_str.split(",") if p]
+                            # days_ = int(parts[0].split()[0]) if "day" in parts[0] else 0
+                            # h_, m_, s_ = map(int, parts[-1].strip().split(":"))
+                            # self.tz_offset = days_ * 24 + h_ + m_ / 60 + s_ / 3600
                     else:
                         self.tz_offset = 0.0
                         wday = "-"
@@ -393,6 +396,11 @@ class EventData:
                     # print("local :", dt_event.isoformat())
                     # print("offset :", dt_event.utcoffset())
                     # print("utc : ", dt_event.astimezone(timezone.utc).isoformat())
+                    if lon_val is not None:
+                        # local apparent time : jc_lmt is local mean time
+                        # utc comes from longitude not zone offset
+                        self.tz_offset = lon_val / 15
+                        jd_ut = jd_lmt - lon_val / 360
                     if self.tz_offset is not None:
                         dt_utc = naive_to_utc(Y, M, D, h, m, s, self.tz_offset)
                         Yu, Mu, Du, hu, mu, su = dt_utc

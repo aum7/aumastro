@@ -128,7 +128,7 @@ def calculate_d1(e1_jd, lat, lon, objs, hsys, mean_node, flag):
 
 # def run_test():
 #     # if __name__ == "__main__":
-#     # lisa presley test : 1968-02-01 17-01 ut, memphis 35.1495 n 90.049 w
+#     # lisa presley test : 1968-02-01 17-01 local time (= 23-01 ut), memphis 35.1495 n 90.049 w
 #     jd_lmp = swe.julday(1968, 2, 1, 17.016667)
 #     geo_lmp = (35.1495, -90.049, 0.0)
 #     objs_test = ["su", "mo", "me", "ve", "ma", "ju", "sa"]
@@ -179,6 +179,7 @@ def calculate_d1(e1_jd, lat, lon, objs, hsys, mean_node, flag):
 # moon     16°17'04" Gem     0°00'09"        11°05'58"
 # node     18°27'53" Cnc     0°00'09"        -0°02'59"
 # endregion lisa presley
+# sig → m(oving), prom → f(ixed) - claude ai agreement
 # region primary directions quick course & output legend
 # significator (sig)
 # the target or receiver. it represents the area of life being affected (e.g. ascendant = physical body and health, mc = career and status).

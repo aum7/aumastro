@@ -9,7 +9,7 @@ from math import modf
 from swisseph import contrib as swh
 from ui.fonts.glyphs import SIGNS
 from user.usersettings import OBJECTS
-from sweph.constants import AVG_SPEEDS
+from sweph.constants import AVG_SPEEDS, MAGNITUDE_RANGE
 
 
 def get_harmonic_lon(lon, division):
@@ -45,6 +45,17 @@ def _relative_speed(code, speed: float):
     if not mean:
         return 0
     return int(round((speed / mean) * 100))
+
+
+def _relative_magnitude(code, mag):
+    # % of brightness range : 0 faintest, 100 = brightest
+    if mag is None or code not in MAGNITUDE_RANGE:
+        return None
+
+    brightest, faintest = MAGNITUDE_RANGE[code]
+    pct = 100 * (faintest - mag) / (faintest - brightest)
+
+    return max(0.0, min(100.0, pct))
 
 
 def _decimal_to_ymd(period: float, year_length: float):

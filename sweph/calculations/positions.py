@@ -10,15 +10,13 @@ from helpers import (
     _object_name_to_code as objcode,
     get_harmonic_lon as harmlon,
     _relative_speed,
+    _relative_magnitude,
     ok,
     err,
 )
+from sweph.constants import MAGNITUDE_RANGE
 from sweph.calculations.naksatras import get_naksatra
 from sweph.calculations.stations import get_retro_phases as retrphas
-
-
-# def is_position_entry(item):
-#     return isinstance(item, dict) and "lon" in item
 
 
 def calculate_positions(
@@ -61,6 +59,9 @@ def calculate_positions(
                 if swe.MOON <= code <= swe.SATURN
                 else None
             )
+            mag = (
+                swe.pheno_ut(jd_ut, code, flag)[4] if code in MAGNITUDE_RANGE else None
+            )
             # LOG.debug(f"equatorial : {result_equat}")
             positions[code] = {
                 "name": name,
@@ -75,6 +76,8 @@ def calculate_positions(
                 "harmonic": harmonic,
                 "harmonic naksatra": harmonic_nak,
                 "speed relative": _relative_speed(code, pos[3]),
+                "magnitude": mag,
+                "magnitude relative": _relative_magnitude(code, mag),
             }
         except swe.Error as e:
             LOG.error(

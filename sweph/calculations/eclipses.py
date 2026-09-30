@@ -7,7 +7,8 @@ source = "eclipses"
 routing = {"source": source, "route": ["terminal"]}
 import swisseph as swe
 from helpers import ok, err
-from sweph.calculations.horas import jd_to_local_time as toloctime
+from sweph.swetime import jd_to_local_time as jdtoloc
+# from sweph.calculations.horas import jd_to_local_time as toloctime
 
 GESTATION_DAYS = 273.0
 
@@ -122,7 +123,7 @@ def calculate_last_eclipses(jd_ut, flag, tz_name=None):
         for found in (find_solar_eclipse, find_lunar_eclipse):
             ecl = found(jd_ut, flag)
             if ecl:
-                dt_local = toloctime(ecl["jd"], tz_name)
+                dt_local = jdtoloc(ecl["jd"], tz_name)
                 ecl["local time"] = (
                     f"{dt_local.year}-{dt_local.month:02d}-{dt_local.day:02d} "
                     f"{dt_local.hour:02d}:{dt_local.minute:02d}"
@@ -142,7 +143,7 @@ def calculate_eclipses(jd_ut, flag, tz_name=None):
         for ecl in find_all_solar_eclipses(
             jd_ut, conception_jd, flag
         ) + find_all_lunar_eclipses(jd_ut, conception_jd, flag):
-            dt_local = toloctime(ecl["jd"], tz_name)
+            dt_local = jdtoloc(ecl["jd"], tz_name)
             ecl["local time"] = (
                 f"{dt_local.year}-{dt_local.month:02d}-{dt_local.day:02d} "
                 f"{dt_local.hour:02d}:{dt_local.minute:02d}"

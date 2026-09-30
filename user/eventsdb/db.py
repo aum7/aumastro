@@ -3,11 +3,17 @@
 # default data (state, city, location, name, date-time) for event 1 & 2
 # IMPORTANT ! default country must be enabled in countries.py
 DEFAULT_E1 = {
-    "country": "Slo",
-    "city": "ljubljana",
-    "location": "46 03 10 n 14 31 26 e 0294 m",  # porodnišnica lj
-    "name": "nau",
-    "datetime": "1975 2 8 14 10",
+    "country": "usa",
+    "city": "muskegon heights",
+    "location": "43 12 n 86 15 w",  # porodnišnica lj
+    "name": "jim bakker",
+    "datetime": "1940 1 2 11 00",
+    # ---
+    # "country": "Slo",
+    # "city": "ljubljana",
+    # "location": "46 03 10 n 14 31 26 e 0294 m",  # porodnišnica lj
+    # "name": "nau",
+    # "datetime": "1975 2 8 14 10",
 }
 DEFAULT_E2 = {
     "datetime": "2026-08-21 19:36:00",  # lisa presley 45th revolution

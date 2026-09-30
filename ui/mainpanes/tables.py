@@ -200,11 +200,11 @@ class Tables(Gtk.Notebook):
         text = ""
         # build header string with house column added
         header = (
-            f" positions{self.vic_spc}{self.h_sym * 48}\n"
+            f" positions{self.vic_spc}{self.h_sym * 58}\n"
             f" obj  {self.v_sym}       sign : nak {self.vic_spc}{self.v_sym}"
             f"   harmonic : nak {self.vic_spc}{self.v_sym} "
             f" lat {self.v_sym}   lon {self.v_sym} speed : rel "
-            f"{self.v_sym} hs\n"
+            f"{self.v_sym}   mag : rel {self.v_sym} hs\n"
         )
         text += header
         # separ = f"{self.h_sym * 56}\n"
@@ -215,6 +215,13 @@ class Tables(Gtk.Notebook):
             # relative speed
             speed_rel = obj["speed relative"]
             # print(f"tables : speed : {speed}")
+            mag = obj["magnitude"]
+            mag_rel = obj["magnitude relative"]
+            mag_str = (
+                f"{mag:6.2f} {mag_rel:4.0f}"
+                if mag is not None
+                else f"{'-':>6} {'-':>4}"
+            )
             lon = obj["lon"]
             retro = obj["retro"]
             house = hsforlon(obj["lon"], cusps)
@@ -231,7 +238,8 @@ class Tables(Gtk.Notebook):
                 f"{decsigndms(lon):10} {nak_idx:02}-{nak_ruler} {self.v_sym} "
                 f"{harm_str} {self.v_sym}"
                 f"{obj['lat']:5.2f} {self.v_sym} "
-                f"{lon:5.1f} {self.v_sym} {speed:6.3f} {speed_rel:4.0f} {self.v_sym} {house}\n"
+                f"{lon:5.1f} {self.v_sym} {speed:6.3f} {speed_rel:4.0f} {self.v_sym} "
+                f"{mag_str} {self.v_sym} {house}\n"
             )
             text += ln_pos
         # houses

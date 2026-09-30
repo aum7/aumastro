@@ -16,6 +16,21 @@ routinguser = {"source": source, "route": ["terminal", "user"]}
 import re
 import swisseph as swe
 from helpers import _decimal_to_hms
+from datetime import datetime, timezone
+from zoneinfo import ZoneInfo
+
+
+def utc_offset_hours(dt_event):
+    # utc offset of tz-aware datetime in hours
+    return dt_event.utcoffset().total_seconds() / 3600
+
+
+def jd_to_local_time(jd, tz_name):
+    # utc jd to event local tz-aware datetime
+    utc_dt = datetime.strptime(jd_to_custom_iso(jd), "%Y-%m-%d %H:%M:%S")
+    utc_dt = utc_dt.replace(tzinfo=timezone.utc)
+
+    return utc_dt.astimezone(ZoneInfo(tz_name)) if tz_name else utc_dt
 
 
 def validate_datetime(date_time: str, lon=None):
@@ -79,18 +94,18 @@ def validate_datetime(date_time: str, lon=None):
         Y = 17000
     # check for calendar flag : g(regorian) is default
     calendar = b"j" if "j" in flags else b"g"
-    cal_swe = swe.JUL_CAL if calendar == b"j" else swe.GREG_CAL
+    # cal_swe = swe.JUL_CAL if calendar == b"j" else swe.GREG_CAL
     # check for time flag : local apparent vs mean time = default
     local_time = "a" if "a" in flags else "m"
+    if local_time == "a" and lon is None:
+        return None, "local apparent time : longitude missing"
     # check if date-time is valid
     dec_h = h + m / 60 + s / 3600
-    jd = swe.julday(Y, M, D, dec_h, cal_swe)
-    if local_time == "a":
-        if lon is None:
-            return None, "local apparent time : longitude missing"
-        jd = swe.lat_to_lmt(jd, lon)
     # validate date-time
     is_valid, jd, dt_corr = swe.date_conversion(Y, M, D, dec_h, calendar)
+    # jd = swe.julday(Y, M, D, dec_h, cal_swe)
+    if local_time == "a":
+        jd = swe.lat_to_lmt(jd, lon)
     if not is_valid:
         # corrected datetime used
         # date_conversion returns i 1975-2-8 14:9:60 for input 1975 02 08 14 10
@@ -105,6 +120,7 @@ def validate_datetime(date_time: str, lon=None):
             f"date-time as corrected : {Y}-{M}-{D} {h}:{m}:{s}",
         )
         return (Y, M, D, h, m, s, calendar, jd), None
+
     if s >= 60:
         s = 0
         m += 1
@@ -126,19 +142,20 @@ def custom_iso_to_jd(
     """convert date-time to julian date & check if datetime is valid"""
     dec_h = h + m / 60 + s / 3600
     # convert calender bytes to int
-    cal_swe = swe.GREG_CAL if calendar == b"g" else swe.JUL_CAL
-    jd = swe.julday(Y, M, D, dec_h, cal_swe)
+    # cal_swe = swe.GREG_CAL if calendar == b"g" else swe.JUL_CAL
+    # jd = swe.julday(Y, M, D, dec_h, cal_swe)
     # local apparent => mean time
     # in : jd_lat, geolon ; out : jd_lmt, err (string);
-    if local_time == "a":
-        if not lon:
-            LOG.error(
-                "customisotojd : longitude missing for local apparent time",
-                extra=routinguser,
-            )
-            return False, None, (Y, M, D, dec_h)
-        jd = swe.lat_to_lmt(jd, lon)
+    if local_time == "a" and lon is None:
+        LOG.error(
+            "customisotojd : longitude missing for local apparent time",
+            extra=routinguser,
+        )
+        return False, None, (Y, M, D, dec_h)
     is_valid, jd, dt_corr = swe.date_conversion(Y, M, D, dec_h, calendar)
+    if local_time == "a":
+        jd = swe.lat_to_lmt(jd, lon)
+
     return is_valid, jd, dt_corr
 
 
