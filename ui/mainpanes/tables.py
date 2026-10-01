@@ -10,7 +10,7 @@ routingtimeout6 = {"source": source, "route": ["terminal", "user"], "timeout": "
 routinguser = {"source": source, "route": ["terminal", "user"]}
 from sweph.swetime import jd_to_custom_iso as jdtoiso
 from sweph.constants import PLANETARY_ORDER
-from ui.fonts.glyphs import get_glyph
+from ui.fonts.glyphs import get_glyph, PLANETS, SIGNS, ASPECTS, EXTRA
 from helpers import (
     _decimal_to_sign_dms as decsigndms,
     _decimal_to_ra as decra,
@@ -52,12 +52,12 @@ class Tables(Gtk.Notebook):
             "vimsottari",
             "e1",
             "e1 horas",
+            "d1",  # LEAVEIT
             "e2",
             "e2 horas",
             "p2",
             "p3",
             "p3m",
-            # "d1", # LEAVEIT
         ]
         # event data widget
         self.app.signaler.connect("package table ready", self.on_package_ready)
@@ -167,8 +167,11 @@ class Tables(Gtk.Notebook):
         if aspects:
             content += aspects
         self.set_page_content(event_id, content)
-        if "vimsottari" in package and event_id == "e1":
-            self.set_page_content("vimsottari", package["vimsottari"])
+        if event_id == "e1":
+            if "vimsottari" in package:
+                self.set_page_content("vimsottari", package["vimsottari"])
+            if "d1" in package:
+                self.set_page_content("d1", self.get_d1_text(package["d1"]))
         if "horas" in package:
             self.update_horas(f"{event_id} horas", package["horas"]["horas list"])
         if event_id == "e2":
@@ -338,6 +341,31 @@ class Tables(Gtk.Notebook):
         text += self.h_line
         # LOG.debug(f"getaspectstext :\n{text}")
         return text
+
+    def get_d1_text(self, directions: list):
+        # primary directions : sig (moving) travels with arc to prom (fixed)
+        sign_keys = list(SIGNS)
+        separ = f"{self.h_sym * 22}\n"
+        text = (
+            " primary directions\n direct | 1° = 1 year | arc in ° = age in years\n"
+            " sig (moving / directed) travels to prom (fixed / natal)\n T = term"
+            f"{separ}"
+            f"   age {self.v_sym} date       {self.v_sym} sig > prom\n"
+            f"{separ}"
+        )
+        for d in directions:
+            date = jdtoiso(d["jd"])[:10]
+            sig = EXTRA.get(d["sig"], PLANETS.get(d["sig"], ""))
+            prom = PLANETS.get(d["prom"], "")
+            if d["aspect"] is None:  # entering terms
+                sign = SIGNS[sign_keys[d["term sign"]]][0]
+                target = f"T {prom} {sign}"
+            else:
+                target = f"{ASPECTS[d['aspect']][0]}{prom}"
+            text += (
+                f" {d['age']:5.2f} {self.v_sym} {date} {self.v_sym} {sig} > {target}\n"
+            )
+        return text + separ
 
     def update_progress(self, key: str, package: dict, data_key: str, date: str):
         # common updater for p2 p3 p3m progressions

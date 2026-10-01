@@ -1,12 +1,20 @@
 # sweph/calculations/d1.py
 # ruff: noqa: E402, E701
 # original (ai code)
-# primary direction (aka primary progression)
+# primary direction (aka primary progression) as per gansten (or we die trying)
 # actual motion of heavens in hours following birth, brings objects to
 # places in natal chart, unfolding events in years to come; each degree
 # of such motion corresponds to approximately 1 year of life
 # it is equatorial plane usually in tabular form : todo can we
 # reproduce tables in circular form ie are dates of angles same ???
+# placidus semi-arc & direct motion & key of ptolemy
+# sig = Moving directed point : asc mc su mo
+# prom = Fixed natal point : planet | aspect point | term start
+# arc = equatorial degrees until significator reaches promissor
+# age = arc (1° = 1 anno )
+# points on daily circle / arc of the sky as phase : 0 rising 90+ culminating
+# 180+ setting 270+ lower culmination 360+ rising again : has 4 semi arcs =
+# degrees it needs for each of those 4 quarters
 import logging
 
 LOG = logging.getLogger(__name__)
@@ -14,114 +22,126 @@ source = "d1"
 routing = {"source": source, "route": ["terminal"]}
 import math
 import swisseph as swe
-from helpers import _object_name_to_code as objcode, ok, err
+from helpers import ok, err
+from sweph.constants import TERMS
+from user.usersettings import OBJECTS
 
 
-def get_speculum(jd_ut, code, lat, ramc, flag):
-    # gather data for primary direction calculations
-    try:
-        res = swe.calc_ut(jd_ut, code, flag | swe.FLG_EQUATORIAL)
-    except swe.Error as e:
-        LOG.error(
-            f"speculum error : {e}",
-            extra=routing,
-        )
-        return None
-    pos = res[0]
-    ra = pos[0]
-    dec = pos[1]
-    tan_val = math.tan(math.radians(dec)) * math.tan(math.radians(lat))
-    tan_val = max(-1.0, min(1.0, tan_val))
-    ad = math.degrees(math.asin(tan_val))
-    dsa = 90.0 + ad
-    nsa = 90.0 - ad
-    md_mc = abs((ra - ramc + 180.0) % 360.0 - 180.0)
-    oa = (ra - ad) if lat >= 0 else (ra + ad)
-    oa = oa % 360.0
-    oa_asc = (ramc + 90.0) % 360.0
-    hd = (oa - oa_asc + 180.0) % 360.0 - 180.0
-    is_above = md_mc <= dsa
-    sa = dsa if is_above else nsa
-    md = md_mc if is_above else abs(((ra - (ramc + 180.0)) + 180.0) % 360.0 - 180.0)
+MAX_ARC = 120.0  # max life span in years
+DAYS_PER_ARC_DEGREE = 365.25
+CLASSICAL_PLANETS = {obj[0]: code for code, obj in OBJECTS.items() if code <= 6}
+ASPECT_ANGLES = (0, 60, 90, 120, 180)
+# latitude kept for conjunction (body) & opposition (antipode = opposite latitude)
+# 60 90 120 lie on ecliptic (latitude 0)
+LATITUDE_FACTOR = {0: 1, 180: -1}
+
+
+def wrap_180(angle):
+    return (angle + 180.0) % 360.0 - 180.0
+
+
+def locate_point(lon, lat, obliquity, geo_lat, ramc):
+    # ecliptic point > 4 semi-arcs (rise>mc>set>ic) & phase on diurnal circle
+    # phase : asc 0 > mc 90 > dsc 180 > ic 270 > asc 360
+    ra, decl = swe.cotrans((lon % 360.0, lat, 1.0), -obliquity)[:2]
+    tan_val = math.tan(math.radians(decl)) * math.tan(math.radians(geo_lat))
+    asc_diff = math.degrees(math.asin(max(-1.0, min(1.0, tan_val))))
+    day_semi_arc, night_semi_arc = 90.0 + asc_diff, 90.0 - asc_diff
+    merid_dist = wrap_180(ra - ramc)  # +ve east of mc & -ve west of mc
+    if abs(merid_dist) <= day_semi_arc:  # above horizon
+        phase = 90.0 * (1.0 - merid_dist / day_semi_arc)
+    else:  # below horizon : distance measured from ic
+        phase = 270.0 - 90.0 * wrap_180(ra - ramc - 180.0) / night_semi_arc
 
     return {
-        "ra": ra,
-        "dec": dec,
-        "ad": ad,
-        "dsa": dsa,
-        "nsa": nsa,
-        "oa": oa,
-        "md": md,
-        "hd": hd,
-        "sa": sa,
-        "is_above": is_above,
+        "semi_arcs": (day_semi_arc, night_semi_arc),
+        "phase": phase,
     }
 
 
-def calculate_d1(e1_jd, lat, lon, objs, hsys, mean_node, flag):
-    # primary direction calculation
+def risen_degrees(semi_arcs, phase):
+    # equatorial degrees elapsed since rising
+    day, night = semi_arcs
+    quarters = (day, day, night, night)  # rise>mc mc>set set>ic ic>rise
+    quarter = min(int(phase // 90.0), 3)
+    done = sum(quarters[:quarter])
+    return done + quarters[quarter] * (phase - 90.0 * quarter) / 90.0
+
+
+def direction_arc(prom, sig_phase):
+    # arc of promotor primary motion travel to significator proportional place
+    # place is kept as fraction of quarter then measured with promissor own semi arc
+    semi_arcs = prom["semi_arcs"]
+    target = risen_degrees(semi_arcs, sig_phase)
+    start = risen_degrees(semi_arcs, prom["phase"])
+    return (target - start) % 360.0
+
+
+def calculate_d1(e1_jd, lat, lon, alt, flag):
+    # tropical primary direction : terms follow zodiac - sidereal if used
+    tropical_flag = swe.FLG_SWIEPH
+    # tropical_flag = flag & ~(swe.FLG_SIDEREAL | swe.FLG_TOPOCTR)
+    ayan = swe.get_ayanamsa_ut(e1_jd) if flag & swe.FLG_SIDEREAL else 0.0
     try:
-        houses = swe.houses(e1_jd, lat, lon, hsys)
+        # ramc = swe.houses(e1_jd, lat, lon, hsys)[1][2]
+        ramc = (swe.sidtime(e1_jd) * 15.0 + lon) % 360.0
+        obliquity = swe.calc_ut(e1_jd, swe.ECL_NUT)[0][0]
     except swe.Error as e:
+        LOG.debug(f"d1 calculations failed : {e}")
         return err(e)
-    ramc = houses[1][2]
-    oa_asc = (ramc + 90.0) % 360.0
-    directions = []
-    # angle directions
-    for obj in objs:
-        code, name = objcode(obj, mean_node)
-        if code is None:
-            return err(f"unknown object name : {obj}")
-        # try:
-        spec = get_speculum(e1_jd, code, lat, ramc, flag)
-        if spec is None:
+    # mo parallax : same as dispatcher : code is safe
+    swe.set_topo(lon, lat, alt)
+
+    def locate(ecl_lon, ecl_lat):
+        return locate_point(ecl_lon, ecl_lat, obliquity, lat, ramc)
+
+    # natal bodies : name > code lon lat
+    bodies = {}
+    for name, code in CLASSICAL_PLANETS.items():
+        # gansten uses topocentric moon
+        body_flag = tropical_flag | (swe.FLG_TOPOCTR if code == swe.MOON else 0)
+        try:
+            position = swe.calc_ut(e1_jd, code, body_flag)[0]
+        except swe.Error as e:
+            LOG.debug(f"d1 position error : {name} : {e}")
             continue
-        # direction to mc
-        arc_mc = (spec["ra"] - ramc) % 360.0
-        directions.append({
-            "sig": "mc",
-            "prom": name,
-            "type": "direct",
-            "arc": round(arc_mc, 4),
-            "age": round(arc_mc, 2),
-        })
-        # directions to asc
-        arc_asc = (spec["oa"] - oa_asc) % 360.0
-        directions.append({
-            "sig": "asc",
-            "prom": name,
-            "type": "direct",
-            "arc": round(arc_asc, 4),
-            "age": round(arc_asc, 2),
-        })
-    # body to body directions (proportional semi-arc)
-    speculums = {}
-    for obj in objs:
-        code, name = objcode(obj, mean_node)
-        if code is None:
-            return err(f"unknown object name : {obj}")
-        # try:
-        speculums[code] = (name, get_speculum(e1_jd, code, lat, ramc, flag))
-    codes = list(speculums.keys())
-    for i in range(len(codes)):
-        for j in range(i + 1, len(codes)):
-            c1, c2 = codes[i], codes[j]
-            name1, spec1 = speculums[c1]
-            name2, spec2 = speculums[c2]
-            if spec1 is None or spec2 is None:
-                # todo breaks ???
+        bodies[name] = (code, position[0], position[1])
+    # significators : name > phase : asc mc always - luminaries if present
+    sigs = {"asc": 0.0, "mc": 90.0}
+    for name, (code, ecl_lon, ecl_lat) in bodies.items():
+        if code in (swe.SUN, swe.MOON):
+            sigs[name] = locate(ecl_lon, ecl_lat)["phase"]
+    # promissors : name aspect sign point
+    proms = []
+    for name, (_, ecl_lon, ecl_lat) in bodies.items():
+        # proms.append((name, "con", None, pt(lo, la)))
+        # proms.append((name, "opp", None, pt(lo + 180.0, -la)))
+        for angle in ASPECT_ANGLES:
+            lat_factor = LATITUDE_FACTOR.get(angle, 0)
+            for offset in {angle % 360, -angle % 360}:  # both sides of body
+                point = locate(ecl_lon + offset, ecl_lat * lat_factor)
+                proms.append((name, angle, None, point))
+    for start_lon, ruler in TERMS.items():
+        point = locate(start_lon + ayan, 0.0)
+        proms.append((ruler, None, int(start_lon // 30), point))
+    # every significator vs every promissor
+    directions = []
+    for sig, phase in sigs.items():
+        for prom, aspect, term_sign, point in proms:
+            if prom == sig and aspect == 0:
                 continue
-            if spec1["sa"] != 0:
-                pd1 = spec1["md"] / spec1["sa"]
-                pp2 = spec2["sa"] * pd1
-                arc = abs(pp2 - spec2["md"])
+            arc = direction_arc(point, phase)
+            if 1e-6 < arc <= MAX_ARC:
                 directions.append({
-                    "sig": name1,
-                    "prom": name2,
-                    "type": "direct",
+                    "sig": sig,
+                    "prom": prom,  # term ruler for terms
+                    "aspect": aspect,  # angle : none for terms
+                    "term sign": term_sign,  # 0 = ari : none for aspects
                     "arc": round(arc, 4),
                     "age": round(arc, 2),
+                    "jd": e1_jd + arc * DAYS_PER_ARC_DEGREE,
                 })
+    directions.sort(key=lambda d: d["arc"])
 
     return ok(directions)
 
@@ -179,7 +199,6 @@ def calculate_d1(e1_jd, lat, lon, objs, hsys, mean_node, flag):
 # moon     16°17'04" Gem     0°00'09"        11°05'58"
 # node     18°27'53" Cnc     0°00'09"        -0°02'59"
 # endregion lisa presley
-# sig → m(oving), prom → f(ixed) - claude ai agreement
 # region primary directions quick course & output legend
 # significator (sig)
 # the target or receiver. it represents the area of life being affected (e.g. ascendant = physical body and health, mc = career and status).

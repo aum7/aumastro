@@ -20,8 +20,7 @@ from sweph.calculations.lots import calculate_lots
 from sweph.calculations.stars import calculate_stars
 from sweph.calculations.syzygy import calculate_syzygy
 from sweph.calculations.eclipses import calculate_eclipses, calculate_last_eclipses
-
-# from sweph.calculations.d1 import calculate_d1
+from sweph.calculations.d1 import calculate_d1
 from sweph.calculations.p2 import calculate_p2
 from sweph.calculations.p3 import calculate_p3
 from sweph.calculations.p3m import calculate_p3m
@@ -541,6 +540,17 @@ class Dispatcher:
                     self.selected_stars,
                     self.swe_flag,
                 )
+            # primary directions
+            self.run_calc(
+                event_id,
+                "d1",
+                calculate_d1,
+                jd_ut,
+                lat,
+                lon,
+                alt,
+                self.swe_flag,
+            )
             # horas_data = calculated.get("horas")
             # if positions_data and houses_data and horas_data:
             #     # h0 = horas_data["horas list"][0]

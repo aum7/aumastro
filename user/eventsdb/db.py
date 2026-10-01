@@ -3,11 +3,18 @@
 # default data (state, city, location, name, date-time) for event 1 & 2
 # IMPORTANT ! default country must be enabled in countries.py
 DEFAULT_E1 = {
+    # --- lisa marie presley
     "country": "usa",
-    "city": "muskegon heights",
-    "location": "43 12 n 86 15 w",  # porodnišnica lj
-    "name": "jim bakker",
-    "datetime": "1940 1 2 11 00",
+    "city": "memphis",
+    "location": "35 9 n 090 3 w",
+    "name": "lisa presley",
+    "datetime": "1968-02-01 17:01",  # cst
+    # --- richard houck p29
+    # "country": "usa",
+    # "city": "muskegon heights",
+    # "location": "43 12 n 86 15 w",  # porodnišnica lj
+    # "name": "jim bakker",
+    # "datetime": "1940 1 2 11 00",
     # ---
     # "country": "Slo",
     # "city": "ljubljana",

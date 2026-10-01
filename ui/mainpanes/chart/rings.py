@@ -59,7 +59,7 @@ class Rings:
         "border dark": (0.1, 0.1, 0.1, 1),
         # retro outline circles
         "retro": (1, 1, 1, 0.5),
-        "stationary": (1, 0, 0, 0.7),
+        "stationary": (1, 0, 0, 0.6),
         "default": (0.5, 0.5, 0.5, 0.5),
     }
     SIZES = {
@@ -252,7 +252,7 @@ class Rings:
                 cr.save()
                 # red slightly larger object outline
                 cr.set_source_rgba(*self.RING_COLORS["stationary"])
-                cr.set_line_width(2)
+                cr.set_line_width(1.5)
                 cr.arc(x, y, draw_size + 2, 0, 2 * pi)
                 cr.stroke()
                 cr.restore()
