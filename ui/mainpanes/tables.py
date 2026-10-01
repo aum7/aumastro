@@ -345,12 +345,13 @@ class Tables(Gtk.Notebook):
     def get_d1_text(self, directions: list):
         # primary directions : sig (moving) travels with arc to prom (fixed)
         sign_keys = list(SIGNS)
-        separ = f"{self.h_sym * 22}\n"
+        separ = f"{self.h_sym * 24}\n"
         text = (
             " primary directions\n direct | 1° = 1 year | arc in ° = age in years\n"
-            " sig (moving / directed) travels to prom (fixed / natal)\n T = term"
+            " significator (moving / directed) travels\n to promissor (fixed / natal)"
+            " | T = term\n"
             f"{separ}"
-            f"   age {self.v_sym} date       {self.v_sym} sig > prom\n"
+            f" {'age':>6} {self.v_sym} {'date':<10} {self.v_sym} sig > prom\n"
             f"{separ}"
         )
         for d in directions:
@@ -361,10 +362,8 @@ class Tables(Gtk.Notebook):
                 sign = SIGNS[sign_keys[d["term sign"]]][0]
                 target = f"T {prom} {sign}"
             else:
-                target = f"{ASPECTS[d['aspect']][0]}{prom}"
-            text += (
-                f" {d['age']:5.2f} {self.v_sym} {date} {self.v_sym} {sig} > {target}\n"
-            )
+                target = f"{ASPECTS[d['aspect']][0]} {prom}"
+            text += f" {d['age']:6.2f} {self.v_sym} {date:<10} {self.v_sym} {sig} > {target}\n"
         return text + separ
 
     def update_progress(self, key: str, package: dict, data_key: str, date: str):

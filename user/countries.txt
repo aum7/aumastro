@@ -3,6 +3,8 @@
 # un/comment = delete/add '#', and save file
 # countries will be sorted alphabetically by long name
 # countries can be renamed - middle / long name only !
+# in which case also MAKE SURE contry in db.py > default_e1 uses
+# exact same casing - UPPERCASE or lowercase or MixedCase
 # if renamed > best make copy of whole line & move up
 
 #--- copies of original lines > renamed -----

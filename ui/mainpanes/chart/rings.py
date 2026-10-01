@@ -825,8 +825,14 @@ class Rings:
         lines = info_text.split("\n")
         target_size = outer_r * 1.5
         sample = max(lines, key=len) if lines else ""
-        draw_font_size = self.fit_glyph_font_size(cr, sample, target_size)
-        line_spacing = draw_font_size * 1.2
+        spacing = 1.2  # line height
+        draw_font_size = min(
+            self.fit_glyph_font_size(cr, sample, target_size),  # width limit
+            target_size / (len(lines) * spacing),  # height limit
+        )
+        line_spacing = draw_font_size * spacing
+        # draw_font_size = self.fit_glyph_font_size(cr, sample, target_size)
+        # line_spacing = draw_font_size * 1.2
         # todo fix info text scaling
         self.set_custom_font(cr, draw_font_size)
         total_height = (len(lines) - 1) * line_spacing

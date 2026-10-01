@@ -1,10 +1,11 @@
 # user/eventsdb/db.py
 # add your event data here, it will be used as default event
 # default data (state, city, location, name, date-time) for event 1 & 2
-# IMPORTANT ! default country must be enabled in countries.py
+# IMPORTANT ! default country must be enabled in countries.py - also make sure
+# to select proper country from dropdown list in app > sidepane > event one
 DEFAULT_E1 = {
     # --- lisa marie presley
-    "country": "usa",
+    "country": "USA",
     "city": "memphis",
     "location": "35 9 n 090 3 w",
     "name": "lisa presley",
