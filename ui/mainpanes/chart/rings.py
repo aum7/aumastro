@@ -25,11 +25,12 @@ class Rings:
         "p2 progress": (0, 0, 0.24, 1),
         "p3 progress": (0, 0.1, 0.26, 1),
         "p3m progress": (0, 0.14, 0.28, 1),
-        # "d1 direction": (0.13, 0.13, 0.13, 1),
         "lunar return": (0.1386, 0.1269, 0.0092, 1),
         "solar return": (0.1686, 0.1569, 0.0392, 1),
+        "d1 direction": (0.13, 0.13, 0.13, 1),
         "naksatras": (0.1, 0.1, 0.1, 1),
-        "harmonic": (0.1, 0.1, 0.1, 1),
+        "terms": (0.1, 0.1, 0.1, 1),
+        "natal harmonic": (0.1, 0.1, 0.1, 1),
         "signs": (0.15, 0.15, 0.15, 1),
         "signs circle": (1, 1, 1, 0.7),
         "event": (0.1, 0.1, 0.1, 1),
@@ -432,17 +433,10 @@ class Rings:
             cr.restore()
             cr.new_path()
 
-    def draw_harmonic_ring(self, cr):
+    def draw_terms_ring(self, cr):
         # draw circle
-        ring = "harmonic"
+        ring = "terms"
         outer_r, mid_r, inner_r = self.get_ring_bounds(ring)
-        harmonic = self.package.get("harmonic", [])
-        division = self.app.dispatcher.harmonic_ring
-        # LOG.debug(f"drawharmonicring : division={division} type={type(division)}")
-        if not division:
-            LOG.debug("drawharmonicring : division NONE : dont send me this")
-            return
-
         cr.arc(self.cx, self.cy, outer_r, 0, 2 * pi)
         # background colo
         cr.set_source_rgba(*self.RING_COLORS[ring])
@@ -451,54 +445,65 @@ class Rings:
         cr.set_line_width(1)
         cr.stroke()
         # (egyptian) terms (aka bounds) if division 1
-        if division == 1:
-            terms_sorted = sorted(TERMS.items())
-            terms_num = len(terms_sorted)
-            self.set_custom_font(cr, self.font_size * self.font_scale * 0.6)
-            for i, (deg, ruler) in enumerate(terms_sorted):
-                # start angle
-                angle = pi - (deg * pi / 180)
-                x1 = self.cx + inner_r * cos(angle)
-                y1 = self.cy + inner_r * sin(angle)
-                x2 = self.cx + outer_r * cos(angle)
-                y2 = self.cy + outer_r * sin(angle)
-                cr.move_to(x1, y1)
-                cr.line_to(x2, y2)
-                cr.set_source_rgba(1, 1, 1, 0.5)
-                cr.stroke()
-                # collect snap points
-                self.snap_targets.append((
-                    float(deg),
-                    None,
-                    f"{ruler}",
-                    "harmonic",
-                ))
-                # glyphs : next border for mid term position
-                next_deg = (
-                    360 if i == terms_num - 1 else terms_sorted[(i + 1) % terms_num][0]
-                )
-                angle_next = pi - (next_deg * pi / 180)
-                # handle wrap-around
-                mid_angle = (angle + angle_next) / 2
-                # position glyph at ring middle
-                glyph_fix = 1.008
-                xg = self.cx + mid_r * glyph_fix * cos(mid_angle)
-                yg = self.cy + mid_r * glyph_fix * sin(mid_angle)
-                glyph = glyphs.get_glyph(ruler, False)
-                self.draw_rotated_text(cr, glyph, xg, yg, mid_angle)
-        elif division > 1:
-            # clean sign borders
-            self.draw_sign_borders(cr, ring)
-            # draw objects
-            self.draw_ordered(
-                cr,
-                ring,
-                harmonic,
-                radius_fn=lambda obj: mid_r,
-                obj_size=self.scaled_size(ring, "harmonic obj"),
-                marker_size=self.scaled_size(ring, "marker"),
-                skip=(),  # ("asc", "mc"),
+        terms_sorted = sorted(TERMS.items())
+        terms_num = len(terms_sorted)
+        self.set_custom_font(cr, self.font_size * self.font_scale * 0.6)
+        for i, (deg, ruler) in enumerate(terms_sorted):
+            # start angle
+            angle = pi - (deg * pi / 180)
+            x1 = self.cx + inner_r * cos(angle)
+            y1 = self.cy + inner_r * sin(angle)
+            x2 = self.cx + outer_r * cos(angle)
+            y2 = self.cy + outer_r * sin(angle)
+            cr.move_to(x1, y1)
+            cr.line_to(x2, y2)
+            cr.set_source_rgba(1, 1, 1, 0.5)
+            cr.stroke()
+            # collect snap points
+            self.snap_targets.append((
+                float(deg),
+                None,
+                f"{ruler}",
+                "terms",
+            ))
+            # glyphs : next border for mid term position
+            next_deg = (
+                360 if i == terms_num - 1 else terms_sorted[(i + 1) % terms_num][0]
             )
+            angle_next = pi - (next_deg * pi / 180)
+            # handle wrap-around
+            mid_angle = (angle + angle_next) / 2
+            # position glyph at ring middle
+            glyph_fix = 1.008
+            xg = self.cx + mid_r * glyph_fix * cos(mid_angle)
+            yg = self.cy + mid_r * glyph_fix * sin(mid_angle)
+            glyph = glyphs.get_glyph(ruler, False)
+            self.draw_rotated_text(cr, glyph, xg, yg, mid_angle)
+
+    def draw_natal_harmonic_ring(self, cr):
+        # draw circle
+        ring = "natal harmonic"
+        outer_r, mid_r, _ = self.get_ring_bounds(ring)
+        harmonic = self.package.get("natal harmonic", [])
+        cr.arc(self.cx, self.cy, outer_r, 0, 2 * pi)
+        # background colo
+        cr.set_source_rgba(*self.RING_COLORS[ring])
+        cr.fill_preserve()
+        cr.set_source_rgba(1, 1, 1, 0.7)
+        cr.set_line_width(1)
+        cr.stroke()
+        # clean sign borders
+        self.draw_sign_borders(cr, ring)
+        # draw objects
+        self.draw_ordered(
+            cr,
+            ring,
+            harmonic,
+            radius_fn=lambda obj: mid_r,
+            obj_size=self.scaled_size(ring, "harmonic obj"),
+            marker_size=self.scaled_size(ring, "marker"),
+            skip=(),  # ("asc", "mc"),
+        )
 
     # inner rings in order from outer-most to central
     def draw_signs_ring(self, cr):
@@ -852,19 +857,24 @@ class Rings:
         # info event signs are mandatory
         outer_rings_map = {
             "transit": lambda cr: self.draw_outer_ring(
-                cr, "transit", cusp_color=(0, 1, 0, 1)
+                cr,
+                "transit",
+                cusp_color=(0, 1, 0, 1),
             ),
-            "transit harmonic": lambda cr: self.draw_outer_ring(cr, "transit harmonic"),
+            "transit harmonic": lambda cr: self.draw_outer_ring(
+                cr,
+                "transit harmonic",
+            ),
             "p2 progress": lambda cr: self.draw_outer_ring(cr, "p2 progress"),
             "p3 progress": lambda cr: self.draw_outer_ring(cr, "p3 progress"),
             "p3m progress": lambda cr: self.draw_outer_ring(cr, "p3m progress"),
-            # "d1 direction": self.draw_d1_ring,
             "lunar return": lambda cr: self.draw_outer_ring(
                 cr, "lunar return", cusp_color=(1, 1, 0.6, 1), cusp_width=2
             ),
             "solar return": lambda cr: self.draw_outer_ring(
                 cr, "solar return", cusp_color=(1, 1, 0.6, 1), cusp_width=2
             ),
+            "d1 direction": lambda cr: self.draw_outer_ring(cr, "d1 direction"),
         }
         cr.save()
         houses = self.package.get("houses", {})
@@ -880,8 +890,10 @@ class Rings:
                 func(cr)
         if self.app.dispatcher.naksatras_ring:
             self.draw_naksatras_ring(cr)
-        if self.app.dispatcher.harmonic_ring:
-            self.draw_harmonic_ring(cr)
+        if self.app.dispatcher.terms_ring:
+            self.draw_terms_ring(cr)
+        if self.app.dispatcher.natal_harmonic_ring:
+            self.draw_natal_harmonic_ring(cr)
         self.draw_signs_ring(cr)
         self.draw_event_ring(cr)
         cr.restore()

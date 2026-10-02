@@ -82,8 +82,8 @@ class EventData:
                 )
                 return
 
-            if location == self.old_location:
-                return
+        if location == self.old_location:
+            return
 
         try:
             valid_chars = set("0123456789 -.nsewm")
@@ -107,7 +107,7 @@ class EventData:
                 alt = "0"
                 if len(parts) > lon_dir_idx + 1:
                     alt = parts[lon_dir_idx + 1]
-                    if not int(alt):
+                    if not alt.lstrip("-").isdigit():
                         raise ValueError("altitude invalid")
                 if not len(lat_parts) == len(lon_parts):
                     raise ValueError("latitude or longitude missing")
@@ -169,13 +169,13 @@ class EventData:
                 else f"{lat_deg:02d} {lat_min:02d} {lat_sec:02d} {lat_dir} "
                 f"{lon_deg:03d} {lon_min:02d} {lon_sec:02d} {lon_dir} 0 m"
             )
+            self.old_location = location_formatted
             if location != location_formatted:
                 entry.set_text(location_formatted)
             tzf = TimezoneFinder()
             timezone_ = tzf.timezone_at(lat=lat, lng=lon)
             if timezone_:
                 self.timezone = timezone_
-            self.old_location = location_formatted
         except Exception as e:
             # all above errors land here as exception e
             LOG.error(

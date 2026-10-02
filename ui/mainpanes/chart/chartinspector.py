@@ -20,18 +20,19 @@ class ChartInspector:
     """snapping overlay manager for astro chart : shift+r to toggle"""
 
     RING_TAGS = {
-        "transit": "T",
+        "transit": "TR",
         "transit harmonic": "TH",
         "p2 progress": "P2",
         "p3 progress": "P3",
         "p3m progress": "P3m",
-        # "d1 direction": "D1",
         "lunar return": "LNR",
         "solar return": "SLR",
+        "d1 direction": "D1",
         "naksatras": "NK",
-        "event": "N",
-        "harmonic": "NH",
+        "terms": "TM",
+        "natal harmonic": "NH",
         "signs": "SG",
+        "event": "N",
     }
 
     def __init__(self, chart):

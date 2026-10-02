@@ -19,12 +19,12 @@ import logging
 
 LOG = logging.getLogger(__name__)
 source = "d1"
-routing = {"source": source, "route": ["terminal"]}
+# routing = {"source": source, "route": ["terminal"]}
 import math
 import swisseph as swe
 from helpers import ok, err
-from sweph.constants import TERMS
 from user.usersettings import OBJECTS
+from sweph.constants import TERMS
 
 
 MAX_ARC = 120.0  # max life span in years
@@ -34,6 +34,10 @@ ASPECT_ANGLES = (0, 60, 90, 120, 180)
 # latitude kept for conjunction (body) & opposition (antipode = opposite latitude)
 # 60 90 120 lie on ecliptic (latitude 0)
 LATITUDE_FACTOR = {0: 1, 180: -1}
+TROPICAL_FLAG = swe.FLG_SWIEPH
+LUMINARIES = (swe.SUN, swe.MOON)
+SCAN_STEP = 15.0  # ecliptic degrees
+BISECT_STEPS = 20  # 15 / 2**20 = 0.00001 deg
 
 
 def wrap_180(angle):
@@ -77,45 +81,110 @@ def direction_arc(prom, sig_phase):
     return (target - start) % 360.0
 
 
-def calculate_d1(e1_jd, lat, lon, alt, flag):
-    # tropical primary direction : terms follow zodiac - sidereal if used
-    tropical_flag = swe.FLG_SWIEPH
-    # tropical_flag = flag & ~(swe.FLG_SIDEREAL | swe.FLG_TOPOCTR)
-    ayan = swe.get_ayanamsa_ut(e1_jd) if flag & swe.FLG_SIDEREAL else 0.0
-    try:
-        # ramc = swe.houses(e1_jd, lat, lon, hsys)[1][2]
-        ramc = (swe.sidtime(e1_jd) * 15.0 + lon) % 360.0
-        obliquity = swe.calc_ut(e1_jd, swe.ECL_NUT)[0][0]
-    except swe.Error as e:
-        LOG.debug(f"d1 calculations failed : {e}")
-        return err(e)
-    # mo parallax : same as dispatcher : code is safe
-    swe.set_topo(lon, lat, alt)
+def get_ayanamsa(e1_jd, flag):
+    return swe.get_ayanamsa_ut(e1_jd) if flag & swe.FLG_SIDEREAL else 0.0
 
-    def locate(ecl_lon, ecl_lat):
+
+def make_locator(e1_jd, lat, lon, alt):
+    # birth time & place > function : ecliptic point > semi-arcs & phase
+    ramc = (swe.sidtime(e1_jd) * 15.0 + lon) % 360.0
+    obliquity = swe.calc_ut(e1_jd, swe.ECL_NUT)[0][0]
+    swe.set_topo(lon, lat, alt)  # mo parallax
+
+    def locate(ecl_lon, ecl_lat=0.0):
         return locate_point(ecl_lon, ecl_lat, obliquity, lat, ramc)
 
-    # natal bodies : name > code lon lat
+    return locate
+
+
+def get_natal_bodies(e1_jd, codes=None):
+    # name > code lon lat : all classical or only given codes
     bodies = {}
     for name, code in CLASSICAL_PLANETS.items():
+        if codes and code not in codes:
+            continue
         # gansten uses topocentric moon
-        body_flag = tropical_flag | (swe.FLG_TOPOCTR if code == swe.MOON else 0)
+        body_flag = TROPICAL_FLAG | (swe.FLG_TOPOCTR if code == swe.MOON else 0)
         try:
             position = swe.calc_ut(e1_jd, code, body_flag)[0]
         except swe.Error as e:
             LOG.debug(f"d1 position error : {name} : {e}")
             continue
         bodies[name] = (code, position[0], position[1])
+
+    return bodies
+
+
+def get_significators(locate, bodies):
     # significators : name > phase : asc mc always - luminaries if present
     sigs = {"asc": 0.0, "mc": 90.0}
     for name, (code, ecl_lon, ecl_lat) in bodies.items():
-        if code in (swe.SUN, swe.MOON):
+        if code in LUMINARIES:
             sigs[name] = locate(ecl_lon, ecl_lat)["phase"]
+
+    return sigs
+
+
+def directed_longitude(locate, sig_phase, arc):
+    # inverse of direction_arc : tropical lon (lat 0) of sig after arc
+    # gap grows with lon & drops 360 > 0 at directed point : scan > bisect
+    def gap(ecl_lon):
+        return (direction_arc(locate(ecl_lon, 0.0), sig_phase) - arc) % 360.0
+
+    lon_lo, gap_lo = 0.0, gap(0.0)
+    for _ in range(round(360.0 / SCAN_STEP)):
+        lon_hi = lon_lo + SCAN_STEP
+        gap_hi = gap(lon_hi)
+        if gap_hi < gap_lo:
+            break
+        lon_lo, gap_lo = lon_hi, gap_hi
+    else:
+        return None
+    for _ in range(BISECT_STEPS):
+        lon_mid = (lon_lo + lon_hi) / 2.0
+        if gap(lon_mid) >= gap_lo:  # still before drop
+            lon_lo = lon_mid
+        else:
+            lon_hi = lon_mid
+
+    return ((lon_lo + lon_hi) / 2.0) % 360.0
+
+
+def calculate_d1_ring(e1_jd, e2_jd, lat, lon, alt, flag):
+    # tropical primary direction : terms follow zodiac - sidereal if used
+    arc = (e2_jd - e1_jd) / DAYS_PER_ARC_DEGREE
+    if not 0.0 < arc <= MAX_ARC:
+        return ok([])
+
+    try:
+        locate = make_locator(e1_jd, lat, lon, alt)
+        bodies = get_natal_bodies(e1_jd, LUMINARIES)
+    except swe.Error as e:
+        LOG.debug(f"d1 ring calculation failed : {e}")
+        return err(e)
+
+    ayan = get_ayanamsa(e1_jd, flag)
+    points = []
+    for sig, phase in get_significators(locate, bodies).items():
+        directed_lon = directed_longitude(locate, phase, arc)
+        if directed_lon is not None:
+            points.append({"name": sig, "lon": (directed_lon - ayan) % 360.0})
+
+    return ok(points)
+
+
+def calculate_d1(e1_jd, lat, lon, alt, flag):
+    ayan = get_ayanamsa(e1_jd, flag)
+    try:
+        locate = make_locator(e1_jd, lat, lon, alt)
+    except swe.Error as e:
+        LOG.debug(f"d1 calculation failed : {e}")
+        return err(e)
+    bodies = get_natal_bodies(e1_jd)
+    sigs = get_significators(locate, bodies)
     # promissors : name aspect sign point
     proms = []
     for name, (_, ecl_lon, ecl_lat) in bodies.items():
-        # proms.append((name, "con", None, pt(lo, la)))
-        # proms.append((name, "opp", None, pt(lo + 180.0, -la)))
         for angle in ASPECT_ANGLES:
             lat_factor = LATITUDE_FACTOR.get(angle, 0)
             for offset in {angle % 360, -angle % 360}:  # both sides of body

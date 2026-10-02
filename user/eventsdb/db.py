@@ -1,8 +1,9 @@
 # user/eventsdb/db.py
 # add your event data here, it will be used as default event
 # default data (state, city, location, name, date-time) for event 1 & 2
-# IMPORTANT ! default country must be enabled in countries.py - also make sure
-# to select proper country from dropdown list in app > sidepane > event one
+# IMPORTANT ! default country must be enabled in countries.txt - also make
+# sure to select proper country from dropdown list in app > sidepane >
+# event one if not already auto-selected
 DEFAULT_E1 = {
     # --- lisa marie presley
     "country": "USA",
@@ -24,7 +25,8 @@ DEFAULT_E1 = {
     # "datetime": "1975 2 8 14 10",
 }
 DEFAULT_E2 = {
-    "datetime": "2026-08-21 19:36:00",  # lisa presley 45th revolution
+    "datetime": "2013-01-31 23:01:00",  # lmp 45th year
+    # "datetime": "2058-02-01 05:01:00", # lmp 90th year
 }
 # --- solar eclipses -----------------------------------------------------------
 # 1999-08-11  11:04:09  145  -total  1999-08-11 12:03:15

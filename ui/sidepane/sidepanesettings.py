@@ -4,7 +4,6 @@ import logging
 
 LOG = logging.getLogger(__name__)
 source = "sidepanesettings"
-routing = {"source": source, "route": ["terminal"]}  # todo default so no need
 routingnone = {"source": source, "route": [""]}
 from ui.collapsepanel import CollapsePanel
 import ui.sidepane.sidepanehelpers as help
@@ -48,6 +47,18 @@ class SidepaneSettings(CollapsePanel):
             self.sync_chart_checkboxes(data["chart"])
         if "naksatras" in data:
             self.sync_naksatra_checkboxes(data["naksatras"])
+        if "terms" in data:
+            self.sync_terms_checkboxes(data["terms"])
+        if "natal harmonic" in data:
+            text = str(data["natal harmonic"]["harmonic"])
+            if self.ent_harm.get_text() != text:
+                self.ent_harm.set_text(text)
+
+    def sync_terms_checkboxes(self, changed):
+        if "ring" in changed and self.chk_terms_ring.get_active() != changed["ring"]:
+            self.chk_terms_ring.handler_block_by_func(help.terms_ring)
+            self.chk_terms_ring.set_active(changed["ring"])
+            self.chk_terms_ring.handler_unblock_by_func(help.terms_ring)
 
     def sync_objects_checkboxes(self, selected):
         # sync hotkeys & checkboxes
@@ -72,10 +83,6 @@ class SidepaneSettings(CollapsePanel):
                     check.set_active(value)
                     check.handler_unblock_by_func(help.setting_toggled)
                 continue
-            if setting == "harmonic ring":
-                text = str(value)
-                if self.ent_harm.get_text() != text:
-                    self.ent_harm.set_text(text)
 
     def sync_naksatra_checkboxes(self, changed: dict):
         if "ring" in changed and self.chk_naks_ring.get_active() != changed["ring"]:
@@ -109,7 +116,7 @@ class SidepaneSettings(CollapsePanel):
         )
         subpnl_objs.set_title_tooltip("select objects to calculate & display on chart")
         box_objects = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5)
-        # Header buttons
+        # header buttons
         box_button = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=5)
         box_button.set_halign(Gtk.Align.START)
         ico_event = Gtk.Image.new_from_file(
@@ -343,19 +350,28 @@ class SidepaneSettings(CollapsePanel):
         row_nak_opt.set_sensitive(self.app.dispatcher.naksatras_ring)
         self.row_nak_opt = row_nak_opt
         lbx_draw.append(row_nak_opt)
+        # terms row
+        row_terms = Gtk.ListBoxRow()
+        chk_terms_ring = Gtk.CheckButton(label="terms ring")
+        self.chk_terms_ring = chk_terms_ring
+        row_terms.set_tooltip_text(chart_settings["terms ring"][1])
+        chk_terms_ring.set_active(self.app.dispatcher.terms_ring)
+        chk_terms_ring.connect(
+            "toggled", help.terms_ring, "terms ring", self, self.app.dispatcher
+        )
+        row_terms.set_child(chk_terms_ring)
+        lbx_draw.append(row_terms)
         # harmonics row
         row_harm = Gtk.ListBoxRow()
         row_harm.set_focusable(False)
         box_harm = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=7)
-        box_harm.append(Gtk.Label(label="harmonic ring"))
+        box_harm.append(Gtk.Label(label="harmonic (varga)"))
         ent_harm = Gtk.Entry()
         self.ent_harm = ent_harm
         ent_harm.set_width_chars(2)
         ent_harm.set_max_width_chars(2)
-        ent_harm.set_text(str(self.app.dispatcher.harmonic_ring))
-        ent_harm.set_tooltip_text(
-            self.app.dispatcher.CHART_SETTINGS["harmonic ring"][1]
-        )
+        ent_harm.set_text(str(self.app.dispatcher.selected_harmonic))
+        ent_harm.set_tooltip_text(self.app.dispatcher.CHART_SETTINGS["harmonic"][1])
         ent_harm.connect("activate", help.harmonic_ring, self.app.dispatcher)
         box_harm.append(ent_harm)
         row_harm.set_child(box_harm)

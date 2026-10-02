@@ -65,17 +65,19 @@ class AstroChart(Gtk.Box):
                 "p2 progress",
                 "p3 progress",
                 "p3m progress",
-                # "d1 direction",
                 "lunar return",
                 "solar return",
+                "d1 direction",
             ):
                 # if self.event_package["rings"][key]:
                 if self.app.dispatcher.rings[key]:
                     outer_rings.append(key)
         if self.app.dispatcher.naksatras_ring:
             outer_rings.append("naksatras")
-        if self.app.dispatcher.harmonic_ring:
-            outer_rings.append("harmonic")
+        if self.app.dispatcher.terms_ring:
+            outer_rings.append("terms")
+        if self.app.dispatcher.natal_harmonic_ring:
+            outer_rings.append("natal harmonic")
         # draw rings : max diameter of astrochart : determines distance
         # from pane edges
         # outer rings linked to event 2 :
@@ -90,11 +92,12 @@ class AstroChart(Gtk.Box):
             "p2 progress": 0.06,
             "p3 progress": 0.06,
             "p3m progress": 0.06,
-            # "d1 direction": 0.06,
             "lunar return": 0.06,
             "solar return": 0.06,
+            "d1 direction": 0.06,
             "naksatras": 0.05,
-            "harmonic": 0.05,
+            "terms": 0.05,
+            "natal harmonic": 0.05,
         }
         # mandatory rings for event 1 : circle diameter ratio
         inner_portions = {

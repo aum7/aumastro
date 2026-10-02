@@ -71,13 +71,18 @@ def naksatras_ring(widget, key, panel, dispatcher):
     panel.row_nak_opt.set_sensitive(val_ring)
 
 
+def terms_ring(widget, key, panel, dispatcher):
+    val_ring = panel.chk_terms_ring.get_active()
+    dispatcher.update_terms_ring(val_ring)
+
+
 def harmonic_ring(entry, dispatcher):
     text = entry.get_text().strip()
-    if text != "" and not text.isdigit():
+    if not (text.isdigit() and 2 <= int(text) <= 60):
         entry.add_css_class("entry-warning")
         return
     entry.remove_css_class("entry-warning")
-    dispatcher.update_chart_setting("harmonic ring", int(text) if text else 0)
+    dispatcher.update_harmonic_ring(True, int(text))
 
 
 def fixed_stars(entry, dispatcher):

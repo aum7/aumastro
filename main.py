@@ -5,8 +5,9 @@
 # os.environ["GTK_DEBUG"] = "keybindings geometry size-request actions constraints"
 # Gtk.Window.set_interactive_debugging(True)
 # app todo :
-#   menu button to titlebar
-#   ageyear nor month wont update on event 1 or 2 datetime change
+#   separate harmonic ring ctrl+0 new ring & terms as is
+#   terms ring : usersettings : boolean done
+#
 # LOG
 # 2026-09-16 21-12
 #   app bumped v0 > v1 - major code redesign &

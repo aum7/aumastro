@@ -4,7 +4,7 @@ import logging
 
 LOG = logging.getLogger(__name__)
 source = "tables"
-routing = {"source": source, "route": ["terminal"]}
+# routing = {"source": source, "route": ["terminal"]}
 routingtimeout4 = {"source": source, "route": ["terminal", "user"], "timeout": "4"}
 routingtimeout6 = {"source": source, "route": ["terminal", "user"], "timeout": "6"}
 routinguser = {"source": source, "route": ["terminal", "user"]}
@@ -283,14 +283,11 @@ class Tables(Gtk.Notebook):
     def get_aspects_text(self, event_id: str, package: dict):
         aspects = package.get("aspects", {})
         if not aspects:
-            LOG.error(
-                f"aspects missing for {event_id}",
-                extra=routing,
-            )
+            LOG.error(f"aspects missing for {event_id}")
             return ""
 
         harmonic_aspects = self.app.dispatcher.harmonic_aspects
-        division = self.app.dispatcher.harmonic_ring
+        division = self.app.dispatcher.selected_harmonic
         obj_names = aspects["obj names"]
         objs_sorted = self.sort_by_order(obj_names, name_fn=lambda n: n)
         speeds = aspects["speeds"]
@@ -351,7 +348,7 @@ class Tables(Gtk.Notebook):
             " significator (moving / directed) travels\n to promissor (fixed / natal)"
             " | T = term\n"
             f"{separ}"
-            f" {'age':>6} {self.v_sym} {'date':<10} {self.v_sym} sig > prom\n"
+            f" {'age':>6} {self.v_sym} {'date':>10} {self.v_sym} sig > prom\n"
             f"{separ}"
         )
         for d in directions:

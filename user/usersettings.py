@@ -335,11 +335,20 @@ sweph/constants.py""",
         "\nrotate relative to 0° aries\n1 = asvini (standard)"
         "\n19 = mula etc\nsee user/usersettings/CHART_SETTINGS for more info",
     ),
-    # --- harmonics division ring : 0 hide | 1 egypt. terms (bounds) |
-    # 1+ simple divisions, similar but NOT all equal to varga
-    "harmonic ring": (
+    # --- egyptian terms ring
+    "terms ring": (
+        True,
+        "egyptian terms (bounds) ring\nterms can be changed in\nsweph/constants.py",
+    ),
+    # --- natal harmonic ring
+    "natal harmonic ring": (
+        False,
+        "draw natal harmonic ring for below harmonic division",
+    ),
+    # --- harmonic / simple varga ring
+    "harmonic": (
         9,
-        "harmonic (aka varga) ring\nempty or 0 : do NOT show | 1 : egypt. terms (bounds)\n2+ : simple harmonic for event 1 *similar* to varga\nterms can be changed in\nsweph/constants.py",
+        "harmonic (aka varga) division\n2-60 : simple natal & transit harmonic *similar* to varga\nhk : ctrl+9 - toggle natal harmonic ring\nhk : ctrl+2 - toggle transit harmonic ring",
     ),
     # --- event 2 astro chart circles : draw progressions (p1 & p3) | returns | transit
     # calculated in sweph / calculations / ...

@@ -189,7 +189,6 @@ class MainWindow(
         self.hotkeys.register_hotkey(
             "<Control>c", lambda: self.astro_chart.inspector.angle_to_clipboard()
         )
-        # self.hotkeys.register_hotkey("ctrl+m", self.show_manual)
         self.hotkeys.register_hotkey("<Control>m", self.show_manual)
         self.hotkeys.register_hotkey("<Control>s", self.on_toggle_sidepane)
         # toggle selected event
@@ -252,27 +251,34 @@ class MainWindow(
                 "p3m progress", not self.app.dispatcher.rings["p3m progress"]
             ),
         )
-        # self.hotkeys.register_hotkey(
-        #     "<Control>6",
-        #     lambda: self.app.dispatcher.update_rings(
-        #         "d1 direction", not self.app.dispatcher.rings["d1 direction"]
-        #     ),
-        # )
         self.hotkeys.register_hotkey(
-            "<Control>7",
+            "<Control>6",
             lambda: self.app.dispatcher.update_rings(
                 "lunar return", not self.app.dispatcher.rings["lunar return"]
             ),
         )
         self.hotkeys.register_hotkey(
-            "<Control>8",
+            "<Control>7",
             lambda: self.app.dispatcher.update_rings(
                 "solar return", not self.app.dispatcher.rings["solar return"]
             ),
         )
-        # astro chart naksatras ring
+        self.hotkeys.register_hotkey(
+            "<Control>8",
+            lambda: self.app.dispatcher.update_rings(
+                "d1 direction", not self.app.dispatcher.rings["d1 direction"]
+            ),
+        )
+        # astro chart terms ring
         self.hotkeys.register_hotkey(
             "<Control>9",
+            lambda: self.app.dispatcher.update_natal_harmonic_ring(
+                not self.app.dispatcher.natal_harmonic_ring,
+            ),
+        )
+        # astro chart naksatras ring
+        self.hotkeys.register_hotkey(
+            "<Control>0",
             lambda: self.app.dispatcher.update_naksatra_settings(
                 not self.app.dispatcher.naksatras_ring,
                 self.app.dispatcher.mansions_28,

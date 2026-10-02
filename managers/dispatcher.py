@@ -7,7 +7,7 @@ import logging
 
 LOG = logging.getLogger(__name__)
 source = "dispatcher"
-routing = {"source": source, "route": ["terminal"]}
+# routing = {"source": source, "route": ["terminal"]}
 routinguser = {"source": source, "route": ["terminal", "user"]}
 import time
 import swisseph as swe
@@ -20,7 +20,7 @@ from sweph.calculations.lots import calculate_lots
 from sweph.calculations.stars import calculate_stars
 from sweph.calculations.syzygy import calculate_syzygy
 from sweph.calculations.eclipses import calculate_eclipses, calculate_last_eclipses
-from sweph.calculations.d1 import calculate_d1
+from sweph.calculations.d1 import calculate_d1, calculate_d1_ring
 from sweph.calculations.p2 import calculate_p2
 from sweph.calculations.p3 import calculate_p3
 from sweph.calculations.p3m import calculate_p3m
@@ -29,8 +29,6 @@ from sweph.calculations.returnlunar import calculate_lunar_return
 from sweph.calculations.returnsolar import calculate_solar_return
 from sweph.calculations.aspects import calculate_aspects
 from sweph.calculations.vimsottari import calculate_vimsottari
-
-# from sweph.calculations.grahabhavabala import calculate_grahabala, calculate_bhavabala
 from user.fixedstars import FIXEDSTARS
 from ui.mainpanes.chart.astroobject import AstroObject
 
@@ -102,7 +100,9 @@ class Dispatcher:
         self.naksatras_ring = usersett.CHART_SETTINGS["naksatras ring"][0]
         self.mansions_28 = usersett.CHART_SETTINGS["28 mansions"][0]
         self.first_naksatra = usersett.CHART_SETTINGS["first naksatra"][0]
-        self.harmonic_ring = usersett.CHART_SETTINGS["harmonic ring"][0]
+        self.terms_ring = usersett.CHART_SETTINGS["terms ring"][0]
+        self.natal_harmonic_ring = usersett.CHART_SETTINGS["natal harmonic ring"][0]
+        self.selected_harmonic = usersett.CHART_SETTINGS["harmonic"][0]
         self.chart_info = usersett.CHART_SETTINGS["chart info"][0]
         self.chart_info_extra = usersett.CHART_SETTINGS["chart info extra"][0]
         # chart outer rings
@@ -116,9 +116,9 @@ class Dispatcher:
             "p2 progress": self.E2_RINGS["p2 progress"],
             "p3 progress": self.E2_RINGS["p3 progress"],
             "p3m progress": self.E2_RINGS["p3m progress"],
-            # "d1 direction": self.E2_RINGS["d1 direction"],
             "lunar return": self.E2_RINGS["lunar return"],
             "solar return": self.E2_RINGS["solar return"],
+            "d1 direction": self.E2_RINGS["d1 direction"],
         }
         # ephe path & astro font & mono font & events database & graph data & filename
         self.FILES = usersett.FILES
@@ -165,9 +165,7 @@ class Dispatcher:
             self.active_flags.remove(flag)
         self.swe_flag = self.compute_swe_flag(self.active_flags)
         self.app.signaler.emit("setting changed", {"sweph": self.active_flags})
-        self.recalculate("e1")
-        if self.e2_active:
-            self.recalculate("e2")
+        self.recalculate_events()
 
     def set_selected_objects_event(self, event_id: str):
         # called from sidepanehelpers
@@ -197,6 +195,12 @@ class Dispatcher:
         self.app.signaler.emit("setting changed", signal_data)
         self.recalculate(event_id)
 
+    def recalculate_events(self):
+        # e1 then e2 : chart is built once at end
+        self.recalculate("e1", is_chart=not self.e2_active)
+        if self.e2_active:
+            self.recalculate("e2")
+
     def on_event_change(self, dataset):
         event_id = dataset.get("id")
         # LOG.debug(f"oneventchage : dataset={dataset}")
@@ -207,7 +211,9 @@ class Dispatcher:
         if event_id == "e2":
             self.e2_active = True
         self.recalculate(event_id)
-        if event_id == "e1" and self.e2_active:
+        if event_id == "e1":
+            self.recalculate("e1")
+        else:
             self.recalculate("e2")
 
     def on_e2_clear(self, event_id=None):
@@ -255,9 +261,7 @@ class Dispatcher:
         # called from sidepanehelpers
         self.selected_hsys = hsys.encode("ascii")
         self.app.signaler.emit("setting changed", {"hsys": hsys})
-        self.recalculate("e1")
-        if self.e2_active:
-            self.recalculate("e2")
+        self.recalculate_events()
 
     def update_naksatra_settings(self, val_ring, val_28, val_1st):
         self.naksatras_ring = val_ring
@@ -270,19 +274,34 @@ class Dispatcher:
         # LOG.debug(f"updatenaksatrasettings : ring={val_ring} 28={val_28} 1st={val_1st}")
         self.recalculate("e1")
 
+    def update_terms_ring(self, val_ring):
+        self.terms_ring = val_ring
+        self.app.signaler.emit("setting changed", {"terms": {"ring": val_ring}})
+        self.app.signaler.emit("redraw chart")
+
+    def update_natal_harmonic_ring(self, val_ring, val_n=None):
+        n_changed = val_n is not None and val_n != self.selected_harmonic
+        self.natal_harmonic_ring = val_ring
+        if val_n is not None:
+            self.selected_harmonic = val_n
+        self.app.signaler.emit(
+            "setting changed",
+            {"natal harmonic": {"ring": val_ring, "harmonic": self.selected_harmonic}},
+        )
+        if n_changed:  # harmonic divisor changed
+            self.recalculate("e1")
+        else:  # show / hide
+            self.app.signaler.emit("redraw chart")
+
     def update_solar_year(self, period):
         self.selected_year_period = period
         self.app.signaler.emit("setting changed", {"solar year": period})
-        self.recalculate("e1")
-        if self.e2_active:
-            self.recalculate("e2")
+        self.recalculate_events()
 
     def update_lunar_month(self, period):
         self.selected_month_period = period
         self.app.signaler.emit("setting changed", {"lunar month": period})
-        self.recalculate("e1")
-        if self.e2_active:
-            self.recalculate("e2")
+        self.recalculate_events()
 
     def set_sid_mode(self):
         # set swe sidereal mode
@@ -301,9 +320,7 @@ class Dispatcher:
         )
         self.set_sid_mode()
         self.app.signaler.emit("setting changed", {"ayanamsa": ayanamsa})
-        self.recalculate("e1")
-        if self.e2_active:
-            self.recalculate("e2")
+        self.recalculate_events()
 
     def update_custom_ayanamsa(self, key, value):
         if key in self.CUSTOM_AYANAMSA:
@@ -313,9 +330,7 @@ class Dispatcher:
             self.app.signaler.emit(
                 "setting changed", {"custom_ayanamsa": self.CUSTOM_AYANAMSA}
             )
-            self.recalculate("e1")
-            if self.e2_active:
-                self.recalculate("e2")
+            self.recalculate_events()
 
     def update_files(self, key, value):
         if key in self.FILES:
@@ -338,27 +353,19 @@ class Dispatcher:
                 "snap_tolerance",
             ]
             if attr_name not in visual_settings:
-                self.recalculate("e1")
-                if self.e2_active:
-                    self.recalculate("e2")
+                self.recalculate_events()
             else:
                 self.app.signaler.emit("redraw chart")
 
     def update_rings(self, ring: str, value: bool):
         if ring not in self.rings:
-            LOG.debug(
-                "ring not in rings : exiting",
-                extra=routing,
-            )
+            LOG.debug("ring not in rings : exiting")
             return
 
         self.rings[ring] = value
         self.app.signaler.emit("setting changed", {"chart": {ring: value}})
         if not self.e2_active:
-            LOG.debug(
-                "e2 not active : exiting",
-                extra=routing,
-            )
+            LOG.debug("e2 not active : exiting")
             return
         # ring not yet cached in e2 calculated : needs 1 real recalculate to
         # populate it - then toggling is package-only
@@ -406,13 +413,12 @@ class Dispatcher:
         self.calc_vimsottari()
         self.refresh_package("e1")
 
-    def recalculate(self, event_id: str):
+    def recalculate(self, event_id: str, is_chart: bool = True):
         # on event or settings change > recalculate astodata
         t0 = time.perf_counter()
         if event_id == "e2" and not self.e2_active:
             LOG.debug(
-                "recalculate : received 'e2' but e2_active is false > investigate",
-                extra=routing,
+                "recalculate : received 'e2' but e2_active is false > investigate"
             )
             return
 
@@ -435,10 +441,6 @@ class Dispatcher:
             # swisweph mess : lon-lat
             swe.set_topo(lon, lat, alt)
         # LOG.debug(f"recalculate : jdut={jd_ut} lat={lat} lon={lon} alt={alt}")
-        if event_id == "e2":
-            division = self.harmonic_ring if self.harmonic_ring > 1 else 9
-        else:
-            division = self.harmonic_ring if self.harmonic_ring else 0
         calculated = {}
         self.events_data[event_id]["calculated"] = calculated
         # su & mo always calculated
@@ -453,7 +455,7 @@ class Dispatcher:
             calculate_positions,
             jd_ut,
             objs,
-            division,
+            self.selected_harmonic,
             self.mansions_28,
             self.first_naksatra,
             self.mean_node,
@@ -707,20 +709,6 @@ class Dispatcher:
                         self.mean_node,
                         self.swe_flag,
                     )
-            # DONTDELETE
-            # if self.rings["d1 direction"] and e1_jd:
-            #     self.run_calc(
-            #         event_id,
-            #         "d1 direction",
-            #         calculate_d1,
-            #         e1_jd,
-            #         lat,
-            #         lon,
-            #         objs,
-            #         self.selected_hsys,
-            #         self.mean_node,
-            #         self.swe_flag,
-            #     )
             if self.rings["lunar return"] and e1_mo:
                 self.run_calc(
                     event_id,
@@ -752,11 +740,23 @@ class Dispatcher:
                     self.mean_node,
                     self.swe_flag,
                 )
+            if self.rings["d1 direction"] and e1_jd:
+                self.run_calc(
+                    event_id,
+                    "d1 direction",
+                    calculate_d1_ring,
+                    e1_jd,
+                    e2_jd,
+                    e1_sweph["lat"],
+                    e1_sweph["lon"],
+                    e1_sweph.get("alt", 0),
+                    self.swe_flag,
+                )
             self.calc_vimsottari()
-            self.refresh_package("e1")
-            # self.update_titlebar() # not updating ageyears nor agemonths
-        self.refresh_package(event_id)
+            self.refresh_package("e1", is_chart=False)
+        self.refresh_package(event_id, is_chart=is_chart)
         self.update_titlebar()
+        # calculations to skip drawing app freeze - redraw is in controled manner
         elapsed_ms = (time.perf_counter() - t0) * 1000
         # exponent moving average : recent samples weighted more
         self.average_calc_ms = 0.3 * elapsed_ms + 0.7 * self.average_calc_ms
@@ -771,11 +771,13 @@ class Dispatcher:
                 key,
                 event_id,
             )
-            # if result["status"] != "ok":
-            #         LOG.error(
-            #         f"{key} calculation failed for {event_id} : {result['error']}",
-            #         extra=routinguser,
-            #         )
+            return
+
+        if result["status"] != "ok":
+            LOG.error(
+                f"{key} calculation failed for {event_id} : {result['error']}",
+                extra=routinguser,
+            )
             return
         self.events_data[event_id]["calculated"][key] = result["data"]
 
@@ -801,7 +803,7 @@ class Dispatcher:
             return {"positions": objects, "cusps": raw.get("cusps", [])}
         return objects
 
-    def refresh_package(self, event_id: str):
+    def refresh_package(self, event_id: str, is_chart: bool = True):
         # get & emit package with cached data - never recompute by itself
         calculated = self.events_data[event_id].get("calculated")
         chart = self.events_data[event_id].get("chart")
@@ -811,7 +813,7 @@ class Dispatcher:
             )
             return
         self.app.signaler.emit("package table ready", event_id, dict(calculated))
-        if event_id == "e1" or self.e2_active:
+        if is_chart and (event_id == "e1" or self.e2_active):
             self.refresh_chart_package()
         self.update_titlebar()
 
@@ -852,25 +854,25 @@ class Dispatcher:
         }
         # LOG.debug(f"refreshpackage : grahabala : {e1_calculated.get('grahabala')}")
         # LOG.debug(f"refreshpackage : bhavabala : {e1_calculated.get('bhavabala')}")
-        if self.harmonic_ring:
-            hx_pos = self._prep_ring(e1_calculated.get("positions"), harmonic=True)
-            if not isinstance(hx_pos, list):
-                hx_pos = []
-            ascmc = e1_calculated.get("houses", {}).get("ascmc")
-            if hx_pos and ascmc and len(ascmc) >= 2:
-                hx_pos.append(
-                    AstroObject({
-                        "name": "asc",
-                        "lon": harmlon(ascmc[0], self.harmonic_ring),
-                    })
-                )
-                hx_pos.append(
-                    AstroObject({
-                        "name": "mc",
-                        "lon": harmlon(ascmc[1], self.harmonic_ring),
-                    })
-                )
-            chart_package["harmonic"] = hx_pos
+        # if self.selected_harmonic:
+        hx_pos = self._prep_ring(e1_calculated.get("positions"), harmonic=True)
+        if not isinstance(hx_pos, list):
+            hx_pos = []
+        ascmc = e1_calculated.get("houses", {}).get("ascmc")
+        if hx_pos and ascmc and len(ascmc) >= 2:
+            hx_pos.append(
+                AstroObject({
+                    "name": "asc",
+                    "lon": harmlon(ascmc[0], self.selected_harmonic),
+                })
+            )
+            hx_pos.append(
+                AstroObject({
+                    "name": "mc",
+                    "lon": harmlon(ascmc[1], self.selected_harmonic),
+                })
+            )
+        chart_package["natal harmonic"] = hx_pos
         # table needs all data for gtk.widgets incl aspects
         if self.e2_active:
             e2_calculated = self.events_data["e2"].get("calculated", {})
@@ -892,8 +894,8 @@ class Dispatcher:
                 ascmc = e2_houses.get("ascmc")
                 thx_ascmc = (
                     [
-                        harmlon(ascmc[0], self.harmonic_ring),
-                        harmlon(ascmc[1], self.harmonic_ring),
+                        harmlon(ascmc[0], self.selected_harmonic),
+                        harmlon(ascmc[1], self.selected_harmonic),
                     ]
                     if ascmc and len(ascmc) >= 2
                     else []
@@ -906,15 +908,15 @@ class Dispatcher:
                 "p2 progress",
                 "p3 progress",
                 "p3m progress",
-                # "d1 direction",
                 "lunar return",
                 "solar return",
+                "d1 direction",
             ):
                 if self.rings.get(ring):
                     raw = e2_calculated.get(ring)
                     if raw:
                         chart_package[ring] = self._prep_ring(raw)
-        # LOG.debug(f"refreshpackage : eventpackage={event_package}")  # ok
+        # LOG.debug(f"refreshpackage : d1 : {chart_package.get('d1 direction')}")  # ok
         self.app.signaler.emit("package chart ready", "e1", chart_package)
 
     def set_change_time_period(self, period: float, label: str):
@@ -945,7 +947,7 @@ class Dispatcher:
                 title += f" - lun : {self.age_months:.2f} m"
         change_time = self.selected_change_time_label  # or "1 D"
         title += f" | ct : {change_time}"
-        #  send signal & subscribe in mainwindow
+        #  send signal - subscribe in mainwindow
         self.app.signaler.emit("update titlebar", {"title": title})
 
     def event_selection(self, event_id: str):
@@ -966,7 +968,5 @@ class Dispatcher:
         selected_panel.add_title_css_class("label-event-selected")
         other_panel.remove_title_css_class("label-event-selected")
         other_panel.add_title_css_class("label-event")
-        # todo signal never used
-        # self.app.signaler.emit("event selected", event_id)
         # LOG.debug(f"{event_id} selected")
         self.update_titlebar()
