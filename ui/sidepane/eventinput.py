@@ -117,7 +117,7 @@ comment (add '# ' & save file) uninterested country"""
         default = DEFAULT_E2.get("country")
         if default and default in countries:
             ddn_country.set_selected(countries.index(default))
-        mainwindow.contry_two = ddn_country
+        mainwindow.country_two = ddn_country
     # city
     lbl_city = Gtk.Label(label="city")
     lbl_city.add_css_class("label")

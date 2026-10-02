@@ -5,19 +5,19 @@
 # sure to select proper country from dropdown list in app > sidepane >
 # event one if not already auto-selected
 DEFAULT_E1 = {
-    # --- lisa marie presley
+    # --- gansten lisa marie presley
+    # "country": "USA",
+    # "city": "memphis",
+    # "location": "35 9 n 090 3 w",
+    # "name": "lisa presley",
+    # "datetime": "1968-02-01 17:01",  # cst
+    # --- houck 31 weinberger
     "country": "USA",
-    "city": "memphis",
-    "location": "35 9 n 090 3 w",
-    "name": "lisa presley",
-    "datetime": "1968-02-01 17:01",  # cst
-    # --- richard houck p29
-    # "country": "usa",
-    # "city": "muskegon heights",
-    # "location": "43 12 n 86 15 w",  # porodnišnica lj
-    # "name": "jim bakker",
-    # "datetime": "1940 1 2 11 00",
-    # ---
+    "city": "san francisco",
+    "location": "37 47 n 122 25 w",
+    "name": "c weinberger",
+    "datetime": "1917-08-18 15:10",  # pst
+    # --- slovenia
     # "country": "Slo",
     # "city": "ljubljana",
     # "location": "46 03 10 n 14 31 26 e 0294 m",  # porodnišnica lj
@@ -25,7 +25,8 @@ DEFAULT_E1 = {
     # "datetime": "1975 2 8 14 10",
 }
 DEFAULT_E2 = {
-    "datetime": "2013-01-31 23:01:00",  # lmp 45th year
+    "datetime": "1992-12-25 12:01:00",
+    # "datetime": "2013-01-31 23:01:00",  # lmp 45th year
     # "datetime": "2058-02-01 05:01:00", # lmp 90th year
 }
 # --- solar eclipses -----------------------------------------------------------
