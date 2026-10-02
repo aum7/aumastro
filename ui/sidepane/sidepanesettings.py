@@ -30,6 +30,7 @@ class SidepaneSettings(CollapsePanel):
         if self.mainwindow:
             self.set_margin_end(margin)
         self.chk_settings = {}
+        self.chk_flags = {}
         self.app.signaler.connect("setting changed", self.on_setting_change)
         self.build_ui()
 
@@ -45,6 +46,8 @@ class SidepaneSettings(CollapsePanel):
             self.sync_objects_checkboxes(data[key])
         if "chart" in data:
             self.sync_chart_checkboxes(data["chart"])
+        if "sweph" in data:
+            self.sync_flags_checkboxes(data["sweph"])
         if "naksatras" in data:
             self.sync_naksatra_checkboxes(data["naksatras"])
         if "terms" in data:
@@ -59,6 +62,15 @@ class SidepaneSettings(CollapsePanel):
             self.chk_terms_ring.handler_block_by_func(help.terms_ring)
             self.chk_terms_ring.set_active(changed["ring"])
             self.chk_terms_ring.handler_unblock_by_func(help.terms_ring)
+
+    def sync_flags_checkboxes(self, active_flags):
+        # sync hotkeys with sweph flag checkboxes
+        for flag, check in self.chk_flags.items():
+            should_be_active = flag in active_flags
+            if check.get_active() != should_be_active:
+                check.handler_block_by_func(help.flags_toggled)
+                check.set_active(should_be_active)
+                check.handler_unblock_by_func(help.flags_toggled)
 
     def sync_objects_checkboxes(self, selected):
         # sync hotkeys & checkboxes
@@ -427,6 +439,7 @@ class SidepaneSettings(CollapsePanel):
             check = Gtk.CheckButton(label=flag)
             check.set_active(flag in active_flags)
             check.connect("toggled", help.flags_toggled, flag, self.app.dispatcher)
+            self.chk_flags[flag] = check
             row.set_child(check)
             lbx_flags.append(row)
 

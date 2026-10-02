@@ -167,6 +167,12 @@ class Dispatcher:
         self.app.signaler.emit("setting changed", {"sweph": self.active_flags})
         self.recalculate_events()
 
+    def toggle_sidereal(self):
+        # toggle sidereal vs tropical flag
+        self.update_sweph_flag(
+            "sidereal zodiac", "sidereal zodiac" not in self.active_flags
+        )
+
     def set_selected_objects_event(self, event_id: str):
         # called from sidepanehelpers
         self.selected_objects_event = event_id

@@ -115,7 +115,8 @@ SWE_FLAGS = {
     "sidereal zodiac": (
         True,
         """use sidereal (vs tropical) zodiac
-if checked also select ayanamsa below""",
+if checked also select ayanamsa below
+hk : shift+s""",
         "FLG_SIDEREAL",
     ),
     # --- calculate true, not apparent (visible from earth) positions

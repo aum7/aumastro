@@ -171,6 +171,9 @@ class MainWindow(
         self.hotkeys.register_hotkey(
             "<Shift>r", lambda: self.astro_chart.inspector.toggle()
         )
+        self.hotkeys.register_hotkey(
+            "<Shift>s", lambda: self.app.dispatcher.toggle_sidereal()
+        )
         # below works for qwertz keyboard, modify according to your keyboard layout
         self.hotkeys.register_hotkey("<Shift>exclam", self.panes_single)  # shift+1
         self.hotkeys.register_hotkey("<Shift>quotedbl", self.panes_double)  # shift+2
@@ -323,14 +326,15 @@ class MainWindow(
             "\nctrl+f : toggle fixed ascendant vs ari 0° at zodiac left"
             "\nctrl+g : toggle glyphs visibility"
             "\nctrl+h : toggle harmonic / varga hX vs rasi h1 aspects table"  # harmonic
-            "\nctrl+1-9 : toggle"
-            "\n\ttransit|transit harmonic|p2|p3|p3m|d1|lunar|solar return|naksatras ring"
-            "\n\tnote : d1 primary direction goes with chart setting 'harmonic ring 1'"
+            "\nctrl+1-0 : toggle"
+            "\n\ttransit|transit harmonic|p2|p3|p3m|lunar|solar return|d1|natal harmonic|naksatras ring\nterms ring : sidepane > settings > chart settings"
+            "\n\tnote : d1 primary direction goes with terms ring"
             "\nshift+1/2/3/4 : show single / double / triple / all panes"
             "\nshift+5 : toggle movie mode"
             "\nshift+6 : run printscreen sequence"
             "\n\tesc : cancel sequence"
             "\nshift+v : toggle vimsottari level"
+            "\nshift+s : toggle sidereal vs tropical (default) zodiac"
             "\nshift+r : toggle astro chart angle ruler / hover info",
             source="manual",
             timeout=5,
