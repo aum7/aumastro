@@ -40,10 +40,13 @@ class SidepaneSettings(CollapsePanel):
             LOG.debug("onsettingchange : data missing : exiting")
             return
 
-        objs_event = self.app.dispatcher.selected_objects_event
-        key = f"objects_{objs_event}"
-        if key in data:
-            self.sync_objects_checkboxes(data[key])
+        event_id = self.app.dispatcher.selected_objects_event
+        for kind in self.app.dispatcher.SELECTION_TYPES:
+            if f"{kind}_{event_id}" in data:
+                self.sync_checkboxes(kind, data[f"{kind}_{event_id}"])
+        # key = f"objects_{event_id}"
+        # if key in data:
+        #     self.sync_objects_checkboxes(data[key])
         if "chart" in data:
             self.sync_chart_checkboxes(data["chart"])
         if "sweph" in data:
@@ -72,18 +75,14 @@ class SidepaneSettings(CollapsePanel):
                 check.set_active(should_be_active)
                 check.handler_unblock_by_func(help.flags_toggled)
 
-    def sync_objects_checkboxes(self, selected):
+    def sync_checkboxes(self, kind, selected):
         # sync hotkeys & checkboxes
-        # if not hasattr(self, "chk_objects"):
-        #     LOG.debug("syncobjectcheckboxes : chk_objects is missing : exiting")
-        #     return
-
-        for short_name, check in self.chk_objects.items():
-            should_be_active = short_name in selected
+        for name, check in self.chk_selected[kind].items():
+            should_be_active = name in selected
             if check.get_active() != should_be_active:
-                check.handler_block_by_func(help.objects_toggled)
+                check.handler_block_by_func(help.selected_toggled)
                 check.set_active(should_be_active)
-                check.handler_unblock_by_func(help.objects_toggled)
+                check.handler_unblock_by_func(help.selected_toggled)
 
     def sync_chart_checkboxes(self, changed: dict):
         # sync hotkeys & checkboxes
@@ -168,14 +167,20 @@ class SidepaneSettings(CollapsePanel):
             ),
         )
         # get objects
+        event_id = self.app.dispatcher.selected_objects_event
+        self.chk_selected = {kind: {} for kind in self.app.dispatcher.SELECTION_TYPES}
+        sel_objs = self.app.dispatcher.get_selected("objects", event_id)
         objs = self.app.dispatcher.OBJECTS
         # selected objects event
-        sel_objs = (
-            self.app.dispatcher.selected_objects_e1
-            if self.app.dispatcher.selected_objects_event == "e1"
-            else self.app.dispatcher.selected_objects_e2
-        )
-        self.chk_objects = {}
+        # sel_objs = self.app.dispatcher.get_selected_objects(
+        #     self.app.dispatcher.selected_objects_event
+        # )
+        # (
+        #     self.app.dispatcher.selected_objects_e1
+        #     if self.app.dispatcher.selected_objects_event == "e1"
+        #     else self.app.dispatcher.selected_objects_e2
+        # )
+        # self.chk_objects = {}
         for name, data in objs.items():
             row = Gtk.ListBoxRow()
             short_name = data[0]
@@ -191,15 +196,22 @@ class SidepaneSettings(CollapsePanel):
             # )
             check.set_active(short_name in sel_objs)
             check.connect(
-                "toggled", help.objects_toggled, short_name, self.app.dispatcher
+                "toggled",
+                help.selected_toggled,
+                "objects",
+                short_name,
+                self.app.dispatcher,
             )
-            self.chk_objects[short_name] = check
+            self.chk_selected["objects"][short_name] = check
             row.set_child(check)
+            if short_name in self.app.dispatcher.LUMIES:
+                check.set_sensitive(False)
+                row.set_activatable(False)
+                row.set_tooltip_text(f"{tooltip}\nalways calculated & shown")
             lbx_objects.append(row)
         box_objects.append(lbx_objects)
         # sub-sub-panel: lots
         lots = self.app.dispatcher.LOTS
-        sel_lots = self.app.dispatcher.selected_lots
         # LOG.debug(f"\nsellots={type(sel_lots)}\n\t{sel_lots}")
         subsub_lots = CollapsePanel(title="lots / parts", indent=21, expanded=False)
         lbx_lots = Gtk.ListBox()
@@ -214,8 +226,11 @@ class SidepaneSettings(CollapsePanel):
             row = Gtk.ListBoxRow()
             row.set_tooltip_text(f"{data['day']}\n{data['tooltip']}")
             check = Gtk.CheckButton(label=name)
-            check.set_active(name in sel_lots)
-            check.connect("toggled", help.lots_toggled, name, self.app.dispatcher)
+            check.set_active(name in self.app.dispatcher.get_selected("lots", event_id))
+            check.connect(
+                "toggled", help.selected_toggled, "lots", name, self.app.dispatcher
+            )
+            self.chk_selected["lots"][name] = check
             row.set_child(check)
             lbx_lots.append(row)
         subsub_lots.add_widget(lbx_lots)
@@ -230,13 +245,17 @@ class SidepaneSettings(CollapsePanel):
             ),
         )
         prenatal = self.app.dispatcher.PRENATAL
-        sel_prenatal = self.app.dispatcher.selected_prenatal
         for name, data in prenatal.items():
             row = Gtk.ListBoxRow()
             row.set_tooltip_text(data["tooltip"])
             check = Gtk.CheckButton(label=name)
-            check.set_active(name in sel_prenatal)
-            check.connect("toggled", help.prenatal_toggled, name, self.app.dispatcher)
+            check.set_active(
+                name in self.app.dispatcher.get_selected("prenatal", event_id)
+            )
+            check.connect(
+                "toggled", help.selected_toggled, "prenatal", name, self.app.dispatcher
+            )
+            self.chk_selected["prenatal"][name] = check
             row.set_child(check)
             lbx_prenatal.append(row)
         subsub_prenatal.add_widget(lbx_prenatal)

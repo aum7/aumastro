@@ -7,10 +7,9 @@
 # app todo :
 #   sidepane settings > lots toggle breaks on unchecked objects
 #   also su mo always calculated & shown on every astrochart ring - disable checkboxes
-#   also selected objects button click wont update objects checkboxes
-#   p3 exact month calculations clamps result to month period
 #   add prenatal eclipses to progressions
 #   add lots to  progressions
+#   p3 exact month calculations clamps result to month period
 #   fix labels : [ring] [object] ie N pl 12 07 R NH ju
 #   vimsottari from strongest of mo su asc
 #   major - database / event import & export

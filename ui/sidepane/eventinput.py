@@ -128,6 +128,7 @@ comment (add '# ' & save file) uninterested country"""
 
     def update_location(lat, lon, alt):
         ent_location.set_text(f"{lat} {lon} {alt}")
+        event_data.on_location_change(ent_location)
 
     event_location.set_location_callback(update_location)
 

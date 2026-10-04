@@ -46,21 +46,52 @@ class EventData:
         self.tz_offset = None
         self.lon = None
         self.is_hotkey_now = False
-        self.location = ""  # added
+        # self.location = ""  # added
         self.old_location = ""
-        self.name = ""  # added
+        # self.name = ""  # added
         self.old_name = ""
         self.old_date_time = ""
         # data from calculation
         self.chart = {}
         self.sweph = {}
+        # dataflow redesign
+        self.dirty = False
         # on datagraph click datetime will be captured & sent here for processing
         self.app.signaler.connect("datetime captured", self.on_datetime_capture)
+
+    def read_place(self):
+        # country city location from widgets : marks dirty if changed
+        if self.country is None or self.city is None:
+            return
+        if not self.chart.get("location"):  # e2 has no location > copy e1
+            return
+
+        item = self.country.get_selected_item()
+        country = item.get_string() if item else ""
+        mainwindow = self.app.get_active_window()
+        place = {
+            "country": country,
+            "city": self.city.get_text().strip(),
+            "iso3": mainwindow.event_location.country_map.get(country, ""),
+        }
+        if any(self.chart.get(key) != value for key, value in place.items()):
+            self.chart.update(place)
+            self.dirty = True
+
+    def collect_input(self):
+        # datetime confirm > single entry point : collect name & location & place
+        if self.name is None or self.location is None:
+            return
+
+        self.on_name_change(self.name)
+        if self.id == "e1" or self.location.get_text().strip():
+            self.on_location_change(self.location)
+        self.read_place()
 
     def on_location_change(self, entry):
         location_name = entry.get_name()
         location = entry.get_text().strip()
-        mainwindow = self.app.get_active_window()
+        # mainwindow = self.app.get_active_window()
         if not location:
             if self.id == "e1":
                 LOG.warning(
@@ -189,28 +220,28 @@ class EventData:
         parts = location_formatted.split()
         lat_str = " ".join(parts[:4])
         lon_str = " ".join(parts[4:8])
-        country = ""
-        city = ""
-        iso3 = ""
-        if self.id == "e1":
-            if hasattr(mainwindow, "country_one"):
-                country = mainwindow.country_one.get_selected_item().get_string()
-            if hasattr(mainwindow, "city_one"):
-                city = mainwindow.city_one.get_text()
-            if hasattr(mainwindow, "event_location"):
-                iso3 = mainwindow.event_location.country_map.get(country, "")
-        else:
-            if hasattr(mainwindow, "country_two"):
-                country = mainwindow.country_two.get_selected_item().get_string()
-            if hasattr(mainwindow, "city_two"):
-                city = mainwindow.city_two.get_text()
-            if hasattr(mainwindow, "event_location"):
-                iso3 = mainwindow.event_location.country_map.get(country, "")
+        # country = ""
+        # city = ""
+        # iso3 = ""
+        # if self.id == "e1":
+        #     if hasattr(mainwindow, "country_one"):
+        #         country = mainwindow.country_one.get_selected_item().get_string()
+        #     if hasattr(mainwindow, "city_one"):
+        #         city = mainwindow.city_one.get_text()
+        #     if hasattr(mainwindow, "event_location"):
+        #         iso3 = mainwindow.event_location.country_map.get(country, "")
+        # else:
+        #     if hasattr(mainwindow, "country_two"):
+        #         country = mainwindow.country_two.get_selected_item().get_string()
+        #     if hasattr(mainwindow, "city_two"):
+        #         city = mainwindow.city_two.get_text()
+        #     if hasattr(mainwindow, "event_location"):
+        #         iso3 = mainwindow.event_location.country_map.get(country, "")
         # data needed for event 1 center info ring
-        self.chart["country"] = country
-        self.chart["city"] = city
-        self.chart["iso3"] = iso3
         self.chart["location"] = location_formatted
+        # self.chart["country"] = country
+        # self.chart["city"] = city
+        # self.chart["iso3"] = iso3
         self.chart["lat"] = lat_str
         self.chart["lon"] = lon_str
         self.chart["timezone"] = timezone_
@@ -218,7 +249,9 @@ class EventData:
         self.sweph["lat"] = lat
         self.sweph["lon"] = lon
         self.sweph["alt"] = int(alt)
-        self.location = location  # added
+        # self.location = location  # added
+        self.read_place()
+        self.dirty = True
         # LOG.info("location input processed", extra=routing)
 
         return
@@ -245,7 +278,8 @@ class EventData:
 
         self.old_name = name
         self.chart["name"] = name
-        self.name = name  # added
+        self.dirty = True
+        # self.name = name  # added
         # LOG.info("name input processed", extra=routing)
 
         return
@@ -254,10 +288,11 @@ class EventData:
         datetime_name = entry.get_name()
         date_time = entry.get_text().strip()
         # todo revise ???
-        if not self.is_hotkey_now and (
-            date_time == self.old_date_time
-            and self.name == self.old_name
-            and self.location == self.old_location
+        self.collect_input()
+        if (
+            not self.is_hotkey_now
+            and not self.dirty
+            and date_time == self.old_date_time
         ):
             return
 
@@ -451,6 +486,8 @@ class EventData:
                 self.chart["name"] = E1_chart.get("name")
         dataset = {"id": self.id, "chart": self.chart, "sweph": self.sweph}
         self.app.signaler.emit("event changed", dataset)
+        # remove flag on data process
+        self.dirty = False
         # LOG.info("datetime input processed", extra=routing)
 
         return

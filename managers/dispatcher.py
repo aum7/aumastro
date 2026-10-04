@@ -9,6 +9,7 @@ LOG = logging.getLogger(__name__)
 source = "dispatcher"
 # routing = {"source": source, "route": ["terminal"]}
 routinguser = {"source": source, "route": ["terminal", "user"]}
+import re
 import time
 import swisseph as swe
 import user.usersettings as usersett
@@ -19,7 +20,7 @@ from sweph.calculations.horas import calculate_horas
 from sweph.calculations.lots import calculate_lots
 from sweph.calculations.stars import calculate_stars
 from sweph.calculations.syzygy import calculate_syzygy
-from sweph.calculations.eclipses import calculate_eclipses, calculate_last_eclipses
+from sweph.calculations.eclipses import calculate_eclipses
 from sweph.calculations.d1 import calculate_d1, calculate_d1_ring
 from sweph.calculations.p2 import calculate_p2
 from sweph.calculations.p3 import calculate_p3
@@ -40,6 +41,7 @@ class Dispatcher:
             self.app = app
         # LOG.debug(f"whoisme self : {self.__class__.__name__}")
         self.events_data = {"e1": {}, "e2": {}}
+        self.LUMIES = frozenset({"su", "mo"})  # always calculated
         # explicit selected event : the one arrived last or be user-selected
         self.selected_event = "e1"
         # select event for objects button
@@ -77,13 +79,17 @@ class Dispatcher:
         ]
         self.swe_flag = self.compute_swe_flag(self.active_flags)
         self.selected_objects_e1 = {data[0] for data in usersett.OBJECTS.values()}
-        self.selected_objects_e2 = set(usersett.OBJECTS_2)
-        self.selected_lots = {
+        self.selected_objects_e2 = set(usersett.OBJECTS_2) | self.LUMIES
+        self.selected_lots_e1 = {
             lot for lot, data in usersett.LOTS.items() if data["enable"]
         }
-        self.selected_prenatal = {
+        # e2 rings also receive lots
+        self.selected_lots_e2 = set()
+        self.selected_prenatal_e1 = {
             item for item, data in usersett.PRENATAL.items() if data["enable"]
         }
+        # e2 rings also receive prenatal
+        self.selected_prenatal_e2 = set()
         # fixed stars list not empty : custom | naksatras | behenian
         self.fixed_stars = usersett.CHART_SETTINGS["fixed stars"][0]
         self.selected_stars = FIXEDSTARS[self.fixed_stars]
@@ -120,6 +126,7 @@ class Dispatcher:
             "solar return": self.E2_RINGS["solar return"],
             "d1 direction": self.E2_RINGS["d1 direction"],
         }
+        self.SELECTION_TYPES = ("objects", "lots", "prenatal")
         # ephe path & astro font & mono font & events database & graph data & filename
         self.FILES = usersett.FILES
         # explicit setting
@@ -173,9 +180,29 @@ class Dispatcher:
             "sidereal zodiac", "sidereal zodiac" not in self.active_flags
         )
 
+    def get_selected(self, kind: str, event_id: str):
+        #  kind = type of objects
+        return getattr(self, f"selected_{kind}_{event_id}")
+
+    def update_selected(self, kind: str, event_id: str, name: str, active: bool):
+        selected = self.get_selected(kind, event_id)
+        if active:
+            selected.add(name)
+        else:
+            selected.discard(name)
+        self.app.signaler.emit("setting changed", {f"{kind}_{event_id}": selected})
+        self.recalculate(event_id)
+
     def set_selected_objects_event(self, event_id: str):
         # called from sidepanehelpers
         self.selected_objects_event = event_id
+        self.app.signaler.emit(
+            "setting changed",
+            {
+                f"{kind}_{event_id}": self.get_selected(kind, event_id)
+                for kind in self.SELECTION_TYPES
+            },
+        )
 
     def select_all_objects(self, event_id: str):
         if event_id == "e1":
@@ -186,7 +213,7 @@ class Dispatcher:
         else:
             self.selected_objects_e2 = {
                 name for name in self.OBJECTS_2 if len(name) > 0
-            }
+            } | self.LUMIES
             signal_data = {"objects_e2": self.selected_objects_e2}
         self.app.signaler.emit("setting changed", signal_data)
         self.recalculate(event_id)
@@ -194,9 +221,11 @@ class Dispatcher:
     def select_none_objects(self, event_id: str):
         if event_id == "e1":
             self.selected_objects_e1.clear()
+            self.selected_objects_e1.update(self.LUMIES)
             signal_data = {"objects_e1": self.selected_objects_e1}
         else:
             self.selected_objects_e2.clear()
+            self.selected_objects_e2.update(self.LUMIES)
             signal_data = {"objects_e2": self.selected_objects_e2}
         self.app.signaler.emit("setting changed", signal_data)
         self.recalculate(event_id)
@@ -222,43 +251,45 @@ class Dispatcher:
         else:
             self.recalculate("e2")
 
-    def on_e2_clear(self, event_id=None):
+    def on_e2_clear(self):
+        # def on_e2_clear(self, event_id=None):
         # handle e2 removal
         self.events_data["e2"] = {}
         self.e2_active = False
         self.refresh_chart_package()
         self.update_titlebar()
 
-    def update_object(self, event_id: str, name: str, active: bool):
-        # target correct set based on event
-        target_set = (
-            self.selected_objects_e1 if event_id == "e1" else self.selected_objects_e2
-        )
-        # mutate set
-        if active:
-            target_set.add(name)
-        else:
-            target_set.discard(name)
-        self.app.signaler.emit("setting changed", {f"objects_{event_id}": target_set})
-        self.recalculate(event_id)
+    # def update_object(self, event_id: str, name: str, active: bool):
+    #     # target correct set based on event
+    #     target_set = self.get_selected_objects(event_id)
+    #     # (
+    #     #     self.selected_objects_e1 if event_id == "e1" else self.selected_objects_e2
+    #     # )
+    #     # mutate set
+    #     if active:
+    #         target_set.add(name)
+    #     else:
+    #         target_set.discard(name)
+    #     self.app.signaler.emit("setting changed", {f"objects_{event_id}": target_set})
+    #     self.recalculate(event_id)
 
-    def update_lot(self, name: str, active: bool):
-        # update lots selection : lots are exclusive to event 1
-        if active:
-            self.selected_lots.add(name)
-        else:
-            self.selected_lots.discard(name)
-        self.app.signaler.emit("setting changed", {"lots": self.selected_lots})
-        self.recalculate("e1")
+    # def update_lot(self, name: str, active: bool):
+    #     # update lots selection : lots are exclusive to event 1
+    #     if active:
+    #         self.selected_lots.add(name)
+    #     else:
+    #         self.selected_lots.discard(name)
+    #     self.app.signaler.emit("setting changed", {"lots": self.selected_lots})
+    #     self.recalculate("e1")
 
-    def update_prenatal(self, name: str, active: bool):
-        # update prenatal syzygy & eclipse selection : exclusive to event 1
-        if active:
-            self.selected_prenatal.add(name)
-        else:
-            self.selected_prenatal.discard(name)
-        self.app.signaler.emit("setting changed", {"prenatal": self.selected_prenatal})
-        self.recalculate("e1")
+    # def update_prenatal(self, name: str, active: bool):
+    #     # update prenatal syzygy & eclipse selection : exclusive to event 1
+    #     if active:
+    #         self.selected_prenatal.add(name)
+    #     else:
+    #         self.selected_prenatal.discard(name)
+    #     self.app.signaler.emit("setting changed", {"prenatal": self.selected_prenatal})
+    #     self.recalculate("e1")
 
     def update_house_system(
         self,
@@ -419,6 +450,65 @@ class Dispatcher:
         self.calc_vimsottari()
         self.refresh_package("e1")
 
+    def lot_positions(self, jd_ut, positions, lot_defs):
+        # lot have their own bodies
+        body_names = {data[0] for data in self.OBJECTS.values()}
+        needed = {
+            token
+            for data in lot_defs.values()
+            for token in re.findall(r"[a-z]{2,3}", data["day"])
+        } & body_names
+        have = {pos["name"] for pos in positions.values()}
+        missing = needed - have
+        if not missing:
+            return positions
+        result = calculate_positions(
+            jd_ut,
+            missing,
+            None,
+            self.mansions_28,
+            self.first_naksatra,
+            self.mean_node,
+            self.swe_flag,
+        )
+        if result["status"] != "ok":
+            LOG.error(f"lots bodies failed : {result.get('error')}")
+            return positions
+        return {**positions, **result["data"]}
+
+    def calc_lots_prenatal(self, event_id, jd_ut, positions, houses):
+        # lots syzygy eclipses of event : each its own toggle
+        lots = self.get_selected("lots", event_id)
+        prenatal = self.get_selected("prenatal", event_id)
+        lot_defs = {n: d for n, d in self.LOTS.items() if n in lots}
+        if lot_defs and positions and houses:
+            lots_package = {
+                "ascmc": houses["ascmc"],
+                "positions": self.lot_positions(jd_ut, positions, lot_defs),
+                "lots": lot_defs,
+            }
+            self.run_calc(event_id, "lots", calculate_lots, lots_package)
+        if positions and "syzygy" in prenatal:
+            self.run_calc(
+                event_id,
+                "syzygy",
+                calculate_syzygy,
+                jd_ut,
+                positions[0]["lon"],
+                positions[1]["lon"],
+                self.swe_flag,
+            )
+        if "eclipses" in prenatal:
+            tz_name = self.events_data[event_id].get("chart", {}).get("timezone")
+            self.run_calc(
+                event_id,
+                "eclipses",
+                calculate_eclipses,
+                jd_ut,
+                self.swe_flag,
+                tz_name,
+            )
+
     def recalculate(self, event_id: str, is_chart: bool = True):
         # on event or settings change > recalculate astodata
         t0 = time.perf_counter()
@@ -450,10 +540,11 @@ class Dispatcher:
         calculated = {}
         self.events_data[event_id]["calculated"] = calculated
         # su & mo always calculated
-        selected_objs = (
-            self.selected_objects_e1 if event_id == "e1" else self.selected_objects_e2
-        )
-        objs = selected_objs | {"su", "mo"}
+        selected_objs = self.get_selected("objects", event_id)
+        # (
+        #     self.selected_objects_e1 if event_id == "e1" else self.selected_objects_e2
+        # )
+        objs = selected_objs
         # positions of planets
         self.run_calc(
             event_id,
@@ -490,7 +581,7 @@ class Dispatcher:
             self.swe_flag,
         )
         positions_data = calculated["positions"]
-        houses_data = calculated["houses"]
+        # houses_data = calculated["houses"]
         if positions_data:
             self.run_calc(
                 event_id,
@@ -502,42 +593,42 @@ class Dispatcher:
             )
         if event_id == "e1":
             # lots if enabled - needs positions & houses
-            lot_defs = {
-                name: data
-                for name, data in self.LOTS.items()
-                if name in self.selected_lots
-            }
-            if lot_defs and positions_data and houses_data:
-                lots_package = {
-                    "ascmc": houses_data["ascmc"],
-                    "positions": positions_data,
-                    "lots": lot_defs,
-                }
-                self.run_calc(event_id, "lots", calculate_lots, lots_package)
-            # prenatal syzygy & eclipses
-            if positions_data and "syzygy" in self.selected_prenatal:
-                su_lon = positions_data[0]["lon"]
-                mo_lon = positions_data[1]["lon"]
-                self.run_calc(
-                    event_id,
-                    "syzygy",
-                    calculate_syzygy,
-                    jd_ut,
-                    su_lon,
-                    mo_lon,
-                    self.swe_flag,
-                )
-            # eclipses
-            if "eclipses" in self.selected_prenatal:
-                tz_name = self.events_data[event_id].get("chart", {}).get("timezone")
-                self.run_calc(
-                    event_id,
-                    "eclipses",
-                    calculate_eclipses,
-                    jd_ut,
-                    self.swe_flag,
-                    tz_name,
-                )
+            # lot_defs = {
+            #     name: data
+            #     for name, data in self.LOTS.items()
+            #     if name in self.selected_lots
+            # }
+            # if lot_defs and positions_data and houses_data:
+            #     lots_package = {
+            #         "ascmc": houses_data["ascmc"],
+            #         "positions": positions_data,
+            #         "lots": lot_defs,
+            #     }
+            #     self.run_calc(event_id, "lots", calculate_lots, lots_package)
+            # # prenatal syzygy & eclipses
+            # if positions_data and "syzygy" in self.selected_prenatal:
+            #     su_lon = positions_data[0]["lon"]
+            #     mo_lon = positions_data[1]["lon"]
+            #     self.run_calc(
+            #         event_id,
+            #         "syzygy",
+            #         calculate_syzygy,
+            #         jd_ut,
+            #         su_lon,
+            #         mo_lon,
+            #         self.swe_flag,
+            #     )
+            # # eclipses
+            # if "eclipses" in self.selected_prenatal:
+            #     tz_name = self.events_data[event_id].get("chart", {}).get("timezone")
+            #     self.run_calc(
+            #         event_id,
+            #         "eclipses",
+            #         calculate_eclipses,
+            #         jd_ut,
+            #         self.swe_flag,
+            #         tz_name,
+            #     )
             # fixed stars
             if self.selected_stars:
                 self.run_calc(
@@ -603,7 +694,7 @@ class Dispatcher:
             e1_asc = e1_houses["ascmc"][0]
             e1_mc = e1_houses["ascmc"][1]
             e2_jd = self.events_data["e2"]["sweph"]["jd ut"]
-            e2_mo = positions_data[1]["lon"]
+            # e2_mo = positions_data[1]["lon"]
             year_length = self.selected_year_period[1]
             month_length = self.selected_month_period[1]
             period = e2_jd - e1_jd
@@ -653,9 +744,9 @@ class Dispatcher:
                     lat,
                     lon,
                     e1_su,
+                    e1_mo,
                     e1_asc,
                     e1_mc,
-                    e2_mo,
                     objs,
                     month_length,
                     self.exact_lunar_month,
@@ -885,16 +976,16 @@ class Dispatcher:
             e2_positions = e2_calculated.get("positions")
             e2_houses = e2_calculated.get("houses")
             if self.rings.get("transit") and e2_positions:
-                e2_tz = self.events_data["e2"].get("chart", {}).get("timezone")
-                e2_jd_ut = self.events_data["e2"]["sweph"]["jd ut"]
-                ecl_result = calculate_last_eclipses(e2_jd_ut, self.swe_flag, e2_tz)
+                # e2_tz = self.events_data["e2"].get("chart", {}).get("timezone")
+                # e2_jd_ut = self.events_data["e2"]["sweph"]["jd ut"]
+                # ecl_result = calculate_last_eclipses(e2_jd_ut, self.swe_flag, e2_tz)
                 chart_package["transit"] = {
                     "positions": self._prep_ring(e2_positions),
                     "cusps": e2_houses.get("cusps") or [],
                     "ascmc": e2_houses.get("ascmc"),
-                    "eclipses": self._prep_ring(ecl_result["data"])
-                    if ecl_result["status"] == "ok"
-                    else [],
+                    "lots": self._prep_ring(e2_calculated.get("lots")),
+                    "syzygy": self._prep_ring(e2_calculated.get("syzygy")),
+                    "eclipses": self._prep_ring(e2_calculated.get("eclipses")),
                 }
             if self.rings.get("transit harmonic") and e2_positions:
                 ascmc = e2_houses.get("ascmc")

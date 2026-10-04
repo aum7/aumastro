@@ -30,9 +30,9 @@ def calculate_p3(
     lat,
     lon,
     e1_su,
+    e1_mo,
     e1_asc,
     e1_mc,
-    e2_mo,
     objs,
     month_length,
     exact_lunar_month,
@@ -43,10 +43,10 @@ def calculate_p3(
     try:
         # period elapsed from birth in years : needs event 2 datetime
         period = e2_jd - e1_jd
-        if exact_lunar_month and e2_mo is not None:
+        if exact_lunar_month and e1_mo is not None:
             # lunar returns : search x days range
-            lr_prev_jd = swe.mooncross_ut(e2_mo, e2_jd - 27.5, flag)
-            lr_next_jd = swe.mooncross_ut(e2_mo, e2_jd + 0.1, flag)
+            lr_next_jd = swe.mooncross_ut(e1_mo, e2_jd, flag)
+            lr_prev_jd = swe.mooncross_ut(e1_mo, lr_next_jd - 29.0, flag)
             # calculate lunar month length
             lr_month = lr_next_jd - lr_prev_jd
             # completed returns for mark pottenger / houck exact calculation

@@ -22,9 +22,9 @@ class ChartInspector:
     RING_TAGS = {
         "transit": "TR",
         "transit harmonic": "TH",
-        "p2 progress": "DFY",
-        "p3 progress": "DFM",
-        "pm progress": "MFY",
+        "p2 progress": "DFY",  # day for a year
+        "p3 progress": "DFM",  # day for a month
+        "pm progress": "MFY",  # month for a year
         "lunar return": "LNR",
         "solar return": "SLR",
         "d1 direction": "D1",
