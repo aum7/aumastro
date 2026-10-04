@@ -165,14 +165,19 @@ class MainWindow(
     def setup_hotkeys(self):
         """register additional hotkeys"""
         # no more custom hotkey & mouseclick controllers
+        # data sequence screenprinting can take hours > cancel with escape key
+        # set data test-print period in dataprintscreen.py
+        self.hotkeys.register_hotkey("Escape", self.on_data_seq_cancel)
         # [shift]
         # toggle vimsottari table level
+        self.hotkeys.register_hotkey("<Shift>s", self.on_toggle_sidepane)
         self.hotkeys.register_hotkey("<Shift>v", lambda: self.tables.toggle_vimso())
+        # toggle label snapping & angle ruler | plato solids aspects
         self.hotkeys.register_hotkey(
             "<Shift>r", lambda: self.astro_chart.inspector.toggle()
         )
         self.hotkeys.register_hotkey(
-            "<Shift>s", lambda: self.app.dispatcher.toggle_sidereal()
+            "<Shift>w", lambda: self.app.dispatcher.toggle_sidereal()
         )
         # below works for qwertz keyboard, modify according to your keyboard layout
         self.hotkeys.register_hotkey("<Shift>exclam", self.panes_single)  # shift+1
@@ -181,19 +186,18 @@ class MainWindow(
         self.hotkeys.register_hotkey("<Shift>dollar", self.panes_all)  # shift+4
         self.hotkeys.register_hotkey("<Shift>percent", self.panes_movie)  # shift+5
         self.hotkeys.register_hotkey("<Shift>ampersand", self.on_data_seq)
-        self.hotkeys.register_hotkey("Escape", self.on_data_seq_cancel)
+        # below should work for any keyboard, modify if needed
+        # [ctrl]
         self.hotkeys.register_hotkey("<Control>Up", self.obc_arrow_up)
         self.hotkeys.register_hotkey("<Control>Down", self.obc_arrow_dn)
         self.hotkeys.register_hotkey("<Control>Left", self.obc_arrow_l)
         self.hotkeys.register_hotkey("<Control>Right", self.obc_arrow_r)
         # call helper function for time now
         self.hotkeys.register_hotkey("<Control>n", lambda: self.on_time_now())
-        # [ctrl]
         self.hotkeys.register_hotkey(
             "<Control>c", lambda: self.astro_chart.inspector.angle_to_clipboard()
         )
         self.hotkeys.register_hotkey("<Control>m", self.show_manual)
-        self.hotkeys.register_hotkey("<Control>s", self.on_toggle_sidepane)
         # toggle selected event
         self.hotkeys.register_hotkey(
             "<Control>e",
@@ -222,7 +226,7 @@ class MainWindow(
             ),
         )
         # astro chart outer rings for event 2
-        # transit|trharmonic|p2|p3|p3m|d1|lunar|solar return|naksatras ring
+        # transit|trharmonic|p2|p3|pm|lunar|solar return|d1|natharmonic|naksatras ring
         self.hotkeys.register_hotkey(
             "<Control>1",
             lambda: self.app.dispatcher.update_rings(
@@ -251,7 +255,7 @@ class MainWindow(
         self.hotkeys.register_hotkey(
             "<Control>5",
             lambda: self.app.dispatcher.update_rings(
-                "p3m progress", not self.app.dispatcher.rings["p3m progress"]
+                "pm progress", not self.app.dispatcher.rings["pm progress"]
             ),
         )
         self.hotkeys.register_hotkey(
@@ -315,7 +319,6 @@ class MainWindow(
             "\ntab/shift+tab or arrow up/down : navigate widgets in side pane"
             "\nspace/enter : activate button / dropdown / entry when focused"
             "\nctrl+m : show manual / help (this message)"
-            "\nctrl+s : toggle side pane"
             "\nctrl+e : toggle selected event"
             "\n\tie for change time / time now & datagraph click (grab datetime)"
             "\nctrl+arrow keys :"
@@ -327,17 +330,19 @@ class MainWindow(
             "\nctrl+g : toggle glyphs visibility"
             "\nctrl+h : toggle harmonic / varga hX vs rasi h1 aspects table"  # harmonic
             "\nctrl+1-0 : toggle"
-            "\n\ttransit|transit harmonic|p2|p3|p3m|lunar|solar return|d1|natal harmonic|naksatras ring\nterms ring : sidepane > settings > chart settings"
-            "\n\tnote : d1 primary direction goes with terms ring"
+            "\n\ttransit|transit harmonic|p2|p3|pm|lunar|solar return|d1|natal harmonic|naksatras ring"
+            "\nterms ring : sidepane > settings > chart settings > ... - goes with d1"
+            # "\n\tnote : d1 primary direction goes with terms ring"
+            "\nshift+s : toggle side pane"
             "\nshift+1/2/3/4 : show single / double / triple / all panes"
             "\nshift+5 : toggle movie mode"
-            "\nshift+6 : run printscreen sequence"
+            "\nshift+6 : run printscreen sequence (can take hours to finish)"
             "\n\tesc : cancel sequence"
             "\nshift+v : toggle vimsottari level"
-            "\nshift+s : toggle sidereal vs tropical (default) zodiac"
+            "\nshift+w : toggle sidereal vs tropical (aka western = default) zodiac"
             "\nshift+r : toggle astro chart angle ruler / hover info",
             source="manual",
-            timeout=5,
+            timeout=7,
             route=["user"],
         )
 

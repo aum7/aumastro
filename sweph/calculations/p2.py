@@ -1,6 +1,6 @@
 # sweph/calculations/p2.py
 # ruff: noqa: E402
-# secondary progression : a day for a year
+# secondary progression : a day for a year dfy
 import logging
 
 LOG = logging.getLogger(__name__)

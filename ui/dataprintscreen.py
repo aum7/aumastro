@@ -5,7 +5,6 @@ import logging
 
 LOG = logging.getLogger(__name__)
 source = "dataprintscreen"
-routing = {"source": source, "route": ["terminal"]}
 routinguser = {"source": source, "route": ["terminal", "user"]}
 routingnone = {"source": source, "route": [""]}
 import pandas as pd
@@ -26,11 +25,10 @@ class DataPrintscreen:
     def __init__(self, app):
         self.app = app
         # app IS aumastroapp
-        LOG.debug(
-            f"whoisapp : {app.__class__.__name__}",
-            # f"has-selfappnotifier : {hasattr(self.app, 'notifier')}",
-            extra=routingnone,
-        )
+        # LOG.debug(
+        #     f"whoisapp : {app.__class__.__name__}",
+        #     # f"has-selfappnotifier : {hasattr(self.app, 'notifier')}",
+        # )
         self.output_dir = Path.home() / EXPORT_FOLDER
         self.output_dir.mkdir(parents=True, exist_ok=True)
         self.running = False
@@ -52,24 +50,24 @@ class DataPrintscreen:
         if not self.app.EVENT_ONE:
             self.app.notifier.warning(
                 "event 1 not initialized",
-                source="dataprintscreen",
+                source=source,
                 route=["terminal", "user"],
             )
             return
         if not hasattr(self.app.EVENT_ONE, "date_time"):
             self.app.notifier.warning(
                 "event 1 datetime missing",
-                source="dataprintscreen",
+                source=source,
                 route=["terminal", "user"],
             )
             return
         # need 3-panes view
         win = self.app.get_active_window()
-        print(f"activewin : {win}")
+        # print(f"activewin : {win.__class__.__name__}")
         if not win:
             self.app.notifier.error(
                 "main window not found",
-                source="dataprintscreen",
+                source=source,
                 route=["terminal", "user"],
             )
             return
@@ -79,7 +77,7 @@ class DataPrintscreen:
             if not gold_path.exists():
                 self.app.notifier.error(
                     f"datagraph data not found : {gold_path}",
-                    source="dataprintscreen",
+                    source=source,
                     route=["terminal", "user"],
                 )
                 return
@@ -114,13 +112,13 @@ class DataPrintscreen:
                     self.app.notifier.info(
                         f"datetime filter : {original_len} -> {filtered_len} enties\n"
                         f"range : {actual_start} to {actual_end}",
-                        source="dataprintscreen",
+                        source=source,
                         route=["terminal"],
                     )
                 except Exception as e:
                     self.app.notifier.error(
                         f"datetime filter error\n{e}",
-                        source="dataprintscreen",
+                        source=source,
                         route=["terminal"],
                     )
                     return
@@ -129,20 +127,20 @@ class DataPrintscreen:
                 self.gold_df = self.gold_df.head(self.test_screenshots)
                 self.app.notifier.warning(
                     f"test sequence ({self.test_screenshots} screenshots)",
-                    source="dataprintscreen",
+                    source=source,
                     route=["terminal"],
                 )
             self.total = len(self.gold_df)
             if self.total == 0:
                 self.app.notifier.warning(
                     "no data after filtering",
-                    source="dataprintscreen",
+                    source=source,
                     route=["terminal"],
                 )
                 return
             self.app.notifier.info(
                 f"loaded {self.total} data entries\nstarting printscreen sequence",
-                source="dataprintscreen",
+                source=source,
                 route=["terminal"],
             )
             # estimate time
@@ -152,7 +150,7 @@ class DataPrintscreen:
         except Exception as e:
             self.app.notifier.error(
                 f"loading printscreen data error :\n{e}",
-                source="dataprintscreen",
+                source=source,
                 route=["terminal", "user"],
             )
             return
@@ -175,6 +173,7 @@ class DataPrintscreen:
             dt_str = dt.strftime("%Y-%m-%d %H:%M:%S")
             entry = self.app.EVENT_ONE.date_time
             entry.set_text(dt_str)
+            # trigger datetime change
             self.app.EVENT_ONE.on_datetime_change(entry)
             # center datagraph cursor
             self._center_datagraph(dt)
@@ -200,10 +199,7 @@ class DataPrintscreen:
             # schedule screenshot after redraw
             GLib.timeout_add(self.capture_delay, self._capture, dt)
         except Exception as e:
-            self.app.notifier.error(
-                f"error processing index {self.current_idx}\n{e}",
-                extra=routing,
-            )
+            self.app.notifier.error(f"error processing index {self.current_idx}\n{e}")
             self.current_idx += 1
             return True
         return False
@@ -213,10 +209,7 @@ class DataPrintscreen:
         try:
             self._screenshot(dt)
         except Exception as e:
-            self.app.notifier.error(
-                f"screenshot failed for {dt}\n{e}",
-                extra=routing,
-            )
+            self.app.notifier.error(f"screenshot failed for {dt}\n{e}")
         self.current_idx += 1
         # schedule next iteration
         GLib.idle_add(self._process_next)
@@ -265,25 +258,16 @@ class DataPrintscreen:
                 dg.cursor_text.set_text(info)
                 dg.cursor_text.set_visible(True)
         except Exception as e:
-            LOG.error(
-                f"failed to set info banner : {e}",
-                extra=routing,
-            )
+            LOG.error(f"failed to set info banner : {e}")
         # redraw canvas
         try:
             dg.canvas.draw()
         except Exception as e:
-            LOG.debug(
-                f"using drawidle() : {e}",
-                extra=routing,
-            )
+            LOG.debug(f"using drawidle() : {e}")
             try:
                 dg.canvas.draw_idle()
             except Exception as e:
-                LOG.debug(
-                    f"failed to redraw canvas : {e}",
-                    extra=routing,
-                )
+                LOG.debug(f"failed to redraw canvas : {e}")
 
     def _screenshot(self, dt):
         # capture window screenshot to png
@@ -294,6 +278,7 @@ class DataPrintscreen:
         file_path = self.output_dir / filename
         # external printscreen tool
         try:
+            # todo import for every screenshot ???
             import subprocess
 
             # get window id
@@ -315,7 +300,7 @@ class DataPrintscreen:
             except (subprocess.TimeoutExpired, FileNotFoundError):
                 self.app.notifier.error(
                     f"gnome-screenshot failed : {file_path}",
-                    source="dataprintscreen",
+                    source=source,
                     route=["terminal"],
                 )
                 # return False
@@ -324,7 +309,7 @@ class DataPrintscreen:
         except Exception as e:
             self.app.notifier.debug(
                 f"external screenshot failed\n{e}",
-                source="dataprintscreen",
+                source=source,
                 route=["terminal"],
             )
 
@@ -354,10 +339,10 @@ class DataPrintscreen:
         elapsed = (datetime.now() - self.start_time).total_seconds()
         rate = self.current_idx / elapsed if elapsed > 0 else 0
         self.app.notifier.info(
-            f"data printscreen complete : {self.current_idx} screenshots\n"
-            f"saved {len(png_files)} files to {self.output_dir}"
-            f"time : {elapsed / 60:.1f} min ({rate:.1f}/s)\n",
-            source="dataprintscreen",
+            f"data printscreen complete : {self.current_idx} screenshots"
+            f"\nsaved {len(png_files)} files to {self.output_dir}"
+            f"\ntime : {elapsed / 60:.1f} min ({rate:.1f}/s)",
+            source=source,
             route=["terminal"],
         )
 
@@ -367,6 +352,6 @@ class DataPrintscreen:
             self.running = False
             self.app.notifier.warning(
                 f"data sequence stopped at {self.current_idx}/{self.total}",
-                source="dataprintscreen",
+                source=source,
                 route=["terminal", "user"],
             )

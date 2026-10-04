@@ -57,7 +57,7 @@ class Tables(Gtk.Notebook):
             "e2 horas",
             "p2",
             "p3",
-            "p3m",
+            "pm",
         ]
         # event data widget
         self.app.signaler.connect("package table ready", self.on_package_ready)
@@ -179,8 +179,8 @@ class Tables(Gtk.Notebook):
                 self.update_progress("p2", package, "p2 progress", "p2 date")
             if "p3 progress" in package:
                 self.update_progress("p3", package, "p3 progress", "p3 date")
-            if "p3m progress" in package:
-                self.update_progress("p3m", package, "p3m progress", "p3m date")
+            if "pm progress" in package:
+                self.update_progress("pm", package, "pm progress", "pm date")
 
     def get_positions_text(self, event_id: str, package: dict):
         # get positions
@@ -262,7 +262,7 @@ class Tables(Gtk.Notebook):
                     f" {self.asc} :  {decsigndms(self.ascendant)}\n"
                     f" {self.mc} :  {decsigndms(self.midheaven)}\n"
                     f" ra : {int(raH):02d}h{int(raM):02d}m{int(raS):02d}s\n"
-                    f" {weekday} : {hora_glyph}\n"  # type:ignore
+                    f" {weekday} : {hora_glyph}\n"
                 )
             else:
                 ln_csps += f" houses {self.h_sym * 7}\n"
@@ -274,7 +274,7 @@ class Tables(Gtk.Notebook):
                     f" {self.asc} :  {decsigndms(self.ascendant)}\n"
                     f" {self.mc} :  {decsigndms(self.midheaven)}\n"
                     f" ra : {int(raH):02d}h{int(raM):02d}m{int(raS):02d}s\n"
-                    f" {weekday} : {hora_glyph}\n"  # type:ignore
+                    f" {weekday} : {hora_glyph}\n"
                 )
             # ln_csps += separ
             text += ln_csps
@@ -364,7 +364,7 @@ class Tables(Gtk.Notebook):
         return text + separ
 
     def update_progress(self, key: str, package: dict, data_key: str, date: str):
-        # common updater for p2 p3 p3m progressions
+        # common updater for p2 p3 pm progressions
         pos = package.get(data_key, [])
         stations = package.get(f"{key} stations", [])
         if not pos:
@@ -377,8 +377,8 @@ class Tables(Gtk.Notebook):
         if date:
             content += (
                 " all time is utc\n"
-                " tas & tmc - true asc & mc on date\n"
-                " asc & mc - progressed asc & mc\n"
+                " white - true asc & mc on date (tas tmc)\n"
+                " dodgerblue - progressed asc & mc (pas pmc)\n"
                 f"{separ}"
                 f" {key} : {date.strip()}\n"
             )
@@ -415,7 +415,7 @@ class Tables(Gtk.Notebook):
                 content += f"   prev : {prev_st}\n"
                 content += f"   next : {next_st}\n"
         self.set_page_content(key, content)
-        LOG.debug(f"{key} tables set")
+        # LOG.debug(f"{key} tables set")
 
     def update_horas(self, page: str, horas: list):
         if not horas:

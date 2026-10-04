@@ -373,25 +373,25 @@ sweph/constants.py""",
             "show tertiary progression (p3) ring for event 2\nhk : ctrl+4"
             "\ncalculations as per richard houck\nchange in sweph/calculations/...",
         ),
-        "p3m progress": (
+        "pm progress": (
             False,
-            "show minor (tertiary) progression (p3m) ring for event 2\nhk : ctrl+5\n"
+            "show minor progression (pm) ring for event 2\nhk : ctrl+5\n"
             "change in sweph/calculations/...",
+        ),
+        "lunar return": (
+            False,
+            "show lunar return ring for event 2\nhk : ctrl+6",
+        ),
+        "solar return": (
+            False,
+            "show solar return ring for event 2\nhk : ctrl+7",
         ),
         "d1 direction": (
             False,
             "show traditional primary direction (d1) ring for event 2"
-            "\nhk : ctrl+6\ncalculations as per martin gansten / ptolemy"
-            "\n[todo needs verification : current is simple calculation]"
+            "\nhk : ctrl+8\ncalculations as per martin gansten / ptolemy"
+            "\nalso show terms ring (settings > chart settings > terms ring)"
             "\nchange in sweph/calculations/...",
-        ),
-        "lunar return": (
-            False,
-            "show lunar return ring for event 2\nhk : ctrl+7",
-        ),
-        "solar return": (
-            False,
-            "show solar return ring for event 2\nhk : ctrl+8",
         ),
     },
     # --- use varga positions for aspects todo change to use harmonic aspect : also

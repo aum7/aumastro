@@ -23,7 +23,7 @@ from sweph.calculations.eclipses import calculate_eclipses, calculate_last_eclip
 from sweph.calculations.d1 import calculate_d1, calculate_d1_ring
 from sweph.calculations.p2 import calculate_p2
 from sweph.calculations.p3 import calculate_p3
-from sweph.calculations.p3m import calculate_p3m
+from sweph.calculations.pm import calculate_pm
 from sweph.calculations.stations import calculate_stations
 from sweph.calculations.returnlunar import calculate_lunar_return
 from sweph.calculations.returnsolar import calculate_solar_return
@@ -115,7 +115,7 @@ class Dispatcher:
             "transit harmonic": self.E2_RINGS["transit harmonic"],
             "p2 progress": self.E2_RINGS["p2 progress"],
             "p3 progress": self.E2_RINGS["p3 progress"],
-            "p3m progress": self.E2_RINGS["p3m progress"],
+            "pm progress": self.E2_RINGS["pm progress"],
             "lunar return": self.E2_RINGS["lunar return"],
             "solar return": self.E2_RINGS["solar return"],
             "d1 direction": self.E2_RINGS["d1 direction"],
@@ -679,11 +679,11 @@ class Dispatcher:
                         self.mean_node,
                         self.swe_flag,
                     )
-            if self.rings["p3m progress"] and e1_jd and e1_su:
+            if self.rings["pm progress"] and e1_jd and e1_su:
                 self.run_calc(
                     event_id,
-                    "p3m progress",
-                    calculate_p3m,
+                    "pm progress",
+                    calculate_pm,
                     e1_jd,
                     lat,
                     lon,
@@ -699,18 +699,18 @@ class Dispatcher:
                     self.mean_node,
                     self.swe_flag,
                 )
-                p3m_data = calculated.get("p3m progress")
-                p3m_jd = (
-                    next((d["p3m jdut"] for d in p3m_data if "p3m jdut" in d), None)
-                    if p3m_data
+                pm_data = calculated.get("pm progress")
+                pm_jd = (
+                    next((d["pm jdut"] for d in pm_data if "pm jdut" in d), None)
+                    if pm_data
                     else None
                 )
-                if p3m_jd:
+                if pm_jd:
                     self.run_calc(
                         event_id,
-                        "p3m stations",
+                        "pm stations",
                         calculate_stations,
-                        p3m_jd,
+                        pm_jd,
                         objs,
                         self.mean_node,
                         self.swe_flag,
@@ -913,7 +913,7 @@ class Dispatcher:
             for ring in (
                 "p2 progress",
                 "p3 progress",
-                "p3m progress",
+                "pm progress",
                 "lunar return",
                 "solar return",
                 "d1 direction",

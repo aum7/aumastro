@@ -1,11 +1,11 @@
-# sweph/calculations/p3m.py
+# sweph/calculations/pm.py
 # ruff: noqa: E402
-# minor progression (month for a year - sun-moon) (blaschke)
+# minor progression (month for a year mfy - sun-moon) (blaschke)
 # 13.369 ratio
 import logging
 
 LOG = logging.getLogger(__name__)
-source = "p3m"
+source = "pm"
 routing = {"source": source, "route": ["terminal"]}
 import swisseph as swe
 from helpers import (
@@ -24,7 +24,7 @@ def tuple_to_iso(jd):
     return f"{Y:04d}-{M:02d}-{D:02d} {h:02d}:{m:02d}:{s:02d}"
 
 
-def calculate_p3m(
+def calculate_pm(
     e1_jd,
     lat,
     lon,
@@ -52,64 +52,58 @@ def calculate_p3m(
             # find next lunar return
             lr_next_jd = swe.mooncross_ut(e1_mo, lr_prev_jd + 0.1, flag)
             cycle_length = lr_next_jd - lr_prev_jd
-            p3m_jd = lr_prev_jd + (fract_year * cycle_length)
-            p3m_diff = p3m_jd - e1_jd
-            LOG.debug("using exact lunar month")
+            pm_jd = lr_prev_jd + (fract_year * cycle_length)
+            pm_diff = pm_jd - e1_jd
+            # LOG.debug("using exact lunar month")
         else:
-            p3m_diff = age_years * month_length
-            LOG.debug("using average lunar month")
-        p3m_jd = e1_jd + p3m_diff
-        p3m_date = tuple_to_iso(p3m_jd)
-        p3m = [{"p3m jdut": p3m_jd}, {"p3m date": p3m_date}]
-        res, _ = swe.calc_ut(p3m_jd, swe.SUN, flag)  # su lon
+            pm_diff = age_years * month_length
+            # LOG.debug("using average lunar month")
+        pm_jd = e1_jd + pm_diff
+        pm_date = tuple_to_iso(pm_jd)
+        pm = [{"pm jdut": pm_jd}, {"pm date": pm_date}]
+        res, _ = swe.calc_ut(pm_jd, swe.SUN, flag)  # su lon
         # true asc mc positions on progressed day
-        p3m_su = res[0]
+        pm_su = res[0]
         try:
             _, ascmc = swe.houses_ex(
-                p3m_jd,
+                pm_jd,
                 lat,
                 lon,
                 hsys,
                 flag,
             )
-            p3m.append({"name": "tas", "lon": ascmc[0]})
-            p3m.append({"name": "tmc", "lon": ascmc[1]})
+            pm.append({"name": "tas", "lon": ascmc[0]})
+            pm.append({"name": "tmc", "lon": ascmc[1]})
         except swe.Error as e:
-            LOG.error(
-                f"p3m true asc mc calculation error : {e}",
-                extra=routing,
-            )
+            LOG.error(f"pm true asc mc calculation error : {e}")
             return err(e)
 
         e1_mc_arc = (e1_mc - e1_su) % 360.0 if e1_mc else 0.0
         e1_asc_arc = (e1_asc - e1_su) % 360.0 if e1_asc else 0.0
-        p3m_asc = (p3m_su + e1_asc_arc) % 360.0
-        p3m_mc = (p3m_su + e1_mc_arc) % 360.0
-        p3m.append({"name": "pas", "lon": p3m_asc})
-        p3m.append({"name": "pmc", "lon": p3m_mc})
+        pm_asc = (pm_su + e1_asc_arc) % 360.0
+        pm_mc = (pm_su + e1_mc_arc) % 360.0
+        pm.append({"name": "pas", "lon": pm_asc})
+        pm.append({"name": "pmc", "lon": pm_mc})
         for obj in objs:
             code, name = objcode(obj, mean_node)
             if code is None:
                 return err(f"unknow object name : {obj}")
 
-            res = swe.calc_ut(p3m_jd, code, flag)
+            res = swe.calc_ut(pm_jd, code, flag)
             data = res[0] if isinstance(res, tuple) else res
-            p3m.append({
+            pm.append({
                 "name": name,
                 "lon": data[0],
                 "lon speed": data[3],
                 "retro": get_retro_phases(
                     code,
-                    p3m_jd,
+                    pm_jd,
                     flag,
                     curr_speed=data[3],
                 ),
             })
-        return ok(p3m)
+        return ok(pm)
 
     except (swe.Error, Exception) as e:
-        LOG.error(
-            f"tertiary progression calculation error : {e}",
-            extra=routing,
-        )
+        LOG.error(f"tertiary progression calculation error : {e}")
         return err(e)

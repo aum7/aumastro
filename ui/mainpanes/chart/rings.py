@@ -24,7 +24,7 @@ class Rings:
         "transit harmonic": (0.0078, 0.0941, 0, 1),
         "p2 progress": (0, 0, 0.24, 1),
         "p3 progress": (0, 0.1, 0.26, 1),
-        "p3m progress": (0, 0.14, 0.28, 1),
+        "pm progress": (0, 0.14, 0.28, 1),
         "lunar return": (0.1386, 0.1269, 0.0092, 1),
         "solar return": (0.1686, 0.1569, 0.0392, 1),
         "d1 direction": (0.13, 0.13, 0.13, 1),
@@ -78,6 +78,7 @@ class Rings:
         "syzygy glyph": 0.6,
         "stars obj": 0.2,
         "info text": 1.5,  # info text / font size
+        "retro width": 1.0,
     }
     RADIUS = {  # offset from ring middle positions : signs ring only + house
         "ascmc": 1.0,
@@ -104,7 +105,7 @@ class Rings:
         "syzygy",
         "eclipses",
         "stars",
-        "pas",  # progressed ascendant for p2 p3 p3m rings
+        "pas",  # progressed ascendant for p2 p3 pm rings
         "pmc",  # progressed midheaven
         "tas",  # true ascendant on progressed julian day
         "tmc",  # true midheaven
@@ -245,21 +246,20 @@ class Rings:
                 radius,
                 obj_size,
             )
-            # draw object outline a) red for stationary (sr or sd)
-            # b) white for retro - stationary speed in sweph/constants.py
-            retro_state = obj.data.get("retro", " ")
+            # stationary & retro outline circle
+            retro_state = obj.data.get("retro", "")
             label = f"{name} {retro_state}"
             if retro_state in ("SD", "SR"):
                 cr.save()
-                # red slightly larger object outline
+                # red  object outline for stationary (sr or sd)
                 cr.set_source_rgba(*self.RING_COLORS["stationary"])
-                cr.set_line_width(1.5)
+                cr.set_line_width(self.SIZES["retro width"])
                 cr.arc(x, y, draw_size + 2, 0, 2 * pi)
                 cr.stroke()
                 cr.restore()
             elif retro_state == "R":
                 cr.save()
-                # white slightly larger object outline
+                # white  object outline for retro
                 cr.set_source_rgba(*self.RING_COLORS["retro"])
                 cr.arc(x, y, draw_size + 2, 0, 2 * pi)
                 cr.stroke()
@@ -822,6 +822,7 @@ class Rings:
             data["hora"] = glyphs.get_glyph(data["hora"], False)
         # movie mode info text : naksatra positions & speeds for 7 planets
         # if movie_mode and isinstance(movie_info, dict):
+        # todo code was removed for movie mode
         try:
             info_text = fmt_basic.format(**data) + "\n" + fmt_extra.format(**info_extra)
             # LOG.debug(f"inforing : infotext={info_text}")
@@ -836,9 +837,6 @@ class Rings:
             target_size / (len(lines) * spacing),  # height limit
         )
         line_spacing = draw_font_size * spacing
-        # draw_font_size = self.fit_glyph_font_size(cr, sample, target_size)
-        # line_spacing = draw_font_size * 1.2
-        # todo fix info text scaling
         self.set_custom_font(cr, draw_font_size)
         total_height = (len(lines) - 1) * line_spacing
         # calculate start y to roughly center text block
@@ -867,7 +865,7 @@ class Rings:
             ),
             "p2 progress": lambda cr: self.draw_outer_ring(cr, "p2 progress"),
             "p3 progress": lambda cr: self.draw_outer_ring(cr, "p3 progress"),
-            "p3m progress": lambda cr: self.draw_outer_ring(cr, "p3m progress"),
+            "pm progress": lambda cr: self.draw_outer_ring(cr, "pm progress"),
             "lunar return": lambda cr: self.draw_outer_ring(
                 cr, "lunar return", cusp_color=(1, 1, 0.6, 1), cusp_width=2
             ),
