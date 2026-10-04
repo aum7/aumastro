@@ -174,6 +174,11 @@ class Dispatcher:
         self.app.signaler.emit("setting changed", {"sweph": self.active_flags})
         self.recalculate_events()
 
+    def apply_topo(self, lon, lat, alt):
+        # swisseph observer is global : set at start & after solar eclipse search
+        if "topocentric" in self.active_flags:
+            swe.set_topo(lon, lat, alt)
+
     def toggle_sidereal(self):
         # toggle sidereal vs tropical flag
         self.update_sweph_flag(
@@ -476,38 +481,86 @@ class Dispatcher:
             return positions
         return {**positions, **result["data"]}
 
-    def calc_lots_prenatal(self, event_id, jd_ut, positions, houses):
-        # lots syzygy eclipses of event : each its own toggle
+    # def calc_lots_prenatal(self, event_id, jd_ut, positions, houses):
+    #     # lots syzygy eclipses of event : each its own toggle
+    #     lots = self.get_selected("lots", event_id)
+    #     prenatal = self.get_selected("prenatal", event_id)
+    #     lot_defs = {n: d for n, d in self.LOTS.items() if n in lots}
+    #     if lot_defs and positions and houses:
+    #         lots_package = {
+    #             "ascmc": houses["ascmc"],
+    #             "positions": self.lot_positions(jd_ut, positions, lot_defs),
+    #             "lots": lot_defs,
+    #         }
+    #         self.run_calc(event_id, "lots", calculate_lots, lots_package)
+    #     if positions and "syzygy" in prenatal:
+    #         self.run_calc(
+    #             event_id,
+    #             "syzygy",
+    #             calculate_syzygy,
+    #             jd_ut,
+    #             positions[0]["lon"],
+    #             positions[1]["lon"],
+    #             self.swe_flag,
+    #         )
+    #     if "eclipses" in prenatal:
+    #         tz_name = self.events_data[event_id].get("chart", {}).get("timezone")
+    #         self.run_calc(
+    #             event_id,
+    #             "eclipses",
+    #             calculate_eclipses,
+    #             jd_ut,
+    #             self.swe_flag,
+    #             tz_name,
+    #         )
+    def calc_extras(self, event_id, jd_ut, tz_name, positions, ascmc):
+        # lots syzygy eclipses of event or progressions ring : own toggles
+        # positions : dict of items : name lon : su mo always calculated
+        lons = {pos["name"]: pos["lon"] for pos in positions.values()}
         lots = self.get_selected("lots", event_id)
         prenatal = self.get_selected("prenatal", event_id)
-        lot_defs = {n: d for n, d in self.LOTS.items() if n in lots}
-        if lot_defs and positions and houses:
-            lots_package = {
-                "ascmc": houses["ascmc"],
+        lot_defs = {name: data for name, data in self.LOTS.items() if name in lots}
+        jobs = {}
+        if lot_defs and ascmc:
+            package = {
+                "ascmc": ascmc,
                 "positions": self.lot_positions(jd_ut, positions, lot_defs),
                 "lots": lot_defs,
             }
-            self.run_calc(event_id, "lots", calculate_lots, lots_package)
-        if positions and "syzygy" in prenatal:
-            self.run_calc(
-                event_id,
-                "syzygy",
+            jobs["lots"] = (calculate_lots, package)
+        if "syzygy" in prenatal and "su" in lons and "mo" in lons:
+            jobs["syzygy"] = (
                 calculate_syzygy,
                 jd_ut,
-                positions[0]["lon"],
-                positions[1]["lon"],
+                lons["su"],
+                lons["mo"],
                 self.swe_flag,
             )
         if "eclipses" in prenatal:
-            tz_name = self.events_data[event_id].get("chart", {}).get("timezone")
-            self.run_calc(
-                event_id,
-                "eclipses",
-                calculate_eclipses,
-                jd_ut,
-                self.swe_flag,
-                tz_name,
-            )
+            jobs["eclipses"] = (calculate_eclipses, jd_ut, self.swe_flag, tz_name)
+        results = {
+            key: self.try_calc(event_id, key, func, *args)
+            for key, (func, *args) in jobs.items()
+        }
+        return {key: data for key, data in results.items() if data is not None}
+
+    def calc_ring_extras(self, event_id, ring, jd_key):
+        # extras on progression ring
+        calculated = self.events_data[event_id]["calculated"]
+        raw = calculated.get(ring)
+        if not raw:
+            return
+
+        jd_ut = next((item[jd_key] for item in raw if jd_key in item), None)
+        items = {item["name"]: item for item in raw if "name" in item}
+        if jd_ut is None or "tas" not in items or "tmc" not in items:
+            return
+
+        tz_name = self.events_data["e1"].get("chart", {}).get("timezone")
+        ascmc = [items["tas"]["lon"], items["tmc"]["lon"]]
+        calculated[f"{ring} extras"] = self.calc_extras(
+            event_id, jd_ut, tz_name, items, ascmc
+        )
 
     def recalculate(self, event_id: str, is_chart: bool = True):
         # on event or settings change > recalculate astodata
@@ -533,9 +586,11 @@ class Dispatcher:
         lat = sweph["lat"]
         lon = sweph["lon"]
         alt = sweph.get("alt", 0.0)
-        if "topocentric" in self.active_flags:
-            # swisweph mess : lon-lat
-            swe.set_topo(lon, lat, alt)
+        # apply topocentric flag
+        self.apply_topo(lon, lat, alt)
+        # if "topocentric" in self.active_flags:
+        #     # swisweph mess : lon-lat
+        #     swe.set_topo(lon, lat, alt)
         # LOG.debug(f"recalculate : jdut={jd_ut} lat={lat} lon={lon} alt={alt}")
         calculated = {}
         self.events_data[event_id]["calculated"] = calculated
@@ -581,7 +636,7 @@ class Dispatcher:
             self.swe_flag,
         )
         positions_data = calculated["positions"]
-        # houses_data = calculated["houses"]
+        houses_data = calculated["houses"]
         if positions_data:
             self.run_calc(
                 event_id,
@@ -591,6 +646,15 @@ class Dispatcher:
                 self.orb,
                 self.harmonic_aspects,
             )
+        if positions_data and houses_data:
+            tz_name = self.events_data[event_id].get("chart", {}).get("timezone")
+            calculated.update(
+                self.calc_extras(
+                    event_id, jd_ut, tz_name, positions_data, houses_data["ascmc"]
+                )
+            )
+            # solar eclipse search resets observer > reapply topocentric flag
+            self.apply_topo(lon, lat, alt)
         if event_id == "e1":
             # lots if enabled - needs positions & houses
             # lot_defs = {
@@ -806,6 +870,12 @@ class Dispatcher:
                         self.mean_node,
                         self.swe_flag,
                     )
+            for ring, jd_key in (
+                ("p2 progress", "p2 jdut"),
+                ("p3 progress", "p3 jdut"),
+                ("pm progress", "pm jdut"),
+            ):
+                self.calc_ring_extras(event_id, ring, jd_key)
             if self.rings["lunar return"] and e1_mo:
                 self.run_calc(
                     event_id,
@@ -858,8 +928,8 @@ class Dispatcher:
         # exponent moving average : recent samples weighted more
         self.average_calc_ms = 0.3 * elapsed_ms + 0.7 * self.average_calc_ms
 
-    def run_calc(self, event_id: str, key: str, func, *args):
-        # run 1 calculation - cache on success : never raise nor block rest of package
+    def try_calc(self, event_id: str, key: str, func, *args):
+        # run 1 calculation - data on success else None - never raises
         try:
             result = func(*args)
         except Exception:
@@ -868,15 +938,33 @@ class Dispatcher:
                 key,
                 event_id,
             )
-            return
+            return None
 
         if result["status"] != "ok":
             LOG.error(
                 f"{key} calculation failed for {event_id} : {result['error']}",
                 extra=routinguser,
             )
-            return
-        self.events_data[event_id]["calculated"][key] = result["data"]
+            return None
+        # self.events_data[event_id]["calculated"][key] = result["data"]
+        return result["data"]
+
+    def run_calc(self, event_id: str, key: str, func, *args):
+        # run 1 calculation & cache on success
+        data = self.try_calc(event_id, key, func, *args)
+        if data is not None:
+            self.events_data[event_id]["calculated"][key] = data
+
+    def ring_package(self, ring, raw, calculated):
+        # ring with own lots syzygy eclipses
+        extras = calculated.get(f"{ring} extras")
+        if not extras:
+            return self._prep_ring(raw)
+
+        return {
+            "positions": self._prep_ring(raw),
+            **{kind: self._prep_ring(items) for kind, items in extras.items()},
+        }
 
     def _prep_ring(self, raw, harmonic=False):
         # return prepared data for rings
@@ -1012,7 +1100,9 @@ class Dispatcher:
                 if self.rings.get(ring):
                     raw = e2_calculated.get(ring)
                     if raw:
-                        chart_package[ring] = self._prep_ring(raw)
+                        chart_package[ring] = self.ring_package(
+                            ring, raw, e2_calculated
+                        )
         # LOG.debug(f"refreshpackage : d1 : {chart_package.get('d1 direction')}")  # ok
         self.app.signaler.emit("package chart ready", "e1", chart_package)
 

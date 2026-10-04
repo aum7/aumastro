@@ -16,6 +16,7 @@ def calculate_solar_return(
 ):
     # calculate solar return - solcross & mooncros always search forward
     try:
+        flag &= -swe.FLG_TOPOCTR  # eclipse is global event : geocentric
         # period elapsed from birth in years : needs event 2 datetime
         period = e2_jd - e1_jd
         delta_years = period / year_length

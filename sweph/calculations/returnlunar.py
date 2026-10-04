@@ -14,6 +14,7 @@ def calculate_lunar_return(
 ):
     # calculate lunar return
     try:
+        flag &= -swe.FLG_TOPOCTR  # eclipse is global event : geocentric
         lr_jd = swe.mooncross_ut(e1_mo, e2_jd - month_length, flag)
         if lr_jd > e2_jd:
             lr_jd = swe.mooncross_ut(e1_mo, e2_jd - month_length - 2.0, flag)

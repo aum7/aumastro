@@ -94,14 +94,14 @@ PRENATAL = {
     "syzygy": {
         "enable": True,
         "tooltip": (
-            "syzygy - last full or new moon before event 1"
+            "syzygy - last full or new moon before event"
             "\nnote : syzygy might overlap with eclipses (below)"
         ),
     },
     "eclipses": {
         "enable": True,
         "tooltip": (
-            "last solar & lunar eclipse before event 1"
+            "last solar & lunar eclipse before event"
             "\nnote : eclipses might overlap with syzygy (above)"
         ),
     },

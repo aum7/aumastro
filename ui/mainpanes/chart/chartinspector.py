@@ -19,22 +19,6 @@ from gi.repository import Gtk, Gdk  # type: ignore
 class ChartInspector:
     """snapping overlay manager for astro chart : shift+r to toggle"""
 
-    RING_TAGS = {
-        "transit": "TR",
-        "transit harmonic": "TH",
-        "p2 progress": "DFY",  # day for a year
-        "p3 progress": "DFM",  # day for a month
-        "pm progress": "MFY",  # month for a year
-        "lunar return": "LNR",
-        "solar return": "SLR",
-        "d1 direction": "D1",
-        "naksatras": "NK",
-        "terms": "TM",
-        "natal harmonic": "NH",
-        "signs": "SG",
-        "event": "N",
-    }
-
     def __init__(self, chart):
         self.chart = chart
         self.app = getattr(self.chart, "app")
@@ -548,9 +532,9 @@ class ChartInspector:
             d = math.hypot(x - tx, y - ty)
             if d < min_dist:
                 min_dist = d
-                tag = self.RING_TAGS.get(ring, ring)
-                txt_label = f"{display_label}-{tag}"
-                best_target = (lon, display_label, txt_label, (tx, ty))
+                # tag = self.RING_TAGS.get(ring, ring)
+                # txt_label = f"{display_label}-{tag}"
+                best_target = (lon, display_label, display_label, (tx, ty))
         if best_target:
             return best_target
         # fallback to free radial line snap
