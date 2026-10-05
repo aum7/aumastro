@@ -1,0 +1,6 @@
+# .taplo.toml
+# formatting rules for db.toml file
+[formatting]
+reorder_keys = false
+allowed_blank_lines = 1
+column_width = 80

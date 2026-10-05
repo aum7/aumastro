@@ -25,7 +25,8 @@ OBJECTS = {  # one-but-last = color ; last = size scale = drawing order
     6: ("sa", "saturn", "sa", "sani", (0.1176, 0.5647, 1.0, 1), 0.91),
     7: ("ur", "uranus", "ur", "uranus", (0.4, 0.4, 0.4, 1), 0.94),
     8: ("ne", "neptune", "ne", "neptune", (0, 0.2539, 0.4931, 1), 0.97),
-    9: ("pl", "pluto", "pl", "pluto", (0.1784, 0.1784, 0.1784, 1), 1.0),
+    9: ("pl", "pluto", "pl", "pluto", (0.2, 0.2, 0.2, 1), 1.0),
+    # 9: ("pl", "pluto", "pl", "pluto", (0.198, 0.198, 0.198, 1), 1.0),
     11: ("ra", "true node", "ra", "rahu", (0.4, 0.3, 0.3, 1), 1.1),
     # 10: rahu mean handled in positions.py by usersettings.CHART_SETTINGS.usermeannode
     # heliocentric view

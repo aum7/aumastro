@@ -69,7 +69,7 @@ class UISetup:
         # self.btn_toggle_pane.set_halign(Gtk.Align.START)
         # self.btn_toggle_pane.set_valign(Gtk.Align.START)
         self.btn_toggle_pane.set_tooltip_text(
-            """left-click : toggle side pane (hk : ctrl+s)
+            """left-click : toggle side pane (hk : shift+s)
 [shift+1-click] : single pane (hk : shift+1)
 [shift+2-click] : double panes (hk : shift+2)
 [shift+3-click] : triple panes (hk : shift+3)

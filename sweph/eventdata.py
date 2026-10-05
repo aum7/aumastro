@@ -88,6 +88,60 @@ class EventData:
             self.on_location_change(self.location)
         self.read_place()
 
+    def get_fields(self):
+        # entry text as shown : none while entries differ from processed data
+        if (
+            self.name is None
+            or self.country is None
+            or self.city is None
+            or self.location is None
+            or self.date_time is None
+        ):
+            return None
+
+        item = self.country.get_selected_item()
+        fields = {
+            "name": self.name.get_text().strip(),
+            "country": item.get_string() if item else "",
+            "city": self.city.gdt_text().strip(),
+            "location": self.location.get_text().strip(),
+            "datetime": self.date_time.get_text().strip(),
+        }
+        for key in ("name", "location", "datetime"):
+            if fields[key] and fields[key] != self.chart.get(key):
+                return None
+
+            return fields
+
+    def set_fields(self, fields: dict):
+        # load : fill entries then run same config path as typing
+        if (
+            self.name is None
+            or self.country is None
+            or self.city is None
+            or self.location is None
+            or self.date_time is None
+        ):
+            return
+
+        self.name.set_text(fields.get("name", ""))
+        self.city.set_text(fields.get("city", ""))
+        self.location.set_text(fields.get("location", ""))
+        self.date_time.set_text(fields.get("datetime", ""))
+        model = self.country.get_model()
+        names = [model.get_string(i) for i in range(model.get_n_items())]
+        country = fields.get("country", "")
+        if country in names:
+            self.country.set_selected(names.index(country))
+        elif country:
+            LOG.warning(
+                f"country not found : {country} : use exact name from countries.txt",
+                extra=routinguser,
+            )
+        if self.id == "e2":
+            self.on_location_change(self.location)  # empty = e2 place erased
+        self.on_datetime_change(self.date_time)
+
     def on_location_change(self, entry):
         location_name = entry.get_name()
         location = entry.get_text().strip()

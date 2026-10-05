@@ -5,8 +5,9 @@
 # os.environ["GTK_DEBUG"] = "keybindings geometry size-request actions constraints"
 # Gtk.Window.set_interactive_debugging(True)
 # app todo :
-#   vimsottari from strongest of mo su asc
-#   major - database / event import & export
+#   vimsottari from strongest of mo su asc ??? not now
+#   redesign notification mess / doubling
+#   export to executable on linux & mswindows (10 & 11)
 #
 # LOG
 # 2026-09-16 21-12

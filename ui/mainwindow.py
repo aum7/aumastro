@@ -13,6 +13,7 @@ from managers.notifier import NotifyLevel
 from ui.mainpanes.tables import Tables
 from ui.mainpanes.chart.astrochart import AstroChart
 from ui.mainpanes.datagraph import DataGraph
+from ui.dbpopover import DbPopover
 from .dataprintscreen import DataPrintscreen  # printscreen sequence generation
 import gi
 
@@ -58,6 +59,8 @@ class MainWindow(
         # sidepane toggle button
         self.setup_menu_button()
         self.headerbar.pack_start(self.btn_toggle_pane)
+        self.btn_db = DbPopover(self.app)
+        self.headerbar.pack_start(self.btn_db)
         # widget for text align left
         self.title_label = Gtk.Label(label="aumastro")
         self.headerbar.set_title_widget(self.title_label)
@@ -194,6 +197,10 @@ class MainWindow(
         self.hotkeys.register_hotkey("<Control>Right", self.obc_arrow_r)
         # call helper function for time now
         self.hotkeys.register_hotkey("<Control>n", lambda: self.on_time_now())
+        # save & load popover
+        self.hotkeys.register_hotkey("<Control>s", self.btn_db.quick_save)
+        # astrochart inspector ruler / snap labels
+        self.hotkeys.register_hotkey("<Control>o", self.btn_db.open)
         self.hotkeys.register_hotkey(
             "<Control>c", lambda: self.astro_chart.inspector.angle_to_clipboard()
         )
@@ -313,9 +320,10 @@ class MainWindow(
             "\n\tenter date-time 2 (app will reuse event 1 location & name)"
             "\n\tenter location 2 for relocation event (transit will be for location 2)"
             "\n\t\tnote: can also be simple synastry chart - enable 'transit' ring"
-            "\n\tenter custom name 2 (ie 'marriage' - not saved currently)"
+            "\n\tenter custom name 2 (ie 'marriage' - saved as e2 subevent)"
             "\ndelete date-time 2 = erase event 2 data (not interested in transit etc)"
             "\n\nhotkeys (hk) :"
+            "\nctrl+s : quick-save event | ctrl+o : open events db"
             "\ntab/shift+tab or arrow up/down : navigate widgets in side pane"
             "\nspace/enter : activate button / dropdown / entry when focused"
             "\nctrl+m : show manual / help (this message)"

@@ -9,6 +9,7 @@ source = "returnsolar"
 routing = {"source": source, "route": ["terminal"]}
 import swisseph as swe
 from helpers import _object_name_to_code as objcode, ok, err
+from sweph.calculations.stations import get_retro_phases
 
 
 def calculate_solar_return(
@@ -29,23 +30,28 @@ def calculate_solar_return(
         # start_jd = frac_jd - 1.0
         # search solar crossing
         sr_next_jd = swe.solcross_ut(e1_su, e2_jd, flag)
-        sol_ret_jd = swe.solcross_ut(e1_su, sr_next_jd - 370.0, flag)
+        sr_jd = swe.solcross_ut(e1_su, sr_next_jd - 370.0, flag)
         # sol_ret_jd = swe.solcross_ut(e1_su, start_jd, flag)
-        sol_ret = [{"sr jdut": sol_ret_jd}]
+        sol_ret = [{"sr jdut": sr_jd}]
         # calculate positions on solar return
         for obj in objs:
             code, name = objcode(obj, mean_node)
             if code is None:
                 return err(f"unknown object name : {obj}")
 
-            res = swe.calc_ut(sol_ret_jd, code, flag)
+            res = swe.calc_ut(sr_jd, code, flag)
             data = res[0]
             sol_ret.append(
-                {"name": name, "lon": data[0]},
+                {
+                    "name": name,
+                    "lon": data[0],
+                    "lon speed": data[3],
+                    "retro": get_retro_phases(code, sr_jd, flag, curr_speed=data[3]),
+                },
             )
         # calculate houses
         cusps, ascmc = swe.houses_ex(
-            sol_ret_jd,
+            sr_jd,
             lat,
             lon,
             hsys,

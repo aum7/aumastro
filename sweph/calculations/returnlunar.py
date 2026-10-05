@@ -7,6 +7,7 @@ source = "returnlunar"
 routing = {"source": source, "route": ["terminal"]}
 import swisseph as swe
 from helpers import _object_name_to_code as objcode, ok, err
+from sweph.calculations.stations import get_retro_phases
 
 
 def calculate_lunar_return(
@@ -30,6 +31,8 @@ def calculate_lunar_return(
             lun_ret.append({
                 "name": name,
                 "lon": data[0],
+                "lon speed": data[3],
+                "retro": get_retro_phases(code, lr_jd, flag, curr_speed=data[3]),
             })
         cusps, ascmc = swe.houses_ex(
             lr_jd,
