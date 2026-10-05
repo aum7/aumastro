@@ -1,8 +1,7 @@
 # user/eventsdb/db.toml
-# IMPORTANT ! default country must be enabled in countries.txt - also make
-# sure to select country in dropdown list in app > sidepane > event one/two
-# add entries by hand or with ctrl+s : file order = list order
-# category = [category.key] | subevent= [[category.key.subevents]]
+# IMPORTANT ! country used in below events must be enabled in countries.txt
+# also make sure to select country in dropdown list in app > sidepane > event
+# one/two - add entries by hand or with ctrl+s : file order = list order
 # event one if not already auto-selected
 # --- houck book examples
 [houck.p29]
@@ -30,46 +29,134 @@ note = "houck p35"
 name = "job promotion"
 datettime = "1994-01-24 12:00"
 note = "houck p35 subevent"
+[houck.river_phoenix]
+name = "river phoenix"
+country = "USA"
+city = "Madras"
+location = "44 38 00 n 121 07 46 w 0684 m"
+datetime = "1970-08-23 12:00:00"
+note = "houck p57"
+[[houck.river_phoenix.subevents]]
+name = "died"
+datetime = "1993-10-31 12:00:00"
+note = ""
+[houck.federico_fellini]
+name = "federico fellini"
+country = "Italy"
+city = "Rimini"
+location = "44 03 27 n 012 33 55 e 0010 m"
+datetime = "1920-01-20 12:00:00"
+note = "houck p58"
+[[houck.federico_fellini.subevents]]
+name = "1993-10-31"
+datetime = "1993-10-31 12:00:00"
+note = ""
+[houck.david_koresh]
+name = "david koresh"
+country = "USA"
+city = "Houston"
+location = "29 45 47 n 095 21 47 w 0025 m"
+datetime = "1959-08-17 08:49:00"
+note = "houck p58"
+[[houck.david_koresh.subevents]]
+name = "1st assault"
+datetime = "1993-02-28 12:00:00"
+[[houck.david_koresh.subevents]]
+name = "died with crowd"
+datetime = "1993-04-19 12:00:00"
 [houck.p129]
 name = "jf kennedy"
 country = "USA"
 city = "brookline"
 location = "42 20 n 071 07 w 0043 m"
 datetime = "1917-5-29 15:15"
-note = "millionaire at 21st birthday"
+note = "millionaire on 21st birthday"
 [[houck.p129.subevents]]
 name = "assasination"
 datetime = "1963-11-22 15:15"
 note = "dallas"
 # --- misc
-[misc.ljubljana]
+[events.ljubljana]
 name = "ljubljana"
 country = "Slo"
 city = "ljubljana"
 location = "46 03 10 n 14 31 26 e 0294 m" # porodnišnica lj
 datetime = "1975 2 8 14 10"
 note = ""
-[misc.intel]
+[events.intel]
 name = "intel"
 country = "usa"
 city = "santa clara"
 location = "37 23 16 n 121 57 49 w 0038 m"
 datetime = "1968-07-18 10:00:00"
-[misc.eurojackpot]
+[events.eurojackpot]
 name = "ejpt"
-country = "finland"
+country = "Finland"
 city = "vantaa"                           # helsinki
 location = "60 17 36 n 25 02 17 e 0038 m"
 datetime = "2012 03 23 21 00"
 note = "eurojackpot"
-[[misc.eurojackpot.subevents]]
-name = "2013-04-11"
+[[events.eurojackpot.subevents]]
+name = "33 M"
 datetime = "2013-04-11 21"
 note = "33 M finland"
-# fill from folder
-[misc.solitaire]
+[events.solitaire]
 name = "solitaire"
 country = "Morocco"
 city = "Agadir"
 location = "30 25 12 n 009 35 53 w 0 m"
 datetime = "2024-6-19 11:53:00"
+[events.low-tide_2026-10-05_09-56]
+name = "low tide"
+country = "USA"
+city = "Los Angeles"
+location = "34 03 08 n 118 14 37 w 0102 m"
+datetime = "2026-10-05 09:56:01"
+note = ""
+[[events.low-tide_2026-10-05_09-56.subevents]]
+name = "died"
+datetime = "1993-10-31 12:00:00"
+note = ""
+# --------------------------------------------------
+
+[events.luna_1917-05-30_15_15]
+name = "luna"
+country = "USA"
+city = "brookline"
+location = "42 20 00 n 071 07 00 w 0043 m"
+datetime = "1917-05-30 15:15:00"
+note = ""
+
+# subevent of luna
+[[events.luna_1917-05-30_15_15.subevents]]
+name = "1963-11-22"
+datetime = "1963-11-22 15:15:00"
+note = ""
+
+[events.1917-05-31]
+name = "sonce"
+country = "USA"
+city = "brookline"
+location = "42 20 00 n 071 07 00 w 0043 m"
+datetime = "1917-05-31 15:15:00"
+note = ""
+
+# subevent of sonce
+[[events.1917-05-31.subevents]]
+name = "1963-11-26"
+datetime = "1963-11-26 15:15:00"
+note = ""
+
+[events.tito_1917_05_31]
+name = "tito"
+country = "USA"
+city = "brookline"
+location = "42 20 00 n 071 07 00 w 0043 m"
+datetime = "1917-05-31 15:15:00"
+note = ""
+
+# subevent of tito
+[[events.tito_1917_05_31.subevents]]
+name = "1963-11-18"
+datetime = "1963-11-18 15:15:00"
+note = ""

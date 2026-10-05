@@ -28,19 +28,6 @@ def objects_toggle_event(button, dispatcher):
     )
 
 
-# def objects_toggled(checkbutton, name, dispatcher):
-#     # clicking on checkbutton
-#     active = checkbutton.get_active()
-#     event = dispatcher.selected_objects_event
-#     dispatcher.update_object(event, name, active)
-
-
-# def lots_toggled(checkbutton, name, dispatcher):
-#     dispatcher.update_lot(name, checkbutton.get_active())
-
-
-# def prenatal_toggled(checkbutton, name, dispatcher):
-#     dispatcher.update_prenatal(name, checkbutton.get_active())
 def selected_toggled(checkbutton, kind, name, dispatcher):
     # objects | lots | prenatal of button-chosen event 1 / 2
     event_id = dispatcher.selected_objects_event
@@ -52,8 +39,6 @@ def house_system_changed(dropdown, _pspec, dispatcher):
     house_systems = dispatcher.HOUSE_SYSTEMS
     hsys, _, _ = house_systems[idx]
     dispatcher.update_house_system(hsys)
-    # hsys, _, short_name = house_systems[idx]
-    # dispatcher.update_house_system(hsys, short_name)
 
 
 def setting_toggled(button, setting, dispatcher):
@@ -184,5 +169,8 @@ def custom_ayanamsa_changed(entry, key, dispatcher):
 
 def files_changed(entry, key, dispatcher):
     value = entry.get_text().strip()
+    if key == "filename":
+        dispatcher.update_filename_format(value)
+    else:
+        dispatcher.update_files(key, value)
     LOG.debug(f"{key} changed")
-    dispatcher.update_files(key, value)

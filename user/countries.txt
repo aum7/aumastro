@@ -10,8 +10,9 @@
 #--- copies of original lines > renamed -----
 ("US", "USA", "USA"),
 ("SI", "Slo", "SVN"),
+("FI", "Finland", "FIN"),
+("IT", "Italy", "ITA"),
 #("SE", "Sweden", "SWE"),
-#("FI", "Finland", "FIN"),
 #("NL", "Netherlands", "NLD"),
 #("DK", "Denmark", "DNK"),
 #("GB", "UK", "GBR"),

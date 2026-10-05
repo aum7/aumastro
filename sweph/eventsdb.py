@@ -16,6 +16,7 @@ from pathlib import Path
 DB_NAME = "db.toml"
 DB_HEADER = "# events db : category > event > subevents\n"
 DEFAULT_CATEGORY = "events"
+DEFAULT_KEY_FORMAT = "{name}"
 EVENT_FIELDS = ("name", "country", "city", "location", "datetime")
 PLACE_FIELDS = ("country", "city", "location")
 _cache = {"mtime": None, "data": {}, "error": False}
@@ -37,6 +38,7 @@ def read_db() -> dict:
         try:
             with open(path, "rb") as file:
                 _cache["data"] = tomllib.load(file)
+            _cache["error"] = False
         except (OSError, tomllib.TOMLDecodeError) as e:
             LOG.error(f"events db unreadable : {e}", extra=routinguser)
             _cache["data"] = {}
@@ -76,9 +78,9 @@ def list_events(query: str = "") -> list:
 
 
 # --- save : append only : never rewrite what user wrote
-def slug(text: str) -> str:
+def to_toml_key(text: str) -> str:
     # toml bare key : letters digits underscore dash
-    return re.sub(r"[^a-z0-9_-]+", "-", text.lower()).strip("-")
+    return re.sub(r"[^a-z0-9]+", "_", text.lower()).strip("_")
 
 
 def toml_str(text) -> str:
@@ -96,19 +98,24 @@ def same_event(a: dict, b: dict) -> bool:
     return same_name and stamp(a) == stamp(b)
 
 
-def make_key(event: dict, taken: dict) -> str:
+def make_key(event: dict, taken: dict, file_format: str = "") -> str:
     # key from usersettings.py filename format ie {name}_{date}_{time}
-    date, _, time = event["datetime"].partition(" ")
+    LOG.debug(f"makekey : fileformat : {file_format}")
+    # if file_format == "":  # use default : name only
+    #     file_format = r"{name}"  # placeholder so to speak
+    # name = event["name"]  # actual attribute
+    date, _, time = event["datetime"].partition(" ")  # other 2 possible attributes
+    LOG.debug(f"makekey : date={date} time={time}")
     try:
-        raw = usersett.FILES["filename"][0].format(
+        raw = (file_format or DEFAULT_KEY_FORMAT).format(
             name=event["name"], date=date, time=time, time_short=time[:5]
         )
-    except (KeyError, IndexError):
-        raw = f"{event['name']}_{date}_{time[:5]}"
-    key = base = slug(raw) or "event"
+    except (KeyError, IndexError, ValueError):
+        raw = event["name"]
+    key = base = to_toml_key(raw) or "event"
     count = 2
     while key in taken:
-        key = f"{base}-{count}"
+        key = f"{base}_{count}"
         count += 1
 
     return key
@@ -123,12 +130,14 @@ def block(header: str, fields: dict, note: str, comment: str = "") -> str:
     return "\n".join(lines)
 
 
-def save_event(category: str, event: dict, subevent: dict | None, note: str):
+def save_event(
+    category: str, event: dict, subevent: dict | None, note: str, file_format: str = ""
+):
     # append event & / or subevent : return saved, message
     read_db()
     if _cache["error"]:
         return False, "events db has errors : fix db.toml first"
-    category = slug(category) or DEFAULT_CATEGORY
+    category = to_toml_key(category) or DEFAULT_CATEGORY
     existing = next(
         ((cat, key, ev) for cat, key, ev in iter_events() if same_event(ev, event)),
         None,
@@ -136,7 +145,7 @@ def save_event(category: str, event: dict, subevent: dict | None, note: str):
     blocks, notes = [], []
     if existing is None:
         taken = read_db().get(category, {})
-        cat, key = category, make_key(event, taken)
+        cat, key = category, make_key(event, taken, file_format)
         fields = {name: event[name] for name in EVENT_FIELDS}
         blocks.append(block(f"[{cat}.{key}]", fields, note))
         notes.append(f"event {event['name']}")

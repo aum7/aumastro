@@ -5,9 +5,8 @@
 # os.environ["GTK_DEBUG"] = "keybindings geometry size-request actions constraints"
 # Gtk.Window.set_interactive_debugging(True)
 # app todo :
+#   add post-natal eclipses upto 70 days forward in time - most potent
 #   switch swisseph to pysweph (pyswisseph maintained fork) ???
-#   close dbpopover on mouse exit ???
-#   add names to naksatras / mansions
 #   redesign notification mess / doubling
 #   export to executable on linux & mswindows (10 & 11)
 #

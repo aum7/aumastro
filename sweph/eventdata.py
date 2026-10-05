@@ -101,7 +101,7 @@ class EventData:
         fields = {
             "name": self.name.get_text().strip(),
             "country": item.get_string() if item else "",
-            "city": self.city.gdt_text().strip(),
+            "city": self.city.get_text().strip(),
             "location": self.location.get_text().strip(),
             "datetime": self.date_time.get_text().strip(),
         }

@@ -133,6 +133,7 @@ class Dispatcher:
         self.SELECTION_TYPES = ("objects", "lots", "prenatal")
         # ephe path & astro font & mono font & events database & graph data & filename
         self.FILES = usersett.FILES
+        self.filename_format = usersett.FILES["filename"][0]
         # explicit setting
         self.age_years = 0.0
         self.age_months = 0.0
@@ -318,6 +319,11 @@ class Dispatcher:
         self.selected_month_period = period
         self.app.signaler.emit("setting changed", {"lunar month": period})
         self.recalculate_events()
+
+    def update_filename_format(self, file_format: str):
+        self.filename_format = file_format
+        LOG.debug(f"updatefilenameformat : {file_format}")
+        self.app.signaler.emit("setting changed", {"filename": file_format})
 
     def set_sid_mode(self):
         # set swe sidereal mode

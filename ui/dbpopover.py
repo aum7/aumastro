@@ -19,7 +19,7 @@ ICONS = {  # key : custom file fallback theme icon
     "database": ("database.svg", "folder-open-symbolic"),
     # "editor": ("editor.svg", "folder-open-symbolic"),
 }
-ICON_SIZE = 24  # same as menu.svg
+ICON_SIZE = 24
 CLOSE_DELAY_MS = 350  # mouse exit : grace time before popover closes
 
 
@@ -53,7 +53,6 @@ class DbPopover(Gtk.MenuButton):
     def __init__(self, app, **kwargs):
         super().__init__(**kwargs)
         self.app = app
-        # self.set_icon_name("folder-open-symbolic")
         self.set_child(make_icon("folder"))
         self.set_tooltip_text(
             "load & save events\nhk :\nctrl+s : quick save\nctrl+o : open events db"
@@ -86,7 +85,7 @@ class DbPopover(Gtk.MenuButton):
         self.ent_name.set_tooltip_text("save as name")
         self.ent_note = Gtk.Entry()
         self.ent_note.set_placeholder_text("note")
-        self.ent_note.set_tooltip_text("add additional data")
+        self.ent_note.set_tooltip_text("add note")
         btn_save = icon_button(
             "save",
             "save current event (e2 as subevent)\nhk : ctrl+s : quick save",
@@ -94,7 +93,7 @@ class DbPopover(Gtk.MenuButton):
         )
         btn_db = icon_button(
             "database",
-            "open db text in editor",
+            "open db text in external editor",
             self.open_db_text,
         )
         row_buttons = Gtk.Box(spacing=6)
@@ -168,7 +167,7 @@ class DbPopover(Gtk.MenuButton):
         row = Gtk.ListBoxRow()
         row.set_activatable(False)
         label = Gtk.Label(use_markup=True)
-        label.set_markup(f"<b>{GLib.markup_escape_text(category)}</b>")
+        label.set_markup(f"<b>+ {GLib.markup_escape_text(category)}</b>")
         label.set_xalign(0)
         label.set_margin_start(6)
         row.set_child(label)
@@ -177,22 +176,25 @@ class DbPopover(Gtk.MenuButton):
 
     def event_row(self, event, subevent, indent):
         item = subevent or event
+        name = item.get("name", "")
+        datetime = item.get("datetime", "")
         row = Gtk.ListBoxRow()
-        label = Gtk.Label(label=f"{item.get('name', '')}  {item.get('datetime', '')}")
+        label = Gtk.Label(label=(f"{name}  {datetime}"))
         label.set_xalign(0)
         label.set_ellipsize(Pango.EllipsizeMode.END)
         label.set_margin_start(indent + 6)
         row.set_child(label)
-        row.payload = (event, subevent)
+        row.data = (event, subevent)
         if note := item.get("note"):
             row.set_tooltip_text(note)
 
         return row
 
     def on_row_activated(self, listbox, row):
-        payload = getattr(row, "payload", None)
-        if payload:
-            self.load_event(*payload)
+        data = getattr(row, "data", None)
+        # self.app.notifier.debug(f"data : {data}")
+        if data:
+            self.load_event(*data)
             self.popdown()
 
     def load_event(self, event, subevent):
@@ -202,7 +204,7 @@ class DbPopover(Gtk.MenuButton):
             self.app.EVENT_TWO.set_fields(subevent or {})
 
     def on_show(self, *args):
-        # form starts with current event one neme & empty note
+        # form starts with current event one name & empty note
         self.ent_name.set_text(self.app.EVENT_ONE.name.get_text().strip())
         self.ent_note.set_text("")
         self.fill_list()
@@ -218,18 +220,14 @@ class DbPopover(Gtk.MenuButton):
     def quick_save(self):
         # ctrl+s : save to last used category
         self.save(self.ent_category.get_text(), "", "")
-        # self.app.notifier.info(
-        #     "save : todo",
-        #     source=source,
-        #     route=["terminal", "user"],
-        # )
 
     def save(self, category, name, note):
         e1, e2 = self.app.EVENT_ONE, self.app.EVENT_TWO
         e1.on_datetime_change(e1.date_time)  # confirm : entries = chart data
         event = e1.get_fields()
+        # set filename string
         if not event or not all(event[key] for key in ("name", "location", "datetime")):
-            self.notify(False, "save canceled : event on is not valid")
+            self.notify(False, "save canceled : event one is not valid")
             return
 
         event["name"] = name or event["name"]
@@ -242,7 +240,10 @@ class DbPopover(Gtk.MenuButton):
                 return
 
             subevent["name"] = subevent["name"] or subevent["datetime"].split()[0]
-        saved, message = eventsdb.save_event(category, event, subevent, note)
+        saved, message = eventsdb.save_event(
+            category, event, subevent, note, self.app.dispatcher.filename_format
+        )
+        # LOG.debug(f"save : saved : {saved}\nmessage : {message}")
         self.notify(saved, message)
 
     def notify(self, saved: bool, message: str):
