@@ -30,6 +30,7 @@ from sweph.calculations.returnlunar import calculate_lunar_return
 from sweph.calculations.returnsolar import calculate_solar_return
 from sweph.calculations.aspects import calculate_aspects
 from sweph.calculations.vimsottari import calculate_vimsottari
+from sweph.calculations.naksatras import get_naksatra_ring
 from user.fixedstars import FIXEDSTARS
 from ui.mainpanes.chart.astroobject import AstroObject
 
@@ -42,6 +43,8 @@ class Dispatcher:
         # LOG.debug(f"whoisme self : {self.__class__.__name__}")
         self.events_data = {"e1": {}, "e2": {}}
         self.LUMIES = frozenset({"su", "mo"})  # always calculated
+        # topocentric flag management
+        self.topo = None
         # explicit selected event : the one arrived last or be user-selected
         self.selected_event = "e1"
         # select event for objects button
@@ -106,6 +109,7 @@ class Dispatcher:
         self.naksatras_ring = usersett.CHART_SETTINGS["naksatras ring"][0]
         self.mansions_28 = usersett.CHART_SETTINGS["28 mansions"][0]
         self.first_naksatra = usersett.CHART_SETTINGS["first naksatra"][0]
+        self.naksatra_ring = get_naksatra_ring(self.mansions_28, self.first_naksatra)
         self.terms_ring = usersett.CHART_SETTINGS["terms ring"][0]
         self.natal_harmonic_ring = usersett.CHART_SETTINGS["natal harmonic ring"][0]
         self.selected_harmonic = usersett.CHART_SETTINGS["harmonic"][0]
@@ -174,10 +178,12 @@ class Dispatcher:
         self.app.signaler.emit("setting changed", {"sweph": self.active_flags})
         self.recalculate_events()
 
-    def apply_topo(self, lon, lat, alt):
+    def apply_topo(self, lon=None, lat=None, alt=None):
         # swisseph observer is global : set at start & after solar eclipse search
-        if "topocentric" in self.active_flags:
-            swe.set_topo(lon, lat, alt)
+        if lon is not None:
+            self.topo = (lon, lat, alt)
+        if "topocentric" in self.active_flags and self.topo:
+            swe.set_topo(*self.topo)
 
     def toggle_sidereal(self):
         # toggle sidereal vs tropical flag
@@ -309,6 +315,7 @@ class Dispatcher:
         self.naksatras_ring = val_ring
         self.mansions_28 = val_28
         self.first_naksatra = val_1st
+        self.naksatra_ring = get_naksatra_ring(self.mansions_28, self.first_naksatra)
         self.app.signaler.emit(
             "setting changed",
             {"naksatras": {"ring": val_ring, "28": val_28, "1st": val_1st}},
@@ -542,6 +549,7 @@ class Dispatcher:
             key: self.try_calc(event_id, key, func, *args)
             for key, (func, *args) in jobs.items()
         }
+        self.apply_topo()  # solar eclipse search resets observer
         return {key: data for key, data in results.items() if data is not None}
 
     def calc_ring_extras(self, event_id, ring, jd_key):
@@ -654,45 +662,7 @@ class Dispatcher:
                 )
             )
             # solar eclipse search resets observer > reapply topocentric flag
-            self.apply_topo(lon, lat, alt)
         if event_id == "e1":
-            # lots if enabled - needs positions & houses
-            # lot_defs = {
-            #     name: data
-            #     for name, data in self.LOTS.items()
-            #     if name in self.selected_lots
-            # }
-            # if lot_defs and positions_data and houses_data:
-            #     lots_package = {
-            #         "ascmc": houses_data["ascmc"],
-            #         "positions": positions_data,
-            #         "lots": lot_defs,
-            #     }
-            #     self.run_calc(event_id, "lots", calculate_lots, lots_package)
-            # # prenatal syzygy & eclipses
-            # if positions_data and "syzygy" in self.selected_prenatal:
-            #     su_lon = positions_data[0]["lon"]
-            #     mo_lon = positions_data[1]["lon"]
-            #     self.run_calc(
-            #         event_id,
-            #         "syzygy",
-            #         calculate_syzygy,
-            #         jd_ut,
-            #         su_lon,
-            #         mo_lon,
-            #         self.swe_flag,
-            #     )
-            # # eclipses
-            # if "eclipses" in self.selected_prenatal:
-            #     tz_name = self.events_data[event_id].get("chart", {}).get("timezone")
-            #     self.run_calc(
-            #         event_id,
-            #         "eclipses",
-            #         calculate_eclipses,
-            #         jd_ut,
-            #         self.swe_flag,
-            #         tz_name,
-            #     )
             # fixed stars
             if self.selected_stars:
                 self.run_calc(

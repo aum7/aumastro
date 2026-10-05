@@ -97,11 +97,16 @@ class Rings:
     }
     RADIUS = {  # offset from ring middle positions : signs ring only + house
         "ascmc": 1.0,
-        "lots": 1.0,
-        "eclipses": 0.99,
-        "syzygy": 1.01,
+        # "lots": 1.0,
+        # "eclipses": 0.99,
+        # "syzygy": 1.01,
         "stars": 1.015,
         "house": 0.4,
+    }
+    # extra objects lots syzygy eclipses radius offset
+    EXTRA_RADIUS = {
+        "signs": {"eclipses": 0.99, "syzygy": 1.0, "lots": 1.01},
+        "outer": {"eclipses": 0.99, "syzygy": 1.0, "lots": 0.99},
     }
     # drawing order for objects including glyphs & markers
     DRAW_ORDER = [
@@ -200,10 +205,11 @@ class Rings:
 
     def draw_extras(self, cr, ring, mid_r, data, ascmc):
         # lots syzygy eclipses : same look on event & e2 rings
+        radii = self.EXTRA_RADIUS["signs" if ring == "signs" else "outer"]
         for kind in ("eclipses", "syzygy", "lots"):
+            radius = mid_r * radii[kind]
             obj_size = self.scaled_size(ring, f"{kind} obj")
             glyph_size = self.scaled_size(ring, f"{kind} glyph")
-            radius = mid_r * self.RADIUS[kind]
             for item in data.get(kind) or []:
                 info = item.data
                 if info.get("name") is None:  # skip event attribute
@@ -450,8 +456,9 @@ class Rings:
         # draw naksatras circle
         ring = "naksatras"
         outer_r, mid_r, _ = self.get_ring_bounds(ring)
-        naks_num = 28 if self.app.dispatcher.mansions_28 else 27
-        first_nak = self.app.dispatcher.first_naksatra
+        segments = self.app.dispatcher.naksatra_ring  # idx name ruler
+        naks_num = len(segments)
+        # first_nak = self.app.dispatcher.first_naksatra
         # LOG.debug(f"drawnaksatrasring : naksnum={naks_num} firstnak={first_nak}")
         cr.arc(self.cx, self.cy, outer_r, 0, 2 * pi)
         cr.set_source_rgba(*self.RING_COLORS[ring])
@@ -463,27 +470,28 @@ class Rings:
         cr.set_source_rgba(0.9, 0.9, 0.9, 0.7)
         seg_angle = 2 * pi / naks_num
         seg_angle_deg = 360.0 / naks_num
-        for i in range(naks_num):
+        for i, seg in enumerate(segments):
             angle = pi - (i * seg_angle)
             x = self.cx + outer_r * cos(angle)
             y = self.cy + outer_r * sin(angle)
             cr.move_to(self.cx, self.cy)
             cr.line_to(x, y)
             cr.stroke()
-            idx = ((i + first_nak - 1) % naks_num) + 1
+            # idx = ((i + first_nak - 1) % naks_num) + 1
             self.add_snap(
                 i * seg_angle_deg,
                 None,
                 ring,
-                "nk",
-                idx,
+                seg["idx"],
+                seg["ruler"],
             )
         # labels
         self.set_custom_font(cr, self.font_size * self.font_scale * 0.6)
         # num_fix = 0.998  # fit ring middle
-        for i in range(naks_num):
+        for i, seg in enumerate(segments):
             angle = pi - ((i + 0.5) * seg_angle)
-            label = str((first_nak + i - 1) % naks_num + 1)
+            # label = str((first_nak + i - 1) % naks_num + 1)
+            label = str(seg["idx"])
             te = cr.text_extents(label)
             x = self.cx + mid_r * cos(angle)
             y = self.cy + mid_r * sin(angle)

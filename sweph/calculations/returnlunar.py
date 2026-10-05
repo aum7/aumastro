@@ -14,10 +14,11 @@ def calculate_lunar_return(
 ):
     # calculate lunar return
     try:
-        flag &= -swe.FLG_TOPOCTR  # eclipse is global event : geocentric
-        lr_jd = swe.mooncross_ut(e1_mo, e2_jd - month_length, flag)
-        if lr_jd > e2_jd:
-            lr_jd = swe.mooncross_ut(e1_mo, e2_jd - month_length - 2.0, flag)
+        lr_next_jd = swe.mooncross_ut(e1_mo, e2_jd, flag)
+        lr_jd = swe.mooncross_ut(e1_mo, lr_next_jd - 29.0, flag)
+        # lr_jd = swe.mooncross_ut(e1_mo, e2_jd - month_length, flag)
+        # if lr_jd > e2_jd:
+        #     lr_jd = swe.mooncross_ut(e1_mo, e2_jd - month_length - 2.0, flag)
         lun_ret = [{"lr jdut": lr_jd}]
         for obj in objs:
             code, name = objcode(obj, mean_node)

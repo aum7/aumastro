@@ -119,7 +119,7 @@ def find_all_lunar_eclipses(jd_ut, conception_jd, flag):
 def calculate_last_eclipses(jd_ut, flag, tz_name=None):
     # used on transit ring
     try:
-        flag &= -swe.FLG_TOPOCTR  # eclipse is global event : geocentric
+        flag &= ~swe.FLG_TOPOCTR  # eclipse is global event : geocentric
         eclipses_data = []
         for found in (find_solar_eclipse, find_lunar_eclipse):
             ecl = found(jd_ut, flag)
@@ -139,7 +139,7 @@ def calculate_last_eclipses(jd_ut, flag, tz_name=None):
 def calculate_eclipses(jd_ut, flag, tz_name=None):
     # calculate (prenatal) solar & lunar eclipses
     try:
-        flag &= -swe.FLG_TOPOCTR  # eclipse is global event : geocentric
+        flag &= ~swe.FLG_TOPOCTR  # eclipse is global event : geocentric
         conception_jd = jd_ut - GESTATION_DAYS
         eclipses_data = []
         for ecl in find_all_solar_eclipses(

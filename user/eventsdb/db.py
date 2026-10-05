@@ -5,12 +5,12 @@
 # sure to select proper country from dropdown list in app > sidepane >
 # event one if not already auto-selected
 DEFAULT_E1 = {
-    # --- houck p37
+    # --- houck p129
     "country": "USA",
-    "city": "evansville",
-    "location": "37 58 29 n 087 33 21 w 0117 m",
-    "name": "houck p37",
-    "datetime": "1948-08-03 06:47:00",
+    "city": "brookline",  # ma
+    "location": "42 20 n 071 07 w 0043 m",
+    "name": "jf kennedy",
+    "datetime": "1917-5-29 15:15",
     # --- slovenia
     # "country": "Slo",
     # "city": "ljubljana",
@@ -19,7 +19,7 @@ DEFAULT_E1 = {
     # "datetime": "1975 2 8 14 10",
 }
 DEFAULT_E2 = {
-    "datetime": "1992-06-17 16:00:00",  # houck p37 boyfriend gone
+    "datetime": "1963-11-22 15:15",  # assasinated in dallas
 }
 # --- solar eclipses -----------------------------------------------------------
 # 1999-08-11  11:04:09  145  -total  1999-08-11 12:03:15

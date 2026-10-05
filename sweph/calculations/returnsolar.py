@@ -16,20 +16,21 @@ def calculate_solar_return(
 ):
     # calculate solar return - solcross & mooncros always search forward
     try:
-        flag &= -swe.FLG_TOPOCTR  # eclipse is global event : geocentric
         # period elapsed from birth in years : needs event 2 datetime
-        period = e2_jd - e1_jd
-        delta_years = period / year_length
-        # from period get fraction
-        age_fract = delta_years % 1.0
-        # convert to days
-        frac_days = age_fract * year_length
-        # remove fraction days from e2 julian day
-        frac_jd = e2_jd - frac_days
-        # remove 1 julian day to ensure crossing (fwd search)
-        start_jd = frac_jd - 1.0
+        # period = e2_jd - e1_jd
+        # delta_years = period / year_length
+        # # from period get fraction
+        # age_fract = delta_years % 1.0
+        # # convert to days
+        # frac_days = age_fract * year_length
+        # # remove fraction days from e2 julian day
+        # frac_jd = e2_jd - frac_days
+        # # remove 1 julian day to ensure crossing (fwd search)
+        # start_jd = frac_jd - 1.0
         # search solar crossing
-        sol_ret_jd = swe.solcross_ut(e1_su, start_jd, flag)
+        sr_next_jd = swe.solcross_ut(e1_su, e2_jd, flag)
+        sol_ret_jd = swe.solcross_ut(e1_su, sr_next_jd - 370.0, flag)
+        # sol_ret_jd = swe.solcross_ut(e1_su, start_jd, flag)
         sol_ret = [{"sr jdut": sol_ret_jd}]
         # calculate positions on solar return
         for obj in objs:
