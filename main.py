@@ -5,7 +5,9 @@
 # os.environ["GTK_DEBUG"] = "keybindings geometry size-request actions constraints"
 # Gtk.Window.set_interactive_debugging(True)
 # app todo :
-#   vimsottari from strongest of mo su asc ??? not now
+#   switch swisseph to pysweph (pyswisseph maintained fork) ???
+#   close dbpopover on mouse exit ???
+#   add names to naksatras / mansions
 #   redesign notification mess / doubling
 #   export to executable on linux & mswindows (10 & 11)
 #
@@ -13,11 +15,14 @@
 # 2026-09-16 21-12
 #   app bumped v0 > v1 - major code redesign &
 #   (almost) all little bugs terminated + tiny upgrades
+# 2026-10-05 09-23
+#   v1.1 - added save / load events functionality
+#   jyotisa graha/bhava bala abandoned as also other qualitative techniques
+#   vimsottari from strongest of mo su asc
 import logging
 
 LOG = logging.getLogger(__name__)
 source = "main"
-routing = {"source": source, "route": ["terminal"]}
 routinguser = {"source": source, "route": ["terminal", "user"]}
 import os
 import swisseph as swe  # type:ignore

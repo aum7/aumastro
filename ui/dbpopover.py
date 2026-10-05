@@ -10,6 +10,41 @@ import gi
 gi.require_version("Gtk", "4.0")
 from gi.repository import Gtk, Gio, GLib, Pango  # type: ignore
 from sweph import eventsdb
+from pathlib import Path
+
+ICON_DIR = "ui/imgs/icons/hicolor/scalable/"
+ICONS = {  # key : custom file fallback theme icon
+    "folder": ("folder.svg", "folder-open-symbolic"),
+    "save": ("save.svg", "document-save-symbolic"),
+    "database": ("database.svg", "folder-open-symbolic"),
+    # "editor": ("editor.svg", "folder-open-symbolic"),
+}
+ICON_SIZE = 24  # same as menu.svg
+CLOSE_DELAY_MS = 350  # mouse exit : grace time before popover closes
+
+
+def make_icon(key: str, size: int = ICON_SIZE) -> Gtk.Image:
+    # custom svg if exists else fallback icon
+    filename, fallback = ICONS[key]
+    path = Path(ICON_DIR) / filename
+    if path.exists():
+        icon = Gtk.Image.new_from_file(str(path))
+    else:
+        LOG.debug(f"icon file missing : {path} : using {fallback}")
+        icon = Gtk.Image.new_from_icon_name(fallback)
+    icon.set_pixel_size(size)
+
+    return icon
+
+
+def icon_button(key: str, tooltip: str, callback) -> Gtk.Button:
+    button = Gtk.Button()
+    button.set_child(make_icon(key))
+    button.set_tooltip_text(tooltip)
+    button.add_css_class("flat")
+    button.connect("clicked", lambda *a: callback())
+
+    return button
 
 
 class DbPopover(Gtk.MenuButton):
@@ -18,10 +53,12 @@ class DbPopover(Gtk.MenuButton):
     def __init__(self, app, **kwargs):
         super().__init__(**kwargs)
         self.app = app
-        self.set_icon_name("folder-open-symbolic")
+        # self.set_icon_name("folder-open-symbolic")
+        self.set_child(make_icon("folder"))
         self.set_tooltip_text(
-            "load & save events\nhk : ctrl+o : open events db\nctrl+s : quick save"
+            "load & save events\nhk :\nctrl+s : quick save\nctrl+o : open events db"
         )
+        self.leave_timer = 0
         self.set_popover(self.build_popover())
 
     def build_popover(self) -> Gtk.Popover:
@@ -43,17 +80,26 @@ class DbPopover(Gtk.MenuButton):
         self.ent_category = Gtk.Entry()
         self.ent_category.set_text(eventsdb.DEFAULT_CATEGORY)
         self.ent_category.set_placeholder_text("category")
+        self.ent_category.set_tooltip_text("save as category")
         self.ent_name = Gtk.Entry()
         self.ent_name.set_placeholder_text("name")
+        self.ent_name.set_tooltip_text("save as name")
         self.ent_note = Gtk.Entry()
         self.ent_note.set_placeholder_text("note")
-        btn_save = Gtk.Button(label="save")
-        btn_save.connect("clicked", self.on_save_click)
-        btn_text = Gtk.Button(label="open db text")
-        btn_text.connect("clicked", lambda *a: self.open_db_text())
+        self.ent_note.set_tooltip_text("add additional data")
+        btn_save = icon_button(
+            "save",
+            "save current event (e2 as subevent)\nhk : ctrl+s : quick save",
+            self.on_save_click,
+        )
+        btn_db = icon_button(
+            "database",
+            "open db text in editor",
+            self.open_db_text,
+        )
         row_buttons = Gtk.Box(spacing=6)
         row_buttons.append(btn_save)
-        row_buttons.append(btn_text)
+        row_buttons.append(btn_db)
         for widget in (
             self.ent_search,
             scroll,
@@ -67,6 +113,12 @@ class DbPopover(Gtk.MenuButton):
         popover = Gtk.Popover()
         popover.set_child(box)
         popover.connect("show", self.on_show)
+        # close popover on mouse exit
+        motion = Gtk.EventControllerMotion()
+        motion.connect("enter", self.cancel_close)
+        motion.connect("leave", self.schedule_close)
+        popover.add_controller(motion)
+        popover.connect("closed", self.cancel_close)
 
         return popover
 
@@ -74,6 +126,28 @@ class DbPopover(Gtk.MenuButton):
         # ctrl+o : open with search focused
         self.popup()
         self.ent_search.grab_focus()
+
+    def cancel_close(self, *args):
+        if self.leave_timer:
+            GLib.source_remove(self.leave_timer)
+            self.leave_timer = 0
+
+    def schedule_close(self, *args):
+        self.cancel_close()
+        self.leave_timer = GLib.timeout_add(CLOSE_DELAY_MS, self.close_if_idle)
+
+    def close_if_idle(self):
+        # not while user types text : search entry excluded
+        self.leave_timer = 0
+        popover = self.get_popover()
+        # close popover on mouse leave
+        root = popover.get_root()
+        focus = root.get_focus() if root else None
+        entry = focus.get_ancestor(Gtk.Entry) if focus else None
+        if entry not in (self.ent_category, self.ent_name, self.ent_note):
+            popover.popdown()
+
+        return GLib.SOURCE_REMOVE
 
     def fill_list(self):
         # rebuild rows from db : category header event indented subevents

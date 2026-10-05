@@ -256,51 +256,18 @@ class Dispatcher:
         # received e2 data - user is interested in transit progressions transit etc
         if event_id == "e2":
             self.e2_active = True
-        self.recalculate(event_id)
         if event_id == "e1":
             self.recalculate("e1")
         else:
             self.recalculate("e2")
 
-    def on_e2_clear(self):
-        # def on_e2_clear(self, event_id=None):
+    # def on_e2_clear(self, *args):
+    def on_e2_clear(self, event_id=None):
         # handle e2 removal
         self.events_data["e2"] = {}
         self.e2_active = False
         self.refresh_chart_package()
         self.update_titlebar()
-
-    # def update_object(self, event_id: str, name: str, active: bool):
-    #     # target correct set based on event
-    #     target_set = self.get_selected_objects(event_id)
-    #     # (
-    #     #     self.selected_objects_e1 if event_id == "e1" else self.selected_objects_e2
-    #     # )
-    #     # mutate set
-    #     if active:
-    #         target_set.add(name)
-    #     else:
-    #         target_set.discard(name)
-    #     self.app.signaler.emit("setting changed", {f"objects_{event_id}": target_set})
-    #     self.recalculate(event_id)
-
-    # def update_lot(self, name: str, active: bool):
-    #     # update lots selection : lots are exclusive to event 1
-    #     if active:
-    #         self.selected_lots.add(name)
-    #     else:
-    #         self.selected_lots.discard(name)
-    #     self.app.signaler.emit("setting changed", {"lots": self.selected_lots})
-    #     self.recalculate("e1")
-
-    # def update_prenatal(self, name: str, active: bool):
-    #     # update prenatal syzygy & eclipse selection : exclusive to event 1
-    #     if active:
-    #         self.selected_prenatal.add(name)
-    #     else:
-    #         self.selected_prenatal.discard(name)
-    #     self.app.signaler.emit("setting changed", {"prenatal": self.selected_prenatal})
-    #     self.recalculate("e1")
 
     def update_house_system(
         self,
@@ -488,38 +455,6 @@ class Dispatcher:
             return positions
         return {**positions, **result["data"]}
 
-    # def calc_lots_prenatal(self, event_id, jd_ut, positions, houses):
-    #     # lots syzygy eclipses of event : each its own toggle
-    #     lots = self.get_selected("lots", event_id)
-    #     prenatal = self.get_selected("prenatal", event_id)
-    #     lot_defs = {n: d for n, d in self.LOTS.items() if n in lots}
-    #     if lot_defs and positions and houses:
-    #         lots_package = {
-    #             "ascmc": houses["ascmc"],
-    #             "positions": self.lot_positions(jd_ut, positions, lot_defs),
-    #             "lots": lot_defs,
-    #         }
-    #         self.run_calc(event_id, "lots", calculate_lots, lots_package)
-    #     if positions and "syzygy" in prenatal:
-    #         self.run_calc(
-    #             event_id,
-    #             "syzygy",
-    #             calculate_syzygy,
-    #             jd_ut,
-    #             positions[0]["lon"],
-    #             positions[1]["lon"],
-    #             self.swe_flag,
-    #         )
-    #     if "eclipses" in prenatal:
-    #         tz_name = self.events_data[event_id].get("chart", {}).get("timezone")
-    #         self.run_calc(
-    #             event_id,
-    #             "eclipses",
-    #             calculate_eclipses,
-    #             jd_ut,
-    #             self.swe_flag,
-    #             tz_name,
-    #         )
     def calc_extras(self, event_id, jd_ut, tz_name, positions, ascmc):
         # lots syzygy eclipses of event or progressions ring : own toggles
         # positions : dict of items : name lon : su mo always calculated
@@ -596,17 +531,11 @@ class Dispatcher:
         alt = sweph.get("alt", 0.0)
         # apply topocentric flag
         self.apply_topo(lon, lat, alt)
-        # if "topocentric" in self.active_flags:
-        #     # swisweph mess : lon-lat
-        #     swe.set_topo(lon, lat, alt)
         # LOG.debug(f"recalculate : jdut={jd_ut} lat={lat} lon={lon} alt={alt}")
         calculated = {}
         self.events_data[event_id]["calculated"] = calculated
         # su & mo always calculated
         selected_objs = self.get_selected("objects", event_id)
-        # (
-        #     self.selected_objects_e1 if event_id == "e1" else self.selected_objects_e2
-        # )
         objs = selected_objs
         # positions of planets
         self.run_calc(
@@ -916,7 +845,7 @@ class Dispatcher:
                 extra=routinguser,
             )
             return None
-        # self.events_data[event_id]["calculated"][key] = result["data"]
+
         return result["data"]
 
     def run_calc(self, event_id: str, key: str, func, *args):
@@ -1009,7 +938,6 @@ class Dispatcher:
         }
         # LOG.debug(f"refreshpackage : grahabala : {e1_calculated.get('grahabala')}")
         # LOG.debug(f"refreshpackage : bhavabala : {e1_calculated.get('bhavabala')}")
-        # if self.selected_harmonic:
         hx_pos = self._prep_ring(e1_calculated.get("positions"), harmonic=True)
         if not isinstance(hx_pos, list):
             hx_pos = []
@@ -1034,9 +962,6 @@ class Dispatcher:
             e2_positions = e2_calculated.get("positions")
             e2_houses = e2_calculated.get("houses")
             if self.rings.get("transit") and e2_positions:
-                # e2_tz = self.events_data["e2"].get("chart", {}).get("timezone")
-                # e2_jd_ut = self.events_data["e2"]["sweph"]["jd ut"]
-                # ecl_result = calculate_last_eclipses(e2_jd_ut, self.swe_flag, e2_tz)
                 chart_package["transit"] = {
                     "positions": self._prep_ring(e2_positions),
                     "cusps": e2_houses.get("cusps") or [],
@@ -1085,7 +1010,11 @@ class Dispatcher:
     def update_titlebar(self):
         # grab needed data & construct string to be displayed on mainwindow titlebar
         dt1 = self.events_data["e1"].get("chart", {}).get("datetime")
-        dt2 = self.events_data["e2"].get("chart", {}).get("datetime")
+        dt2 = (
+            self.events_data["e2"].get("chart", {}).get("datetime")
+            if self.e2_active
+            else None
+        )
         selected = self.app.dispatcher.selected_event
         title = ""
         if dt1:

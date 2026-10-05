@@ -46,9 +46,7 @@ class EventData:
         self.tz_offset = None
         self.lon = None
         self.is_hotkey_now = False
-        # self.location = ""  # added
         self.old_location = ""
-        # self.name = ""  # added
         self.old_name = ""
         self.old_date_time = ""
         # data from calculation
@@ -333,15 +331,28 @@ class EventData:
         self.old_name = name
         self.chart["name"] = name
         self.dirty = True
-        # self.name = name  # added
         # LOG.info("name input processed", extra=routing)
 
         return
 
+    def clear_e2(self):
+        # empty event 2 datetime = delete e2 data : only once
+        if self.chart or self.sweph:
+            self.chart = {}
+            self.sweph = {}
+            self.old_date_time = ""
+            self.dirty = False
+            self.app.signaler.emit("e2 cleared", "e2")
+            LOG.info("event 2 cleared", extra=routinguser)
+
     def on_datetime_change(self, entry):
         datetime_name = entry.get_name()
         date_time = entry.get_text().strip()
-        # todo revise ???
+        # clear event 2 data
+        if self.id == "e2" and not date_time and not self.is_hotkey_now:
+            self.clear_e2()
+            return
+
         self.collect_input()
         if (
             not self.is_hotkey_now
@@ -420,25 +431,13 @@ class EventData:
         else:
             # entry confirm : not hotkey now
             if not date_time:
-                if self.id == "e1":
-                    LOG.warning(
-                        f"mandatory data missing for {datetime_name}",
-                        extra=routinguser,
-                    )
-                    return
-                # empty e2 datetime = delete e2 data
-                elif self.id == "e2":
-                    if self.chart or self.sweph:
-                        self.chart = {}
-                        self.sweph = {}
-                        # todo needed below code ???
-                        self.old_date_time = ""
-                        self.app.signaler.emit("e2 cleared", "e2")
-                        LOG.info(
-                            "event 2 cleared",
-                            extra=routinguser,
-                        )
-                        return
+                # if self.id == "e1":
+                LOG.warning(
+                    f"mandatory data missing for {datetime_name}",
+                    extra=routinguser,
+                )
+                return
+
             try:
                 dt_str = entry.get_text().strip()
                 lon_val = self.lon if dt_str and "a" in dt_str else None
@@ -543,7 +542,6 @@ class EventData:
         # remove flag on data process
         self.dirty = False
         # LOG.info("datetime input processed", extra=routing)
-
         return
 
     def on_datetime_capture(self, data):

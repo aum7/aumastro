@@ -484,6 +484,7 @@ class Rings:
                 ring,
                 seg["idx"],
                 seg["ruler"],
+                seg["name"],
             )
         # labels
         self.set_custom_font(cr, self.font_size * self.font_scale * 0.6)

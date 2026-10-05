@@ -1,7 +1,6 @@
 # user/eventsdb/db.toml
-# default data (state, city, location, name, date-time) for event 1 & 2
 # IMPORTANT ! default country must be enabled in countries.txt - also make
-# sure to select proper country from dropdown list in app > sidepane >
+# sure to select country in dropdown list in app > sidepane > event one/two
 # add entries by hand or with ctrl+s : file order = list order
 # category = [category.key] | subevent= [[category.key.subevents]]
 # event one if not already auto-selected
@@ -12,7 +11,7 @@ country = "USA"
 city = "muskegon heights"
 location = "43 12 n 86 15 w"
 datetime = "1940 1 2 11 00"
-note = "houck p29"
+note = "tv evangelist (houck p29)"
 [houck.p31]
 name = "c weinberger"
 country = "USA"
@@ -37,12 +36,19 @@ country = "USA"
 city = "brookline"
 location = "42 20 n 071 07 w 0043 m"
 datetime = "1917-5-29 15:15"
-note = "millinaire at 21th birthday"
+note = "millionaire at 21st birthday"
 [[houck.p129.subevents]]
 name = "assasination"
 datetime = "1963-11-22 15:15"
 note = "dallas"
 # --- misc
+[misc.ljubljana]
+name = "ljubljana"
+country = "Slo"
+city = "ljubljana"
+location = "46 03 10 n 14 31 26 e 0294 m" # porodnišnica lj
+datetime = "1975 2 8 14 10"
+note = ""
 [misc.intel]
 name = "intel"
 country = "usa"
@@ -52,9 +58,15 @@ datetime = "1968-07-18 10:00:00"
 [misc.eurojackpot]
 name = "ejpt"
 country = "finland"
-city = "vantaa"
+city = "vantaa"                           # helsinki
 location = "60 17 36 n 25 02 17 e 0038 m"
 datetime = "2012 03 23 21 00"
+note = "eurojackpot"
+[[misc.eurojackpot.subevents]]
+name = "2013-04-11"
+datetime = "2013-04-11 21"
+note = "33 M finland"
+# fill from folder
 [misc.solitaire]
 name = "solitaire"
 country = "Morocco"

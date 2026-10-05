@@ -199,7 +199,6 @@ class MainWindow(
         self.hotkeys.register_hotkey("<Control>n", lambda: self.on_time_now())
         # save & load popover
         self.hotkeys.register_hotkey("<Control>s", self.btn_db.quick_save)
-        # astrochart inspector ruler / snap labels
         self.hotkeys.register_hotkey("<Control>o", self.btn_db.open)
         self.hotkeys.register_hotkey(
             "<Control>c", lambda: self.astro_chart.inspector.angle_to_clipboard()
