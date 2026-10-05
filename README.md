@@ -1,22 +1,28 @@
-astrology app with 4 panes
-
-made using gtk4 & python
-
-uses swisseph via pyswisseph lib
+astrology app with 4 panes | made using gtk4 & python | uses swisseph via pyswisseph lib
 
 ![current development stage](https://github.com/aum7/aumastro/blob/master/ui/imgs/aumastro.png)
 
 - 4 resizable panels in 1 / 2 / 3 / all (4) mode
-
 - standard astrological options :
-
     - _tropical vs sidereal zodiac_
     - _true vs mean node_
-    - _hotkeys for quick astrochart navigation_
-    - _collapsible sidepane with collapsible subpanels for total immersion_
-    - _snap labels & angle ruler with candies_
-    - _datachart for plotting dataset click-linked to astrochart_
+    - _topocentric vs geocentric_
     - _etc_
+- implemented as rings for event 2 :
+    - _transit & transit harmonic_
+    - _secondary progression_
+    - _tertiary progression_
+    - _minor progression_
+    - _lunar & solar return_
+    - _primary direction_
+    - _natal harmonic_
+- 7 lots | syzygy | prenatal eclipses
+- 27 naksatras or 28 chinese | arabic mansions ring
+- egyptian terms / bounds ring
+- hotkeys for quick astrochart navigation
+- collapsible sidepane with collapsible subpanels for total immersion
+- snap labels & angle ruler with candies
+- datachart for plotting dataset click-linked to astrochart
 
 - movie mode for image sequence fed by dataset
 
