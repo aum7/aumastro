@@ -5,6 +5,7 @@
 # os.environ["GTK_DEBUG"] = "keybindings geometry size-request actions constraints"
 # Gtk.Window.set_interactive_debugging(True)
 # app todo :
+#   update datagraph to accept datetime, value dataset
 #   add post-natal eclipses upto 70 days forward in time - most potent
 #   switch swisseph to pysweph (pyswisseph maintained fork) ???
 #   redesign notification mess / doubling

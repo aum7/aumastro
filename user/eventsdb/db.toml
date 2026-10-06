@@ -96,67 +96,9 @@ city = "vantaa"                           # helsinki
 location = "60 17 36 n 25 02 17 e 0038 m"
 datetime = "2012 03 23 21 00"
 note = "eurojackpot"
-[[events.eurojackpot.subevents]]
-name = "33 M"
-datetime = "2013-04-11 21"
-note = "33 M finland"
 [events.solitaire]
 name = "solitaire"
 country = "Morocco"
 city = "Agadir"
 location = "30 25 12 n 009 35 53 w 0 m"
 datetime = "2024-6-19 11:53:00"
-[events.low-tide_2026-10-05_09-56]
-name = "low tide"
-country = "USA"
-city = "Los Angeles"
-location = "34 03 08 n 118 14 37 w 0102 m"
-datetime = "2026-10-05 09:56:01"
-note = ""
-[[events.low-tide_2026-10-05_09-56.subevents]]
-name = "died"
-datetime = "1993-10-31 12:00:00"
-note = ""
-# --------------------------------------------------
-
-[events.luna_1917-05-30_15_15]
-name = "luna"
-country = "USA"
-city = "brookline"
-location = "42 20 00 n 071 07 00 w 0043 m"
-datetime = "1917-05-30 15:15:00"
-note = ""
-
-# subevent of luna
-[[events.luna_1917-05-30_15_15.subevents]]
-name = "1963-11-22"
-datetime = "1963-11-22 15:15:00"
-note = ""
-
-[events.1917-05-31]
-name = "sonce"
-country = "USA"
-city = "brookline"
-location = "42 20 00 n 071 07 00 w 0043 m"
-datetime = "1917-05-31 15:15:00"
-note = ""
-
-# subevent of sonce
-[[events.1917-05-31.subevents]]
-name = "1963-11-26"
-datetime = "1963-11-26 15:15:00"
-note = ""
-
-[events.tito_1917_05_31]
-name = "tito"
-country = "USA"
-city = "brookline"
-location = "42 20 00 n 071 07 00 w 0043 m"
-datetime = "1917-05-31 15:15:00"
-note = ""
-
-# subevent of tito
-[[events.tito_1917_05_31.subevents]]
-name = "1963-11-18"
-datetime = "1963-11-18 15:15:00"
-note = ""
