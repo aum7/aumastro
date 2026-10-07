@@ -573,6 +573,14 @@ class SidepaneSettings(CollapsePanel):
             ent_files.connect("activate", help.files_changed, key, self.app.dispatcher)
             grid.attach(lbl_files, 0, row, 1, 1)
             grid.attach(ent_files, 1, row, 1, 1)
+            if key in help.FILE_TYPES:
+                btn_pick = Gtk.Button.new_from_icon_name("folder-open-symbolic")
+                btn_pick.add_css_class("flat")
+                btn_pick.set_tooltip_text(f"pick {key}")
+                btn_pick.connect(
+                    "clicked", help.pick_path, ent_files, key, self.app.dispatcher
+                )
+                grid.attach(btn_pick, 2, row, 1, 1)
         subpnl_files.add_widget(grid)
 
         return subpnl_files

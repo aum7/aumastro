@@ -47,6 +47,7 @@ class Rings:
         "terms": (0.1, 0.1, 0.1, 1),
         "natal harmonic": (0.1, 0.1, 0.1, 1),
         "signs": (0.15, 0.15, 0.15, 1),
+        # rings background end
         "signs circle": (1, 1, 1, 0.7),
         "event": (0.1, 0.1, 0.1, 1),
         "event circle": (0.5, 0.5, 0.5, 0.7),
@@ -68,7 +69,7 @@ class Rings:
         "eclipse lun": (1, 1, 1, 0.6),
         "eclipse sol": (1, 1, 0, 0.6),
         "stars": (1.0, 0.9, 0.2, 0.7),
-        "info movie": (0.5, 0.5, 0.5, 1.0),
+        # "info movie": (0.5, 0.5, 0.5, 1),
         # signs border
         "house cusp": (1, 1, 1, 0.3),
         "border light": (0.8, 0.8, 0.8, 1),
@@ -410,43 +411,6 @@ class Rings:
             )
             self.add_snap(mc, mid_r, ring, "mc")
         natal_ascmc = self.package.get("houses", {}).get("ascmc")
-        # eclipses = ring_data.get("eclipses") if isinstance(ring_data, dict) else None
-        # if eclipses:
-        #     obj_size = self.scaled_size(ring, "eclipses obj")
-        #     glyph_size = self.scaled_size(ring, "eclipses glyph")
-        #     for eclipse in eclipses:
-        #         if eclipse.data.get("name") is None:
-        #             continue
-        #         name = eclipse.data.get("name", "")
-        #         lon = eclipse.data.get("lon", "")
-        #         ecl_type = eclipse.data.get("type", "")
-        #         dt_local = eclipse.data.get("local time", "")
-        #         label = f"{ecl_type} {name} ecl {dt_local}"
-        #         radius = mid_r * self.RADIUS["eclipses"]
-        #         eclipse.draw(
-        #             cr,
-        #             self.cx,
-        #             self.cy,
-        #             radius,
-        #             obj_size,
-        #             color=self.RING_COLORS["eclipse lun"]
-        #             if name == "lun"
-        #             else self.RING_COLORS["eclipse sol"],
-        #         )
-        #         self.snap_targets.append((lon, radius, label, ring))
-        #         glyph = glyphs.get_eclipse_glyph(name)
-        #         if glyph:
-        #             angle = pi - radians(lon)
-        #             x = self.cx + radius * cos(angle)
-        #             y = self.cy + radius * sin(angle)
-        #             self.draw_object_glyph(
-        #                 cr,
-        #                 glyph,
-        #                 x,
-        #                 y,
-        #                 glyph_size,
-        #                 natal_ascmc,
-        #             )
         self.draw_sign_borders(cr, ring)
         self.draw_objects(cr, ring)
         if isinstance(ring_data, dict):
@@ -458,7 +422,6 @@ class Rings:
         outer_r, mid_r, _ = self.get_ring_bounds(ring)
         segments = self.app.dispatcher.naksatra_ring  # idx name ruler
         naks_num = len(segments)
-        # first_nak = self.app.dispatcher.first_naksatra
         # LOG.debug(f"drawnaksatrasring : naksnum={naks_num} firstnak={first_nak}")
         cr.arc(self.cx, self.cy, outer_r, 0, 2 * pi)
         cr.set_source_rgba(*self.RING_COLORS[ring])
@@ -477,7 +440,6 @@ class Rings:
             cr.move_to(self.cx, self.cy)
             cr.line_to(x, y)
             cr.stroke()
-            # idx = ((i + first_nak - 1) % naks_num) + 1
             self.add_snap(
                 i * seg_angle_deg,
                 None,
@@ -491,7 +453,6 @@ class Rings:
         # num_fix = 0.998  # fit ring middle
         for i, seg in enumerate(segments):
             angle = pi - ((i + 0.5) * seg_angle)
-            # label = str((first_nak + i - 1) % naks_num + 1)
             label = str(seg["idx"])
             te = cr.text_extents(label)
             x = self.cx + mid_r * cos(angle)
@@ -600,115 +561,6 @@ class Rings:
             self.draw_rotated_text(cr, glyph, x, y, angle)
         houses = self.package.get("houses", {})
         ascmc = houses.get("ascmc", [])
-        # lots syzygy eclipses
-        # self.draw_extras(cr, ring, mid_r, self.package, ascmc)
-        # lots = self.package.get("lots", [])
-        # if lots:
-        #     obj_size = self.scaled_size(ring, "lots obj")
-        #     glyph_size = self.scaled_size(ring, "lots glyph")
-        #     for lot in lots:
-        #         # skip event attribute
-        #         if lot.data.get("name") is None:
-        #             continue
-        #         name = lot.data.get("name", "")  # .lower()
-        #         lon = lot.data.get("lon", 0)
-        #         radius = mid_r * self.RADIUS["lots"]
-        #         lot.draw(
-        #             cr,
-        #             self.cx,
-        #             self.cy,
-        #             radius,
-        #             obj_size,
-        #             color=self.RING_COLORS["lots"],
-        #         )
-        #         self.snap_targets.append((lon, radius, name, ring))
-        #         glyph = glyphs.get_lot_glyph(name)
-        #         if glyph:
-        #             angle = pi - radians(lon)
-        #             x = self.cx + radius * cos(angle)
-        #             y = self.cy + radius * sin(angle)
-        #             self.draw_object_glyph(
-        #                 cr,
-        #                 glyph,
-        #                 x,
-        #                 y,
-        #                 glyph_size,
-        #                 ascmc,
-        #             )
-        # syzygy = self.package.get("syzygy", [])
-        # if syzygy:
-        #     obj_size = self.scaled_size(ring, "syzygy obj")
-        #     glyph_size = self.scaled_size(ring, "syzygy glyph")
-        #     for lun in syzygy:
-        #         # ultra smart check
-        #         if lun.data.get("name") is None:
-        #             continue
-        #         name = lun.data.get("name", "")
-        #         lon = lun.data.get("lon")
-        #         syzygy_type = lun.data.get("lun_type")
-        #         label = glyphs.SYZYGY.get(syzygy_type, ("", ""))[1]
-        #         radius = mid_r * self.RADIUS["syzygy"]
-        #         lun.draw(
-        #             cr,
-        #             self.cx,
-        #             self.cy,
-        #             radius,
-        #             obj_size,
-        #             color=self.RING_COLORS["syzygy"],
-        #         )
-        #         self.snap_targets.append((lon, radius, label, ring))
-        #         glyph = glyphs.get_syzygy_glyph(syzygy_type)
-        #         if glyph:
-        #             angle = pi - radians(lon)
-        #             x = self.cx + radius * cos(angle)
-        #             y = self.cy + radius * sin(angle)
-        #             self.draw_object_glyph(
-        #                 cr,
-        #                 glyph,
-        #                 x,
-        #                 y,
-        #                 glyph_size,
-        #                 ascmc,
-        #             )
-        # eclipses = self.package.get("eclipses")
-        # if eclipses:
-        #     obj_size = self.scaled_size(ring, "eclipses obj")
-        #     glyph_size = self.scaled_size(ring, "eclipses glyph")
-        #     for eclipse in eclipses:
-        #         # skip event attribute
-        #         if eclipse.data.get("name") is None:
-        #             continue
-        #         name = eclipse.data.get("name", "")  # .lower()
-        #         lon = eclipse.data.get("lon", 0)
-        #         dt_local = eclipse.data.get("local time")
-        #         ecl_type = eclipse.data.get("type", "")
-        #         label = f"{ecl_type} {name} ecl {dt_local}"  # .strip()
-        #         radius = mid_r * self.RADIUS["eclipses"]
-        #         eclipse.draw(
-        #             cr,
-        #             self.cx,
-        #             self.cy,
-        #             radius,
-        #             obj_size,
-        #             color=self.RING_COLORS["eclipse lun"]
-        #             if name == "lun"
-        #             else self.RING_COLORS["eclipse sol"],
-        #         )
-        #         self.snap_targets.append((lon, radius, label, ring))
-        #         # self.snap_targets.append((lon, radius, name, ring))
-        #         glyph = glyphs.get_eclipse_glyph(name)
-        #         if glyph:
-        #             angle = pi - radians(lon)
-        #             x = self.cx + radius * cos(angle)
-        #             y = self.cy + radius * sin(angle)
-        #             self.draw_object_glyph(
-        #                 cr,
-        #                 glyph,
-        #                 x,
-        #                 y,
-        #                 glyph_size,
-        #                 ascmc,
-        #             )
         # draw stars circle
         stars_obj = self.scaled_size(ring, "stars obj")
         stars = self.package.get("stars", {})
@@ -814,7 +666,6 @@ class Rings:
         cr.set_source_rgba(*self.RING_COLORS["event circle"])
         cr.set_line_width(1)
         cr.stroke()
-        # middle circle = lat 0°
         cr.arc(self.cx, self.cy, mid_r, 0, 2 * pi)
         cr.set_source_rgba(*self.RING_COLORS["event circle mid"])
         cr.set_line_width(1)
@@ -824,7 +675,6 @@ class Rings:
         cusps = houses.get("cusps", [])
         ascmc = houses.get("ascmc", [])
         e1_pos = self.package.get("positions", [])
-        # self.draw_bhava_tint(cr, inner_r)
         self.draw_cusp_lines(
             cr,
             "event",
@@ -856,18 +706,11 @@ class Rings:
         # center circle with event 1 info text
         ring = "info"
         outer_r, _, _ = self.get_ring_bounds(ring)
-        movie_mode = self.app.dispatcher.movie_mode
-        # movie_info = self.app.dispatcher.movie_info
-        # mean_node = self.app.dispatcher.mean_node
         info = self.package.get("info", {})
         info_extra = self.package.get("info extra", {})
         cr.arc(self.cx, self.cy, outer_r, 0, 2 * pi)
-        if movie_mode:
-            # print("rings:draw : moviemodeon")
-            cr.set_source_rgba(*self.RING_COLORS["info movie"])
-        else:
-            # default background
-            cr.set_source_rgba(*self.RING_COLORS["info"])
+        # default background
+        cr.set_source_rgba(*self.RING_COLORS["info"])
         cr.fill_preserve()
         # circle border
         cr.set_source_rgba(1, 1, 1, 1)
@@ -879,10 +722,10 @@ class Rings:
 
         cr.set_source_rgba(1, 1, 1, 1)
         # event 1 default chart info string (format)
-        fmt_basic = self.app.dispatcher.chart_info
         # "{name}\n{date}\n{wday} {time_short}\n{city} @ {country}\n{lat}\n{lon}",
-        fmt_extra = self.app.dispatcher.chart_info_extra
+        fmt_basic = self.app.dispatcher.chart_info
         # "{hsys} | {zod}\n{aynm}",
+        fmt_extra = self.app.dispatcher.chart_info_extra
         # convert raw newline into actual newline
         fmt_basic = fmt_basic.replace(r"\n", "\n")
         fmt_extra = fmt_extra.replace(r"\n", "\n")
@@ -893,9 +736,6 @@ class Rings:
         data["hora"] = self.package.get("current hora", {}).get("ruler")
         if "hora" in fmt_basic and data["hora"]:
             data["hora"] = glyphs.get_glyph(data["hora"], False)
-        # movie mode info text : naksatra positions & speeds for 7 planets
-        # if movie_mode and isinstance(movie_info, dict):
-        # todo code was removed for movie mode
         try:
             info_text = fmt_basic.format(**data) + "\n" + fmt_extra.format(**info_extra)
             # LOG.debug(f"inforing : infotext={info_text}")
@@ -1061,43 +901,3 @@ class Rings:
         cr.show_text(text)
         cr.new_path()
         cr.restore()
-
-    # def draw_bhava_tint(self, cr, radius):
-    #     cusps = self.package.get("houses", {}).get("cusps", [])
-    #     bhavabala = self.package.get("bhavabala", {})
-    #     if not cusps or len(cusps) < 12:
-    #         return
-
-    #     belt_width = 4.0 * self.font_scale
-    #     outer = radius + belt_width / 2.0
-    #     inner = radius - belt_width / 2.0
-    #     values = [v["total"] for v in bhavabala.values()] if bhavabala else []
-    #     lo, hi = (min(values), max(values)) if values else (0.0, 1.0)
-    #     span = (hi - lo) or 1.0
-    #     for house_num in range(1, 13):
-    #         lon_start = cusps[house_num - 1]
-    #         lon_end = cusps[house_num % 12]
-    #         angle_start = pi - radians(lon_end)
-    #         angle_end = pi - radians(lon_start)
-    #         if angle_end < angle_start:
-    #             angle_end += 2 * pi
-    #         intensity = (
-    #             (bhavabala.get(house_num, {}).get("total", lo) - lo) / span
-    #             if bhavabala
-    #             else 0.5
-    #         )
-    #         cr.new_path()
-    #         cr.arc(self.cx, self.cy, outer, angle_start, angle_end)
-    #         cr.arc_negative(self.cx, self.cy, inner, angle_end, angle_start)
-    #         cr.close_path()
-    #         cr.set_source_rgba(0.6, 0.15 + intensity * 0.45, 0.1, 0.9)
-    #         cr.fill()
-    #         # snap to area center
-    #         span_lon = (lon_end - lon_start) % 360.0
-    #         center_lon = (lon_start + span_lon / 2.0) % 360.0
-    #         self.snap_targets.append((
-    #             center_lon,
-    #             radius,
-    #             f"h {house_num}",
-    #             "bhava",
-    #         ))

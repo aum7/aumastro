@@ -96,9 +96,47 @@ city = "vantaa"                           # helsinki
 location = "60 17 36 n 25 02 17 e 0038 m"
 datetime = "2012 03 23 21 00"
 note = "eurojackpot"
+# subevent of ejpt
+[[events.eurojackpot.subevents]]
+name = "nau"
+datetime = "2026-10-06 04:41:02"
 [events.solitaire]
 name = "solitaire"
 country = "Morocco"
 city = "Agadir"
 location = "30 25 12 n 009 35 53 w 0 m"
+datetime = "2024-6-19 11:53:00"
+# --- gold
+# first london gold fix (organized market)
+# rothschild & sons (new court, st swithin's lane)
+# 1919-09-12 fri 11:00 london time
+# 51.512336 n -0.088951° w
+[gold.1st_gold_fix]
+name = "1st gold fix"
+country = "UK"
+city = "London"
+location = "51 30 44 n 000 05 20 w 0 m"
+datetime = "1919-09-12 11:00:00"
+[[gold.1st_gold_fix.subevents]]
+name = "nau"
+datetime = "2026-10-06 01:52:49"
+# ---
+# nixon closes gold window (floating xau/usd) challenge of peace
+# 1971-08-15 sun evening hour (9:00 pm eastern) washington dc oval office
+# 38.895190 -77.032845
+# ---
+# comex gold futures launch xau/usd
+# 1974-12-31 tue comex trading floor, new york
+# nyse 40.707413 -74.011137
+[gold.london]
+name = "lse"
+country = "UK"
+city = "london"
+location = "51 30 54 n 000 05 56 w" # lse
+datetime = "2024-6-19 11:53:00"
+[gold.new_york]
+name = "nyse"
+country = "USA"
+city = "new york"
+location = "40 42 25 n 74 0 41 w 10 m" # nyse
 datetime = "2024-6-19 11:53:00"

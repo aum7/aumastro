@@ -143,7 +143,6 @@ class EventData:
     def on_location_change(self, entry):
         location_name = entry.get_name()
         location = entry.get_text().strip()
-        # mainwindow = self.app.get_active_window()
         if not location:
             if self.id == "e1":
                 LOG.warning(
@@ -272,28 +271,8 @@ class EventData:
         parts = location_formatted.split()
         lat_str = " ".join(parts[:4])
         lon_str = " ".join(parts[4:8])
-        # country = ""
-        # city = ""
-        # iso3 = ""
-        # if self.id == "e1":
-        #     if hasattr(mainwindow, "country_one"):
-        #         country = mainwindow.country_one.get_selected_item().get_string()
-        #     if hasattr(mainwindow, "city_one"):
-        #         city = mainwindow.city_one.get_text()
-        #     if hasattr(mainwindow, "event_location"):
-        #         iso3 = mainwindow.event_location.country_map.get(country, "")
-        # else:
-        #     if hasattr(mainwindow, "country_two"):
-        #         country = mainwindow.country_two.get_selected_item().get_string()
-        #     if hasattr(mainwindow, "city_two"):
-        #         city = mainwindow.city_two.get_text()
-        #     if hasattr(mainwindow, "event_location"):
-        #         iso3 = mainwindow.event_location.country_map.get(country, "")
         # data needed for event 1 center info ring
         self.chart["location"] = location_formatted
-        # self.chart["country"] = country
-        # self.chart["city"] = city
-        # self.chart["iso3"] = iso3
         self.chart["lat"] = lat_str
         self.chart["lon"] = lon_str
         self.chart["timezone"] = timezone_
@@ -301,11 +280,9 @@ class EventData:
         self.sweph["lat"] = lat
         self.sweph["lon"] = lon
         self.sweph["alt"] = int(alt)
-        # self.location = location  # added
         self.read_place()
         self.dirty = True
         # LOG.info("location input processed", extra=routing)
-
         return
 
     def on_name_change(self, entry):
@@ -332,7 +309,6 @@ class EventData:
         self.chart["name"] = name
         self.dirty = True
         # LOG.info("name input processed", extra=routing)
-
         return
 
     def clear_e2(self):
@@ -403,12 +379,6 @@ class EventData:
                     wday = weekdays[dt_event.weekday()]
                     dt_event_str = dt_event.strftime("%Y-%m-%d %H:%M:%S")
                     self.tz_offset = utc_offset_hours(dt_event)
-                    # tz_offset_ = dt_event.utcoffset()
-                    # tz_offset_str = str(tz_offset_)
-                    # parts = [p for p in tz_offset_str.split(",") if p]
-                    # days = int(parts[0].split()[0]) if "day" in parts[0] else 0
-                    # h, m, s = map(int, parts[-1].strip().split(":"))
-                    # self.tz_offset = days * 24 + h + m / 60 + s / 3600
                 _, jd_ut = utc_to_jd(
                     dt_utc.year,
                     dt_utc.month,
@@ -431,7 +401,6 @@ class EventData:
         else:
             # entry confirm : not hotkey now
             if not date_time:
-                # if self.id == "e1":
                 LOG.warning(
                     f"mandatory data missing for {datetime_name}",
                     extra=routinguser,
@@ -441,7 +410,6 @@ class EventData:
             try:
                 dt_str = entry.get_text().strip()
                 lon_val = self.lon if dt_str and "a" in dt_str else None
-                # if dt_str and lon_val and self.tz_offset:
                 dt_data, error = validate_datetime(
                     date_time=dt_str,
                     lon=lon_val,
@@ -450,7 +418,6 @@ class EventData:
                     LOG.error("datetime validation failed")
                 if dt_data is not None:
                     Y, M, D, h, m, s, cal, jd_lmt = dt_data
-                    # Y, M, D, h, m, s, cal, _ = dt_data
                     Y, M, D, h, m, s = (
                         int(Y),
                         int(M),
@@ -471,21 +438,13 @@ class EventData:
                             dt_event = datetime(Y, M, D, h, m, s, tzinfo=ZoneInfo(tz))
                             wday = weekdays[dt_event.weekday()]
                             self.tz_offset = utc_offset_hours(dt_event)
-                            # tz_offset = dt_event.utcoffset()
-                            # tz_offset_str = str(tz_offset)
-                            # parts = [p for p in tz_offset_str.split(",") if p]
-                            # days_ = int(parts[0].split()[0]) if "day" in parts[0] else 0
-                            # h_, m_, s_ = map(int, parts[-1].strip().split(":"))
-                            # self.tz_offset = days_ * 24 + h_ + m_ / 60 + s_ / 3600
                     else:
                         self.tz_offset = 0.0
                         wday = "-"
                     dt_event_str = f"{Y}-{M:02d}-{D:02d} {h:02d}:{m:02d}:{s:02d}"
-                    # print("local :", dt_event.isoformat())
-                    # print("offset :", dt_event.utcoffset())
                     # print("utc : ", dt_event.astimezone(timezone.utc).isoformat())
                     if lon_val is not None:
-                        # local apparent time : jc_lmt is local mean time
+                        # local apparent time : jd_lmt is local mean time
                         # utc comes from longitude not zone offset
                         self.tz_offset = lon_val / 15
                         jd_ut = jd_lmt - lon_val / 360
@@ -545,8 +504,7 @@ class EventData:
         return
 
     def on_datetime_capture(self, data):
-        # receives data from datagraph click ie user clicks datagraph > read
-        # datetime under cursor > pass forward = here
+        # receives datetime from datagraph click > read datetime under cursor
         id = data[0]
         dt = str(data[1])
         captured = None

@@ -100,12 +100,7 @@ def same_event(a: dict, b: dict) -> bool:
 
 def make_key(event: dict, taken: dict, file_format: str = "") -> str:
     # key from usersettings.py filename format ie {name}_{date}_{time}
-    LOG.debug(f"makekey : fileformat : {file_format}")
-    # if file_format == "":  # use default : name only
-    #     file_format = r"{name}"  # placeholder so to speak
-    # name = event["name"]  # actual attribute
     date, _, time = event["datetime"].partition(" ")  # other 2 possible attributes
-    LOG.debug(f"makekey : date={date} time={time}")
     try:
         raw = (file_format or DEFAULT_KEY_FORMAT).format(
             name=event["name"], date=date, time=time, time_short=time[:5]

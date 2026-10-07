@@ -6,6 +6,7 @@ LOG = logging.getLogger(__name__)
 source = "datagraph"
 import os
 import glob
+import math
 import pandas as pd
 import numpy as np
 import matplotlib
@@ -14,12 +15,29 @@ matplotlib.use("GTK4Agg")
 from matplotlib.backends.backend_gtk4agg import (
     FigureCanvasGTK4Agg as FigureCanvas,
 )
+from matplotlib.collections import PolyCollection, LineCollection
 import matplotlib.pyplot as plt
 import gi
 
 gi.require_version("Gtk", "4.0")
 from gi.repository import Gtk, GLib  # type: ignore
-from matplotlib.collections import PolyCollection, LineCollection
+
+REQUIRED_COLUMNS = {"open", "high", "low", "close"}
+JUMP_BARS = 5800  # 5800 ~1 year of hours
+
+
+def level_line(span: float, levels: int = 6) -> float:
+    # round step 1 2 5 * 10^n giving levels over span
+    if span <= 0:
+        return 1.0
+
+    raw = span / levels
+    magnitude = 10 ** math.floor(math.log10(raw))
+    for factor in (1, 2, 5, 10):
+        if raw <= factor * magnitude:
+            return factor * magnitude
+
+    return 10 * magnitude
 
 
 class DataGraph(Gtk.Box):
@@ -37,17 +55,12 @@ class DataGraph(Gtk.Box):
         self.set_orientation(Gtk.Orientation.VERTICAL)
         # create figure & axes
         self.figure, self.ax = plt.subplots()
-        # transparent background for movie mode
-        # self.figure.patch.set_alpha(0.0)
-        # self.ax.patch.set_alpha(0.0)
         self.canvas = FigureCanvas(self.figure)
         self.append(self.canvas)
         # prevent focus & keyboard kidnapping
         key_controller = Gtk.EventControllerKey()
         key_controller.connect("key-pressed", self.on_canvas_key)
         self.canvas.add_controller(key_controller)
-        # global datetime attribute to move astro chart
-        # self.app.dispatcher.app_settings.get("blues", None)  # selected_dt = None
         # load & plot data
         self.full_df = None
         self.plot_range = [None, None]  # start, end
@@ -73,11 +86,10 @@ class DataGraph(Gtk.Box):
         self.canvas.mpl_connect("key_press_event", self.on_key_press)
         self.canvas.mpl_connect("key_release_event", self.on_key_release)
         # init / create cycle wave
-        # self.cycle_calculated = False # todo move to on_enter_key
         self.app.signaler.connect("plot wave", self.on_plot_wave)
         self.app.signaler.connect("setting changed", self.on_files_change)
         # init search result plot
-        self.search_markers = []
+        self.marker_specs = []  # remembered : ax.clear() removes drawn artists
         self.app.signaler.connect("clear search plots", self.on_clear_search_plots)
         self.app.signaler.connect("plot search result", self.on_plot_search_result)
         self.plot_last_n(800)
@@ -100,16 +112,9 @@ class DataGraph(Gtk.Box):
 
     def on_clear_search_plots(self, *args):
         # remove all previously plotted search markers
-        if hasattr(self, "search_markers") and self.search_markers:
-            for marker in self.search_markers:
-                try:
-                    if hasattr(marker, "remove"):
-                        marker.remove()
-                except Exception:
-                    pass
-            self.search_markers = []
-            self.search_cleared = True
-            self.canvas.draw_idle()
+        self.marker_specs = []
+        self.search_cleared = True
+        self.schedule_plot()
 
     def on_plot_wave(self, event, wave_data):
         """called when wave is recalculated, ie on settings change"""
@@ -139,7 +144,20 @@ class DataGraph(Gtk.Box):
             )
             return False
 
-        self.full_df = df
+        missing = REQUIRED_COLUMNS - set(df.columns)
+        if missing:
+            self.app.notifier.error(
+                f"data file needs datetime-open-high-low-close format\n"
+                "convert simple datetime-value format with "
+                "user/data/scripts/simple_to_ohlc.py script\n"
+                f"missing : {', '.join(sorted(missing))}\n{filepath}",
+                source=source,
+                route=["terminal", "user"],
+                timeout=5,
+            )
+            return False
+
+        self.full_df = df.sort_index()
         return True
 
     def load_last_search(self):
@@ -155,9 +173,21 @@ class DataGraph(Gtk.Box):
         )
         return df
 
-    def draw_marker(
+    def draw_marker(self, dt, **style):
+        # remember marker : drawn on every replot
+        self.marker_specs.append({"dt": pd.to_datetime(dt), **style})
+        self.schedule_plot()
+
+    def draw_markers(self, df):
+        # markers inside plotted window
+        for spec in self.marker_specs:
+            if df.index[0] <= spec["dt"] <= df.index[-1]:
+                self.draw_marker_artists(df, **spec)
+
+    def draw_marker_artists(
         self,
-        dt,  # datetime for x axis
+        df,
+        dt,
         shape="dot",  # line, dot, arrow, triangle, diamond, text
         text=None,  # optional text label or text-only marker
         color="white",
@@ -166,8 +196,6 @@ class DataGraph(Gtk.Box):
         linestyle="-",
     ):
         # draw marker (line, dot, symbol, text) and track it for clearing
-        if self.df is None or self.ax is None:
-            return
         marker_map = {
             "arrow_up": "▲",  # U+25B2
             "arrow_down": "▼",  # U+25BC
@@ -178,15 +206,13 @@ class DataGraph(Gtk.Box):
             "square": "■",  # U+25A0
         }
         # find nearest x index
-        x_vals = np.arange(len(self.df))
-        ix = self.df.index.get_indexer([pd.to_datetime(dt)], method="nearest")
-        x = float(x_vals[ix])
+        x = float(df.index.get_indexer([dt], method="nearest")[0])
         ymin, ymax = self.ax.get_ylim()
-        artist = None
+        y = (ymin + ymax) / 2
         if shape == "line":
-            artist = self.ax.axvline(x, color=color, lw=1.0, ls=linestyle, alpha=0.8)
+            self.ax.axvline(x, color=color, lw=1.0, ls=linestyle, alpha=0.8)
             if text:
-                t = self.ax.text(
+                self.ax.text(
                     x,
                     ymax,
                     text,
@@ -195,10 +221,8 @@ class DataGraph(Gtk.Box):
                     va="bottom",
                     ha="left" if text_vert else "center",
                 )
-                self.search_markers.append(t)
         elif shape in marker_map:
-            y = (ymin + ymax) / 2
-            t = self.ax.text(
+            self.ax.text(
                 x,
                 y,
                 marker_map[shape],
@@ -208,9 +232,8 @@ class DataGraph(Gtk.Box):
                 ha="center",
                 va="center",
             )
-            self.search_markers.append(t)
             if text:
-                t2 = self.ax.text(
+                self.ax.text(
                     x,
                     y + 0.02 * (ymax - ymin),
                     text,
@@ -218,12 +241,8 @@ class DataGraph(Gtk.Box):
                     va="bottom",
                     ha="center",
                 )
-                self.search_markers.append(t2)
-        elif shape == "text":
-            if text is None:
-                return
-            y = (ymin + ymax) / 2
-            t = self.ax.text(
+        elif shape == "text" and text:
+            self.ax.text(
                 x,
                 y,
                 text,
@@ -232,10 +251,6 @@ class DataGraph(Gtk.Box):
                 va="bottom",
                 ha="center",
             )
-            self.search_markers.append(t)
-        if artist is not None:
-            self.search_markers.append(artist)
-        self.canvas.draw_idle()
 
     def on_plot_search_result(self):
         self.search_cleared = False
@@ -271,7 +286,6 @@ class DataGraph(Gtk.Box):
                     color="orange",
                     text_vert=True,
                 )
-        self.canvas.draw()
 
     def init_cursor(self):
         """info cursor is created after every plot as ax is cleared"""
@@ -310,8 +324,9 @@ class DataGraph(Gtk.Box):
 
     def do_plot(self):
         self.plot_pending = False
-        if None not in self.plot_range:
-            self.plot_data(*self.plot_range)
+        start, end = self.plot_range
+        if start is not None and end is not None:
+            self.plot_data(start, end)
 
         return GLib.SOURCE_REMOVE
 
@@ -400,7 +415,37 @@ class DataGraph(Gtk.Box):
         self.plot_range = [start, end]
         self.plot_data(start, end)
 
-    def plot_data(self, start, end):
+    def show_at(self, dt, bars=None) -> bool:
+        # center plot on datetime, cursor & banner on it, draw now : printscreen
+        full = self.full_df
+        if full is None or len(full) == 0:
+            return False
+
+        cur_start, cur_end = self.plot_range
+        if bars:
+            n = bars
+        elif cur_start is not None and cur_end is not None:
+            n = cur_end - cur_start
+        else:
+            n = 800
+        n = min(n, len(full))
+        idx = full.index.get_indexer([pd.to_datetime(dt)], method="nearest")[0]
+        start = max(0, min(idx - n // 2, len(full) - n))
+        self.plot_range = [start, start + n]
+        self.plot_data(start, start + n, redraw=False)
+        if self.info_cursor is None or self.cursor_text is None:
+            return False
+
+        ix = idx - start
+        self.info_cursor.set_xdata([ix, ix])
+        self.info_cursor.set_visible(True)
+        self.cursor_text.set_text(self.hover_text(ix))
+        self.cursor_text.set_visible(True)
+        self.canvas.draw()  # now : draw_event keeps background & paints cursor
+
+        return True
+
+    def plot_data(self, start, end, redraw=True):
         """data to plot & chart design incl. colors"""
         df_ = self.full_df
         if df_ is None or len(df_) == 0:
@@ -414,9 +459,6 @@ class DataGraph(Gtk.Box):
         # fixed background color
         self.figure.patch.set_facecolor("#181818")
         self.ax.set_facecolor("#181818")
-        # transparent background for movie mode
-        # self.figure.patch.set_alpha(0.0)
-        # self.ax.patch.set_alpha(0.0)
         # remove spines, ticks, labels
         for spine in self.ax.spines.values():
             spine.set_visible(False)
@@ -430,7 +472,7 @@ class DataGraph(Gtk.Box):
         )
         # minimal margins
         self.ax.set_position((0, 0, 1, 1))
-        self.ax.margins(5)
+        # self.ax.margins(5)
         self.figure.subplots_adjust(
             left=0,
             right=1,
@@ -448,33 +490,44 @@ class DataGraph(Gtk.Box):
         self.ax.set_ylim(ymin, ymax)
         # draw horizontal price levels every 500 units (white, alpha=0.5)
         try:
-            step = 500.0
-            first = np.floor(ymin / step) * step
-            last = np.ceil(ymax / step) * step
-            levels = np.arange(first, last + step, step)
-            if levels.size > 0:
-                # draw behind candles (zorder=0), span current x range
-                self.ax.hlines(
-                    levels,
-                    xmin=-1,
-                    xmax=len(df),
-                    colors="white",
-                    alpha=0.3,
-                    linewidth=0.5,
-                    zorder=0,
-                )
+            step = level_line(ymax - ymin)
+            levels = np.arange(np.floor(ymin / step) * step, ymax + step, step)
+            # draw behind candles (zorder=0), span current x range
+            self.ax.hlines(
+                levels,
+                xmin=-1,
+                xmax=len(df),
+                colors="white",
+                alpha=0.3,
+                linewidth=0.5,
+                zorder=0,
+            )
         except Exception as e:
             # fail silently if numeric issues occur
             LOG.error(f"failed setting horizontal price lines : {e}")
-
-        if self.wave_df is not None and not self.wave_df.empty:
-            self.draw_wave(df)
+        self.draw_wave(df)
+        self.draw_markers(df)
         self.init_cursor()
-        self.canvas.draw_idle()
+        if redraw:
+            self.canvas.draw_idle()
+
+    def hover_text(self, ix: int) -> str:
+        # info banner of bar ix in plotted window : mouse hover & printscreen
+        if self.df is None or self.ohlc is None or not 0 <= ix < len(self.df):
+            return ""
+
+        dt = self.df.index[ix]
+        op, hi, lo, cl = self.ohlc[ix]
+        info = f"{dt:%Y-%m-%d %H:%M}\nh={hi:.2f}\n{op:.2f}\nc={cl:.2f}\nl={lo:.2f}"
+        if self.wave_df is not None and not self.wave_df.empty:
+            pos = self.wave_df.index.get_indexer([dt], method="nearest")[0]
+            info += f"\nwave : {self.wave_df['cycle'].iloc[pos]:.2f}"
+
+        return info
 
     def on_mouse_move(self, event):
         """show bar info on mouse-over"""
-        if self.df is None or self.info_cursor is None:
+        if self.df is None or self.info_cursor is None or self.cursor_text is None:
             return
 
         if not event.inaxes:
@@ -489,28 +542,14 @@ class DataGraph(Gtk.Box):
         # store last mouse x for zoom
         self.last_mouse_x = event.xdata
         self.info_cursor.set_xdata([event.xdata, event.xdata])
-        ix = int(round(event.xdata))
-        info = ""
-        if self.ohlc is not None and 0 <= ix < len(self.df):
-            dt_str = self.df.index[ix].strftime("%Y-%m-%d %H:%M")
-            op, hi, lo, cl = self.ohlc[ix]
-            info = f"{dt_str}\nh={hi:.2f}\no={op:.2f}\nc={cl:.2f}\nl={lo:.2f}"
-            # add cycle index value
-            if self.wave_df is not None and not self.wave_df.empty:
-                pos = self.wave_df.index.get_indexer(
-                    [self.df.index[ix]], method="nearest"
-                )[0]
-                info += f"\nwave : {self.wave_df['cycle'].iloc[pos]:.2f}"
-        self.cursor_text.set_text(info)
+        self.cursor_text.set_text(self.hover_text(int(round(event.xdata))))
         self.refresh_cursor()
 
     def on_key_press(self, event):
-        # print(f"datagraph : key : {event.key}")
         if event.key == "shift":
             self.shift_held = True
 
     def on_key_release(self, event):
-        # print(f"datagraph : key : {event.key}")
         if event.key == "shift":
             self.shift_held = False
 
@@ -522,14 +561,12 @@ class DataGraph(Gtk.Box):
         ix = int(round(event.xdata))
         num = len(self.df)
         threshold = max(2, int(num * 0.1))  # 10 % of window
-        # check shift-click
+        # check shift-click at left or right graph edge
         if getattr(self, "shift_held", False):
             if ix <= threshold:
-                # print("datagraph : shift-click - jump back")
-                self.jump_bars(-5800)  # ~ 1 year of hours
+                self.jump_bars(-JUMP_BARS)
             elif ix >= num - 1 - threshold:
-                # print("datagraph : shift-click - jump forward")
-                self.jump_bars(5800)
+                self.jump_bars(JUMP_BARS)
             else:
                 self.app.notifier.info(
                     "shift-click : not at edge",
@@ -615,7 +652,7 @@ class DataGraph(Gtk.Box):
                     new_end = df_len
                     new_start = max(0, new_end - new_n)
         else:
-            # pan data plot
+            # pan data plot on mouse scroll
             if not df_len:
                 return
             pan = int(n * 0.2)

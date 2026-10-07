@@ -1,5 +1,5 @@
 # ui/loadsavepopup.py
-# titlebar button for load & save database
+# titlebar button for load & save database opens popover
 # ruff : noqa : E402
 import logging
 
@@ -17,7 +17,6 @@ ICONS = {  # key : custom file fallback theme icon
     "folder": ("folder.svg", "folder-open-symbolic"),
     "save": ("save.svg", "document-save-symbolic"),
     "database": ("database.svg", "folder-open-symbolic"),
-    # "editor": ("editor.svg", "folder-open-symbolic"),
 }
 ICON_SIZE = 24
 CLOSE_DELAY_MS = 350  # mouse exit : grace time before popover closes
@@ -113,11 +112,11 @@ class DbPopover(Gtk.MenuButton):
         popover.set_child(box)
         popover.connect("show", self.on_show)
         # close popover on mouse exit
-        motion = Gtk.EventControllerMotion()
-        motion.connect("enter", self.cancel_close)
-        motion.connect("leave", self.schedule_close)
-        popover.add_controller(motion)
-        popover.connect("closed", self.cancel_close)
+        # motion = Gtk.EventControllerMotion()
+        # motion.connect("enter", self.cancel_close)
+        # motion.connect("leave", self.schedule_close)
+        # popover.add_controller(motion)
+        # popover.connect("closed", self.cancel_close)
 
         return popover
 
@@ -126,27 +125,32 @@ class DbPopover(Gtk.MenuButton):
         self.popup()
         self.ent_search.grab_focus()
 
-    def cancel_close(self, *args):
-        if self.leave_timer:
-            GLib.source_remove(self.leave_timer)
-            self.leave_timer = 0
+    # def cancel_close(self, *args):
+    #     if self.leave_timer:
+    #         GLib.source_remove(self.leave_timer)
+    #         self.leave_timer = 0
 
-    def schedule_close(self, *args):
-        self.cancel_close()
-        self.leave_timer = GLib.timeout_add(CLOSE_DELAY_MS, self.close_if_idle)
+    # def schedule_close(self, *args):
+    #     self.cancel_close()
+    #     self.leave_timer = GLib.timeout_add(CLOSE_DELAY_MS, self.close_if_idle)
 
-    def close_if_idle(self):
-        # not while user types text : search entry excluded
-        self.leave_timer = 0
-        popover = self.get_popover()
-        # close popover on mouse leave
-        root = popover.get_root()
-        focus = root.get_focus() if root else None
-        entry = focus.get_ancestor(Gtk.Entry) if focus else None
-        if entry not in (self.ent_category, self.ent_name, self.ent_note):
-            popover.popdown()
+    # def close_if_idle(self):
+    #     # not while user types text : search entry excluded
+    #     self.leave_timer = 0
+    #     popover = self.get_popover()
+    #     # close popover on mouse leave
+    #     # root = popover.get_root()
+    #     # focus = root.get_focus() if root else None
+    #     # entry = focus.get_ancestor(Gtk.Entry) if focus else None
+    #     # if entry not in (
+    #     #     self.ent_search,
+    #     #     self.ent_category,
+    #     #     self.ent_name,
+    #     #     self.ent_note,
+    #     # ):
+    #     popover.popdown()
 
-        return GLib.SOURCE_REMOVE
+    #     return GLib.SOURCE_REMOVE
 
     def fill_list(self):
         # rebuild rows from db : category header event indented subevents

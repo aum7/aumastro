@@ -1,23 +1,29 @@
 # ui/dataprintscreen.py
 # printscreen all data (datagraph) & save as .png sequence
 # ruff: noqa: E402
+# saved 166 files - time : 1.27 min (2.18/s) @ capture_delay = 40
+# saved 166 files - time : 1.22 min (2.27/s) @ capture_delay = 20
 import logging
 
 LOG = logging.getLogger(__name__)
 source = "dataprintscreen"
 routinguser = {"source": source, "route": ["terminal", "user"]}
-routingnone = {"source": source, "route": [""]}
 import pandas as pd
+from pathlib import Path
+from datetime import datetime
 import gi
 
 gi.require_version("Gtk", "4.0")
-from gi.repository import GLib  # type: ignore
-from pathlib import Path
-from datetime import datetime
+gi.require_version("Graphene", "1.0")
+from gi.repository import Gtk, GLib, Graphene  # type: ignore
 
-EXPORT_FOLDER = "user/data/gold/goldseqd"  # daily data
 START_DATE = "1969-01-01 00:00:00"
-END_DATE = "2026-01-01 00:00:00"
+END_DATE = "2027-01-01 00:00:00"
+CAPTURE_WIDGET = None  # fullscreen | grid : sidepane
+# 1 frame is about 16 ms
+CAPTURE_DELAY = 20  # delay for astrochart (& tables) to update
+TEST_SEQ = False
+TEST_SCREENSHOTS = 10
 
 
 class DataPrintscreen:
@@ -29,21 +35,22 @@ class DataPrintscreen:
         #     f"whoisapp : {app.__class__.__name__}",
         #     # f"has-selfappnotifier : {hasattr(self.app, 'notifier')}",
         # )
-        self.output_dir = Path.home() / EXPORT_FOLDER
-        self.output_dir.mkdir(parents=True, exist_ok=True)
+        self.output_dir = Path()
+        self.prefix = ""  # data filename : png name prefix
         self.running = False
         self.current_idx = 0
-        self.gold_df = None
+        self.data_df = None
         self.total = 0
         # filter ouptut sequence
         self.seq_start = START_DATE
         self.seq_end = END_DATE
-        self.capture_delay = 100
         self.skip_flush_redraw = True
-        self.gnome_timeout = 2
-        # printscreen sequence filter
-        self.test_seq = False
-        self.test_screenshots = 5
+
+    def prepare_output(self, data_path: Path):
+        # images sequence in data file subfolder : [data folder]/seqimgs/
+        self.output_dir = data_path.parent / "seqimgs"
+        self.output_dir.mkdir(parents=True, exist_ok=True)
+        self.prefix = data_path.stem
 
     def run_seq(self):
         # hotkey entry point
@@ -63,7 +70,6 @@ class DataPrintscreen:
             return
         # need 3-panes view
         win = self.app.get_active_window()
-        # print(f"activewin : {win.__class__.__name__}")
         if not win:
             self.app.notifier.error(
                 "main window not found",
@@ -73,42 +79,49 @@ class DataPrintscreen:
             return
         # load data
         try:
-            gold_path = Path(self.app.dispatcher.FILES["data"][0])
-            if not gold_path.exists():
+            data_path = Path(self.app.dispatcher.FILES["data"][0])
+            if not data_path.exists():
                 self.app.notifier.error(
-                    f"datagraph data not found : {gold_path}",
+                    f"datagraph data not found : {data_path}",
                     source=source,
                     route=["terminal", "user"],
                 )
                 return
-            self.gold_df = pd.read_csv(gold_path, parse_dates=["datetime"])
+            self.prepare_output(data_path)
+            # csv data file
+            graph = win.data_graph
+            if graph.full_df is None:
+                self.app.notifier.error("datagraph has no data", source=source)
+                return
+
+            self.data_df = graph.full_df.reset_index()
             # range filter
             if self.seq_start or self.seq_end:
-                original_len = len(self.gold_df)
+                original_len = len(self.data_df)
                 try:
                     start_dt = (
                         pd.to_datetime(self.seq_start)
                         if self.seq_start
-                        else self.gold_df["datetime"].min()
+                        else self.data_df["datetime"].min()
                     )
                     end_dt = (
                         pd.to_datetime(self.seq_end)
                         if self.seq_end
-                        else self.gold_df["datetime"].max()
+                        else self.data_df["datetime"].max()
                     )
                     # filter using in between
-                    self.gold_df = self.gold_df[
-                        self.gold_df["datetime"].between(
+                    self.data_df = self.data_df[
+                        self.data_df["datetime"].between(
                             start_dt,
                             end_dt,
                             inclusive="both",
                         )
                     ]
-                    filtered_len = len(self.gold_df)
+                    filtered_len = len(self.data_df)
                     if filtered_len == 0:
                         raise ValueError(f"no data in range {start_dt} to {end_dt}")
-                    actual_start = self.gold_df.iloc[0]["datetime"]
-                    actual_end = self.gold_df.iloc[-1]["datetime"]
+                    actual_start = self.data_df.iloc[0]["datetime"]
+                    actual_end = self.data_df.iloc[-1]["datetime"]
                     self.app.notifier.info(
                         f"datetime filter : {original_len} -> {filtered_len} enties\n"
                         f"range : {actual_start} to {actual_end}",
@@ -123,14 +136,14 @@ class DataPrintscreen:
                     )
                     return
             # sequence test
-            if self.test_seq:
-                self.gold_df = self.gold_df.head(self.test_screenshots)
+            if TEST_SEQ:
+                self.data_df = self.data_df.head(TEST_SCREENSHOTS)
                 self.app.notifier.warning(
-                    f"test sequence ({self.test_screenshots} screenshots)",
+                    f"test sequence ({TEST_SCREENSHOTS} screenshots)",
                     source=source,
                     route=["terminal"],
                 )
-            self.total = len(self.gold_df)
+            self.total = len(self.data_df)
             if self.total == 0:
                 self.app.notifier.warning(
                     "no data after filtering",
@@ -144,9 +157,9 @@ class DataPrintscreen:
                 route=["terminal"],
             )
             # estimate time
-            estimated_s = (self.total * self.capture_delay) / 1000
+            estimated_s = (self.total * CAPTURE_DELAY) / 1000
             estimated_m = estimated_s / 60
-            print(f"estimated time : {estimated_m:.1f} min ({estimated_s:.0f} sec)")
+            print(f"estimated time : {estimated_m:.3f} min ({estimated_s:.2f} sec)")
         except Exception as e:
             self.app.notifier.error(
                 f"loading printscreen data error :\n{e}",
@@ -166,38 +179,45 @@ class DataPrintscreen:
             self._finish()
             return False
         try:
+            selected = self.app.dispatcher.selected_event
             # get current row
-            row = self.gold_df.iloc[self.current_idx]  # type: ignore
+            row = self.data_df.iloc[self.current_idx]  # type: ignore
             dt = row["datetime"]
             # update datetime
             dt_str = dt.strftime("%Y-%m-%d %H:%M:%S")
-            entry = self.app.EVENT_ONE.date_time
+            entry = (
+                self.app.EVENT_ONE.date_time
+                if selected == "e1"
+                else self.app.EVENT_TWO.date_time
+            )
             entry.set_text(dt_str)
-            # trigger datetime change
-            self.app.EVENT_ONE.on_datetime_change(entry)
+            # trigger datetime change for selected event
+            if selected == "e1":
+                self.app.EVENT_ONE.on_datetime_change(entry)
+            elif selected == "e2":
+                self.app.EVENT_TWO.on_datetime_change(entry)
             # center datagraph cursor
             self._center_datagraph(dt)
             # progress
-            if (self.current_idx + 1) % 50 == 0:
-                pct = ((self.current_idx + 1) / self.total) * 100
-                elapsed = (datetime.now() - self.start_time).total_seconds()
-                rate = (self.current_idx + 1) / elapsed if elapsed > 0 else 0
-                remaining = (
-                    (self.total - self.current_idx - 1) / rate if rate > 0 else 0
-                )
-                LOG.debug(
-                    f"{self.current_idx + 1} / {self.total}\t({pct:.1f}% : {dt_str})"
-                    f"\n{rate:.1f}/s"
-                    f"\neta : {remaining / 60:.1f} min",
-                    extra=routingnone,
-                )
+            # if (self.current_idx + 1) % 50 == 0:
+            #     pct = ((self.current_idx + 1) / self.total) * 100
+            #     elapsed = (datetime.now() - self.start_time).total_seconds()
+            #     rate = (self.current_idx + 1) / elapsed if elapsed > 0 else 0
+            # remaining = (
+            #     (self.total - self.current_idx - 1) / rate if rate > 0 else 0
+            # )
+            # LOG.debug(
+            #     f"{self.current_idx + 1} / {self.total}\t({pct:.1f}% : {dt_str})"
+            #     f"\n{rate:.1f}/s"
+            #     f"\neta : {remaining / 60:.1f} min",
+            # )
             # flush pending events : wait a bit for screenshot
             if not self.skip_flush_redraw:
                 main_context = GLib.MainContext.default()
                 while main_context.pending():
                     main_context.iteration(False)
             # schedule screenshot after redraw
-            GLib.timeout_add(self.capture_delay, self._capture, dt)
+            GLib.timeout_add(CAPTURE_DELAY, self._capture, dt)
         except Exception as e:
             self.app.notifier.error(f"error processing index {self.current_idx}\n{e}")
             self.current_idx += 1
@@ -218,136 +238,53 @@ class DataPrintscreen:
     def _center_datagraph(self, dt):
         # center info cursor : find datagraph window & show info banner
         win = self.app.get_active_window()
-        dg = self._find_widget_type(win, type(win.datagraph))
-        if not dg or dg.full_df is None:
-            return
-        # get index of target datetime
-        try:
-            idx = dg.full_df.index.get_indexer(
-                [pd.to_datetime(dt)],
-                method="nearest",
-            )[0]
-        except Exception:
-            return
-        # calculate range to center cursor
-        visible_bars = 800  # todo adjust
-        half = visible_bars // 2
-        start = max(0, idx - half)
-        end = min(len(dg.full_df), start + visible_bars)
-        # adjust if at end
-        if end == len(dg.full_df):
-            start = max(0, end - visible_bars)
-        # update plot range & redraw
-        dg.plot_range = [start, end]
-        dg.plot_data(start, end)
-        # position info cursor at center
-        center_x = idx - start
-        if hasattr(dg, "info_cursor") and center_x >= 0:
-            dg.info_cursor.set_xdata([center_x, center_x])
-        # build info banner
-        try:
-            row = dg.df.iloc[center_x]
-            hi = float(row["high"])
-            op = float(row["open"])
-            cl = float(row["close"])
-            lo = float(row["low"])
-            dt_str = dg.df.index[center_x].strftime("%Y-%m-%d %H:%M")
-            info = f"{dt_str}\nh={hi:.2f}\no={op:.2f}\nc={cl:.2f}\nl={lo:.2f}"
-            # ensure text widget exists & is visible
-            if hasattr(dg, "cursor_text"):
-                dg.cursor_text.set_text(info)
-                dg.cursor_text.set_visible(True)
-        except Exception as e:
-            LOG.error(f"failed to set info banner : {e}")
-        # redraw canvas
-        try:
-            dg.canvas.draw()
-        except Exception as e:
-            LOG.debug(f"using drawidle() : {e}")
-            try:
-                dg.canvas.draw_idle()
-            except Exception as e:
-                LOG.debug(f"failed to redraw canvas : {e}")
+        if win is not None:
+            win.data_graph.show_at(dt)
 
     def _screenshot(self, dt):
         # capture window screenshot to png
         win = self.app.get_active_window()
-        if not win:
-            return
-        filename = f"gold_{dt.strftime('%Y-%m-%d_%H-%M')}.png"
-        file_path = self.output_dir / filename
-        # external printscreen tool
-        try:
-            # todo import for every screenshot ???
-            import subprocess
-
-            # get window id
-            win = self.app.get_active_window()
-            surface = win.get_surface()
-            if not surface:
-                return False
-            # try gnome
-            # print("gnome-screenshot call")
-            try:
-                result = subprocess.run(
-                    ["gnome-screenshot", "-w", "-f", str(file_path)],
-                    capture_output=True,
-                    text=True,
-                    timeout=self.gnome_timeout,
-                    check=False,
-                )
-                return result.returncode == 0 and file_path.exists()
-            except (subprocess.TimeoutExpired, FileNotFoundError):
-                self.app.notifier.error(
-                    f"gnome-screenshot failed : {file_path}",
-                    source=source,
-                    route=["terminal"],
-                )
-                # return False
+        if win is None:
             return False
-            # todo more external printscreen methods
-        except Exception as e:
-            self.app.notifier.debug(
-                f"external screenshot failed\n{e}",
-                source=source,
-                route=["terminal"],
-            )
 
-    def _find_widget_type(self, container, target_type):
-        # recursively find widget
-        if isinstance(container, target_type):
-            return container
-        child = (
-            container.get_first_child()
-            if hasattr(container, "get_first_child")
-            else None
-        )
-        while child:
-            result = self._find_widget_type(child, target_type)
-            if result:
-                return result
-            child = (
-                child.get_next_sibling() if hasattr(child, "get_next_sibling") else None
-            )
-        return None
+        widget = getattr(win, CAPTURE_WIDGET) if CAPTURE_WIDGET else win
+        width, height = widget.get_width(), widget.get_height()
+        renderer = widget.get_native().get_renderer()
+        if not width or not height or renderer is None:
+            return False
+
+        scale = widget.get_scale_factor()  # hdpi : full resolution
+        snapshot = Gtk.Snapshot()
+        snapshot.scale(scale, scale)
+        Gtk.WidgetPaintable.new(widget).snapshot(snapshot, width, height)
+        node = snapshot.to_node()
+        if node is None:
+            return False
+
+        viewport = Graphene.Rect().init(0, 0, width * scale, height * scale)
+        texture = renderer.render_texture(node, viewport)
+        filename = f"{self.prefix}_{dt.strftime('%Y_%m_%d_%H_%M')}.png"
+        file_path = self.output_dir / filename
+
+        return texture.save_to_png(str(file_path))
 
     def _finish(self):
         # cleanup after completion
         self.running = False
         # verify pngs created
-        png_files = sorted(self.output_dir.glob("gold_*.png"))
+        png_files = sorted(self.output_dir.glob(f"{self.prefix}_*.png"))
         elapsed = (datetime.now() - self.start_time).total_seconds()
         rate = self.current_idx / elapsed if elapsed > 0 else 0
         self.app.notifier.info(
             f"data printscreen complete : {self.current_idx} screenshots"
             f"\nsaved {len(png_files)} files to {self.output_dir}"
-            f"\ntime : {elapsed / 60:.1f} min ({rate:.1f}/s)",
+            f"\ntime : {elapsed / 60:.2f} min ({rate:.2f}/s)",
             source=source,
             route=["terminal"],
         )
 
     def stop(self):
-        # stop generation early
+        # stop generation early on escape key
         if self.running:
             self.running = False
             self.app.notifier.warning(

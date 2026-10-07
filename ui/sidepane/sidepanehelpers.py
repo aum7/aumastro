@@ -6,6 +6,19 @@ LOG = logging.getLogger(__name__)
 source = "sidepanehelpers"
 routing = {"source": source, "route": ["terminal"]}
 import re
+from pathlib import Path
+import gi
+
+gi.require_version("Gtk", "4.0")
+from gi.repository import Gtk, Gio, GLib  # type:ignore
+
+FILE_TYPES = {  # file & paths key : (kind, file extensions)
+    "ephe path": ("folder", ()),
+    "events db": ("folder", ()),
+    "astro font": ("file", ("ttf", "otf")),
+    "mono font": ("file", ("ttf", "otf")),
+    "data": ("file", ("csv",)),
+}
 
 
 def objects_select_all_none(button, dispatcher, select_all: bool):
@@ -174,3 +187,46 @@ def files_changed(entry, key, dispatcher):
     else:
         dispatcher.update_files(key, value)
     LOG.debug(f"{key} changed")
+
+
+def pick_path(button, entry, key, dispatcher):
+    # file / folder popup
+    kind, extensions = FILE_TYPES[key]
+    dialog = Gtk.FileDialog()
+    dialog.set_title(f"select {key}")
+    current = Path(entry.get_text().strip()).expanduser()
+    start = current if current.is_dir() else current.parent
+    if start.is_dir():
+        dialog.set_initial_folder(Gio.File.new_for_path(str(start.resolve())))
+    if extensions:
+        file_filter = Gtk.FIleFilter()
+        file_filter.set_name(", ".join(extensions))
+        for extension in extensions:
+            file_filter.add_suffix(extension)
+        filters = Gio.ListStore.new(Gtk.FileFilter)
+        filters.append(file_filter)
+        dialog.set_filters(filters)
+
+    def done(dlg, result):
+        try:
+            chosen = (
+                dlg.select_folder_finish(result)
+                if kind == "folder"
+                else dlg.open_finish(result)
+            )
+        except GLib.Error:
+            return  # canceled
+
+        path = Path(chosen.get_path())
+        try:  # inside project : keep it relative
+            path = path.relative_to(Path.cwd())
+        except ValueError:
+            pass
+        entry.set_text(f"{path}/" if kind == "folder" else str(path))
+        files_changed(entry, key, dispatcher)
+
+    parent = entry.get_root()
+    if kind == "folder":
+        dialog.select_folder(parent, None, done)
+    else:
+        dialog.open(parent, None, done)

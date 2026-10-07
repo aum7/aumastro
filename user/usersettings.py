@@ -487,8 +487,9 @@ FILES = {
     ),
     # --- path to data folder & file ; data to be plotted on graph
     "data": (
-        "user/data/gold/gold_h_utc.csv",
+        # "user/data/gold/gold_h_utc.csv",
         # "user/data/gold/gold_d.csv",
+        "user/data/ejpt/ejpt_bar.csv",
         "path to data folder & file name : data for plotting on graph",
     ),
     # --- construct your own 'filename' format: allowed fields
@@ -497,12 +498,11 @@ FILES = {
     # use {time_short} ; see default value as example
     # todo : not saving - using this -defaults- file instead + /eventsdb/db.py
     "filename": (
-        r"{name}_{date}_{time_short}",
+        r"{name}",
         "construct your own 'save filename' format : allowed fields"
         "\n\t1: event {name} | 2: event {date} | 3: {time}"
         "\nseparate fields with '_' underscore ; for short time format "
         "(no seconds) use {time_short}"
-        "\nexample : {name}_{date}_{time_short}"
-        "\nnote : not implemented",
+        "\nexample : {name}_{date}_{time_short}",
     ),
 }

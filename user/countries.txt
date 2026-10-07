@@ -15,7 +15,7 @@
 #("SE", "Sweden", "SWE"),
 #("NL", "Netherlands", "NLD"),
 #("DK", "Denmark", "DNK"),
-#("GB", "UK", "GBR"),
+("GB", "UK", "GBR"),
 #("CA", "Canada", "CAN"),
 #("JP", "Japan", "JPN"),
 #("CN", "China", "CHN"),

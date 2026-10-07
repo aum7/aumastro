@@ -80,9 +80,8 @@ class MainWindow(
         self.tables = Tables(self.app)
         # we pass self.app to datagraph -
         # keeping track for dispatcher signaler notifier access
-        self.datagraph = DataGraph(self.app)
-        # todo we could pass self.datagraph to self.astrodata ???
-        self.astrodata = AstroChart(self.app)  # extra astro chart for data overlay
+        self.data_graph = DataGraph(self.app)
+        self.astro_data = AstroChart(self.app)  # extra astro chart for data overlay
         self.init_panes()
         # printscreen sequence script
         self.data_seq = DataPrintscreen(self.app)
@@ -309,18 +308,19 @@ class MainWindow(
     def show_manual(self):
         self.app.notifier.debug(
             " ct = change time module at sidepane top"
-            "\ntop info : app name | selected event e1|e2 : date-time | selected ct period (ie 1 Day)"
-            "\nhover mouse over buttons & text = show tooltips (aka detailed manual)"
-            "\nhover mouse over (ie this) notification message = do not hide message"
+            "\ntop info :"
+            "\n\tapp name | selected event *e1/e2 : date-time | ct period (ie 1 Day)"
+            "\nhover mouse over buttons & text : show tooltips (aka detailed manual)"
+            "\nhover mouse over (ie this) notification message : do not hide message"
             "\nesc : discard notification message"
             "\n\nrecommended workflow :"
-            "\nenter event 1 data = calculate event / birth chart"
+            "\nenter event 1 data : calculate event / birth chart"
             "\nif you want transit / progression etc (aka event 2) :"
             "\n\tenter date-time 2 (app will reuse event 1 location & name)"
             "\n\tenter location 2 for relocation event (transit will be for location 2)"
-            "\n\t\tnote: can also be simple synastry chart - enable 'transit' ring"
+            "\n\t\tnote : can also be simple synastry chart - enable 'transit' ring"
             "\n\tenter custom name 2 (ie 'marriage' - saved as e2 subevent)"
-            "\ndelete date-time 2 = erase event 2 data (not interested in transit etc)"
+            "\ndelete date-time 2 : erase event 2 data (not interested in transit etc)"
             "\n\nhotkeys (hk) :"
             "\nctrl+s : quick-save event | ctrl+o : open events db"
             "\ntab/shift+tab or arrow up/down : navigate widgets in side pane"
@@ -329,20 +329,19 @@ class MainWindow(
             "\nctrl+e : toggle selected event"
             "\n\tie for change time / time now & datagraph click (grab datetime)"
             "\nctrl+arrow keys :"
-            "\n\tup/down = change period"
-            "\n\tleft/right = change time <</>> for selected event"
+            "\n\tup/down : change period"
+            "\n\tleft/right : change time <</>> for selected event"
             "\nctrl+n : set time now for selected event location"
             "\n\tyour computer time > utc > event location time"
             "\nctrl+f : toggle fixed ascendant vs ari 0° at zodiac left"
             "\nctrl+g : toggle glyphs visibility"
             "\nctrl+h : toggle harmonic / varga hX vs rasi h1 aspects table"  # harmonic
             "\nctrl+1-0 : toggle"
-            "\n\ttransit|transit harmonic|p2|p3|pm|lunar|solar return|d1|natal harmonic|naksatras ring"
-            "\nterms ring : sidepane > settings > chart settings > ... - goes with d1"
-            # "\n\tnote : d1 primary direction goes with terms ring"
+            "\n\ttransit|tr harm|p2|p3|pm|lun|sol return|d1|natal harm|naks ring"
+            "\n\tsidepane > settings > chart settings > terms ring goes with d1"
             "\nshift+s : toggle side pane"
             "\nshift+1/2/3/4 : show single / double / triple / all panes"
-            "\nshift+5 : toggle movie mode"
+            "\nshift+5 : toggle movie mode - astrochart over datagraph"
             "\nshift+6 : run printscreen sequence (can take hours to finish)"
             "\n\tesc : cancel sequence"
             "\nshift+v : toggle vimsottari level"
@@ -359,8 +358,8 @@ class MainWindow(
         widgets = {
             "bottom_right": self.astro_chart,
             "bottom_left": self.tables,
-            "top_right": self.datagraph,
-            "top_left": self.astrodata,
+            "top_right": self.data_graph,
+            "top_left": self.astro_data,
         }
         for k, v in widgets.items():
             frame = getattr(self, f"frm_{k}", None)
@@ -425,9 +424,7 @@ class MainWindow(
             # expand top left pane to full screen (minus side pane)
             self.pnd_main.set_position(self.pnd_main.get_height())
             self.pnd_top.set_position(self.pnd_top.get_width())
-        # need frames todo below code makes copies of frame widget
         # we need our custom widgets
-        # print("hotkey panes movie pressed")
         self.app.dispatcher.movie_mode = not self.app.dispatcher.movie_mode
         frm_target = getattr(self, "frm_top_left", None)
         frm_top = getattr(self, "frm_top_right", None)
@@ -441,26 +438,23 @@ class MainWindow(
             self.orig_top_right_child = frm_top.get_child() if frm_top else None
             # print(f"origtoprightchild : {self.orig_top_right_child}")
             # unparent datagraph from current parent
-            dg_parent = self.datagraph.get_parent()
+            dg_parent = self.data_graph.get_parent()
             if dg_parent:
                 # only clear parent once
                 dg_parent.set_child(None)
             # unparent astrodata from its current parent
-            astro_parent = self.astrodata.get_parent()
+            astro_parent = self.astro_data.get_parent()
             if astro_parent:
                 astro_parent.set_child(None)
             # create overlay & place astro chart as base
             overlay = Gtk.Overlay()
-            overlay.set_child(self.astrodata)
+            overlay.set_child(self.astro_data)
             # add data graph as overlay child & make it transparent
-            overlay.add_overlay(self.datagraph)
+            overlay.add_overlay(self.data_graph)
             # set widget opacity
-            self.datagraph.set_opacity(0.3)
+            self.data_graph.set_opacity(0.3)
             # put overlay into astro chart
             frm_target.set_child(overlay) if frm_target else None
-            # target_frame = frm_target
-            # if target_frame:
-            #     target_frame.set_child(overlay)
             self.movie_overlay = overlay
             self.overlay_active = True
             self.app.notifier.info(
@@ -476,23 +470,23 @@ class MainWindow(
             if frm_target and frm_target.get_child() is overlay:
                 frm_target.set_child(None)
             # remove datagraph from overlay if still parented to it
-            if self.datagraph.get_parent() is overlay:
-                overlay.remove_overlay(self.datagraph)
+            if self.data_graph.get_parent() is overlay:
+                overlay.remove_overlay(self.data_graph)
             # remove astrodata main child from overlay
-            if overlay.get_child() is self.astrodata:
+            if overlay.get_child() is self.astro_data:
                 overlay.set_child(None)
             # restore original frame
             if frm_top:
                 # ensure no parent on datagraph
-                if self.datagraph.get_parent():
-                    self.datagraph.get_parent().set_child(None)
-                frm_top.set_child(self.datagraph)
+                if self.data_graph.get_parent():
+                    self.data_graph.get_parent().set_child(None)
+                frm_top.set_child(self.data_graph)
             # restore original target frame
             if self.orig_target:
-                if self.orig_target is self.astrodata:
-                    if self.astrodata.get_parent():
-                        self.astrodata.get_parent().set_child(None)
-                    frm_target.set_child(self.astrodata) if frm_target else None
+                if self.orig_target is self.astro_data:
+                    if self.astro_data.get_parent():
+                        self.astro_data.get_parent().set_child(None)
+                    frm_target.set_child(self.astro_data) if frm_target else None
                 else:
                     # put original widget back : unparent 1st
                     if self.orig_target.get_parent():
@@ -501,7 +495,7 @@ class MainWindow(
             else:
                 # nothing to restore
                 frm_target.set_child(None) if frm_target else None
-            self.datagraph.set_opacity(1.0)
+            self.data_graph.set_opacity(1.0)
             # clean up
             self.movie_overlay = None
             self.overlay_active = False
