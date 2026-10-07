@@ -225,7 +225,7 @@ class ChartInspector:
     def on_released(self, gesture, n_press, x, y):
         # on mouse button release : drag end
         if not self.active or not self.dragging:
-            LOG.debug("onreleased : not active or not dragging : exiting")
+            # LOG.debug("onreleased : not active or not dragging : exiting")
             return
 
         (x, y), dist = self._clamp_coords(x, y)

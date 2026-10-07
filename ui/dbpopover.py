@@ -8,7 +8,7 @@ source = "dbpopup"
 import gi
 
 gi.require_version("Gtk", "4.0")
-from gi.repository import Gtk, Gio, GLib, Pango  # type: ignore
+from gi.repository import Gtk, Gdk, Gio, GLib, Pango  # type: ignore
 from sweph import eventsdb
 from pathlib import Path
 
@@ -75,10 +75,14 @@ class DbPopover(Gtk.MenuButton):
         self.lst_events.connect("row-activated", self.on_row_activated)
         scroll.set_child(self.lst_events)
         # save form : category remembers last used
-        self.ent_category = Gtk.Entry()
-        self.ent_category.set_text(eventsdb.DEFAULT_CATEGORY)
-        self.ent_category.set_placeholder_text("category")
-        self.ent_category.set_tooltip_text("save as category")
+        # self.ent_category = Gtk.Entry()
+        # self.ent_category.set_text(eventsdb.DEFAULT_CATEGORY)
+        # self.ent_category.set_placeholder_text("category")
+        # self.ent_category.set_tooltip_text("save as category")
+        # category dropdown list
+        self.dd_category = Gtk.DropDown()
+        self.dd_category.set_tooltip_text("categories list")
+        self.dd_category.connect("notify::selected", lambda *a: self.fill_list())
         self.ent_name = Gtk.Entry()
         self.ent_name.set_placeholder_text("name")
         self.ent_name.set_tooltip_text("save as name")
@@ -99,10 +103,11 @@ class DbPopover(Gtk.MenuButton):
         row_buttons.append(btn_save)
         row_buttons.append(btn_db)
         for widget in (
+            self.dd_category,
             self.ent_search,
             scroll,
             Gtk.Separator(),
-            self.ent_category,
+            # self.ent_category,
             self.ent_name,
             self.ent_note,
             row_buttons,
@@ -111,6 +116,10 @@ class DbPopover(Gtk.MenuButton):
         popover = Gtk.Popover()
         popover.set_child(box)
         popover.connect("show", self.on_show)
+        keys = Gtk.EventControllerKey()
+        keys.set_propagation_phase(Gtk.PropagationPhase.CAPTURE)
+        keys.connect("key-pressed", self.on_popover_key)
+        popover.add_controller(keys)
         # close popover on mouse exit
         # motion = Gtk.EventControllerMotion()
         # motion.connect("enter", self.cancel_close)
@@ -124,6 +133,13 @@ class DbPopover(Gtk.MenuButton):
         # ctrl+o : open with search focused
         self.popup()
         self.ent_search.grab_focus()
+
+    def on_popover_key(self, controller, keyval, keycode, state):
+        if keyval == Gdk.KEY_Escape:
+            self.get_popover().popdown()
+            return True
+
+        return False
 
     # def cancel_close(self, *args):
     #     if self.leave_timer:
@@ -152,15 +168,32 @@ class DbPopover(Gtk.MenuButton):
 
     #     return GLib.SOURCE_REMOVE
 
+    def category(self) -> str:
+        item = self.dd_category.get_selected_item()
+
+        return item.get_string() if item else eventsdb.DEFAULT_CATEGORY
+
+    def fill_categories(self):
+        # categories found in db : keep current selection after rebuild
+        current = self.category()
+        names = list(dict.fromkeys(c for c, _, _ in eventsdb.list_events("")))
+        if eventsdb.DEFAULT_CATEGORY not in names:
+            names.append(eventsdb.DEFAULT_CATEGORY)
+        self.dd_category.set_model(Gtk.StringList.new(names))
+        if current in names:
+            self.dd_category.set_selected(names.index(current))
+
     def fill_list(self):
         # rebuild rows from db : category header event indented subevents
         while row := self.lst_events.get_first_child():
             self.lst_events.remove(row)
+        search = self.ent_search.get_text()
+        only = None if search else self.category()
         last_category = None
-        for category, event, subevents in eventsdb.list_events(
-            self.ent_search.get_text()
-        ):
-            if category != last_category:
+        for category, event, subevents in eventsdb.list_events(search):
+            if only and category != only:
+                continue
+            if not only and category != last_category:
                 self.lst_events.append(self.header_row(category))
                 last_category = category
             self.lst_events.append(self.event_row(event, None, 0))
@@ -211,11 +244,12 @@ class DbPopover(Gtk.MenuButton):
         # form starts with current event one name & empty note
         self.ent_name.set_text(self.app.EVENT_ONE.name.get_text().strip())
         self.ent_note.set_text("")
+        self.fill_categories()
         self.fill_list()
 
     def on_save_click(self, *args):
         self.save(
-            self.ent_category.get_text(),
+            self.category(),
             self.ent_name.get_text().strip(),
             self.ent_note.get_text().strip(),
         )
@@ -223,7 +257,7 @@ class DbPopover(Gtk.MenuButton):
 
     def quick_save(self):
         # ctrl+s : save to last used category
-        self.save(self.ent_category.get_text(), "", "")
+        self.save(self.category(), "", "")
 
     def save(self, category, name, note):
         e1, e2 = self.app.EVENT_ONE, self.app.EVENT_TWO

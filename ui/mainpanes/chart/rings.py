@@ -200,7 +200,13 @@ class Rings:
                 (label,),
             )
         color = self.RING_COLORS["eclipse lun" if name == "lun" else "eclipse sol"]
-        parts = (info.get("type", ""), name, "ecl", info.get("local time", ""))
+        parts = (
+            info.get("number", ""),
+            info.get("type", ""),
+            name,
+            "ecl",
+            info.get("local time", ""),
+        )
 
         return color, glyphs.get_eclipse_glyph(name), parts
 

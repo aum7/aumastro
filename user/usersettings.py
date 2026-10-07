@@ -435,15 +435,15 @@ sweph/constants.py""",
     # --- event data to be presented in chart info
     # construct your own 'chart info' format
     "chart info": (
-        r"{name}\n{date}\n{wday} {time_short} {hora}\n{city} @ {iso3}\n{lat}\n{lon}",
+        r"{date}\n{wday} {time_short} {hora}\n{name}\n{city} @ {iso3}\n{lat}\n{lon}",
         r"""construct your own 'chart info' format : allowed fields :
-    1: event {name} | 2: {datetime} | 3: {date} | 4: {time}
-    5: {time_short} no seconds | 6: {hora} glyph
-    7: {wday} weekday 8: {country} | 9: {iso3} country code
-    10: {city} 11: {location} | 12: {lat}itude
-    13: {lon}gitude 14: {timezone} | 15: timezone {offset}
-    16: moon {nak}satra 17: {nakvar} moon harmonic naksatra
-    chars: @ | - :
+    1 : event {name} | 2 : {datetime} | 3 : {date} | 4 : {time}
+    5 : {time_short} no seconds | 6 : {hora} glyph
+    7 : {wday} weekday 8: {country} | 9 : {iso3} country code
+    10 : {city} 11 : {location} | 12 : {lat}itude
+    13 : {lon}gitude 14 : {timezone} | 15 : timezone {offset}
+    16 : moon {nak}satra 17 : {nakvar} moon harmonic naksatra
+    chars : @ | - :
 \n = new line
 example : {name}\n{date}\n{wday} {time_short}\n{city} @ {country}\n{lat}\n{lon}""",
     ),
@@ -453,10 +453,10 @@ example : {name}\n{date}\n{wday} {time_short}\n{city} @ {country}\n{lat}\n{lon}"
     "chart info extra": (
         r"{hsys} | {zod}\n{aynm}",
         r"""additional 'chart info' format : allowed fields :
-    1: {hsys} house system
-    2: {zod}iac
-    3: {aynm} ayanamsa name & number
-    chars: @ | - :
+    1 : {hsys} house system
+    2 : {zod}iac
+    3 : {aynm} ayanamsa name & number
+    chars : @ | - :
 \n = new line
 example : {hsys} | {zod}\n{aynm}""",
     ),

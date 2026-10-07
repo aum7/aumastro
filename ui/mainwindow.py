@@ -88,6 +88,7 @@ class MainWindow(
         # movie overlay mode : data graph over astro chart
         self.movie_overlay = None
         self.overlay_active = False
+        self.toasts = []
         self.orig_target = None
         self.orig_top_right_child = None  # datagraph to be overlaid
         # initialize panes layout todo doesnt work properly
@@ -136,6 +137,11 @@ class MainWindow(
             else:
                 toast.set_timeout(self.DEFAULT_TIMEOUTS[msg.level])
             self.toast_overlay.add_toast(toast)
+            self.toasts.append(toast)
+            toast.connect(
+                "dismissed",
+                lambda t: self.toasts.remove(t) if t in self.toasts else None,
+            )
             # print("[DEBUG TOAST] toast added to overlay")
         except Exception as e:
             LOG.error(
@@ -169,7 +175,7 @@ class MainWindow(
         # no more custom hotkey & mouseclick controllers
         # data sequence screenprinting can take hours > cancel with escape key
         # set data test-print period in dataprintscreen.py
-        self.hotkeys.register_hotkey("Escape", self.on_data_seq_cancel)
+        self.hotkeys.register_hotkey("Escape", self.on_escape)
         # [shift]
         # toggle vimsottari table level
         self.hotkeys.register_hotkey("<Shift>s", self.on_toggle_sidepane)
@@ -188,8 +194,11 @@ class MainWindow(
         self.hotkeys.register_hotkey("<Shift>dollar", self.panes_all)  # shift+4
         self.hotkeys.register_hotkey("<Shift>percent", self.panes_movie)  # shift+5
         self.hotkeys.register_hotkey("<Shift>ampersand", self.on_data_seq)
+        # shift+h pairs with ctrl+h for manual & hotkeys popup
+        self.hotkeys.register_hotkey("<Shift>h", self.show_hotkeys)
         # below should work for any keyboard, modify if needed
         # [ctrl]
+        self.hotkeys.register_hotkey("<Control>m", self.show_manual)
         self.hotkeys.register_hotkey("<Control>Up", self.obc_arrow_up)
         self.hotkeys.register_hotkey("<Control>Down", self.obc_arrow_dn)
         self.hotkeys.register_hotkey("<Control>Left", self.obc_arrow_l)
@@ -202,7 +211,6 @@ class MainWindow(
         self.hotkeys.register_hotkey(
             "<Control>c", lambda: self.astro_chart.inspector.angle_to_clipboard()
         )
-        self.hotkeys.register_hotkey("<Control>m", self.show_manual)
         # toggle selected event
         self.hotkeys.register_hotkey(
             "<Control>e",
@@ -298,21 +306,42 @@ class MainWindow(
             ),
         )
 
+    def on_escape(self):
+        # esc : cancel sequence > dismiss toast > else other
+        if self.on_data_seq_cancel():
+            return True
+
+        if self.toasts:
+            for toast in self.toasts[:]:
+                toast.dismiss()
+            return True
+
+        return False
+
     def on_data_seq_cancel(self):
         if hasattr(self, "data_seq") and self.data_seq.running:
             self.data_seq.stop()
             return True
+
         return False
 
     # help / manual
-    def show_manual(self):
+    def _manual_popup(self, text: str):
         self.app.notifier.debug(
-            " ct = change time module at sidepane top"
-            "\ntop info :"
-            "\n\tapp name | selected event *e1/e2 : date-time | ct period (ie 1 Day)"
-            "\nhover mouse over buttons & text : show tooltips (aka detailed manual)"
+            text,
+            source="manual",
+            route=["user"],
+            timeout=7,
+        )
+
+    def show_manual(self):
+        self._manual_popup(
+            " ct : change time module at sidepane top | hk : hotkeys"
             "\nhover mouse over (ie this) notification message : do not hide message"
             "\nesc : discard notification message"
+            "\ntop titlebar info :"
+            "\n\tapp name | selected event *e1/e2 : date-time | ct period (ie 1 Day)"
+            "\nhover mouse over buttons & text : show tooltips (aka detailed manual)"
             "\n\nrecommended workflow :"
             "\nenter event 1 data : calculate event / birth chart"
             "\nif you want transit / progression etc (aka event 2) :"
@@ -321,16 +350,24 @@ class MainWindow(
             "\n\t\tnote : can also be simple synastry chart - enable 'transit' ring"
             "\n\tenter custom name 2 (ie 'marriage' - saved as e2 subevent)"
             "\ndelete date-time 2 : erase event 2 data (not interested in transit etc)"
-            "\n\nhotkeys (hk) :"
-            "\nctrl+s : quick-save event | ctrl+o : open events db"
+            "\n\nhk : shift+h : show hotkeys"
+        )
+
+    def show_hotkeys(self):
+        self._manual_popup(
+            " hk hotkeys"
             "\ntab/shift+tab or arrow up/down : navigate widgets in side pane"
             "\nspace/enter : activate button / dropdown / entry when focused"
+            "\nmouse scroll : zoom in/out | click-drag to pan | double-click to reset"
+            "\n\tnote : clashes with snap & angle ruler - depends on mouse location"
+            "\n- ctrl"
+            "\nctrl+s : quick-save event | ctrl+o : open events db"
             "\nctrl+m : show manual / help (this message)"
             "\nctrl+e : toggle selected event"
             "\n\tie for change time / time now & datagraph click (grab datetime)"
             "\nctrl+arrow keys :"
             "\n\tup/down : change period"
-            "\n\tleft/right : change time <</>> for selected event"
+            "\n\tleft/right : change time << / >> for selected event"
             "\nctrl+n : set time now for selected event location"
             "\n\tyour computer time > utc > event location time"
             "\nctrl+f : toggle fixed ascendant vs ari 0° at zodiac left"
@@ -339,6 +376,7 @@ class MainWindow(
             "\nctrl+1-0 : toggle"
             "\n\ttransit|tr harm|p2|p3|pm|lun|sol return|d1|natal harm|naks ring"
             "\n\tsidepane > settings > chart settings > terms ring goes with d1"
+            "\n- shift"
             "\nshift+s : toggle side pane"
             "\nshift+1/2/3/4 : show single / double / triple / all panes"
             "\nshift+5 : toggle movie mode - astrochart over datagraph"
@@ -346,10 +384,14 @@ class MainWindow(
             "\n\tesc : cancel sequence"
             "\nshift+v : toggle vimsottari level"
             "\nshift+w : toggle sidereal vs tropical (aka western = default) zodiac"
-            "\nshift+r : toggle astro chart angle ruler / hover info",
-            source="manual",
-            timeout=7,
-            route=["user"],
+            "\nshift+r : toggle chart angle ruler / snap label / aspect rays"
+            "\n\tmouse scroll inside chart : zoom"
+            "\n\tmouse scroll outside chart : toggle standard aspect rays"
+            "\n\t\tuse 90/45 rays as improvised 8-house system"
+            "\n\tdouble-click outside chart : hide aspect rays"
+            "\n\ton snap : click-drag : measure angle on release"
+            "\n\tctrl+c : copy angle label text to clipboard"
+            "\n\nctrl+m : show manual"
         )
 
     def init_panes(self):
