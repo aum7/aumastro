@@ -9,7 +9,6 @@
 #   redesign notification mess / doubling
 #   export to executable on linux & mswindows (10 & 11)
 #   sudarsana cakra : su-mo-asc lined up - custom astrochart / modification
-#   vimsottari from strongest of mo su asc - fixed anchor as list selector ???
 #
 # LOG
 # 2026-09-16 21-12
@@ -20,6 +19,7 @@
 #   jyotisa graha/bhava bala abandoned as also other qualitative techniques
 # 2026-10-07 07-55
 #   v1.2 - added astrochart zoom ; plethora of upgrades ie database popover
+#   vimsottari from strongest of mo su asc - 4 fixed anchors as dropdown
 import logging
 
 LOG = logging.getLogger(__name__)

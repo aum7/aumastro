@@ -37,10 +37,6 @@ def get_lord_seq(start_lord):
 
 def tuple_to_iso(jd, tz_name=None):
     # utc julian day to event local year, month, day, hour, minute, second
-    # Y, M, D, dec_h = swe.revjul(jd, swe.GREG_CAL)
-    # h, m, s = dectohms(dec_h)
-
-    # return f"{Y:04d}-{M:02d}-{D:02d} {h:02d}:{m:02d}:{s:02d}"
     return jdtoloc(jd, tz_name).strftime("%Y-%m-%d %H:%M:%S")
 
 
