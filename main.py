@@ -5,7 +5,6 @@
 # os.environ["GTK_DEBUG"] = "keybindings geometry size-request actions constraints"
 # Gtk.Window.set_interactive_debugging(True)
 # app todo :
-#   fix dataprintscreen.py to capture selected event time
 #   fold text on category for load/save popover
 #   add post-natal eclipses upto 70 days forward in time - most potent
 #   switch swisseph to pysweph (pyswisseph maintained fork) ???

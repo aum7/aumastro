@@ -17,6 +17,7 @@ gi.require_version("Gtk", "4.0")
 gi.require_version("Graphene", "1.0")
 from gi.repository import Gtk, GLib, Graphene  # type: ignore
 
+# filter data range
 START_DATE = "1969-01-01 00:00:00"
 END_DATE = "2027-01-01 00:00:00"
 CAPTURE_WIDGET = None  # fullscreen | grid : sidepane
