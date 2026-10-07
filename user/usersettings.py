@@ -458,7 +458,7 @@ example : {name}\n{date}\n{wday} {time_short}\n{city} @ {country}\n{lat}\n{lon}"
     # additional 'chart info' format: allowed fields: 1: house system {hsys} |
     # 2: {zod}iac | 3: ayanamsa name {aynm} | 4: ayanamsa value {ayvl}
     "chart info extra": (
-        r"{hsys} | {zod}\n{aynm}",
+        r"{hsys}|{zod}|{aynm}",
         r"""additional 'chart info' format : allowed fields :
     1 : {hsys} house system
     2 : {zod}iac

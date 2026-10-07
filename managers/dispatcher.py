@@ -942,15 +942,14 @@ class Dispatcher:
             )
         )
         e1_curr_hora = e1_calculated["horas"]["current hora"]
+        sid = "sidereal zodiac" in self.active_flags
         chart_package = {
             "info": e1_chart,
             "current hora": e1_curr_hora,
             "info extra": {
                 "hsys": hsys_str,
-                "zod": "sid" if "sidereal zodiac" in self.active_flags else "tro",
-                "aynm": self.selected_ayanamsa_label
-                if "sidereal zodiac" in self.active_flags
-                else "",
+                "zod": "sid" if sid else "tro",
+                "aynm": self.selected_ayanamsa_label if sid else "",
             },
             "positions": self._prep_ring(e1_calculated.get("positions")),
             "houses": {
