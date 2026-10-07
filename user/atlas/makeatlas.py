@@ -4,15 +4,12 @@
 """Script used to build the geonames atlas into an sqlite database.
 
 Works best on linuxes, for now.
-
 """
 
 # CONFIGURATION
-
 # where everything happens (empty writable directory)
 _workdir = "."
 # _workdir = '/tmp'
-
 # minimum population of cities
 #
 # some stats as of 2020-05-23:
@@ -25,7 +22,6 @@ _workdir = "."
 # 0+    => ~379M    ~4'769'603 cities
 # _minpop = 1
 _minpop = 1000
-
 # country codes
 # this list must be up to date with geonames ftp
 allcodes = [
@@ -460,11 +456,9 @@ class CountryInfo(object):
             if not line.startswith("#"):
                 ret.append(CountryInfo(line))
             i += 1
-        #
 
 
 # cities
-
 citiesschema = """
 CREATE TABLE GeoNames
 (
@@ -566,14 +560,14 @@ class GeoName(object):
         lines = lines[:-1]
         ret = []
         if ctycode not in ["AN", "BV", "CS", "HM"]:  # those have no P
-            for l in lines:
-                name = GeoName(l)
+            for ln in lines:
+                name = GeoName(ln)
                 if name.feature_class == "P":
                     if name.population and int(name.population) >= _minpop:
                         ret.append(name)
         else:
-            for l in lines:
-                ret.append(GeoName(l))
+            for ln in lines:
+                ret.append(GeoName(ln))
         return ret
 
     @staticmethod
@@ -622,8 +616,8 @@ def makeCountry(cur, ctycode):
     GeoName.downloadFile(ctycode)
     loc = GeoName.parseFile(ctycode)
     cur.execute("begin;")
-    for l in loc:
-        l.insert(cur)
+    for ln in loc:
+        ln.insert(cur)
     cur.execute("end;")
 
 

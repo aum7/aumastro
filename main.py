@@ -8,7 +8,7 @@
 #   switch swisseph to pysweph (pyswisseph maintained fork) ???
 #   redesign notification mess / doubling
 #   export to executable on linux & mswindows (10 & 11)
-#   sudarsana cakra : su-mo-asc lined up - custom astrochart / modification
+#   sudarsana cakra : su-mo-asc lined up - as su-mo ring matched to asc
 #
 # LOG
 # 2026-09-16 21-12
