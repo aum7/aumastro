@@ -199,7 +199,7 @@ def pick_path(button, entry, key, dispatcher):
     if start.is_dir():
         dialog.set_initial_folder(Gio.File.new_for_path(str(start.resolve())))
     if extensions:
-        file_filter = Gtk.FIleFilter()
+        file_filter = Gtk.FileFilter()
         file_filter.set_name(", ".join(extensions))
         for extension in extensions:
             file_filter.add_suffix(extension)
