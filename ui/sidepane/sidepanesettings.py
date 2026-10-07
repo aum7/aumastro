@@ -314,6 +314,19 @@ class SidepaneSettings(CollapsePanel):
             row.set_child(check)
             lbx_chart_setts_1.append(row)
         box.append(lbx_chart_setts_1)
+        # vimsottari anchor
+        box.append(Gtk.Label(label="vimsottari anchor", halign=Gtk.Align.START))
+        ddn_vimso = Gtk.DropDown.new(
+            Gtk.StringList.new([name for _, name in self.app.dispatcher.VIMSO_ANCHORS])
+        )
+        ddn_vimso.set_tooltip_text(
+            "start vimsottari from naksatra of selected anchor"
+            "\nmoon is traditional & default"
+        )
+        ddn_vimso.connect(
+            "notify::selected", help.vimso_anchor_changed, self.app.dispatcher
+        )
+        box.append(ddn_vimso)
         # drawing
         lbl_draw = Gtk.Label(label="drawing")
         lbl_draw.set_focusable(False)

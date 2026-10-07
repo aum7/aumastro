@@ -39,11 +39,9 @@ class Hotkeyer:
         key = shortcut_str.lower()
         if key in self.shortcuts:
             self.unregister_hotkey(key)
-
         trigger = Gtk.ShortcutTrigger.parse_string(shortcut_str)
         if not trigger:
             log.warning(f"invalid shortcut string format: {shortcut_str}")
-
             return
 
         def _action_wrapper(widget, args):

@@ -8,6 +8,8 @@
 #   switch swisseph to pysweph (pyswisseph maintained fork) ???
 #   redesign notification mess / doubling
 #   export to executable on linux & mswindows (10 & 11)
+#   sudarsana cakra : su-mo-asc lined up - custom astrochart / modification
+#   vimsottari from strongest of mo su asc - fixed anchor as list selector ???
 #
 # LOG
 # 2026-09-16 21-12
@@ -16,7 +18,8 @@
 # 2026-10-05 09-23
 #   v1.1 - added save / load events functionality
 #   jyotisa graha/bhava bala abandoned as also other qualitative techniques
-#   vimsottari from strongest of mo su asc
+# 2026-10-07 07-55
+#   v1.2 - added astrochart zoom ; plethora of upgrades ie database popover
 import logging
 
 LOG = logging.getLogger(__name__)

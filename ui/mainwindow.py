@@ -88,7 +88,8 @@ class MainWindow(
         # movie overlay mode : data graph over astro chart
         self.movie_overlay = None
         self.overlay_active = False
-        self.toasts = []
+        # active toasts in queue
+        self.toasts = {}
         self.orig_target = None
         self.orig_top_right_child = None  # datagraph to be overlaid
         # initialize panes layout todo doesnt work properly
@@ -109,6 +110,9 @@ class MainWindow(
             if not self.toast_overlay:
                 print("[DEBUG TOAST] selftoastoverlay is NONE inside showtoast")
                 return False
+            text = str(msg)
+            if text in self.toasts.values():
+                return False  # identical toast already pending
             # custom layout box
             box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=5)
             box.set_margin_start(3)
@@ -126,7 +130,7 @@ class MainWindow(
                 icon.set_pixel_size(24)
             box.append(icon)
             # label with message
-            label = Gtk.Label(label=str(msg))
+            label = Gtk.Label(label=text)
             box.append(label)
             # create toast
             toast = Adw.Toast.new("")
@@ -137,11 +141,13 @@ class MainWindow(
             else:
                 toast.set_timeout(self.DEFAULT_TIMEOUTS[msg.level])
             self.toast_overlay.add_toast(toast)
-            self.toasts.append(toast)
-            toast.connect(
-                "dismissed",
-                lambda t: self.toasts.remove(t) if t in self.toasts else None,
-            )
+            self.toasts[toast] = text
+            toast.connect("dismissed", lambda t: self.toasts.pop(t, None))
+            # self.toasts.append(toast)
+            # toast.connect(
+            #     "dismissed",
+            #     lambda t: self.toasts.remove(t) if t in self.toasts else None,
+            # )
             # print("[DEBUG TOAST] toast added to overlay")
         except Exception as e:
             LOG.error(
@@ -312,8 +318,7 @@ class MainWindow(
             return True
 
         if self.toasts:
-            for toast in self.toasts[:]:
-                toast.dismiss()
+            next(iter(self.toasts)).dismiss()  # visible = oldest in queue
             return True
 
         return False

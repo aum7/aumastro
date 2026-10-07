@@ -4,13 +4,14 @@
 import logging
 
 LOG = logging.getLogger(__name__)
-source = "dbpopup"
+source = "dbpopover"
+from sweph import eventsdb
+from pathlib import Path
+import re
 import gi
 
 gi.require_version("Gtk", "4.0")
 from gi.repository import Gtk, Gdk, Gio, GLib, Pango  # type: ignore
-from sweph import eventsdb
-from pathlib import Path
 
 ICON_DIR = "ui/imgs/icons/hicolor/scalable/"
 ICONS = {  # key : custom file fallback theme icon
@@ -57,6 +58,8 @@ class DbPopover(Gtk.MenuButton):
             "load & save events\nhk :\nctrl+s : quick save\nctrl+o : open events db"
         )
         self.leave_timer = 0
+        # add to session : not in db until event saved into
+        self.new_categories = []
         self.set_popover(self.build_popover())
 
     def build_popover(self) -> Gtk.Popover:
@@ -75,14 +78,26 @@ class DbPopover(Gtk.MenuButton):
         self.lst_events.connect("row-activated", self.on_row_activated)
         scroll.set_child(self.lst_events)
         # save form : category remembers last used
-        # self.ent_category = Gtk.Entry()
-        # self.ent_category.set_text(eventsdb.DEFAULT_CATEGORY)
-        # self.ent_category.set_placeholder_text("category")
-        # self.ent_category.set_tooltip_text("save as category")
         # category dropdown list
         self.dd_category = Gtk.DropDown()
+        self.dd_category.set_hexpand(True)
         self.dd_category.set_tooltip_text("categories list")
         self.dd_category.connect("notify::selected", lambda *a: self.fill_list())
+        btn_new_cat = Gtk.Button.new_from_icon_name("list-add-symbolic")
+        btn_new_cat.add_css_class("flat")
+        btn_new_cat.set_tooltip_text("add new category | click again to cancel")
+        btn_new_cat.connect("clicked", self.on_new_category_click)
+        # row for dropdown & button
+        row_category = Gtk.Box(spacing=12)
+        row_category.append(self.dd_category)
+        row_category.append(btn_new_cat)
+        self.ent_new_cat = Gtk.Entry()
+        self.ent_new_cat.set_placeholder_text(
+            "new category name : confirm with [enter]"
+        )
+        self.ent_new_cat.set_tooltip_text("enter new category name & confirm [enter]")
+        self.ent_new_cat.set_visible(False)
+        self.ent_new_cat.connect("activate", self.on_new_category_confirm)
         self.ent_name = Gtk.Entry()
         self.ent_name.set_placeholder_text("name")
         self.ent_name.set_tooltip_text("save as name")
@@ -103,11 +118,11 @@ class DbPopover(Gtk.MenuButton):
         row_buttons.append(btn_save)
         row_buttons.append(btn_db)
         for widget in (
-            self.dd_category,
+            row_category,
+            self.ent_new_cat,
             self.ent_search,
             scroll,
             Gtk.Separator(),
-            # self.ent_category,
             self.ent_name,
             self.ent_note,
             row_buttons,
@@ -173,15 +188,35 @@ class DbPopover(Gtk.MenuButton):
 
         return item.get_string() if item else eventsdb.DEFAULT_CATEGORY
 
-    def fill_categories(self):
-        # categories found in db : keep current selection after rebuild
-        current = self.category()
-        names = list(dict.fromkeys(c for c, _, _ in eventsdb.list_events("")))
-        if eventsdb.DEFAULT_CATEGORY not in names:
-            names.append(eventsdb.DEFAULT_CATEGORY)
+    def fill_categories(self, select=None):
+        # categories found in db + session: keep current selection after rebuild
+        current = select or self.category()
+        names = list(
+            dict.fromkeys(
+                [c for c, _, _ in eventsdb.list_events("")]
+                + self.new_categories
+                + [eventsdb.DEFAULT_CATEGORY]
+            )
+        )
         self.dd_category.set_model(Gtk.StringList.new(names))
-        if current in names:
-            self.dd_category.set_selected(names.index(current))
+        target = current if current in names else eventsdb.DEFAULT_CATEGORY
+        self.dd_category.set_selected(names.index(target))
+
+    def on_new_category_click(self, *args):
+        show = not self.ent_new_cat.get_visible()
+        self.ent_new_cat.set_visible(show)
+        if show:
+            self.ent_new_cat.set_text("")
+            self.ent_new_cat.grab_focus()
+
+    def on_new_category_confirm(self, *args):
+        # sanitized : category is toml table > no dots nor spaces
+        name = re.sub(r"[^a-z0-9_-]+", "_", self.ent_new_cat.get_text().strip().lower())
+        if name:
+            if name not in self.new_categories:
+                self.new_categories.append(name)
+            self.fill_categories(select=name)
+        self.ent_new_cat.set_visible(False)
 
     def fill_list(self):
         # rebuild rows from db : category header event indented subevents
@@ -244,6 +279,7 @@ class DbPopover(Gtk.MenuButton):
         # form starts with current event one name & empty note
         self.ent_name.set_text(self.app.EVENT_ONE.name.get_text().strip())
         self.ent_note.set_text("")
+        self.ent_new_cat.set_visible(False)
         self.fill_categories()
         self.fill_list()
 

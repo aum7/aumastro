@@ -68,6 +68,9 @@ class Dispatcher:
         # ddn list
         self.LUNAR_MONTHS = usersett.LUNAR_MONTHS
         self.selected_month_period = self.LUNAR_MONTHS[0]
+        # vimsottari anchor ddn list : mo su asc
+        self.VIMSO_ANCHORS = usersett.VIMSO_ANCHORS
+        self.selected_vimso_anchor = self.VIMSO_ANCHORS[0][0]  # mo
         self.AYANAMSAS = usersett.AYANAMSAS
         self.selected_ayanamsa = self.AYANAMSAS[0][0]
         self.selected_ayanamsa_label = self.AYANAMSAS[0][2]
@@ -320,6 +323,11 @@ class Dispatcher:
         self.app.signaler.emit("setting changed", {"lunar month": period})
         self.recalculate_events()
 
+    def update_vimso_anchor(self, anchor: str):
+        self.selected_vimso_anchor = anchor
+        self.app.signaler.emit("setting changed", {"vimso anchor": anchor})
+        self.on_vimsottari_toggle()
+
     def update_filename_format(self, file_format: str):
         self.filename_format = file_format
         LOG.debug(f"updatefilenameformat : {file_format}")
@@ -397,7 +405,7 @@ class Dispatcher:
             self.refresh_chart_package()
 
     def calc_vimsottari(self):
-        # vimsottari needs e1_mo : for level 3+ needs e2_jd :
+        # vimsottari needs anchor su mo asc : level 3+ needs e2_jd :
         # calculate_vimsottari manages levels
         e1_calculated = self.events_data["e1"].get("calculated")
         e1_sweph = self.events_data["e1"].get("sweph")
@@ -411,8 +419,20 @@ class Dispatcher:
             return
 
         e1_jd = e1_sweph["jd ut"]
-        # e1_mo = positions_data[1]["lon"]
-        e1_mo = swe.calc_ut(e1_jd, swe.MOON, self.swe_flag & ~swe.FLG_TOPOCTR)[0][0]
+        anchor = self.selected_vimso_anchor
+        ascmc_idx = {"asc": 0, "mc": 1}.get(anchor)
+        if ascmc_idx is not None:
+            ascmc = e1_calculated.get("houses", {}).get("ascmc")
+            if not ascmc:
+                LOG.debug("missing ascmc : exiting")
+                return
+
+            anchor_lon = ascmc[ascmc_idx]
+        else:
+            body = swe.SUN if anchor == "su" else swe.MOON
+            result, _ = swe.calc_ut(e1_jd, body, self.swe_flag & ~swe.FLG_TOPOCTR)
+            anchor_lon = result[0]
+        # LOG.debug(f"vimsoanchor={anchor} lon={anchor_lon!r}")
         e2_jd = None
         if self.e2_active:
             e2_sweph = self.events_data["e2"].get("sweph")
@@ -423,11 +443,12 @@ class Dispatcher:
             "vimsottari",
             calculate_vimsottari,
             e1_jd,
-            e1_mo,
+            anchor_lon,
             e2_jd,
             self.app.current_lvl,
             self.selected_year_period[1],
             self.events_data["e1"].get("chart", {}).get("timezone"),
+            anchor,
         )
 
     def on_vimsottari_toggle(self):

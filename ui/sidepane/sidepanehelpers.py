@@ -146,6 +146,11 @@ def flags_toggled(button, flag, dispatcher):
     dispatcher.update_sweph_flag(flag, active)
 
 
+def vimso_anchor_changed(dropdown, _pspec, dispatcher):
+    idx = dropdown.get_selected()
+    dispatcher.update_vimso_anchor(dispatcher.VIMSO_ANCHORS[idx][0])
+
+
 def solar_year_changed(dropdown, _pspec, dispatcher):
     idx = dropdown.get_selected()
     period = dispatcher.SOLAR_YEARS[idx]

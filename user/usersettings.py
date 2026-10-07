@@ -14,6 +14,13 @@
 # orientation can be top/bottom as main & left/right as children or vice-versa
 # run app > grab left pane border & drag right ->, similar for top/bottom
 APP_ORIENTATION = "vertical"
+# fixed anchors for vimsottari dasa calculations
+VIMSO_ANCHORS = (
+    ("mo", "moon"),
+    ("su", "sun"),
+    ("asc", "ascendant"),
+    ("mc", "midheaven"),
+)
 # change objects color & names below
 OBJECTS = {  # one-but-last = color ; last = size scale = drawing order
     0: ("su", "sun", "sy", "surya", (1.0, 0.898, 0.0, 1), 0.82),

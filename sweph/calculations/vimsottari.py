@@ -18,11 +18,11 @@ PARAMAYUS = 120  # sum of all maha dasa years
 INDENT = {1: "", 2: " 2 ", 3: "  3  ", 4: "   4   ", 5: "    5    "}
 
 
-def find_naksatra(e1_mo):
-    # naksatra index & fraction from mo_lonon longitude
+def find_naksatra(anchor_lon):
+    # naksatra index & fraction from anchor longitude
     part = 360 / 27
-    idx = int(e1_mo // part) + 1
-    frac = (e1_mo % part) / part
+    idx = int(anchor_lon // part) + 1
+    frac = (anchor_lon % part) / part
 
     return idx, frac
 
@@ -67,15 +67,18 @@ def walk(lord, start, years, level, e1_jd, e2_jd, curr_lvl, year_length):
         start += sub_years * year_length
 
 
-def vimsottari_table(e1_jd, e1_mo, e2_jd, curr_lvl, year_length, tz_name=None):
+def vimsottari_table(
+    e1_jd, anchor_lon, e2_jd, curr_lvl, year_length, tz_name=None, anchor="mo"
+):
     # prepare table as plain text
-    idx, frac = find_naksatra(e1_mo)
+    idx, frac = find_naksatra(anchor_lon)
     nak_lord, nak_name = NAKSATRAS27[idx]
     separ = f"{'-' * 42}\n"
     header = (
         f"\n hk : shift+v : toggle vimso dasas level\n"
         " level 1 & 2 : complete dasas\n"
         " levels 3-5 : >event 2 datetime< maha dasa only\n"
+        f" anchor : {anchor}\n"
         f"{separ}"
         f" nak {idx:02} {nak_name} {nak_lord} | traversed "
         f"{frac * 100:.2f} % | lvl {curr_lvl}\n{separ}"
@@ -95,7 +98,9 @@ def vimsottari_table(e1_jd, e1_mo, e2_jd, curr_lvl, year_length, tz_name=None):
     return header + "\n".join(out)
 
 
-def calculate_vimsottari(e1_jd, e1_mo, e2_jd, curr_level, year_length, tz_name=None):
+def calculate_vimsottari(
+    e1_jd, anchor_lon, e2_jd, curr_level, year_length, tz_name=None, anchor="mo"
+):
     # event 1 is mandatory and only source
     # on missing event 2 julian day notify user & cap table levels
     if e2_jd is None and curr_level >= 3:
@@ -108,7 +113,9 @@ def calculate_vimsottari(e1_jd, e1_mo, e2_jd, curr_level, year_length, tz_name=N
 
     try:
         return ok(
-            vimsottari_table(e1_jd, e1_mo, e2_jd, curr_level, year_length, tz_name)
+            vimsottari_table(
+                e1_jd, anchor_lon, e2_jd, curr_level, year_length, tz_name, anchor
+            )
         )
 
     except Exception as e:
