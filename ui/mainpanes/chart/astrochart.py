@@ -19,7 +19,7 @@ class AstroChart(Gtk.Box):
     """main astro chart widget for rings & objects"""
 
     MAX_ZOOM = 3.0
-    PAN_MARGIN = 20.0
+    PAN_MARGIN = 60.0
 
     def __init__(self, app=None, **kwargs):
         super().__init__(**kwargs)

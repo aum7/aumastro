@@ -148,3 +148,9 @@ city = "brookline"
 location = "42 20 00 n 071 07 00 w 0043 m"
 datetime = "1917-05-29 15:15:00"
 note = ""
+
+# subevent of ljubljana
+[[events.ljubljana.subevents]]
+name = "2026-10-07"
+datetime = "2026-10-07 13:00:52"
+note = ""

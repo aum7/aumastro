@@ -442,7 +442,7 @@ sweph/constants.py""",
     # --- event data to be presented in chart info
     # construct your own 'chart info' format
     "chart info": (
-        r"{date}\n{wday} {time_short} {hora}\n{name}\n{city} @ {iso3}\n{lat}\n{lon}",
+        r"{date}\n{wday} {time_short} {hora}\n-{name}-\n{city} @ {iso3}\n{lat}\n{lon}",
         r"""construct your own 'chart info' format : allowed fields :
     1 : event {name} | 2 : {datetime} | 3 : {date} | 4 : {time}
     5 : {time_short} no seconds | 6 : {hora} glyph
