@@ -518,7 +518,7 @@ class DataGraph(Gtk.Box):
 
         dt = self.df.index[ix]
         op, hi, lo, cl = self.ohlc[ix]
-        info = f"{dt:%Y-%m-%d %H:%M}\nh={hi:.2f}\n{op:.2f}\nc={cl:.2f}\nl={lo:.2f}"
+        info = f"{dt:%Y-%m-%d %H:%M}\nh={hi:.2f}\no={op:.2f}\nc={cl:.2f}\nl={lo:.2f}"
         if self.wave_df is not None and not self.wave_df.empty:
             pos = self.wave_df.index.get_indexer([dt], method="nearest")[0]
             info += f"\nwave : {self.wave_df['cycle'].iloc[pos]:.2f}"
