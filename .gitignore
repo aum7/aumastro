@@ -1,8 +1,10 @@
 __pycache__
 sweph/ephe/
-user/data/_archive/
+# user/data/ejpt/ with a trailing slash strictly matches only directories named ejpt
+user/data/ejpt/
 user/data/wave/
 user/data/search/
+# ui/imgs/_archive - no trailing slash match files & directories named _archive.
 ui/imgs/_archive
 _*
 **/_*
