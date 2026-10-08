@@ -4,8 +4,6 @@ import logging
 
 LOG = logging.getLogger(__name__)
 source = "uisearcher"
-routing = {"source": source, "route": ["terminal"]}
-routingnone = {"source": source, "route": [""]}
 routingtimeout4 = {"source": source, "route": ["terminal"], "timeout": "4"}
 routingtimeout6 = {"source": source, "route": ["terminal"], "timeout": "6"}
 import os
@@ -14,9 +12,10 @@ import pandas as pd
 import json
 from pathlib import Path
 from zoneinfo import ZoneInfo
-from helpers import _object_name_to_code as objcode, get_harmonic_lon as harmlon
+from helpers import _object_name_to_code as objcode
 from datetime import date, timedelta, datetime, timezone
 from sweph.swetime import jd_to_custom_iso as jdtoiso
+from sweph.calculations.varga import get_harmonic_lon as harmlon
 
 
 class Searcher:
@@ -138,7 +137,6 @@ class Searcher:
                         "\n  is outside file time range"
                         f"\nfile {file_start} - {file_end} :"
                         "\n  no search possible : exiting ...",
-                        extra=routing,
                     )
                     return
             main_place = parsed["place"]
@@ -352,10 +350,7 @@ class Searcher:
         sweph = self.app.dispatcher.events.get("e1", None)
         chart = self.app.dispatcher.events.get("chart", None)
         if not sweph or not chart:
-            LOG.error(
-                "missing e1 data",
-                extra=routing,
-            )
+            LOG.error("missing e1 data")
             return []
 
         lon = sweph.get("lon")
@@ -394,16 +389,12 @@ class Searcher:
                 )
                 if ret_rise < 0 or ret_set < 0:
                     LOG.error(
-                        f"sunrise / set calculation failed at lat {lat} & lon {lon}",
-                        extra=routing,
+                        f"sunrise / set calculation failed at lat {lat} & lon {lon}"
                     )
                 srise = data_rise[0]
                 sset = data_set[0]
             except Exception as e:
-                LOG.error(
-                    f"sunrise / set calculation failed\nerror : {e}",
-                    extra=routing,
-                )
+                LOG.error(f"sunrise / set calculation failed\nerror : {e}")
                 # to utc
                 if srise is not None:
                     dt_rise_utc = datetime.strptime(
@@ -476,15 +467,9 @@ class Searcher:
             filename = f"aspect_{from_obj}_{degree}_v{harmonic}.csv"
             df.to_csv(os.path.join(outdir, filename), index=False)
             self.app.signaler.emit("plot search result")
-            LOG.info(
-                "plot aspect signal emitted",
-                extra=routing,
-            )
+            LOG.info("plot aspect signal emitted")
             return df
-        LOG.info(
-            "no aspect found",
-            extra=routing,
-        )
+        LOG.info("no aspect found")
         return None
 
     def terms(self, *args):

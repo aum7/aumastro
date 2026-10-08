@@ -1,12 +1,10 @@
-# ui/sidepane/sidepane.py
+# ui/sidepane/sidepane.py CLEANED20261008
 # collapsible side panel
 # ruff: noqa: E402
 import logging
 
 LOG = logging.getLogger(__name__)
 source = "sidepane"
-routing = {"source": source, "route": ["terminal"]}
-routingnone = {"source": source, "route": [""]}
 import re
 from typing import Optional
 from datetime import datetime, timezone
@@ -32,8 +30,6 @@ class SidepaneManager:
         "arrow_up": "select previous time period\n(hk : ctrl+arrow up)",
         "arrow_dn": "select next time period\n(hk : ctrl+arrow down)",
     }
-    # value for selected change time : 1 day as default
-    # CHANGE_TIME_SELECTED = 1.0
     # time periods in julian day(s) as keys, used for change time
     CHANGE_TIME_PERIODS = {
         "3652.0": "10 Y",  # 365 * 10 + 2 leap years (approximation)
@@ -81,7 +77,6 @@ class SidepaneManager:
         icons_folder = "ui/imgs/icons/hicolor/scalable/"
         icons_path_cpl = icons_folder + icons_path if icons_path else icons_folder
         buttons = []
-
         if not buttons_dict:
             return buttons
         for button_name, tooltip in buttons_dict.items():
@@ -94,14 +89,13 @@ class SidepaneManager:
             else:
                 icon.set_icon_size(Gtk.IconSize.NORMAL)
             button.set_child(icon)
-
             callback_name = f"obc_{button_name}"
             if hasattr(self, callback_name):
                 button.connect("clicked", getattr(self, callback_name), button_name)
             else:
                 button.connect("clicked", self.obc_default, button_name)
-
             buttons.append(button)
+
         return buttons
 
     def setup_side_pane(self):
@@ -110,8 +104,8 @@ class SidepaneManager:
         # create & put collapse panels into box
         self.clp_change_time = self.setup_change_time()
         # 2 events : True/False = set expanded on/off on init
-        self.clp_event_one = setup_event(self, "e1", True)
-        self.clp_event_two = setup_event(self, "e2", True)
+        self.clp_event_one = setup_event(self, "e1", False)
+        self.clp_event_two = setup_event(self, "e2", False)
         if self.app.dispatcher.selected_event == "e1":
             self.clp_event_one.add_title_css_class("label-event-selected")
         else:
@@ -119,8 +113,7 @@ class SidepaneManager:
         # settings ie objects to calculate & flags to use etc
         self.clp_settings = SidepaneSettings(self)
         self.clp_settings.add_title_css_class("label-settings")
-        # self.clp_settings = setup_settings(self)
-        # search module todo self or self.app ???
+        # search module
         self.clp_search = setup_search(self.app)
         self.clp_search.add_title_css_class("label-search")
         # cycle wave module
@@ -192,7 +185,6 @@ ui/sidepane/sidepane.py"""
         # put label & buttons & dropdown into box
         box_change_time.append(box_time_icons)
         box_change_time.append(self.ddn_time_periods)
-
         clp_change_time.add_widget(box_change_time)
 
         return clp_change_time
@@ -223,10 +215,6 @@ ui/sidepane/sidepane.py"""
             # set new value
             dropdown_index = period_values.index(new_value)
             self.ddn_time_periods.set_selected(dropdown_index)
-            # notify new value
-            # self.app.notifier.info(
-            #     f"selected period : {new_value}", source="change time", timeout=3
-            # )
             key = next(k for k, v in self.CHANGE_TIME_PERIODS.items() if v == new_value)
             # store selected change time period for main title update
             self.app.dispatcher.set_change_time_period(float(key), new_value)
@@ -251,13 +239,13 @@ ui/sidepane/sidepane.py"""
         datetime_name = entry.get_name()
         current_text = entry.get_text()
         jd = None
-        # jd: float = 0.0
         if not current_text:
             # missing date-time : fabricate utc now
             dt_now = datetime.now(timezone.utc).replace(microsecond=0)
             # get julian day - verified as side-effect
             if dt_now:
-                is_valid, jd, dt_corr = custom_iso_to_jd(
+                # is_valid, jd, dt_corr = custom_iso_to_jd(
+                is_valid, jd, _ = custom_iso_to_jd(
                     dt_now.year,
                     dt_now.month,
                     dt_now.day,
@@ -278,34 +266,24 @@ ui/sidepane/sidepane.py"""
                 route=["terminal", "user"],
             )
         try:
-            # current_text = entry.get_text()  # type:ignore
             # convert to verified (side-effect) julian day, keep negative year
-            is_valid, jd, dt_corr = custom_iso_to_jd(
+            is_valid, jd, _ = custom_iso_to_jd(
+                # is_valid, jd, dt_corr = custom_iso_to_jd(
                 *map(
                     int,
                     re.sub(r"(?<!^)-", " ", current_text).replace(":", " ").split(),
                 ),
                 calendar=b"g",
             )
-            LOG.debug(
-                f"dtcorr={dt_corr}",
-                extra=routingnone,
-            )
+            # LOG.debug(
+            #     f"dtcorr={dt_corr}",
+            # )
             # change time by delta which is in julian days
             jd_new = jd + change_delta
             # back to custom iso format for string
             new_text = jd_to_custom_iso(jd_new)
             # present string back to user
             entry.set_text(new_text)  # type:ignore
-            # if datetime_name == "datetime one":  # type:ignore
-            #     self.app.EVENT_ONE.on_datetime_change(entry)
-            # else:
-            #     self.app.EVENT_TWO.on_datetime_change(entry)
-            # change_time_period = self.time_periods_list[
-            #     self.ddn_time_periods.get_selected()
-            # ]
-            # update main window title
-            # self.app.dispatcher.update_titlebar()
         except Exception as e:
             self.app.notifier.error(
                 f"\n{datetime_name} error : {e}",  # type:ignore
@@ -313,7 +291,6 @@ ui/sidepane/sidepane.py"""
                 route=["terminal"],
             )
             return
-
         # on key-hold dont recalculate every key-detected
         self.throttle_commit(entry)
 
@@ -343,7 +320,6 @@ ui/sidepane/sidepane.py"""
             interval_ms = self.app.dispatcher.get_debounce_ms()
             GLib.timeout_add(interval_ms, self.cooldown_tick)
             return False
-
         self.throttle_active = False
 
         return False
@@ -389,12 +365,3 @@ ui/sidepane/sidepane.py"""
     def obc_arrow_dn(self, *args):
         """select next time period"""
         self.change_time_period(direction=1)
-
-    # def obc_settings(self, widget, data):
-    #     self.app.notifier.debug(f"{data} clicked", source="sidepane", route=["terminal"])
-
-    # def obc_file_save(self, widget, data):
-    #     self.app.notifier.debug(f"{data} clicked", source="sidepane", route=["terminal"])
-
-    # def obc_file_load(self, widget, data):
-    #     self.app.notifier.debug(f"{data} clicked", source="sidepane", route=["terminal"])

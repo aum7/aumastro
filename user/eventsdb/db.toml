@@ -2,7 +2,7 @@
 # IMPORTANT ! country used in below events must be enabled in countries.txt
 # also make sure to select country in dropdown list in app > sidepane > event
 # one/two - add entries by hand or with ctrl+s : file order = list order
-# event one if not already auto-selected
+# new events & subevents are added to the file end - move manually if needed
 # --- houck book examples
 [houck.jim_bakker]
 name = "jim bakker"
@@ -75,6 +75,18 @@ note = "millionaire on 21st birthday"
 name = "assasination"
 datetime = "1963-11-22 15:15"
 note = "dallas"
+# --- narasimha rao
+[rao.rao_ex_1]
+name = "rao ex 1"
+country = "India"
+city = "Machilīpatnam"
+location = "16 10 00 n 081 08 00 e 0 m"
+datetime = "1970-04-04 17:50:40"
+note = ""
+[[rao.rao_ex_1.subevents]]
+name = "1987-05-28"
+datetime = "1987-05-28 12:00:00"
+note = ""
 # --- events 
 [events.ljubljana]
 name = "ljubljana"
@@ -83,6 +95,9 @@ city = "ljubljana"
 location = "46 03 10 n 14 31 26 e 0294 m" # porodnišnica lj
 datetime = "1975 2 8 14 10"
 note = ""
+[[events.ljubljana.subevents]]
+name = "nau"
+datetime = "2026-10-07 13:00:52"
 [events.intel]
 name = "intel"
 country = "usa"
@@ -96,7 +111,6 @@ city = "vantaa"                           # helsinki
 location = "60 17 36 n 25 02 17 e 0038 m"
 datetime = "2012 03 23 21 00"
 note = "eurojackpot"
-# subevent of ejpt
 [[events.eurojackpot.subevents]]
 name = "nau"
 datetime = "2026-10-06 04:41:02"
@@ -140,17 +154,3 @@ country = "USA"
 city = "new york"
 location = "40 42 25 n 74 0 41 w 10 m" # nyse
 datetime = "2024-6-19 11:53:00"
-
-[tri.tririti]
-name = "tririti"
-country = "USA"
-city = "brookline"
-location = "42 20 00 n 071 07 00 w 0043 m"
-datetime = "1917-05-29 15:15:00"
-note = ""
-
-# subevent of ljubljana
-[[events.ljubljana.subevents]]
-name = "2026-10-07"
-datetime = "2026-10-07 13:00:52"
-note = ""

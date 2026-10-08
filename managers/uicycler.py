@@ -4,8 +4,6 @@ import logging
 
 LOG = logging.getLogger(__name__)
 source = "uicycler"
-routing = {"source": source, "route": ["terminal"]}
-routingnone = {"source": source, "route": [""]}
 routinguser = {"source": source, "route": ["terminal", "user"]}
 routingtimeout4 = {"source": source, "route": ["terminal"], "timeout": "4"}
 routingtimeout6 = {"source": source, "route": ["terminal"], "timeout": "6"}
@@ -13,7 +11,8 @@ import os
 import pandas as pd
 import swisseph as swe
 from pathlib import Path
-from helpers import _object_name_to_code as objcode, get_harmonic_lon as harmlon
+from helpers import _object_name_to_code as objcode
+from sweph.calculations.varga import get_harmonic_lon as harmlon
 
 
 MEMBERS_ORDER = [
@@ -100,10 +99,7 @@ class Cycler:
 
     def run(self, query: dict):
         if not self.app or not hasattr(self.app, "files"):
-            LOG.error(
-                "Data file path missing in app context",
-                extra=routing,
-            )
+            LOG.error("data file path missing in app context")
             return
 
         file_props = self.file_properties(self.app.files.get("data"))
@@ -206,10 +202,7 @@ class Cycler:
         return pd.DataFrame({"datetime": df_time_indexed.index, "cycle": out_vals})
 
     def declination_wave(self, tokens, datarange) -> pd.DataFrame:
-        LOG.debug(
-            f"declination rule called : {tokens}",
-            extra=routing,
-        )
+        LOG.debug(f"declination rule called : {tokens}")
         return pd.DataFrame()
 
     def map_harmonic_naks(

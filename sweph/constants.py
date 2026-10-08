@@ -213,6 +213,43 @@ MANSIONS28 = {  # 12-51-25
     27: ("me", "peih", "al sharatain"),  #  04-17-09 - 17-08-34 pis
     28: ("ju", "goei", "al butain"),  #  17-08-34 - 30-00-00 pis
 }
+# true varga (20) traditional jyotisa calculations table
+# varga_rules : n -> (step, start kind, start values, anti for even signs)
+# sign index: ar=0 ... pi=11 | odd rasi = sign % 2 == 0
+VARGA_RULES = {
+    # hora : odd sun/moon, even moon/sun
+    # 1: rasi
+    2: (1, "table", ((4, 3), (3, 4)), False),  # 2
+    # rel = sign + offset (odd, even)
+    3: (4, "rel", (0, 0), False),  # 3
+    4: (3, "rel", (0, 0), False),  # 4
+    # table = lookup per part (d5)
+    5: (1, "table", ((0, 10, 8, 2, 6), (1, 5, 11, 9, 7)), False),  # 5
+    # oe = absolute (odd, even)
+    6: (1, "oe", (0, 6), False),  # 6
+    7: (1, "rel", (0, 6), False),  # 7
+    # mfd = (movable, fixed, dual)
+    8: (1, "mfd", (0, 8, 4), False),  # 8
+    # elem = (fire, earth, air, water)
+    9: (1, "elem", (0, 9, 6, 3), False),  # 9
+    10: (1, "rel", (0, 8), False),  # 10
+    # neg = -sign (d11)
+    11: (1, "neg", None, False),  # 11
+    12: (1, "rel", (0, 0), False),  # 12
+    16: (1, "mfd", (0, 4, 8), False),  # 13
+    20: (1, "mfd", (0, 8, 4), False),  # 14
+    24: (1, "oe", (4, 3), True),  # 15 rao : even signs anti-zodiacal
+    27: (1, "elem", (0, 3, 6, 9), False),  # 16
+    40: (1, "oe", (0, 6), False),  # 17
+    45: (1, "mfd", (0, 4, 8), False),  # 18
+    60: (1, "rel", (0, 0), False),  # 19
+}
+# d30 : (upper limit, sign) per band | odd, even
+TRIMSAMSA_BANDS = (  # 20
+    ((5, 0), (10, 10), (18, 8), (25, 2), (30, 6)),
+    ((5, 1), (12, 5), (20, 11), (25, 9), (30, 7)),
+)
+# search tokens ?
 TOKENS = (
     "in",
     "max",

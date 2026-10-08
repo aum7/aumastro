@@ -1,10 +1,9 @@
-# ui/sidepane/sidepaggnesettings.py
+# ui/sidepane/sidepaggnesettings.py CLEANED20261008
 # ruff: noqa: E402
 import logging
 
 LOG = logging.getLogger(__name__)
 source = "sidepanesettings"
-routingnone = {"source": source, "route": [""]}
 from ui.collapsepanel import CollapsePanel
 import ui.sidepane.sidepanehelpers as help
 import gi
@@ -15,7 +14,7 @@ from gi.repository import Gtk  # type:ignore
 
 class SidepaneSettings(CollapsePanel):
     def __init__(self, mainwindow=None):
-        super().__init__(title="settings", expanded=False)
+        super().__init__(title="settings", expanded=True)  # todo expand false
         # sidepane IS mainwindow
         if mainwindow is not None:
             self.mainwindow = mainwindow
@@ -44,9 +43,6 @@ class SidepaneSettings(CollapsePanel):
         for kind in self.app.dispatcher.SELECTION_TYPES:
             if f"{kind}_{event_id}" in data:
                 self.sync_checkboxes(kind, data[f"{kind}_{event_id}"])
-        # key = f"objects_{event_id}"
-        # if key in data:
-        #     self.sync_objects_checkboxes(data[key])
         if "chart" in data:
             self.sync_chart_checkboxes(data["chart"])
         if "sweph" in data:
@@ -85,7 +81,7 @@ class SidepaneSettings(CollapsePanel):
                 check.handler_unblock_by_func(help.selected_toggled)
 
     def sync_chart_checkboxes(self, changed: dict):
-        # sync hotkeys & checkboxes
+        # sync hotkeys & checkboxes : chart settings
         for setting, value in changed.items():
             check = self.chk_settings.get(setting)
             if check is not None and isinstance(value, bool):
@@ -171,16 +167,6 @@ class SidepaneSettings(CollapsePanel):
         self.chk_selected = {kind: {} for kind in self.app.dispatcher.SELECTION_TYPES}
         sel_objs = self.app.dispatcher.get_selected("objects", event_id)
         objs = self.app.dispatcher.OBJECTS
-        # selected objects event
-        # sel_objs = self.app.dispatcher.get_selected_objects(
-        #     self.app.dispatcher.selected_objects_event
-        # )
-        # (
-        #     self.app.dispatcher.selected_objects_e1
-        #     if self.app.dispatcher.selected_objects_event == "e1"
-        #     else self.app.dispatcher.selected_objects_e2
-        # )
-        # self.chk_objects = {}
         for name, data in objs.items():
             row = Gtk.ListBoxRow()
             short_name = data[0]
@@ -188,12 +174,6 @@ class SidepaneSettings(CollapsePanel):
             tooltip = data[3]
             row.set_tooltip_text(tooltip)
             check = Gtk.CheckButton(label=name)
-            # LOG.debug(
-            #     f"\nselobjs={type(sel_objs)}"
-            #     f"\n\t{sel_objs}"
-            #     f"\n\tname={name}"
-            #     f"\n\tdata={data}",
-            # )
             check.set_active(short_name in sel_objs)
             check.connect(
                 "toggled",
@@ -212,7 +192,6 @@ class SidepaneSettings(CollapsePanel):
         box_objects.append(lbx_objects)
         # sub-sub-panel: lots
         lots = self.app.dispatcher.LOTS
-        # LOG.debug(f"\nsellots={type(sel_lots)}\n\t{sel_lots}")
         subsub_lots = CollapsePanel(title="lots / parts", indent=21, expanded=False)
         lbx_lots = Gtk.ListBox()
         lbx_lots.set_selection_mode(Gtk.SelectionMode.NONE)
@@ -268,7 +247,6 @@ class SidepaneSettings(CollapsePanel):
     def build_subpnl_housesys(self) -> CollapsePanel:
         subpnl_hsys = CollapsePanel(title="house system", indent=14, expanded=False)
         house_systems = self.app.dispatcher.HOUSE_SYSTEMS
-        # LOG.debug(f"housesystems={house_systems}")
         housesys_list = Gtk.StringList.new([
             f"({display}) {name}" for _, name, display in house_systems
         ])
@@ -283,10 +261,9 @@ class SidepaneSettings(CollapsePanel):
 
     def build_subpnl_chartsettings(self) -> CollapsePanel:
         subpnl_chartsett = CollapsePanel(
-            title="chart settings", indent=14, expanded=False
+            title="chart settings", indent=14, expanded=True
         )
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5)
-        # todo
         chart_settings = self.app.dispatcher.CHART_SETTINGS
         # calculations
         lbl_calc = Gtk.Label(label="calculations")
@@ -405,11 +382,22 @@ class SidepaneSettings(CollapsePanel):
         )
         row_terms.set_child(chk_terms_ring)
         lbx_draw.append(row_terms)
+        # varga vs harmonic
+        row_varga = Gtk.ListBoxRow()
+        chk_varga = Gtk.CheckButton(label="true varga")
+        self.chk_settings["true varga"] = chk_varga
+        row_varga.set_tooltip_text(chart_settings["true varga"][1])
+        chk_varga.set_active(self.app.dispatcher.true_varga)
+        chk_varga.connect(
+            "toggled", help.setting_toggled, "true varga", self.app.dispatcher
+        )
+        row_varga.set_child(chk_varga)
+        lbx_draw.append(row_varga)
         # harmonics row
         row_harm = Gtk.ListBoxRow()
         row_harm.set_focusable(False)
         box_harm = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=7)
-        box_harm.append(Gtk.Label(label="harmonic (varga)"))
+        box_harm.append(Gtk.Label(label="harmonic / varga"))
         ent_harm = Gtk.Entry()
         self.ent_harm = ent_harm
         ent_harm.set_width_chars(2)
@@ -460,9 +448,8 @@ class SidepaneSettings(CollapsePanel):
                 not row.get_child().get_active()
             ),
         )
-        # single calculated flag todo ???
+        # single calculated flag
         swe_flags = self.app.dispatcher.SWE_FLAGS
-        # LOG.debug(f"builssubpnlflags : sweflags={swe_flags}")
         # flags from usersettings
         active_flags = self.app.dispatcher.active_flags
         for flag, data in swe_flags.items():
@@ -474,7 +461,6 @@ class SidepaneSettings(CollapsePanel):
             self.chk_flags[flag] = check
             row.set_child(check)
             lbx_flags.append(row)
-
         subpnl_flags.add_widget(lbx_flags)
 
         return subpnl_flags
@@ -493,7 +479,6 @@ class SidepaneSettings(CollapsePanel):
             "select period for solar year\n"
             + "\n".join(f"<tt>{val[0]:<4}{val[1]:<11} days</tt>" for val in solar_years)
         )
-        # + "\n".join(f"{val[0]}\t{val[1]} days" for val in solar_years)
         ddn_year.connect(
             "notify::selected", help.solar_year_changed, self.app.dispatcher
         )
@@ -509,7 +494,6 @@ class SidepaneSettings(CollapsePanel):
                 f"<tt>{val[0]:<4}{val[1]:<11} days</tt>" for val in lunar_months
             )
         )
-        # + "\n".join(f"{val[0]}\t{val[1]} days" for val in lunar_months)
         ddn_month.connect(
             "notify::selected", help.lunar_month_changed, self.app.dispatcher
         )
@@ -533,8 +517,7 @@ class SidepaneSettings(CollapsePanel):
         subsub_custom_ayan = CollapsePanel(
             title="custom ayanamsa", indent=21, expanded=False
         )
-        # todo attachinf whole subpanel ???
-        self.subsub_custom_ayan = subsub_custom_ayan
+        # custom ayanamsa todo never called ???
         box_custom = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
         custom_ayan = self.app.dispatcher.CUSTOM_AYANAMSA
         ent_jd = Gtk.Entry()
@@ -577,14 +560,11 @@ class SidepaneSettings(CollapsePanel):
         grid = Gtk.Grid(column_spacing=12, row_spacing=4)
         subpnl_files.set_title_tooltip("no validation here - dont do stupid things")
         files = self.app.dispatcher.FILES
-        # LOG.debug(f"buildsubpnlfiles : files={files}")
         for row, (key, value) in enumerate(files.items()):
-            lbl_files = Gtk.Label(label=key, halign=Gtk.Align.START)
             ent_files = Gtk.Entry()
             ent_files.set_text(value[0])
             ent_files.set_tooltip_text(f"{value[0]}\n{value[1]}")
             ent_files.connect("activate", help.files_changed, key, self.app.dispatcher)
-            grid.attach(lbl_files, 0, row, 1, 1)
             grid.attach(ent_files, 1, row, 1, 1)
             if key in help.FILE_TYPES:
                 btn_pick = Gtk.Button.new_from_icon_name("folder-open-symbolic")

@@ -4,11 +4,9 @@ import logging
 
 LOG = logging.getLogger(__name__)
 source = "positions"
-routing = {"source": source, "route": ["terminal"]}
 import swisseph as swe
 from helpers import (
     _object_name_to_code as objcode,
-    get_harmonic_lon as harmlon,
     _relative_speed,
     _relative_magnitude,
     ok,
@@ -17,12 +15,21 @@ from helpers import (
 from sweph.constants import MAGNITUDE_RANGE
 from sweph.calculations.naksatras import get_naksatra
 from sweph.calculations.stations import get_retro_phases as retrphas
+from sweph.calculations.varga import get_harmonic_lon as harmlon
+
+
+def harmonic_fields(lon, division, true_varga, mans_28, first_nak):
+    harmonic = harmlon(lon, division, true_varga) if division else None
+    nak = get_naksatra(harmonic, mans_28, first_nak) if harmonic is not None else None
+
+    return harmonic, nak
 
 
 def calculate_positions(
     jd_ut,
     objs,
     division,
+    true_varga,
     mans_28,
     first_nak,
     mean_node,
@@ -36,20 +43,14 @@ def calculate_positions(
         code, name = objcode(obj, mean_node)
         if code is None:
             msg = f"unknown object name : {obj}"
-            LOG.debug(
-                msg,
-                extra=routing,
-            )
+            LOG.debug(msg)
             return err(msg)
         try:
             result = swe.calc_ut(jd_ut, code, flag)
             pos = result[0]  # pos[0] = lon
             naksatra = get_naksatra(pos[0], mans_28, first_nak)
-            harmonic = harmlon(pos[0], division) if division else None
-            harmonic_nak = (
-                get_naksatra(harmonic, mans_28, first_nak)
-                if harmonic is not None
-                else None
+            harmonic, harmonic_nak = harmonic_fields(
+                pos[0], division, true_varga, mans_28, first_nak
             )
             result_equat = swe.calc_ut(jd_ut, code, flag | swe.FLG_EQUATORIAL)
             ra, decl = result_equat[0][0], result_equat[0][1]
@@ -80,10 +81,7 @@ def calculate_positions(
                 "magnitude relative": _relative_magnitude(code, mag),
             }
         except swe.Error as e:
-            LOG.error(
-                f"positions calculations error : {e}",
-                extra=routing,
-            )
+            LOG.error(f"positions calculations error : {e}")
             return err(e)
 
     return ok(positions)

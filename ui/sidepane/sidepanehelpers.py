@@ -4,7 +4,6 @@ import logging
 
 LOG = logging.getLogger(__name__)
 source = "sidepanehelpers"
-routing = {"source": source, "route": ["terminal"]}
 import re
 from pathlib import Path
 import gi
@@ -17,7 +16,7 @@ FILE_TYPES = {  # file & paths key : (kind, file extensions)
     "events db": ("folder", ()),
     "astro font": ("file", ("ttf", "otf")),
     "mono font": ("file", ("ttf", "otf")),
-    "data": ("file", ("csv",)),
+    "datafile": ("file", ("csv",)),
 }
 
 
@@ -31,9 +30,7 @@ def objects_select_all_none(button, dispatcher, select_all: bool):
 
 
 def objects_toggle_event(button, dispatcher):
-    # toggle objects for event 1 vs 2 by clicking on custom icon button
-    # todo this is not settings changed event at all : toggles planets to be drawn
-    # for event 1 & 2 separately
+    # toggle objects for event 1 vs 2 : button or hotkey
     event_id = "e2" if dispatcher.selected_objects_event == "e1" else "e1"
     dispatcher.set_selected_objects_event(event_id)
     button.get_child().set_from_file(
@@ -84,7 +81,7 @@ def harmonic_ring(entry, dispatcher):
         entry.add_css_class("entry-warning")
         return
     entry.remove_css_class("entry-warning")
-    dispatcher.update_harmonic_ring(True, int(text))
+    dispatcher.update_natal_harmonic_ring(True, int(text))
 
 
 def fixed_stars(entry, dispatcher):

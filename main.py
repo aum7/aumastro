@@ -5,6 +5,7 @@
 # os.environ["GTK_DEBUG"] = "keybindings geometry size-request actions constraints"
 # Gtk.Window.set_interactive_debugging(True)
 # app todo :
+#   add diary module as sidepane subpanel
 #   switch swisseph to pysweph (pyswisseph maintained fork) ???
 #   redesign notification mess / doubling
 #   export to executable on linux & mswindows (10 & 11)
@@ -19,7 +20,7 @@
 #   jyotisa graha/bhava bala abandoned as also other qualitative techniques
 # 2026-10-07 07-55
 #   v1.2 - added astrochart zoom ; plethora of upgrades ie database popover
-#   vimsottari from strongest of mo su asc - 4 fixed anchors as dropdown
+#   vimsottari from mo su asc mc - 4 fixed anchors as dropdown
 import logging
 
 LOG = logging.getLogger(__name__)

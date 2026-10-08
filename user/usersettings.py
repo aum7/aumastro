@@ -33,7 +33,6 @@ OBJECTS = {  # one-but-last = color ; last = size scale = drawing order
     7: ("ur", "uranus", "ur", "uranus", (0.4, 0.4, 0.4, 1), 0.94),
     8: ("ne", "neptune", "ne", "neptune", (0, 0.2539, 0.4931, 1), 0.97),
     9: ("pl", "pluto", "pl", "pluto", (0.2, 0.2, 0.2, 1), 1.0),
-    # 9: ("pl", "pluto", "pl", "pluto", (0.198, 0.198, 0.198, 1), 1.0),
     11: ("ra", "true node", "ra", "rahu", (0.4, 0.3, 0.3, 1), 1.1),
     # 10: rahu mean handled in positions.py by usersettings.CHART_SETTINGS.usermeannode
     # heliocentric view
@@ -102,7 +101,7 @@ PRENATAL = {
     "syzygy": {
         "enable": True,
         "tooltip": (
-            "syzygy - last full or new moon before event"
+            "syzygy : last full or new moon before event"
             "\nnote : syzygy might overlap with eclipses (below)"
         ),
     },
@@ -138,7 +137,7 @@ hk : shift+s""",
     # event ; else calculate geocentric positions (default, used traditionally
     # in astrology), viewed from center of the earth
     "topocentric": (
-        True,
+        False,
         "calculate topocentric (vs geocentric) positions",
         "FLG_TOPOCTR",
     ),
@@ -225,6 +224,7 @@ LUNAR_MONTHS = [  # lunar month lengths
 # also arrange order as you please > move line up / down & save file
 # dropdown : top is default
 AYANAMSAS = [
+    (29, "True Pushya (PVRN Rao)", "tps (29)"),  # SIDM_TRUE_PUSHYA
     (255, "custom (below)", "usr"),  # sidm_user
     (1, "lahiri", "lhr (01)"),  # SIDM_LAHIRI
     (45, "krishnamurti-sent.", "kms (45)"),  # sidm_krishnamurti_vp291
@@ -256,7 +256,6 @@ AYANAMSAS = [
     # (26, "SS Citra", "ssc (26)"),  # SIDM_SS_CITRA
     # (27, "True Citra", "tct (27)"),  # SIDM_TRUE_CITRA
     # (28, "True Revati", "trv (28)"),  # SIDM_TRUE_REVATI
-    # (29, "True Pushya (PVRN Rao)", "tps (29)"),  # SIDM_TRUE_PUSHYA
     # (30, "Galactic Center (Gil Brand)", "gcb (30)"),  # SIDM_GALCENT_RGBRAND
     # (31, "Galactic Equator (IAU1958)", "gei (31)"),  # SIDM_GALEQU_IAU1958
     # (32, "Galactic Equator", "geq (32)"),  # SIDM_GALEQU_TRUE
@@ -346,8 +345,16 @@ sweph/constants.py""",
     ),
     # --- egyptian terms ring
     "terms ring": (
+        False,
+        "egyptian terms (bounds) ring\ngoes with d1 ring"
+        "\nterms can be changed in sweph/constants.py",
+    ),
+    # --- use true (jyotisa) varga vs simple harmonic
+    "true varga": (
         True,
-        "egyptian terms (bounds) ring\nterms can be changed in\nsweph/constants.py",
+        "use true (traditional jyotisa) varga vs simple harmonic calculations"
+        "\naffects harmonic aspects table & positions in main table & "
+        "transit + natal harmonic rings",
     ),
     # --- natal harmonic ring
     "natal harmonic ring": (
@@ -357,7 +364,7 @@ sweph/constants.py""",
     # --- harmonic / simple varga ring
     "harmonic": (
         9,
-        "harmonic (aka varga) division\n2-60 : simple natal & transit harmonic *similar* to varga\nhk : ctrl+9 - toggle natal harmonic ring\nhk : ctrl+2 - toggle transit harmonic ring",
+        "harmonic (aka varga) division\n2-60 : natal & transit simple harmonic or true varga\nhk : ctrl+9 : toggle natal harmonic ring\nhk : ctrl+2 : toggle transit harmonic ring\nctrl+0 : toggle naksatras ring : shows narasimha rao progressed planets",
     ),
     # --- event 2 astro chart circles : draw progressions (p1 & p3) | returns | transit
     # calculated in sweph / calculations / ...
@@ -402,10 +409,10 @@ sweph/constants.py""",
             "\nchange in sweph/calculations/...",
         ),
     },
-    # --- use varga positions for aspects todo change to use harmonic aspect : also
+    # --- use harmonic positions for aspects
     "harmonic aspects": (
         True,
-        "use *simple* varga / harmonic positions for aspects matrix calculation"
+        "use simple harmonic or true varga positions for aspects matrix calculation"
         "\nsort of 'harmonic aspectarian', in tables window"
         "\nhk : ctrl+h (toggle h1 <> hX)",
     ),
@@ -468,8 +475,7 @@ example : {name}\n{date}\n{wday} {time_short}\n{city} @ {country}\n{lat}\n{lon}"
 example : {hsys} | {zod}\n{aynm}""",
     ),
 }
-FILES = {
-    # USER IS EXPECTED NOT TO CHANGE BELOW DEFAULTS : only 'data' is implemented
+FILES = {  # USER IS EXPECTED NOT TO CHANGE BELOW DEFAULTS
     # --- path to ephemerides folder, with min semo_18.se1 & sepl_18.se1 files, or
     # a complete ephe folder https://github.com/aloistr/swisseph/tree/master/ephe
     # todo separate path for linux & mswindows : do we need to ?
@@ -493,7 +499,7 @@ FILES = {
         "path to event / birth charts database folder : inside go saved charts",
     ),
     # --- path to data folder & file ; data to be plotted on graph
-    "data": (
+    "datafile": (
         # "user/data/gold/gold_h_utc.csv",
         # "user/data/gold/gold_d.csv",
         "user/data/ejpt/ejpt_bar.csv",
@@ -510,6 +516,7 @@ FILES = {
         "\n\t1: event {name} | 2: event {date} | 3: {time}"
         "\nseparate fields with '_' underscore ; for short time format "
         "(no seconds) use {time_short}"
-        "\nexample : {name}_{date}_{time_short}",
+        "\nexample : {name}_{date}_{time_short}"
+        "\nwill be used when saving event data into database",
     ),
 }

@@ -186,6 +186,10 @@ class MainWindow(
         # toggle vimsottari table level
         self.hotkeys.register_hotkey("<Shift>s", self.on_toggle_sidepane)
         self.hotkeys.register_hotkey("<Shift>v", lambda: self.tables.toggle_vimso())
+        # toggle true varga vs simple harmonic positions
+        self.hotkeys.register_hotkey(
+            "<Shift>t", lambda: self.app.dispatcher.toggle_true_varga()
+        )
         # toggle label snapping & angle ruler | plato solids aspects
         self.hotkeys.register_hotkey(
             "<Shift>r", lambda: self.astro_chart.inspector.toggle()
@@ -226,15 +230,15 @@ class MainWindow(
         )
         # astro chart drawing
         self.hotkeys.register_hotkey(
-            "<Control>g",
-            lambda: self.app.dispatcher.update_chart_setting(
-                "enable glyphs", not self.app.dispatcher.enable_glyphs
-            ),
-        )
-        self.hotkeys.register_hotkey(
             "<Control>f",
             lambda: self.app.dispatcher.update_chart_setting(
                 "fixed asc", not self.app.dispatcher.fixed_asc
+            ),
+        )
+        self.hotkeys.register_hotkey(
+            "<Control>g",
+            lambda: self.app.dispatcher.update_chart_setting(
+                "enable glyphs", not self.app.dispatcher.enable_glyphs
             ),
         )
         # toggle rasi / varga / harmonic aspects table

@@ -1,4 +1,4 @@
-# ui/mainpanes/datagraph.py
+# ui/mainpanes/datagraph.py CLEANED20261009
 # ruff: noqa: E402
 import logging
 
@@ -99,15 +99,16 @@ class DataGraph(Gtk.Box):
         # reload data when data filepath changed
         if not data or "data" not in data.get("files", {}):
             return
+
         if self.data_load():
             self.plot_last_n(800)
 
     def on_canvas_key(self, controller, keyval, keycode, state):
         # release focus
         win = self.app.get_active_window()
-        # win = self.app.mainwindow.get_active_window()
         if win:
             win.grab_focus()
+
         return False
 
     def on_clear_search_plots(self, *args):
@@ -126,8 +127,7 @@ class DataGraph(Gtk.Box):
 
     def data_load(self):
         """load & plot data"""
-        filepath = self.app.dispatcher.FILES["data"][0]
-        # LOG.debug(f"dataload : filepath : {filepath}")
+        filepath = self.app.dispatcher.FILES["datafile"][0]
         # load csv
         try:
             df = pd.read_csv(
@@ -138,7 +138,7 @@ class DataGraph(Gtk.Box):
         except Exception as e:
             self.app.notifier.error(
                 f"failed to load data file : {filepath}\n{e}",
-                source="datagraph",
+                source=source,
                 route=["terminal", "user"],
                 timeout=6,
             )
@@ -256,7 +256,6 @@ class DataGraph(Gtk.Box):
         self.search_cleared = False
         # plot search data from user/search/*.csv
         df_search = self.load_last_search()
-        # print(f"datagraph : plot : dfsearch : {type(df_search)}")
         if df_search is None or df_search.empty:
             return
         for dt, row in df_search.iterrows():
@@ -472,7 +471,6 @@ class DataGraph(Gtk.Box):
         )
         # minimal margins
         self.ax.set_position((0, 0, 1, 1))
-        # self.ax.margins(5)
         self.figure.subplots_adjust(
             left=0,
             right=1,
@@ -488,7 +486,7 @@ class DataGraph(Gtk.Box):
         ymin = lows - (highs - lows) * 0.03
         ymax = highs + (highs - lows) * 0.03
         self.ax.set_ylim(ymin, ymax)
-        # draw horizontal price levels every 500 units (white, alpha=0.5)
+        # draw horizontal price levels
         try:
             step = level_line(ymax - ymin)
             levels = np.arange(np.floor(ymin / step) * step, ymax + step, step)

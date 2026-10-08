@@ -13,8 +13,9 @@ import re
 import time
 import swisseph as swe
 import user.usersettings as usersett
-from helpers import _decimal_to_ymd, get_harmonic_lon as harmlon
-from sweph.calculations.positions import calculate_positions
+from helpers import _decimal_to_ymd
+from sweph.calculations.positions import calculate_positions, harmonic_fields
+from sweph.calculations.varga import get_harmonic_lon as harmlon
 from sweph.calculations.houses import calculate_houses
 from sweph.calculations.horas import calculate_horas
 from sweph.calculations.lots import calculate_lots
@@ -114,6 +115,7 @@ class Dispatcher:
         self.first_naksatra = usersett.CHART_SETTINGS["first naksatra"][0]
         self.naksatra_ring = get_naksatra_ring(self.mansions_28, self.first_naksatra)
         self.terms_ring = usersett.CHART_SETTINGS["terms ring"][0]
+        self.true_varga = usersett.CHART_SETTINGS["true varga"][0]
         self.natal_harmonic_ring = usersett.CHART_SETTINGS["natal harmonic ring"][0]
         self.selected_harmonic = usersett.CHART_SETTINGS["harmonic"][0]
         self.chart_info = usersett.CHART_SETTINGS["chart info"][0]
@@ -299,6 +301,41 @@ class Dispatcher:
         self.app.signaler.emit("setting changed", {"terms": {"ring": val_ring}})
         self.app.signaler.emit("redraw chart")
 
+    def _harmon(self, lon):
+        return harmlon(lon, self.selected_harmonic, self.true_varga)
+
+    def toggle_true_varga(self):
+        # hotkey
+        self.update_chart_setting("true varga", not self.true_varga)
+
+    def refresh_harmonics(self):
+        # n or true varga changed : harmonic depends on lon only > no recalculate
+        for event_id in ("e1", "e2"):
+            calculated = self.events_data[event_id].get("calculated")
+            positions = calculated.get("positions") if calculated else None
+            if not positions:
+                continue
+            for pos in positions.values():
+                pos["harmonic"], pos["harmonic naksatra"] = harmonic_fields(
+                    pos["lon"],
+                    self.selected_harmonic,
+                    self.true_varga,
+                    self.mansions_28,
+                    self.first_naksatra,
+                )
+            if self.harmonic_aspects:
+                self.run_calc(
+                    event_id,
+                    "aspects",
+                    calculate_aspects,
+                    positions,
+                    self.orb,
+                    self.harmonic_aspects,
+                )
+            self.refresh_package("e1", is_chart=not self.e2_active)
+            if self.e2_active:
+                self.refresh_package("e2")
+
     def update_natal_harmonic_ring(self, val_ring, val_n=None):
         n_changed = val_n is not None and val_n != self.selected_harmonic
         self.natal_harmonic_ring = val_ring
@@ -309,7 +346,7 @@ class Dispatcher:
             {"natal harmonic": {"ring": val_ring, "harmonic": self.selected_harmonic}},
         )
         if n_changed:  # harmonic divisor changed
-            self.recalculate("e1")
+            self.refresh_harmonics()
         else:  # show / hide
             self.app.signaler.emit("redraw chart")
 
@@ -371,6 +408,7 @@ class Dispatcher:
 
     def update_chart_setting(self, setting: str, value):
         # update chart setting for an event & trigger recalculation
+        # LOG.debug(f"updatechartsetting : setting={setting} value={value}")
         attr_name = setting.replace(" ", "_")
         if hasattr(self, attr_name):
             setattr(self, attr_name, value)
@@ -382,7 +420,9 @@ class Dispatcher:
                 "chart_info_extra",
                 "snap_tolerance",
             ]
-            if attr_name not in visual_settings:
+            if attr_name == "true varga":
+                self.refresh_harmonics()
+            elif attr_name not in visual_settings:
                 self.recalculate_events()
             else:
                 self.app.signaler.emit("redraw chart")
@@ -471,6 +511,7 @@ class Dispatcher:
         result = calculate_positions(
             jd_ut,
             missing,
+            None,
             None,
             self.mansions_28,
             self.first_naksatra,
@@ -572,6 +613,7 @@ class Dispatcher:
             jd_ut,
             objs,
             self.selected_harmonic,
+            self.true_varga,
             self.mansions_28,
             self.first_naksatra,
             self.mean_node,
@@ -972,13 +1014,15 @@ class Dispatcher:
             hx_pos.append(
                 AstroObject({
                     "name": "asc",
-                    "lon": harmlon(ascmc[0], self.selected_harmonic),
+                    "lon": self._harmon(ascmc[0]),
+                    # "lon": harmlon(ascmc[0], self.selected_harmonic),
                 })
             )
             hx_pos.append(
                 AstroObject({
                     "name": "mc",
-                    "lon": harmlon(ascmc[1], self.selected_harmonic),
+                    "lon": self._harmon(ascmc[1]),
+                    # "lon": harmlon(ascmc[1], self.selected_harmonic),
                 })
             )
         chart_package["natal harmonic"] = hx_pos
@@ -1000,8 +1044,10 @@ class Dispatcher:
                 ascmc = e2_houses.get("ascmc")
                 thx_ascmc = (
                     [
-                        harmlon(ascmc[0], self.selected_harmonic),
-                        harmlon(ascmc[1], self.selected_harmonic),
+                        self._harmon(ascmc[0]),
+                        self._harmon(ascmc[1]),
+                        # harmlon(ascmc[0], self.selected_harmonic),
+                        # harmlon(ascmc[1], self.selected_harmonic),
                     ]
                     if ascmc and len(ascmc) >= 2
                     else []

@@ -1,10 +1,9 @@
-# helpers.py
+# helpers.py CLEANED20261008
 # ruff: noqa: E402
 import logging
 
 LOG = logging.getLogger(__name__)
 source = "helpers"
-routing = {"source": source, "route": ["terminal"]}
 from math import modf
 from swisseph import contrib as swh
 from ui.fonts.glyphs import SIGNS
@@ -12,20 +11,10 @@ from user.usersettings import OBJECTS
 from sweph.constants import AVG_SPEEDS, MAGNITUDE_RANGE
 
 
-def get_harmonic_lon(lon, division):
-    if division <= 1:
-        return None
-    sign = int(lon // 30)
-    seg = int((lon % 30) // (30 / division))
-    harmonic_sign = (sign * division + seg) % 12
-    harmonic = (harmonic_sign * 30) + ((lon % (30 / division)) * division)
-
-    return harmonic
-
-
 def _house_for_lon(lon: float, cusps: list):
     if not cusps:
         return ""
+
     cusp_list = [(c, i + 1) for i, c in enumerate(cusps)]
     n = len(cusp_list)
     for i in range(n):
@@ -34,9 +23,11 @@ def _house_for_lon(lon: float, cusps: list):
         if c0 <= c1:
             if c0 <= lon < c1:
                 return f"{h0:2d}"
+
         else:
             if lon >= c0 or lon < c1:
                 return f"{h0:2d}"
+
     return ""
 
 
@@ -44,6 +35,7 @@ def _relative_speed(code, speed: float):
     mean = AVG_SPEEDS.get(code, 1.0)
     if not mean:
         return 0
+
     return int(round((speed / mean) * 100))
 
 
@@ -128,6 +120,7 @@ def _object_name_to_code(name: str, mean_node: bool):
     if name == "mean node":
         # return mean node int & same short name as true node
         return 10, "ra"
+
     return None, ""
 
 
@@ -137,11 +130,11 @@ def _decimal_to_sign_dms(lon: float, use_glyph: bool = True):
     sign_keys = list(SIGNS.keys())
     sign_key = sign_keys[sign]
     glyph = SIGNS[sign_key][0] if use_glyph else sign_key
+
     return f"{deg:2d}°{min:02d}'{sec:02d}\" {glyph}"
 
 
-# logger : simplify message reply to dispatcher
-# DISPATCHER ONLY
+# logger : unify message reply to dispatcher : DISPATCHER ONLY
 def ok(data=None):
     # dispatcher = caller expects below format
     return {"status": "ok", "data": data, "error": None}
