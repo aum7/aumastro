@@ -82,11 +82,12 @@ country = "India"
 city = "Machilīpatnam"
 location = "16 10 00 n 081 08 00 e 0 m"
 datetime = "1970-04-04 17:50:40"
-note = ""
 [[rao.rao_ex_1.subevents]]
 name = "1987-05-28"
-datetime = "1987-05-28 12:00:00"
-note = ""
+datetime = "1987-05-28 17:50:40"
+[[rao.rao_ex_1.subevents]]
+name = "2002-08-12"
+datetime = "2002-08-12 17:50:40"
 # --- events 
 [events.ljubljana]
 name = "ljubljana"

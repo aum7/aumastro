@@ -470,6 +470,15 @@ class Rings:
             cr.show_text(label)
             cr.restore()
             cr.new_path()
+        # draw vimsottari proggresed planets
+        self.draw_ordered(
+            cr,
+            ring,
+            self.package.get("naksatras", []),
+            radius_fn=lambda obj: mid_r,
+            obj_size=self.scaled_size("natal harmonic", "harmonic obj"),
+            marker_size=self.scaled_size("natal harmonic", "marker"),
+        )
 
     def draw_terms_ring(self, cr):
         # draw circle

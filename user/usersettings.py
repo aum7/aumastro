@@ -15,7 +15,7 @@
 # run app > grab left pane border & drag right ->, similar for top/bottom
 APP_ORIENTATION = "vertical"
 # fixed anchors for vimsottari dasa calculations
-VIMSO_ANCHORS = (
+VIMSO_SEEDS = (
     ("mo", "moon"),
     ("su", "sun"),
     ("asc", "ascendant"),
@@ -298,7 +298,7 @@ CHART_SETTINGS = {
     # --- toggle glyphs visibility (shortcut)
     "enable glyphs": (
         True,
-        "toggle glyphs visibility",
+        "toggle glyphs visibility\nhk : ctrl+g",
     ),
     # --- show true midheaven & imum coeli when equal or whole house system is
     # selected : true mc / ic can differ by upto 2 signs in those cases
@@ -311,11 +311,12 @@ CHART_SETTINGS = {
     "fixed asc": (
         True,
         "rotate chart so ascendant is fixed at left (east)"
-        "\nelse aries 0° is fixed at left (default)",
+        "\nelse aries 0° is fixed at left (default)"
+        "\nhk : ctrl+f",
     ),
     # --- naksatras ring
     "naksatras ring": (
-        False,
+        True,
         """show 27 naksatras ring
 1  asv\t10 mag\t19 mul
 2  bha\t11 pph\t20 pas
@@ -325,7 +326,8 @@ CHART_SETTINGS = {
 6  ard\t15 sva\t24 sat
 7  pun\t16 vis\t25 pbh
 8  pus\t17 anu\t26 ubh
-9  asl\t18 jye\t27 rev""",
+9  asl\t18 jye\t27 rev
+hk : ctrl+0""",
     ),
     # --- use 28 lunar mansions
     # rulership as per chinese astrology / vivian e robson - fixed stars ...
@@ -353,13 +355,18 @@ sweph/constants.py""",
     "true varga": (
         True,
         "use true (traditional jyotisa) varga vs simple harmonic calculations"
-        "\nhk : shift+t\naffects harmonic aspects table & positions in main table & "
-        "transit + natal harmonic rings",
+        "\naffects harmonic aspects table & positions in main table & "
+        "transit + natal harmonic rings\nhk : shift+t",
+    ),
+    # --- divisional dasa calculation
+    "division dasa": (
+        False,
+        "vimsottari table & naksatras ring positions using seed from divisional (harmonic / varga) charts",
     ),
     # --- natal harmonic ring
     "natal harmonic ring": (
         True,
-        "draw natal harmonic ring for below harmonic division",
+        "draw natal harmonic ring for below harmonic division\nhk : ctrl+9",
     ),
     # --- harmonic / simple varga ring
     "harmonic": (

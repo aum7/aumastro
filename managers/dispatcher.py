@@ -7,7 +7,6 @@ import logging
 
 LOG = logging.getLogger(__name__)
 source = "dispatcher"
-# routing = {"source": source, "route": ["terminal"]}
 routinguser = {"source": source, "route": ["terminal", "user"]}
 import re
 import time
@@ -17,7 +16,6 @@ from helpers import _decimal_to_ymd
 from sweph.calculations.positions import calculate_positions, harmonic_fields
 from sweph.calculations.varga import (
     get_harmonic_lon as harmlon,
-    # has_varga,
     forced_varga,
 )
 from sweph.calculations.houses import calculate_houses
@@ -34,7 +32,7 @@ from sweph.calculations.stations import calculate_stations
 from sweph.calculations.returnlunar import calculate_lunar_return
 from sweph.calculations.returnsolar import calculate_solar_return
 from sweph.calculations.aspects import calculate_aspects
-from sweph.calculations.vimsottari import calculate_vimsottari
+from sweph.calculations.vimsottari import calculate_vimsottari, calculate_vimso_progress
 from sweph.calculations.naksatras import get_naksatra_ring
 from user.fixedstars import FIXEDSTARS
 from ui.mainpanes.chart.astroobject import AstroObject
@@ -42,6 +40,9 @@ from ui.mainpanes.chart.astroobject import AstroObject
 
 class Dispatcher:
     # central app state manager & data distributor as single source of truth
+    # dasa (lun sol return) time unit : tropical year
+    TROPICAL_YEAR = next(yr[1] for yr in usersett.SOLAR_YEARS if yr[0] == "trp")
+
     def __init__(self, app=None):
         if app is not None:
             self.app = app
@@ -73,9 +74,9 @@ class Dispatcher:
         # ddn list
         self.LUNAR_MONTHS = usersett.LUNAR_MONTHS
         self.selected_month_period = self.LUNAR_MONTHS[0]
-        # vimsottari anchor ddn list : mo su asc
-        self.VIMSO_ANCHORS = usersett.VIMSO_ANCHORS
-        self.selected_vimso_anchor = self.VIMSO_ANCHORS[0][0]  # mo
+        # vimsottari seed ddn list : mo su asc
+        self.VIMSO_SEEDS = usersett.VIMSO_SEEDS
+        self.selected_vimso_seed = self.VIMSO_SEEDS[0][0]  # mo
         self.AYANAMSAS = usersett.AYANAMSAS
         self.selected_ayanamsa = self.AYANAMSAS[0][0]
         self.selected_ayanamsa_label = self.AYANAMSAS[0][2]
@@ -122,6 +123,7 @@ class Dispatcher:
         self.true_varga_pref = usersett.CHART_SETTINGS["true varga"][0]
         self.true_varga_tooltip = usersett.CHART_SETTINGS["true varga"][1]
         self.natal_harmonic_ring = usersett.CHART_SETTINGS["natal harmonic ring"][0]
+        self.division_dasa = usersett.CHART_SETTINGS["division dasa"][0]
         self.selected_harmonic = usersett.CHART_SETTINGS["harmonic"][0]
         # switching between truevarga & simple harmonic hanler
         self.true_varga = self.effective_varga()
@@ -308,6 +310,28 @@ class Dispatcher:
         self.app.signaler.emit("setting changed", {"terms": {"ring": val_ring}})
         self.app.signaler.emit("redraw chart")
 
+    def vimso_objects(self, calculated):
+        # natal (or harmonic) bodies + angles shifted by progressed seed delta
+        prog = calculated.get("vimso progress")
+        if not (self.e2_active and prog):
+            return []
+
+        delta = prog["delta"]
+        div = self.division_dasa
+        key = "harmonic" if div else "lon"
+        raw = calculated.get("positions") or {}
+        items = [
+            {**p, "lon": (p[key] + delta) % 360}
+            for p in raw.values()
+            if p.get(key) is not None
+        ]
+        ascmc = calculated.get("houses", {}).get("ascmc") or []
+        for name, lon in zip(("asc", "mc"), ascmc):
+            lon = self._harmon(lon) if div else lon
+            items.append({"name": name, "lon": (lon + delta) % 360})
+
+        return [AstroObject(i) for i in items]
+
     def _harmon(self, lon):
         return harmlon(lon, self.selected_harmonic, self.true_varga)
 
@@ -331,16 +355,6 @@ class Dispatcher:
             if not positions:
                 continue
             for pos in positions.values():
-                # first = next(iter(positions.values()))
-                # print(
-                #     "3 refresh",
-                #     event_id,
-                #     self.selected_harmonic,
-                #     self.true_varga,
-                #     round(first["lon"], 3),
-                #     round(first["harmonic"], 3),
-                #     flush=True,
-                # )
                 pos["harmonic"], pos["harmonic naksatra"] = harmonic_fields(
                     pos["lon"],
                     self.selected_harmonic,
@@ -357,6 +371,8 @@ class Dispatcher:
                     self.orb,
                     self.harmonic_aspects,
                 )
+            if self.division_dasa:
+                self.calc_vimsottari()
         self.refresh_package("e1", is_chart=not self.e2_active)
         if self.e2_active:
             self.refresh_package("e2")
@@ -392,9 +408,9 @@ class Dispatcher:
         self.app.signaler.emit("setting changed", {"lunar month": period})
         self.recalculate_events()
 
-    def update_vimso_anchor(self, anchor: str):
-        self.selected_vimso_anchor = anchor
-        self.app.signaler.emit("setting changed", {"vimso anchor": anchor})
+    def update_vimso_seed(self, seed: str):
+        self.selected_vimso_seed = seed
+        self.app.signaler.emit("setting changed", {"vimso seed": seed})
         self.on_vimsottari_toggle()
 
     def update_filename_format(self, file_format: str):
@@ -460,6 +476,8 @@ class Dispatcher:
             if attr_name == "true_varga":
                 if value != old:
                     self.refresh_harmonics()
+            elif attr_name == "division_dasa":
+                self.on_vimsottari_toggle()  # recalculate dasas + progress
             elif attr_name not in visual_settings:
                 self.recalculate_events()
             else:
@@ -483,7 +501,7 @@ class Dispatcher:
             self.refresh_chart_package()
 
     def calc_vimsottari(self):
-        # vimsottari needs anchor su mo asc : level 3+ needs e2_jd :
+        # vimsottari needs seed su mo asc : level 3+ needs e2_jd :
         # calculate_vimsottari manages levels
         e1_calculated = self.events_data["e1"].get("calculated")
         e1_sweph = self.events_data["e1"].get("sweph")
@@ -497,20 +515,24 @@ class Dispatcher:
             return
 
         e1_jd = e1_sweph["jd ut"]
-        anchor = self.selected_vimso_anchor
-        ascmc_idx = {"asc": 0, "mc": 1}.get(anchor)
+        seed = self.selected_vimso_seed
+        ascmc_idx = {"asc": 0, "mc": 1}.get(seed)
         if ascmc_idx is not None:
             ascmc = e1_calculated.get("houses", {}).get("ascmc")
             if not ascmc:
                 LOG.debug("missing ascmc : exiting")
                 return
 
-            anchor_lon = ascmc[ascmc_idx]
+            seed_lon = ascmc[ascmc_idx]
         else:
-            body = swe.SUN if anchor == "su" else swe.MOON
+            body = swe.SUN if seed == "su" else swe.MOON
             result, _ = swe.calc_ut(e1_jd, body, self.swe_flag & ~swe.FLG_TOPOCTR)
-            anchor_lon = result[0]
-        # LOG.debug(f"vimsoanchor={anchor} lon={anchor_lon!r}")
+            seed_lon = result[0]
+        # LOG.debug(f"vimsoseed={seed} lon={seed_lon!r}")
+        div = self.division_dasa
+        if div:
+            seed_lon = self._harmon(seed_lon)
+        label = f"{seed} v{self.selected_harmonic}" if div else seed
         e2_jd = None
         if self.e2_active:
             e2_sweph = self.events_data["e2"].get("sweph")
@@ -521,13 +543,25 @@ class Dispatcher:
             "vimsottari",
             calculate_vimsottari,
             e1_jd,
-            anchor_lon,
+            seed_lon,
             e2_jd,
             self.app.current_lvl,
-            self.selected_year_period[1],
+            # self.selected_year_period[1],
+            self.TROPICAL_YEAR,
             self.events_data["e1"].get("chart", {}).get("timezone"),
-            anchor,
+            label,
         )
+        e1_calculated.pop("vimso progress", None)
+        if e2_jd:
+            self.run_calc(
+                "e1",
+                "vimso progress",
+                calculate_vimso_progress,
+                e1_jd,
+                seed_lon,
+                e2_jd,
+                self.TROPICAL_YEAR,
+            )
 
     def on_vimsottari_toggle(self):
         # vimsottari level toggle : recalculate
@@ -720,37 +754,6 @@ class Dispatcher:
                 alt,
                 self.swe_flag,
             )
-            # horas_data = calculated.get("horas")
-            # if positions_data and houses_data and horas_data:
-            #     # h0 = horas_data["horas list"][0]
-            #     self.run_calc(
-            #         event_id,
-            #         "grahabala",
-            #         calculate_grahabala,
-            #         positions_data,
-            #         houses_data,
-            #         horas_data,
-            #         jd_ut,
-            #         lon,
-            #         lat,
-            #         alt,
-            #         self.swe_flag,
-            #     )
-            #     grahabala_data = calculated.get("grahabala")
-            #     if grahabala_data:
-            #         self.run_calc(
-            #             event_id,
-            #             "bhavabala",
-            #             calculate_bhavabala,
-            #             houses_data["cusps"],
-            #             positions_data,
-            #             grahabala_data,
-            #             jd_ut,
-            #             lon,
-            #             lat,
-            #             alt,
-            #             self.swe_flag,
-            #         )
             self.calc_vimsottari()
         if event_id == "e2":
             # progressions returns for event 2
@@ -1065,6 +1068,7 @@ class Dispatcher:
                 })
             )
         chart_package["natal harmonic"] = hx_pos
+        chart_package["naksatras"] = self.vimso_objects(e1_calculated)
         # table needs all data for gtk.widgets incl aspects
         if self.e2_active:
             e2_calculated = self.events_data["e2"].get("calculated", {})

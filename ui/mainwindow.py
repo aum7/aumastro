@@ -385,7 +385,7 @@ class MainWindow(
             "\n\tyour computer time > utc > event location time"
             "\nctrl+f : toggle fixed ascendant vs ari 0° at zodiac left"
             "\nctrl+g : toggle glyphs visibility"
-            "\nctrl+h : toggle harmonic / varga hX vs rasi h1 aspects table"  # harmonic
+            "\nctrl+h : toggle harmonic / varga vs rasi (hX<>h1) aspects table"
             "\nctrl+1-0 : toggle"
             "\n\ttransit|tr harm|p2|p3|pm|lun|sol return|d1|natal harm|naks ring"
             "\n\tsidepane > settings > chart settings > terms ring goes with d1"

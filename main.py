@@ -20,7 +20,7 @@
 #   jyotisa graha/bhava bala abandoned as also other qualitative techniques
 # 2026-10-07 07-55
 #   v1.2 - added astrochart zoom ; plethora of upgrades ie database popover
-#   vimsottari from mo su asc mc - 4 fixed anchors as dropdown
+#   vimsottari from mo su asc mc - 4 fixed seeds as dropdown
 import logging
 
 LOG = logging.getLogger(__name__)

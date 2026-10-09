@@ -18,11 +18,56 @@ PARAMAYUS = 120  # sum of all maha dasa years
 INDENT = {1: "", 2: " 2 ", 3: "  3  ", 4: "   4   ", 5: "    5    "}
 
 
-def find_naksatra(anchor_lon):
-    # naksatra index & fraction from anchor longitude
+def vim_seed_delta(e1_jd, seed_lon, e2_jd, year_length):
+    # vimsottari progressed seed (ie mo) : dasa = 1 naksatra - every
+    # subperiod = equal 1/9 arc slice of parent (time stays proportional)
+    idx, frac = find_naksatra(seed_lon)
+    span = 360 / 27
+    lord = NAKSATRAS27[idx][0]
+    seq = get_lord_seq(lord)
+    start = e1_jd - frac * DASA_YEARS[lord] * year_length  # virtual start
+    if e2_jd < start:
+        return None
+
+    shift = 0
+    while True:
+        lord = seq[shift % 9]
+        end = start + DASA_YEARS[lord] * year_length
+        if e2_jd < end:
+            break
+        start, shift = end, shift + 1
+    offset, scale = 0.0, 1.0
+    for _ in range(4):  # level 2-5
+        dur, sub_start = end - start, start
+        j, sub, sub_end = 0, lord, end  # checker-silencer
+        for j, sub in enumerate(get_lord_seq(lord)):
+            sub_end = sub_start + dur * DASA_YEARS[sub] / PARAMAYUS
+            if e2_jd < sub_end or j == 8:
+                break
+            sub_start = sub_end
+        scale /= 9
+        offset += j * scale
+        lord, start, end = sub, sub_start, sub_end
+    offset += (e2_jd - start) / (end - start) * scale
+    pseed = (((idx - 1 + shift) % 27) + offset) * span % 360
+
+    return pseed, (pseed - seed_lon) % 360
+
+
+def calculate_vimso_progress(e1_jd, seed_lon, e2_jd, year_length):
+    result = vim_seed_delta(e1_jd, seed_lon, e2_jd, year_length)
+    if result is None:
+        return err("event 2 before dasa start")
+    LOG.debug(f"calcvimsoprog : pseed={result[0]} delta={result[1]}")
+
+    return ok({"pseed": result[0], "delta": result[1]})
+
+
+def find_naksatra(seed_lon):
+    # naksatra index & fraction from seed longitude
     part = 360 / 27
-    idx = int(anchor_lon // part) + 1
-    frac = (anchor_lon % part) / part
+    idx = int(seed_lon // part) + 1
+    frac = (seed_lon % part) / part
 
     return idx, frac
 
@@ -64,17 +109,17 @@ def walk(lord, start, years, level, e1_jd, e2_jd, curr_lvl, year_length):
 
 
 def vimsottari_table(
-    e1_jd, anchor_lon, e2_jd, curr_lvl, year_length, tz_name=None, anchor="mo"
+    e1_jd, seed_lon, e2_jd, curr_lvl, year_length, tz_name=None, seed="mo"
 ):
     # prepare table as plain text
-    idx, frac = find_naksatra(anchor_lon)
+    idx, frac = find_naksatra(seed_lon)
     nak_lord, nak_name = NAKSATRAS27[idx]
     separ = f"{'-' * 42}\n"
     header = (
         f"\n hk : shift+v : toggle vimso dasas level\n"
         " level 1 & 2 : complete dasas\n"
         " levels 3-5 : >event 2 datetime< maha dasa only\n"
-        f" anchor : {anchor}\n"
+        f" seed : {seed}\n"
         f"{separ}"
         f" nak {idx:02} {nak_name} {nak_lord} | traversed "
         f"{frac * 100:.2f} % | lvl {curr_lvl}\n{separ}"
@@ -95,7 +140,7 @@ def vimsottari_table(
 
 
 def calculate_vimsottari(
-    e1_jd, anchor_lon, e2_jd, curr_level, year_length, tz_name=None, anchor="mo"
+    e1_jd, seed_lon, e2_jd, curr_level, year_length, tz_name=None, seed="mo"
 ):
     # event 1 is mandatory and only source
     # on missing event 2 julian day notify user & cap table levels
@@ -110,7 +155,7 @@ def calculate_vimsottari(
     try:
         return ok(
             vimsottari_table(
-                e1_jd, anchor_lon, e2_jd, curr_level, year_length, tz_name, anchor
+                e1_jd, seed_lon, e2_jd, curr_level, year_length, tz_name, seed
             )
         )
 

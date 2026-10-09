@@ -303,18 +303,70 @@ class SidepaneSettings(CollapsePanel):
             row.set_tooltip_text(tooltip)
             row.set_child(check)
             lbx_chart_setts_1.append(row)
+        # varga vs harmonic
+        row_varga = Gtk.ListBoxRow()
+        self.row_varga = row_varga
+        chk_varga = Gtk.CheckButton(label="true varga")
+        self.chk_settings["true varga"] = chk_varga
+        # chk_varga tooltip is handled in sync_varga_row
+        chk_varga.set_active(self.app.dispatcher.true_varga)
+        chk_varga.connect(
+            "toggled", help.setting_toggled, "true varga", self.app.dispatcher
+        )
+        row_varga.set_child(chk_varga)
+        self.sync_varga_row(self.app.dispatcher.selected_harmonic)
+        lbx_chart_setts_1.append(row_varga)
+        # divisional vimsottari progressions / dasas from seed
+        row_div_vimso = Gtk.ListBoxRow()
+        chk_div_vimso = Gtk.CheckButton(label="divisional dasa")
+        self.chk_settings["division dasa"] = chk_div_vimso
+        chk_div_vimso.set_tooltip_text(
+            self.app.dispatcher.CHART_SETTINGS["division dasa"][1]
+        )
+        chk_div_vimso.set_active(self.app.dispatcher.division_dasa)
+        chk_div_vimso.connect(
+            "toggled", help.setting_toggled, "division dasa", self.app.dispatcher
+        )
+        row_div_vimso.set_child(chk_div_vimso)
+        lbx_chart_setts_1.append(row_div_vimso)
+        # harmonics row
+        row_harm = Gtk.ListBoxRow()
+        row_harm.set_focusable(False)
+        box_harm = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=7)
+        box_harm.append(Gtk.Label(label="harmonic / varga"))
+        ent_harm = Gtk.Entry()
+        self.ent_harm = ent_harm
+        ent_harm.set_width_chars(2)
+        ent_harm.set_max_width_chars(2)
+        ent_harm.set_text(str(self.app.dispatcher.selected_harmonic))
+        ent_harm.set_tooltip_text(
+            self.app.dispatcher.CHART_SETTINGS["harmonic"][1]
+            + f"\n\nvarga : {' '.join(map(str, sorted(VARGA_DIVISIONS)))}"
+            + f"\nvarga = harmonic : {' '.join(map(str, sorted(VARGA_IS_HARMONIC)))}"
+        )
+        ent_harm.connect("activate", help.harmonic_ring, self.app.dispatcher)
+        # hover-scroll : change integers
+        scroll = Gtk.EventControllerScroll.new(
+            Gtk.EventControllerScrollFlags.VERTICAL
+            | Gtk.EventControllerScrollFlags.DISCRETE
+        )
+        scroll.connect("scroll", help.harmonic_scroll, ent_harm, self.app.dispatcher)
+        ent_harm.add_controller(scroll)
+        box_harm.append(ent_harm)
+        row_harm.set_child(box_harm)
+        lbx_chart_setts_1.append(row_harm)
         box.append(lbx_chart_setts_1)
-        # vimsottari anchor
-        box.append(Gtk.Label(label="vimsottari anchor", halign=Gtk.Align.START))
+        # vimsottari seed
+        box.append(Gtk.Label(label="vimsottari seed", halign=Gtk.Align.START))
         ddn_vimso = Gtk.DropDown.new(
-            Gtk.StringList.new([name for _, name in self.app.dispatcher.VIMSO_ANCHORS])
+            Gtk.StringList.new([name for _, name in self.app.dispatcher.VIMSO_SEEDS])
         )
         ddn_vimso.set_tooltip_text(
-            "start vimsottari from naksatra of selected anchor"
-            "\nmoon is traditional & default"
+            "start vimsottari from naksatra of selected seed"
+            "\nmoon is traditional & default (mc is experimental)"
         )
         ddn_vimso.connect(
-            "notify::selected", help.vimso_anchor_changed, self.app.dispatcher
+            "notify::selected", help.vimso_seed_changed, self.app.dispatcher
         )
         box.append(ddn_vimso)
         # drawing
@@ -388,45 +440,6 @@ class SidepaneSettings(CollapsePanel):
         )
         row_terms.set_child(chk_terms_ring)
         lbx_draw.append(row_terms)
-        # varga vs harmonic
-        row_varga = Gtk.ListBoxRow()
-        self.row_varga = row_varga
-        chk_varga = Gtk.CheckButton(label="true varga")
-        self.chk_settings["true varga"] = chk_varga
-        # chk_varga tooltip is handled in sync_varga_row
-        chk_varga.set_active(self.app.dispatcher.true_varga)
-        chk_varga.connect(
-            "toggled", help.setting_toggled, "true varga", self.app.dispatcher
-        )
-        row_varga.set_child(chk_varga)
-        self.sync_varga_row(self.app.dispatcher.selected_harmonic)
-        lbx_draw.append(row_varga)
-        # harmonics row
-        row_harm = Gtk.ListBoxRow()
-        row_harm.set_focusable(False)
-        box_harm = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=7)
-        box_harm.append(Gtk.Label(label="harmonic / varga"))
-        ent_harm = Gtk.Entry()
-        self.ent_harm = ent_harm
-        ent_harm.set_width_chars(2)
-        ent_harm.set_max_width_chars(2)
-        ent_harm.set_text(str(self.app.dispatcher.selected_harmonic))
-        ent_harm.set_tooltip_text(
-            self.app.dispatcher.CHART_SETTINGS["harmonic"][1]
-            + f"\n\nvarga : {' '.join(map(str, sorted(VARGA_DIVISIONS)))}"
-            + f"\nvarga = harmonic : {' '.join(map(str, sorted(VARGA_IS_HARMONIC)))}"
-        )
-        ent_harm.connect("activate", help.harmonic_ring, self.app.dispatcher)
-        # hover-scroll : change integers
-        scroll = Gtk.EventControllerScroll.new(
-            Gtk.EventControllerScrollFlags.VERTICAL
-            | Gtk.EventControllerScrollFlags.DISCRETE
-        )
-        scroll.connect("scroll", help.harmonic_scroll, ent_harm, self.app.dispatcher)
-        ent_harm.add_controller(scroll)
-        box_harm.append(ent_harm)
-        row_harm.set_child(box_harm)
-        lbx_draw.append(row_harm)
         box.append(lbx_draw)
         # chart info sub-sub-panel
         subsub_info = CollapsePanel(title="chart info", indent=21, expanded=False)
