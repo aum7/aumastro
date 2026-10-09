@@ -1,4 +1,6 @@
 # sweph/calculations/varga.py
+# divisions 6 7 8 9 11 16 20 27 produce identical positions for true varga
+# & simple harmonic
 # ruff: noqa: E402, E701
 import logging
 
@@ -39,12 +41,13 @@ def get_harmonic_lon(lon, division, true_varga=False):
         if varga is not None:
             return varga
 
-    sign = int(lon // 30)
-    seg = int((lon % 30) // (30 / division))
-    harmonic_sign = (sign * division + seg) % 12
-    harmonic = (harmonic_sign * 30) + ((lon % (30 / division)) * division)
+    return (lon * division) % 360
+    # sign = int(lon // 30)
+    # seg = int((lon % 30) // (30 / division))
+    # harmonic_sign = (sign * division + seg) % 12
+    # harmonic = (harmonic_sign * 30) + ((lon % (30 / division)) * division)
 
-    return harmonic
+    # return harmonic
 
 
 def varga_start(kind, vals, sign, odd):

@@ -17,7 +17,7 @@ from helpers import _decimal_to_ymd
 from sweph.calculations.positions import calculate_positions, harmonic_fields
 from sweph.calculations.varga import (
     get_harmonic_lon as harmlon,
-    has_varga,
+    # has_varga,
     forced_varga,
 )
 from sweph.calculations.houses import calculate_houses
@@ -119,13 +119,12 @@ class Dispatcher:
         self.first_naksatra = usersett.CHART_SETTINGS["first naksatra"][0]
         self.naksatra_ring = get_naksatra_ring(self.mansions_28, self.first_naksatra)
         self.terms_ring = usersett.CHART_SETTINGS["terms ring"][0]
-        self.true_varga = usersett.CHART_SETTINGS["true varga"][0]
+        self.true_varga_pref = usersett.CHART_SETTINGS["true varga"][0]
         self.true_varga_tooltip = usersett.CHART_SETTINGS["true varga"][1]
         self.natal_harmonic_ring = usersett.CHART_SETTINGS["natal harmonic ring"][0]
         self.selected_harmonic = usersett.CHART_SETTINGS["harmonic"][0]
-        forced = forced_varga(self.selected_harmonic)
-        if forced is not None:
-            self.true_varga = forced
+        # switching between truevarga & simple harmonic hanler
+        self.true_varga = self.effective_varga()
         self.chart_info = usersett.CHART_SETTINGS["chart info"][0]
         self.chart_info_extra = usersett.CHART_SETTINGS["chart info extra"][0]
         # chart outer rings
@@ -317,6 +316,13 @@ class Dispatcher:
         # print("0 hotkey", self.true_varga, flush=True)
         self.update_chart_setting("true varga", not self.true_varga)
 
+    def effective_varga(self):
+        # forced rows : n decides (varga identical to harmonic or no varga)
+        # all other rows : what user chose
+        forced = forced_varga(self.selected_harmonic)
+
+        return self.true_varga_pref if forced is None else forced
+
     def refresh_harmonics(self):
         # n or true varga changed : harmonic depends on lon only > no recalculate
         for event_id in ("e1", "e2"):
@@ -360,12 +366,12 @@ class Dispatcher:
         self.natal_harmonic_ring = val_ring
         if val_n is not None:
             self.selected_harmonic = val_n
-        forced = forced_varga(self.selected_harmonic)
-        if forced is not None and self.true_varga != forced:
-            self.true_varga = forced
+        effective = self.effective_varga()
+        if effective != self.true_varga:
+            self.true_varga = effective
             self.app.signaler.emit(
                 "setting changed",
-                {"chart": {"true varga": forced}},
+                {"chart": {"true varga": effective}},
             )
         self.app.signaler.emit(
             "setting changed",
@@ -437,21 +443,11 @@ class Dispatcher:
         # LOG.debug(f"updatechartsetting : setting={setting} value={value}")
         attr_name = setting.replace(" ", "_")
         if hasattr(self, attr_name):
-            # print(
-            #     "2 ucs",
-            #     setting,
-            #     value,
-            #     self.selected_harmonic,
-            #     has_varga(self.selected_harmonic),
-            #     flush=True,
-            # )
-            changed = getattr(self, attr_name) != value
-            if (
-                attr_name == "true_varga"
-                and value
-                and not has_varga(self.selected_harmonic)
-            ):
-                value = False  # no varga : use simple harmonic
+            old = getattr(self, attr_name)
+            if attr_name == "true_varga":
+                if forced_varga(self.selected_harmonic) is None:
+                    self.true_varga_pref = value  # user decides on non-forced rows
+                value = self.effective_varga()
             setattr(self, attr_name, value)
             self.app.signaler.emit("setting changed", {"chart": {setting: value}})
             # filter recalculate() call to math-impacting settings
@@ -462,10 +458,7 @@ class Dispatcher:
                 "snap_tolerance",
             ]
             if attr_name == "true_varga":
-                forced = forced_varga(self.selected_harmonic)
-                if forced is not None:
-                    value = forced  # n decides but not user
-                if changed or value != getattr(self, attr_name):
+                if value != old:
                     self.refresh_harmonics()
             elif attr_name not in visual_settings:
                 self.recalculate_events()

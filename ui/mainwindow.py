@@ -359,6 +359,10 @@ class MainWindow(
             "\n\t\tnote : can also be simple synastry chart - enable 'transit' ring"
             "\n\tenter custom name 2 (ie 'marriage' - saved as e2 subevent)"
             "\ndelete date-time 2 : erase event 2 data (not interested in transit etc)"
+            "\n\nrings in order from outer to inner : TR-transit | TH-transit harmonic |"
+            "\nDFY-p2 progression | DFM-p3 progression | MFY-pm minor progression |"
+            "\nLNR-lunar return | SLR-solar return | D1-d1 primary direction |"
+            "\nNK-naksatras | TM-terms | NH-natal harmonic | N-natal"
             "\n\nhk : ctrl+k : show hotkeys"
         )
 

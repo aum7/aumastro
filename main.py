@@ -27,6 +27,9 @@ LOG = logging.getLogger(__name__)
 source = "main"
 routinguser = {"source": source, "route": ["terminal", "user"]}
 import os
+
+# suppress libEGL warnings on app init
+os.environ.setdefault("EGL_LOG_LEVEL", "fatal")
 import swisseph as swe  # type:ignore
 from ui.mainwindow import MainWindow
 from managers.notifier import Notifier

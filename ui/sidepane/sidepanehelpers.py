@@ -1,4 +1,4 @@
-# ui/sidepane/settingshelpers.py
+# ui/sidepane/settingshelpers.py CLEANED 20261009
 # ruff: noqa: E402
 import logging
 
@@ -18,6 +18,7 @@ FILE_TYPES = {  # file & paths key : (kind, file extensions)
     "mono font": ("file", ("ttf", "otf")),
     "datafile": ("file", ("csv",)),
 }
+ENTRY_SCROLL_DELAY = 250  # miliseconds
 
 
 def objects_select_all_none(button, dispatcher, select_all: bool):
@@ -51,8 +52,14 @@ def house_system_changed(dropdown, _pspec, dispatcher):
     dispatcher.update_house_system(hsys)
 
 
+def row_toggle_check(listbox, row):
+    # row click toggles its checkbox : other rows & grayed ones are ignored
+    check = getattr(row, "_target_checkbox", None) or row.get_child()
+    if isinstance(check, Gtk.CheckButton) and check.get_sensitive():
+        check.set_active(not check.get_active())
+
+
 def setting_toggled(button, setting, dispatcher):
-    # print("1 toggled", setting, button.get_active(), flush=True)
     dispatcher.update_chart_setting(setting, button.get_active())
 
 
@@ -74,6 +81,28 @@ def naksatras_ring(widget, key, panel, dispatcher):
 def terms_ring(widget, key, panel, dispatcher):
     val_ring = panel.chk_terms_ring.get_active()
     dispatcher.update_terms_ring(val_ring)
+
+
+def harmonic_scroll(controller, dx, dy, entry, dispatcher):
+    # scroll over entry : +-1 : show at once > apply lfter debounce delay
+    try:
+        n = int(entry.get_text())
+    except ValueError:
+        n = dispatcher.selected_harmonic
+    n = max(2, min(60, n + (1 if dy < 0 else -1)))
+    entry.set_text(str(n))
+    pending = getattr(entry, "_scroll_timer", 0)
+    if pending:
+        GLib.source_remove(pending)
+
+    def apply():
+        entry._scroll_timer = 0
+        harmonic_ring(entry, dispatcher)
+        return GLib.SOURCE_REMOVE
+
+    entry._scroll_timer = GLib.timeout_add(ENTRY_SCROLL_DELAY, apply)
+
+    return True  # handled : side pane does not scroll
 
 
 def harmonic_ring(entry, dispatcher):
@@ -158,7 +187,6 @@ def solar_year_changed(dropdown, _pspec, dispatcher):
 def lunar_month_changed(dropdown, _pspec, dispatcher):
     idx = dropdown.get_selected()
     period = dispatcher.LUNAR_MONTHS[idx]
-    # period = list(lunar_months)[idx]
     dispatcher.update_lunar_month(period)
 
 
@@ -167,7 +195,6 @@ def ayanamsa_changed(dropdown, _pspec, mainwindow):
     idx = dropdown.get_selected()
     ayanamsas = mainwindow.app.dispatcher.AYANAMSAS
     key = ayanamsas[idx][0]
-    # key = list(ayanamsas.keys())[idx]
     is_custom = key == 255
     mainwindow.clp_settings.subsub_custom_ayan.set_sensitive(is_custom)
     mainwindow.app.dispatcher.update_ayanamsa(key)

@@ -6,7 +6,12 @@ LOG = logging.getLogger(__name__)
 source = "sidepanesettings"
 from ui.collapsepanel import CollapsePanel
 import ui.sidepane.sidepanehelpers as help
-from sweph.calculations.varga import has_varga, forced_varga, VARGA_IS_HARMONIC
+from sweph.calculations.varga import (
+    has_varga,
+    forced_varga,
+    VARGA_DIVISIONS,
+    VARGA_IS_HARMONIC,
+)
 
 import gi
 
@@ -21,11 +26,7 @@ class SidepaneSettings(CollapsePanel):
         if mainwindow is not None:
             self.mainwindow = mainwindow
         self.app = getattr(mainwindow, "app")
-        # LOG.debug(
-        #     f"whoisme={mainwindow.__class__.__name__}"
-        #     f"\nhas-selfapp : {hasattr(mainwindow, 'app')}",
-        #     extra=routingnone,
-        # )
+        # LOG.debug(f"whoisme={mainwindow.__class__.__name__}")
         self.set_title_tooltip("sweph & application & chart settings")
         margin = 7
         if self.mainwindow:
@@ -110,15 +111,13 @@ class SidepaneSettings(CollapsePanel):
         self.row_nak_opt.set_sensitive(self.chk_naks_ring.get_active())
 
     def sync_varga_row(self, n):
-        chk = self.chk_settings["true varga"]
-        forced = forced_varga(n)
-        chk.set_sensitive(forced is None)
         tip = self.app.dispatcher.true_varga_tooltip
         if not has_varga(n):
-            tip += f"\n\nd{n} : no jyotisa varga exists for this division"
+            tip += f"\n\nv{n} : no jyotisa varga exists for this division"
         elif n in VARGA_IS_HARMONIC:
-            tip += f"\n\nd{n} is identical to simple harmonic"
-        chk.set_tooltip_text(tip)
+            tip += f"\n\nv{n} is identical to simple harmonic"
+        self.row_varga.set_sensitive(forced_varga(n) is None)
+        self.row_varga.set_tooltip_text(tip)
 
     def build_ui(self):
         box_settings = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5)
@@ -325,14 +324,7 @@ class SidepaneSettings(CollapsePanel):
         box.append(lbl_draw)
         lbx_draw = Gtk.ListBox()
         lbx_draw.set_selection_mode(Gtk.SelectionMode.NONE)
-        lbx_draw.connect(
-            "row-activated",
-            lambda box, row: row._target_checkbox.set_active(
-                not row._target_checkbox.get_active()
-            )
-            if hasattr(row, "_target_checkbox")
-            else row.get_child().set_active(not row.get_child().get_active()),
-        )
+        lbx_draw.connect("row-activated", help.row_toggle_check)
         for setting in ["enable glyphs", "fixed asc"]:
             row = Gtk.ListBoxRow()
             tooltip = chart_settings[setting][1]
@@ -398,15 +390,16 @@ class SidepaneSettings(CollapsePanel):
         lbx_draw.append(row_terms)
         # varga vs harmonic
         row_varga = Gtk.ListBoxRow()
+        self.row_varga = row_varga
         chk_varga = Gtk.CheckButton(label="true varga")
         self.chk_settings["true varga"] = chk_varga
-        row_varga.set_tooltip_text(chart_settings["true varga"][1])
-        self.sync_varga_row(self.app.dispatcher.selected_harmonic)
+        # chk_varga tooltip is handled in sync_varga_row
         chk_varga.set_active(self.app.dispatcher.true_varga)
         chk_varga.connect(
             "toggled", help.setting_toggled, "true varga", self.app.dispatcher
         )
         row_varga.set_child(chk_varga)
+        self.sync_varga_row(self.app.dispatcher.selected_harmonic)
         lbx_draw.append(row_varga)
         # harmonics row
         row_harm = Gtk.ListBoxRow()
@@ -418,8 +411,19 @@ class SidepaneSettings(CollapsePanel):
         ent_harm.set_width_chars(2)
         ent_harm.set_max_width_chars(2)
         ent_harm.set_text(str(self.app.dispatcher.selected_harmonic))
-        ent_harm.set_tooltip_text(self.app.dispatcher.CHART_SETTINGS["harmonic"][1])
+        ent_harm.set_tooltip_text(
+            self.app.dispatcher.CHART_SETTINGS["harmonic"][1]
+            + f"\n\nvarga : {' '.join(map(str, sorted(VARGA_DIVISIONS)))}"
+            + f"\nvarga = harmonic : {' '.join(map(str, sorted(VARGA_IS_HARMONIC)))}"
+        )
         ent_harm.connect("activate", help.harmonic_ring, self.app.dispatcher)
+        # hover-scroll : change integers
+        scroll = Gtk.EventControllerScroll.new(
+            Gtk.EventControllerScrollFlags.VERTICAL
+            | Gtk.EventControllerScrollFlags.DISCRETE
+        )
+        scroll.connect("scroll", help.harmonic_scroll, ent_harm, self.app.dispatcher)
+        ent_harm.add_controller(scroll)
         box_harm.append(ent_harm)
         row_harm.set_child(box_harm)
         lbx_draw.append(row_harm)

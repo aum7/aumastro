@@ -133,7 +133,8 @@ class EventData:
             self.country.set_selected(names.index(country))
         elif country:
             LOG.warning(
-                f"country not found : {country} : use exact name from countries.txt",
+                f"country not found : {country} : use exact name from "
+                "countries.txt or enable country in same file",
                 extra=routinguser,
             )
         if self.id == "e2":

@@ -748,7 +748,8 @@ class Rings:
         except Exception as e:
             info_text = f"{info.get('name', '')} : {e}"
         lines = info_text.split("\n")
-        target_size = outer_r * 1.5
+        # limit max font size for info text else overflows
+        target_size = outer_r * 1.4
         sample = max(lines, key=len) if lines else ""
         spacing = 1.2  # line height
         draw_font_size = min(
