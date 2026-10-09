@@ -15,7 +15,11 @@ import swisseph as swe
 import user.usersettings as usersett
 from helpers import _decimal_to_ymd
 from sweph.calculations.positions import calculate_positions, harmonic_fields
-from sweph.calculations.varga import get_harmonic_lon as harmlon
+from sweph.calculations.varga import (
+    get_harmonic_lon as harmlon,
+    has_varga,
+    forced_varga,
+)
 from sweph.calculations.houses import calculate_houses
 from sweph.calculations.horas import calculate_horas
 from sweph.calculations.lots import calculate_lots
@@ -116,8 +120,12 @@ class Dispatcher:
         self.naksatra_ring = get_naksatra_ring(self.mansions_28, self.first_naksatra)
         self.terms_ring = usersett.CHART_SETTINGS["terms ring"][0]
         self.true_varga = usersett.CHART_SETTINGS["true varga"][0]
+        self.true_varga_tooltip = usersett.CHART_SETTINGS["true varga"][1]
         self.natal_harmonic_ring = usersett.CHART_SETTINGS["natal harmonic ring"][0]
         self.selected_harmonic = usersett.CHART_SETTINGS["harmonic"][0]
+        forced = forced_varga(self.selected_harmonic)
+        if forced is not None:
+            self.true_varga = forced
         self.chart_info = usersett.CHART_SETTINGS["chart info"][0]
         self.chart_info_extra = usersett.CHART_SETTINGS["chart info extra"][0]
         # chart outer rings
@@ -306,6 +314,7 @@ class Dispatcher:
 
     def toggle_true_varga(self):
         # hotkey
+        # print("0 hotkey", self.true_varga, flush=True)
         self.update_chart_setting("true varga", not self.true_varga)
 
     def refresh_harmonics(self):
@@ -316,6 +325,16 @@ class Dispatcher:
             if not positions:
                 continue
             for pos in positions.values():
+                # first = next(iter(positions.values()))
+                # print(
+                #     "3 refresh",
+                #     event_id,
+                #     self.selected_harmonic,
+                #     self.true_varga,
+                #     round(first["lon"], 3),
+                #     round(first["harmonic"], 3),
+                #     flush=True,
+                # )
                 pos["harmonic"], pos["harmonic naksatra"] = harmonic_fields(
                     pos["lon"],
                     self.selected_harmonic,
@@ -332,15 +351,22 @@ class Dispatcher:
                     self.orb,
                     self.harmonic_aspects,
                 )
-            self.refresh_package("e1", is_chart=not self.e2_active)
-            if self.e2_active:
-                self.refresh_package("e2")
+        self.refresh_package("e1", is_chart=not self.e2_active)
+        if self.e2_active:
+            self.refresh_package("e2")
 
     def update_natal_harmonic_ring(self, val_ring, val_n=None):
         n_changed = val_n is not None and val_n != self.selected_harmonic
         self.natal_harmonic_ring = val_ring
         if val_n is not None:
             self.selected_harmonic = val_n
+        forced = forced_varga(self.selected_harmonic)
+        if forced is not None and self.true_varga != forced:
+            self.true_varga = forced
+            self.app.signaler.emit(
+                "setting changed",
+                {"chart": {"true varga": forced}},
+            )
         self.app.signaler.emit(
             "setting changed",
             {"natal harmonic": {"ring": val_ring, "harmonic": self.selected_harmonic}},
@@ -411,6 +437,21 @@ class Dispatcher:
         # LOG.debug(f"updatechartsetting : setting={setting} value={value}")
         attr_name = setting.replace(" ", "_")
         if hasattr(self, attr_name):
+            # print(
+            #     "2 ucs",
+            #     setting,
+            #     value,
+            #     self.selected_harmonic,
+            #     has_varga(self.selected_harmonic),
+            #     flush=True,
+            # )
+            changed = getattr(self, attr_name) != value
+            if (
+                attr_name == "true_varga"
+                and value
+                and not has_varga(self.selected_harmonic)
+            ):
+                value = False  # no varga : use simple harmonic
             setattr(self, attr_name, value)
             self.app.signaler.emit("setting changed", {"chart": {setting: value}})
             # filter recalculate() call to math-impacting settings
@@ -420,8 +461,12 @@ class Dispatcher:
                 "chart_info_extra",
                 "snap_tolerance",
             ]
-            if attr_name == "true varga":
-                self.refresh_harmonics()
+            if attr_name == "true_varga":
+                forced = forced_varga(self.selected_harmonic)
+                if forced is not None:
+                    value = forced  # n decides but not user
+                if changed or value != getattr(self, attr_name):
+                    self.refresh_harmonics()
             elif attr_name not in visual_settings:
                 self.recalculate_events()
             else:
@@ -958,6 +1003,7 @@ class Dispatcher:
 
     def refresh_package(self, event_id: str, is_chart: bool = True):
         # get & emit package with cached data - never recompute by itself
+        # print("4 package", event_id, is_chart, flush=True)
         calculated = self.events_data[event_id].get("calculated")
         chart = self.events_data[event_id].get("chart")
         if calculated is None or chart is None:

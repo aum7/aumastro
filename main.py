@@ -61,7 +61,7 @@ class AumastroApp(Gtk.Application):
         # handle app quit from mainwindow
         win.connect("close-request", win.close_request)
         LOG.info(
-            "[ctrl+m] manual | [esc] discard message",
+            "[ctrl+m] manual | [ctrl+k] hotkeys | [esc] discard message",
             extra=routinguser,
         )
         win.present()

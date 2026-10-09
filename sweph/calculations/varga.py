@@ -6,6 +6,29 @@ LOG = logging.getLogger(__name__)
 source = "varga"
 from sweph.constants import VARGA_RULES, TRIMSAMSA_BANDS
 
+VARGA_DIVISIONS = frozenset(VARGA_RULES) | {30}
+
+
+def has_varga(n):
+    return n in VARGA_DIVISIONS
+
+
+def forced_varga(n):
+    # false | true when n decides checkbox state : none when user decides
+    if not has_varga(n):
+        return False
+
+    if n in VARGA_IS_HARMONIC:
+        return True
+
+    return None
+
+
+def same_lon(a, b):
+    d = abs(a - b) % 360
+
+    return min(d, 360 - d) < 1e-6
+
 
 def get_harmonic_lon(lon, division, true_varga=False):
     if division <= 1:
@@ -73,3 +96,13 @@ def varga_lon(lon, n):
         return ((start - step * part) % 12) * 30 + (30 - deg)
 
     return ((start + step * part) % 12) * 30 + deg
+
+
+# varga & harmonic positions / calculations are equal
+VARGA_IS_HARMONIC = frozenset(
+    n
+    for n in VARGA_DIVISIONS
+    if all(
+        same_lon(varga_lon(x / 7, n), get_harmonic_lon(x / 7, n)) for x in range(2520)
+    )
+)

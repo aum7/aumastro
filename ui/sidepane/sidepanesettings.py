@@ -6,6 +6,8 @@ LOG = logging.getLogger(__name__)
 source = "sidepanesettings"
 from ui.collapsepanel import CollapsePanel
 import ui.sidepane.sidepanehelpers as help
+from sweph.calculations.varga import has_varga, forced_varga, VARGA_IS_HARMONIC
+
 import gi
 
 gi.require_version("Gtk", "4.0")
@@ -52,6 +54,7 @@ class SidepaneSettings(CollapsePanel):
         if "terms" in data:
             self.sync_terms_checkboxes(data["terms"])
         if "natal harmonic" in data:
+            self.sync_varga_row(data["natal harmonic"]["harmonic"])
             text = str(data["natal harmonic"]["harmonic"])
             if self.ent_harm.get_text() != text:
                 self.ent_harm.set_text(text)
@@ -105,6 +108,17 @@ class SidepaneSettings(CollapsePanel):
             if self.ent_1st_nak.get_text() != text:
                 self.ent_1st_nak.set_text(text)
         self.row_nak_opt.set_sensitive(self.chk_naks_ring.get_active())
+
+    def sync_varga_row(self, n):
+        chk = self.chk_settings["true varga"]
+        forced = forced_varga(n)
+        chk.set_sensitive(forced is None)
+        tip = self.app.dispatcher.true_varga_tooltip
+        if not has_varga(n):
+            tip += f"\n\nd{n} : no jyotisa varga exists for this division"
+        elif n in VARGA_IS_HARMONIC:
+            tip += f"\n\nd{n} is identical to simple harmonic"
+        chk.set_tooltip_text(tip)
 
     def build_ui(self):
         box_settings = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5)
@@ -387,6 +401,7 @@ class SidepaneSettings(CollapsePanel):
         chk_varga = Gtk.CheckButton(label="true varga")
         self.chk_settings["true varga"] = chk_varga
         row_varga.set_tooltip_text(chart_settings["true varga"][1])
+        self.sync_varga_row(self.app.dispatcher.selected_harmonic)
         chk_varga.set_active(self.app.dispatcher.true_varga)
         chk_varga.connect(
             "toggled", help.setting_toggled, "true varga", self.app.dispatcher

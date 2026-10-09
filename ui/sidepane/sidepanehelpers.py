@@ -52,6 +52,7 @@ def house_system_changed(dropdown, _pspec, dispatcher):
 
 
 def setting_toggled(button, setting, dispatcher):
+    # print("1 toggled", setting, button.get_active(), flush=True)
     dispatcher.update_chart_setting(setting, button.get_active())
 
 

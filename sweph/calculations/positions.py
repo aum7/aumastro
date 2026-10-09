@@ -38,7 +38,6 @@ def calculate_positions(
     # let dispatcher worry about delivering proper data
     # LOG.debug(f"calculatepositions : division={division} type={type(division)}")
     positions = {}
-    # print(f"jdut : {jd_ut}")
     for obj in objs:
         code, name = objcode(obj, mean_node)
         if code is None:

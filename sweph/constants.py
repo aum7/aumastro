@@ -11,7 +11,7 @@ DASA_YEARS = {
     "sa": 19,
     "me": 17,
 }
-# order of planetary hours
+# order of planetary hours : reversed speed
 HORAS_ORDER = ["sa", "ju", "ma", "su", "ve", "me", "mo"]
 # standard planetary order
 PLANETARY_ORDER = (

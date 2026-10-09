@@ -353,18 +353,18 @@ sweph/constants.py""",
     "true varga": (
         True,
         "use true (traditional jyotisa) varga vs simple harmonic calculations"
-        "\naffects harmonic aspects table & positions in main table & "
+        "\nhk : shift+t\naffects harmonic aspects table & positions in main table & "
         "transit + natal harmonic rings",
     ),
     # --- natal harmonic ring
     "natal harmonic ring": (
-        False,
+        True,
         "draw natal harmonic ring for below harmonic division",
     ),
     # --- harmonic / simple varga ring
     "harmonic": (
         9,
-        "harmonic (aka varga) division\n2-60 : natal & transit simple harmonic or true varga\nhk : ctrl+9 : toggle natal harmonic ring\nhk : ctrl+2 : toggle transit harmonic ring\nctrl+0 : toggle naksatras ring : shows narasimha rao progressed planets",
+        "harmonic & varga division\n2-60 : natal & transit simple harmonic or true varga\nhk : ctrl+9 : toggle natal harmonic ring\nhk : ctrl+2 : toggle transit harmonic ring\nhk : ctrl+0 : toggle naksatras ring : shows narasimha rao progressed planets",
     ),
     # --- event 2 astro chart circles : draw progressions (p1 & p3) | returns | transit
     # calculated in sweph / calculations / ...
@@ -374,8 +374,8 @@ sweph/constants.py""",
             "show transit ring for event 2\nhk : ctrl+1",
         ),
         "transit harmonic": (
-            False,
-            "show (simple) transit harmonic / varga ring for event 2"
+            True,
+            "show transit harmonic (simple or true varga) ring for event 2"
             "\nset varga in above harmonic ring\nhk : ctrl+2",
         ),
         "p2 progress": (

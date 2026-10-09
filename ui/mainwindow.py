@@ -204,10 +204,10 @@ class MainWindow(
         self.hotkeys.register_hotkey("<Shift>dollar", self.panes_all)  # shift+4
         self.hotkeys.register_hotkey("<Shift>percent", self.panes_movie)  # shift+5
         self.hotkeys.register_hotkey("<Shift>ampersand", self.on_data_seq)
-        # shift+h pairs with ctrl+h for manual & hotkeys popup
-        self.hotkeys.register_hotkey("<Shift>h", self.show_hotkeys)
         # below should work for any keyboard, modify if needed
         # [ctrl]
+        # ctrl+m pairs with ctrl+k for manual & hotkeys popup
+        self.hotkeys.register_hotkey("<Control>k", self.show_hotkeys)
         self.hotkeys.register_hotkey("<Control>m", self.show_manual)
         self.hotkeys.register_hotkey("<Control>Up", self.obc_arrow_up)
         self.hotkeys.register_hotkey("<Control>Down", self.obc_arrow_dn)
@@ -359,7 +359,7 @@ class MainWindow(
             "\n\t\tnote : can also be simple synastry chart - enable 'transit' ring"
             "\n\tenter custom name 2 (ie 'marriage' - saved as e2 subevent)"
             "\ndelete date-time 2 : erase event 2 data (not interested in transit etc)"
-            "\n\nhk : shift+h : show hotkeys"
+            "\n\nhk : ctrl+k : show hotkeys"
         )
 
     def show_hotkeys(self):
@@ -369,7 +369,7 @@ class MainWindow(
             "\nspace/enter : activate button / dropdown / entry when focused"
             "\nmouse scroll : zoom in/out | click-drag to pan | double-click to reset"
             "\n\tnote : clashes with snap & angle ruler - depends on mouse location"
-            "\n- ctrl"
+            "\n- ctrl -"
             "\nctrl+s : quick-save event | ctrl+o : open events db"
             "\nctrl+m : show manual / help (this message)"
             "\nctrl+e : toggle selected event"
@@ -385,7 +385,7 @@ class MainWindow(
             "\nctrl+1-0 : toggle"
             "\n\ttransit|tr harm|p2|p3|pm|lun|sol return|d1|natal harm|naks ring"
             "\n\tsidepane > settings > chart settings > terms ring goes with d1"
-            "\n- shift"
+            "\n- shift -"
             "\nshift+s : toggle side pane"
             "\nshift+1/2/3/4 : show single / double / triple / all panes"
             "\nshift+5 : toggle movie mode - astrochart over datagraph"
