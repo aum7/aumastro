@@ -6,7 +6,7 @@ import logging
 
 LOG = logging.getLogger(__name__)
 source = "diary"
-routeuser = {"source": source, "route": ["terminal"], "timeout": "6"}
+routeuser6s = {"source": source, "route": ["terminal", "user"], "timeout": "6"}
 import re
 import tomllib
 from difflib import SequenceMatcher
@@ -85,7 +85,7 @@ class DiaryPanel(CollapsePanel):
     """diary : search on top, mood, text, save"""
 
     def __init__(self, app):
-        super().__init__(title="diary", expanded=True)
+        super().__init__(title="diary", expanded=False)
         self.app = app
         self.entries: list[dict] = []
         self.mood_last = ""

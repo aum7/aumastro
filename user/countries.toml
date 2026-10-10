@@ -4,7 +4,7 @@
 # master value : [name shown, continent, (official name)]
 # alias : alternate names for db.toml etc (case & accent insensitive)
 # countries used in db.toml are enabled automatically
-added = []
+added = ["AFG", "DZA", "AND", "ALB", "ATA", "ASM", "AGO", "ATG", "ARG", "ABW", "AUS", "BMU", "BVT", "BRN"]
 [alias]
 slo = "SVN"
 cro = "HRV"

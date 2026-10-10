@@ -1,7 +1,6 @@
 # ui/sidepane/addcountry.py
 # ruff: noqa: E402
 import logging
-from functools import cmp_to_key
 
 LOG = logging.getLogger(__name__)
 source = "addcountry"
@@ -13,13 +12,32 @@ gi.require_version("Gtk", "4.0")
 from gi.repository import Gtk  # type: ignore
 
 
+def tier(term, row) -> int:
+    # 0 starts with 1 inside 2 letter in order
+    if term == row.code or any(t.startswith(term) for t in row.texts):
+        return 0
+
+    if any(term in t for t in row.texts):
+        return 1
+
+    if len(term) >= 3 and any(all(c in iter(t) for c in term) for t in row.texts):
+        return 2
+
+    return 9
+
+
+def in_order(term, text) -> bool:
+    it = iter(text)
+
+    return all(c in it for c in term)
+
+
 class AddCountryPanel(CollapsePanel):
     """countries not enabled yet : search / scroll > click = enable, save, select"""
 
     def __init__(self, mainwindow):
         super().__init__(title="add country", expanded=True)
         self.mainwindow = mainwindow
-        self.terms: list[str] = []
         self.add_title_css_class("label-country")
         self.set_margin_end(7)
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
@@ -27,7 +45,7 @@ class AddCountryPanel(CollapsePanel):
         self.ent_search = Gtk.SearchEntry()
         self.ent_search.set_width_chars(20)
         self.ent_search.set_max_width_chars(20)
-        self.ent_search.set_placeholder_text("search country or continent")
+        self.ent_search.set_placeholder_text("search country")
         self.ent_search.set_tooltip_text(
             "add country for location & automatic geo coordinates from city"
             "\ncountries used in user/eventsdb/db.toml are added automatically"
@@ -60,30 +78,34 @@ class AddCountryPanel(CollapsePanel):
         row = Gtk.ListBoxRow()
         row.set_child(label)
         row.set_tooltip_text(f"{full or name} | {continent}")
-        row.iso3, row.name, row.hay = iso3, name, fold(f"{name} {iso3} {continent}")
+        row.iso3, row.name, row.code = iso3, name, fold(iso3)
+        row.texts = [fold(t) for t in (name, full) if t]
+        row.rank = 0
 
         return row
 
-    def keep(self, row) -> bool:
-        return all(t in row.hay for t in self.terms)
-
-    def order(self, a, b) -> int:
-        # name starts with first term first, then alphabetical
-        first = self.terms[0] if self.terms else ""
-        ka = (not fold(a.name).startswith(first), fold(a.name))
-        kb = (not fold(b.name).startswith(first), fold(b.name))
-        return (ka > kb) - (ka < kb)
-
     def on_search(self, *args):
-        self.terms = fold(self.ent_search.get_text()).split()
+        terms = fold(self.ent_search.get_text()).split()
+        for row in self.rows():
+            tiers = [tier(t, row) for t in terms]
+            row.rank = None if 9 in tiers else sum(tiers)
         self.lst.invalidate_filter()
         self.lst.invalidate_sort()
 
+    def keep(self, row) -> bool:
+        return row.rank is not None
+
+    def order(self, a, b) -> int:
+        # name starts with first term first, then alphabetical
+        ka, kb = (a.rank or 0, a.texts[0]), (b.rank or 0, b.texts[0])
+
+        return (ka > kb) - (ka < kb)
+
     def on_activate(self, *args):
         # enter in search = first hit
-        rows = [r for r in self.rows() if self.keep(r)]
-        if rows:
-            self.pick(min(rows, key=cmp_to_key(self.order)))
+        hits = [r for r in self.rows() if self.keep(r)]
+        if hits:
+            self.pick(min(hits, key=lambda r: (r.rank or 0, r.texts[0])))
 
     def rows(self):
         row = self.lst.get_first_child()
