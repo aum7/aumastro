@@ -19,7 +19,7 @@ import logging
 
 LOG = logging.getLogger(__name__)
 source = "d1"
-# routing = {"source": source, "route": ["terminal"]}
+# routeuser = {"source": source, "route": ["terminal", "user"]}
 import math
 import swisseph as swe
 from helpers import ok, err

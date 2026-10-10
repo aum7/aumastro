@@ -3,11 +3,9 @@
 # import os
 import logging
 
-log = logging.getLogger(__name__)
+LOG = logging.getLogger(__name__)
 source = "notifier"
-routing = {"source": source, "route": ["terminal"]}
-routingtimeout4 = {"source": source, "route": ["terminal"], "timeout": "4"}
-routingtimeout6 = {"source": source, "route": ["terminal"], "timeout": "6"}
+routeuser4s = {"source": source, "route": ["terminal", "user"], "timeout": "4"}
 from datetime import datetime, timezone
 from enum import Enum
 from pathlib import Path
@@ -123,10 +121,9 @@ class GtkNotificationHandler(logging.Handler):
             )
             self.notifier.route_message(msg)
         except Exception:
-            log.exception(
+            LOG.exception(
                 "notification handler failed for %r",
                 record.getMessage(),
-                extra=routing,
             )
             self.handleError(record)
 
@@ -220,7 +217,7 @@ class Notifier:
         # validate route
         valid_routes = {item.value for item in NotifyRoute}
         if not all(val in valid_routes for val in route):
-            log.error(f"notifier : invalid route values in {route} : using default")
+            LOG.error(f"notifier : invalid route values in {route} : using default")
             return
         if any(r in (NotifyRoute.NONE.value, NotifyRoute.EMPTY.value) for r in route):
             # print("[DEBUG NOTIFY] route is none or empty : message discarded")

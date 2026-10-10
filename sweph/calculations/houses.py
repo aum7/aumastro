@@ -1,9 +1,10 @@
 # sweph/calculations/houses.py
 # ruff: noqa: E402, E701
-import logging as log
+import logging
 
+LOG = logging.getLogger(__name__)
 source = "houses"
-routing = {"source": source, "route": ["terminal"]}
+routeuser = {"source": source, "route": ["terminal", "user"]}
 import swisseph as swe  # type:ignore
 from helpers import ok, err
 
@@ -20,8 +21,5 @@ def calculate_houses(jd_ut, lat, lon, hsys, flag):
             "ascmc": list(ascmc)[:3],  # only asc & mc & armc needed
         })
     except swe.Error as e:
-        log.error(
-            f"houses calculations failed : {e}",
-            extra=routing,
-        )
+        LOG.error(f"houses calculations failed : {e}")
         return err(e)

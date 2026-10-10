@@ -5,11 +5,9 @@
 # os.environ["GTK_DEBUG"] = "keybindings geometry size-request actions constraints"
 # Gtk.Window.set_interactive_debugging(True)
 # app todo :
-#   add diary module as sidepane subpanel
 #   switch swisseph to pysweph (pyswisseph maintained fork) ???
-#   redesign notification mess / doubling
 #   export to executable on linux & mswindows (10 & 11)
-#   sudarsana cakra : su-mo-asc lined up - as su-mo ring matched to asc
+#   sudarsana cakra : su-mo-asc lined up - su-mo ring matched to asc
 #
 # LOG
 # 2026-09-16 21-12
@@ -21,11 +19,13 @@
 # 2026-10-07 07-55
 #   v1.2 - added astrochart zoom ; plethora of upgrades ie database popover
 #   vimsottari from mo su asc mc - 4 fixed seeds as dropdown
+# 2026-10-10 08-34
+#   v1.3 - added diary module
 import logging
 
 LOG = logging.getLogger(__name__)
 source = "main"
-routinguser = {"source": source, "route": ["terminal", "user"]}
+routeuser = {"source": source, "route": ["terminal", "user"]}
 import os
 
 # suppress libEGL warnings on app init
@@ -65,7 +65,7 @@ class AumastroApp(Gtk.Application):
         win.connect("close-request", win.close_request)
         LOG.info(
             "[ctrl+m] manual | [ctrl+k] hotkeys | [esc] discard message",
-            extra=routinguser,
+            extra=routeuser,
         )
         win.present()
 

@@ -1,12 +1,13 @@
-# ui/sidepane/eventsinput.py
+# ui/sidepane/eventsinput.py CLEANED
+# sidepane IS mainwindow
 # ruff: noqa: E402
 import logging
 
-log = logging.getLogger(__name__)
+LOG = logging.getLogger(__name__)
 source = "eventinput"
-routing = {"source": source, "route": ["terminal"]}
-routingnone = {"source": source, "route": [""]}
+routeuser = {"source": source, "route": ["terminal", "user"]}
 from ui.collapsepanel import CollapsePanel
+from ui.sidepane.countries import COUNTRIES
 from sweph.eventdata import EventData
 from sweph.eventlocation import EventLocation
 from user.eventsdb.db import DEFAULT_E1  # default event 1 data
@@ -28,15 +29,12 @@ def bind_entry_events(entry: Gtk.Entry, callback):
 
 def setup_event(mainwindow, event_name: str, expand: bool) -> CollapsePanel:
     # setup event one & two collapsible panels, incl location sub-panel
-    # todo sidepane IS mainwindow
-    # log.debug(f"setupevent : whoisme={mainwindow.__class__.__name__}")
-    # log.debug(f"setupevent : has-sidepaneapp={hasattr(mainwindow, 'app')}")
+    # LOG.debug(f"setupevent : whoisme={mainwindow.__class__.__name__}")
     panel = CollapsePanel(
         title="event one" if event_name == "e1" else "event two",
         expanded=expand,  # todo
     )
     panel.set_margin_end(mainwindow.margin_end)
-    # panel.set_margin_end(self.margin_end)
     panel.add_title_css_class("label-event")
     lbl_event = panel.get_title()
     lbl_event.set_tooltip_text(
@@ -72,7 +70,7 @@ user/events.py
 default event one / two can be set in
 user/eventsdb/db.py (database)"""
     )
-    # todo on clear event 2 data remove also from top title bar
+    # on clear event 2 data remove also from top title bar
     gesture = Gtk.GestureClick.new()
     gesture.connect(
         "pressed",
@@ -88,13 +86,16 @@ user/eventsdb/db.py (database)"""
     lbl_country = Gtk.Label(label="country")
     lbl_country.add_css_class("label")
     lbl_country.set_halign(Gtk.Align.START)
-
     event_location = EventLocation(mainwindow=mainwindow, app=mainwindow.app)
     # make event_location available to get iso3 of selected country
     mainwindow.event_location = event_location
     # countries
-    countries = event_location.get_countries()
-    ddn_country = Gtk.DropDown.new_from_strings(countries)
+    # countries = event_location.get_countries()
+    ddn_country = Gtk.DropDown(
+        model=COUNTRIES.model,
+        expression=Gtk.PropertyExpression.new(Gtk.StringObject, None, "string"),
+    )
+    ddn_country.set_enable_search(True)
     ddn_country.set_name("country one" if event_name == "e1" else "country two")
     ddn_country.add_css_class("dropdown")
     ddn_country.set_tooltip_text(
@@ -106,17 +107,17 @@ un-comment any country of interest
 (delete '# ' & save file) or
 comment (add '# ' & save file) uninterested country"""
     )
-    # insert country for default event 1 from user/settings.py
+    # insert country for default event 1 from user/usersettings.py
     # & store as widget so we access fresh data later
     if event_name == "e1":
         default = DEFAULT_E1.get("country")
-        if default and default in countries:
-            ddn_country.set_selected(countries.index(default))
+        if default and (iso3 := COUNTRIES.resolve(default)):
+            ddn_country.set_selected(COUNTRIES.index(iso3))
         mainwindow.country_one = ddn_country
     else:
         default = DEFAULT_E2.get("country")
-        if default and default in countries:
-            ddn_country.set_selected(countries.index(default))
+        if default and (iso3 := COUNTRIES.resolve(default)):
+            ddn_country.set_selected(COUNTRIES.index(iso3))
         mainwindow.country_two = ddn_country
     # city
     lbl_city = Gtk.Label(label="city")
@@ -254,7 +255,6 @@ only use [space] as separator
         default = DEFAULT_E2.get("datetime")
         if default:
             ent_datetime.set_text(default)
-    # ent_datetime.set_placeholder_text("yyyy mm dd HH MM (SS)")
     ent_datetime.set_tooltip_text(
         """year month day hour minute (second)
     2010 9 11 22 55

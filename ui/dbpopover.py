@@ -1,4 +1,4 @@
-# ui/loadsavepopup.py
+# ui/loadsavepopup.py CLEANED
 # titlebar button for load & save database opens popover
 # ruff : noqa : E402
 import logging
@@ -20,7 +20,6 @@ ICONS = {  # key : custom file fallback theme icon
     "database": ("database.svg", "folder-open-symbolic"),
 }
 ICON_SIZE = 24
-CLOSE_DELAY_MS = 350  # mouse exit : grace time before popover closes
 
 
 def make_icon(key: str, size: int = ICON_SIZE) -> Gtk.Image:
@@ -70,6 +69,7 @@ class DbPopover(Gtk.MenuButton):
         # search list
         self.ent_search = Gtk.SearchEntry()
         self.ent_search.set_placeholder_text("search events")
+        self.ent_search.add_css_class("entry-search")
         self.ent_search.connect("search-changed", lambda *a: self.fill_list())
         scroll = Gtk.ScrolledWindow()
         scroll.set_min_content_height(240)
@@ -135,12 +135,6 @@ class DbPopover(Gtk.MenuButton):
         keys.set_propagation_phase(Gtk.PropagationPhase.CAPTURE)
         keys.connect("key-pressed", self.on_popover_key)
         popover.add_controller(keys)
-        # close popover on mouse exit
-        # motion = Gtk.EventControllerMotion()
-        # motion.connect("enter", self.cancel_close)
-        # motion.connect("leave", self.schedule_close)
-        # popover.add_controller(motion)
-        # popover.connect("closed", self.cancel_close)
 
         return popover
 
@@ -155,33 +149,6 @@ class DbPopover(Gtk.MenuButton):
             return True
 
         return False
-
-    # def cancel_close(self, *args):
-    #     if self.leave_timer:
-    #         GLib.source_remove(self.leave_timer)
-    #         self.leave_timer = 0
-
-    # def schedule_close(self, *args):
-    #     self.cancel_close()
-    #     self.leave_timer = GLib.timeout_add(CLOSE_DELAY_MS, self.close_if_idle)
-
-    # def close_if_idle(self):
-    #     # not while user types text : search entry excluded
-    #     self.leave_timer = 0
-    #     popover = self.get_popover()
-    #     # close popover on mouse leave
-    #     # root = popover.get_root()
-    #     # focus = root.get_focus() if root else None
-    #     # entry = focus.get_ancestor(Gtk.Entry) if focus else None
-    #     # if entry not in (
-    #     #     self.ent_search,
-    #     #     self.ent_category,
-    #     #     self.ent_name,
-    #     #     self.ent_note,
-    #     # ):
-    #     popover.popdown()
-
-    #     return GLib.SOURCE_REMOVE
 
     def category(self) -> str:
         item = self.dd_category.get_selected_item()

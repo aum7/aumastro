@@ -4,7 +4,7 @@ import logging
 
 LOG = logging.getLogger(__name__)
 source = "syzygy"
-routing = {"source": source, "route": ["terminal"]}
+routeuser = {"source": source, "route": ["terminal", "user"]}
 from helpers import ok, err
 import swisseph as swe
 from sweph.swetime import jd_to_custom_iso as jdtoiso
@@ -52,8 +52,5 @@ def calculate_syzygy(jd_ut, su_lon, mo_lon, flag):
                 }
             ])
     except Exception as e:
-        LOG.error(
-            f"syzygy calculation error : {e}",
-            extra=routing,
-        )
+        LOG.error(f"syzygy calculation error : {e}")
         return err(e)

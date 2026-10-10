@@ -1,10 +1,10 @@
-# ui/mainwindow.py
+# ui/mainwindow.py CLEANED
 # ruff: noqa: E402
 import logging
 
 LOG = logging.getLogger(__name__)
 source = "mainwindow"
-routing = {"source": source, "route": ["terminal"]}
+routeuser = {"source": source, "route": ["terminal"], "timeout": "6"}
 from typing import Any, Optional
 from .sidepane.sidepane import SidepaneManager
 from .uisetup import UISetup
@@ -14,7 +14,7 @@ from ui.mainpanes.tables import Tables
 from ui.mainpanes.chart.astrochart import AstroChart
 from ui.mainpanes.datagraph import DataGraph
 from ui.dbpopover import DbPopover
-from .dataprintscreen import DataPrintscreen  # printscreen sequence generation
+from .dataprintscreen import DataPrintscreen
 import gi
 
 gi.require_version("Adw", "1")
@@ -143,12 +143,6 @@ class MainWindow(
             self.toast_overlay.add_toast(toast)
             self.toasts[toast] = text
             toast.connect("dismissed", lambda t: self.toasts.pop(t, None))
-            # self.toasts.append(toast)
-            # toast.connect(
-            #     "dismissed",
-            #     lambda t: self.toasts.remove(t) if t in self.toasts else None,
-            # )
-            # print("[DEBUG TOAST] toast added to overlay")
         except Exception as e:
             LOG.error(
                 f"error in toast notification : {e}\nmessage was : {msg.full_str()}"
@@ -359,7 +353,7 @@ class MainWindow(
             "\n\t\tnote : can also be simple synastry chart - enable 'transit' ring"
             "\n\tenter custom name 2 (ie 'marriage' - saved as e2 subevent)"
             "\ndelete date-time 2 : erase event 2 data (not interested in transit etc)"
-            "\n\nrings in order from outer to inner : TR-transit | TH-transit harmonic |"
+            "\n\nrings in order : outer > inner : TR-transit | TH-transit harmonic |"
             "\nDFY-p2 progression | DFM-p3 progression | MFY-pm minor progression |"
             "\nLNR-lunar return | SLR-solar return | D1-d1 primary direction |"
             "\nNK-naksatras | TM-terms | NH-natal harmonic | N-natal"
@@ -449,7 +443,6 @@ class MainWindow(
             and hasattr(self, "pnd_btm")
         ):
             self.pnd_main.set_position(int(self.pnd_main.get_height() * 0.3))
-            # self.pnd_main_v.set_position(self.pnd_main_v.get_height() // 2)
             self.pnd_top.set_position(0)
             self.pnd_btm.set_position(self.pnd_btm.get_width() // 2)
 
@@ -489,9 +482,7 @@ class MainWindow(
         if not self.overlay_active:
             # store original children so we can restore later
             self.orig_target = frm_target.get_child() if frm_target else None
-            # print(f"origtarget : {self.orig_target}")
             self.orig_top_right_child = frm_top.get_child() if frm_top else None
-            # print(f"origtoprightchild : {self.orig_top_right_child}")
             # unparent datagraph from current parent
             dg_parent = self.data_graph.get_parent()
             if dg_parent:

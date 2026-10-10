@@ -5,7 +5,7 @@ import logging
 
 LOG = logging.getLogger(__name__)
 source = "horas"
-routing = {"source": source, "route": ["terminal"]}
+routeuser = {"source": source, "route": ["terminal", "user"]}
 from helpers import ok, err
 import swisseph as swe
 
@@ -102,10 +102,7 @@ def get_day_horas(jd_ut, lon, lat, alt, flag):
         )
         srise_next = data[0]
     except (swe.Error, Exception) as e:
-        LOG.error(
-            f"sunrise / set calculation failed : {e}",
-            extra=routing,
-        )
+        LOG.error(f"sunrise / set calculation failed : {e}")
         return None
     # convert to event location time
     sunrise = to_event_str(srise)
@@ -117,7 +114,6 @@ def get_day_horas(jd_ut, lon, lat, alt, flag):
             f"\tsunrise : {sunrise}\n"
             f"\tsunset : {sunset}\n"
             f"\tnext sunrise : {sunrise_next}\n",
-            extra=routing,
         )
     # weekday from sunrise
     wday = swe.day_of_week(srise)

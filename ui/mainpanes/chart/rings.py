@@ -9,8 +9,7 @@ import logging
 
 LOG = logging.getLogger(__name__)
 source = "rings"
-routing = {"source": source, "route": ["terminal"]}
-routinguser = {"source": source, "route": ["terminal", "user"]}
+routeuser = {"source": source, "route": ["terminal", "user"]}
 import cairo
 import ui.fonts.glyphs as glyphs
 from math import pi, radians, cos, sin

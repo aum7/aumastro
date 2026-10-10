@@ -7,7 +7,7 @@ import logging
 
 LOG = logging.getLogger(__name__)
 source = "dispatcher"
-routinguser = {"source": source, "route": ["terminal", "user"]}
+routeuser = {"source": source, "route": ["terminal", "user"]}
 import re
 import time
 import swisseph as swe
@@ -952,7 +952,7 @@ class Dispatcher:
         if result["status"] != "ok":
             LOG.error(
                 f"{key} calculation failed for {event_id} : {result['error']}",
-                extra=routinguser,
+                extra=routeuser,
             )
             return None
 

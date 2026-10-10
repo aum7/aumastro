@@ -7,7 +7,7 @@ import logging
 
 LOG = logging.getLogger(__name__)
 source = "stars"
-routing = {"source": source, "route": ["terminal"]}
+routeuser = {"source": source, "route": ["terminal", "user"]}
 from helpers import ok, err
 import swisseph as swe
 
@@ -31,10 +31,7 @@ def calculate_stars(jd_ut, stars_list, flag):
                 "nomencl": nomencl,
             })
         except Exception as e:
-            LOG.error(
-                f"stars calculation error : {e}",
-                extra=routing,
-            )
+            LOG.error(f"stars calculation error : {e}")
             return err(e)
 
     return ok(stars)

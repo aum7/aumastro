@@ -2,10 +2,10 @@
 # ruff: noqa: E402
 import logging
 
-log = logging.getLogger(__name__)
+LOG = logging.getLogger(__name__)
 # logging : messages sent from where & to which recipients
 source = "hotkeyer"
-routing = {"source": source, "route": ["terminal"]}
+routeuser = {"source": source, "route": ["terminal", "user"]}
 import gi
 
 gi.require_version("Gtk", "4.0")
@@ -20,8 +20,7 @@ class Hotkeyer:
     def __init__(self, window: Gtk.Window) -> None:
         self.window = window
         self.shortcuts: Dict[str, Gtk.Shortcut] = {}
-
-        # Instantiate and explicitly attach controller to window capture phase
+        # instantiate and explicitly attach controller to window capture phase
         self.controller = Gtk.ShortcutController()
         self.controller.set_propagation_phase(Gtk.PropagationPhase.CAPTURE)
         self.window.add_controller(self.controller)
@@ -41,7 +40,7 @@ class Hotkeyer:
             self.unregister_hotkey(key)
         trigger = Gtk.ShortcutTrigger.parse_string(shortcut_str)
         if not trigger:
-            log.warning(f"invalid shortcut string format: {shortcut_str}")
+            LOG.warning(f"invalid shortcut string format: {shortcut_str}")
             return
 
         def _action_wrapper(widget, args):

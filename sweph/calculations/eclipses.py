@@ -1,4 +1,4 @@
-# swep/calculations/eclipses.py
+# swep/calculations/eclipses.py CLEANED
 # ruff: noqa: E402
 import logging
 
@@ -7,7 +7,6 @@ source = "eclipses"
 import swisseph as swe
 from helpers import ok, err
 from sweph.swetime import jd_to_local_time as jdtoloc
-# from sweph.calculations.horas import jd_to_local_time as toloctime
 
 PRENATAL_DAYS = 273.0
 POSTNATAL_DAYS = 70.0
@@ -27,79 +26,6 @@ def format_eclipse_type(eclflag):
     types = [name for bit, name in ECL_TYPES if eclflag & bit]
 
     return " - ".join(types) if types else f"unknown flag : {eclflag}"
-
-
-# def find_solar_eclipse(jd_ut, flag):
-#     try:
-#         # find time of any global eclipse
-#         any_ecl_type = 0  # any eclipse type
-#         ecl_type, result = swe.sol_eclipse_when_glob(jd_ut, flag, any_ecl_type, True)
-#         # time of eclipse maximum
-#         jd_max_ecl = result[0]
-#         # get sun on max eclipse julian day
-#         su, _ = swe.calc_ut(jd_max_ecl, 0, flag)
-#         su_lon = su[0]
-#         return {
-#             "name": "sol",
-#             "jd": jd_max_ecl,
-#             "lon": su_lon,
-#             "type": format_eclipse_type(ecl_type),
-#         }
-#     except swe.Error as e:
-#         LOG.error(
-#             f"solar eclipse error : {e}",
-#             extra=routing,
-#         )
-#         return None
-
-
-# def find_all_solar_eclipses(jd_ut, conception_jd, flag):
-#     # search backwards from birth to conception for every eclipse
-#     eclipses = []
-#     search_jd = jd_ut
-#     while True:
-#         ecl = find_solar_eclipse(search_jd, flag)
-#         if not ecl or ecl["jd"] < conception_jd:
-#             break
-#         eclipses.append(ecl)
-#         search_jd = ecl["jd"] - 1.0  # step back for next search
-#     return eclipses
-
-
-# def find_lunar_eclipse(jd_ut, flag):
-#     try:
-#         # find 1st global occurence of lunar eclipse
-#         find_type = 0  # any eclipse type
-#         ecl_type, result = swe.lun_eclipse_when(jd_ut, flag, find_type, True)
-#         # julian day of maximum eclipse
-#         jd_max_ecl = result[0]
-#         # get moon on max eclipse julian day
-#         mo, _ = swe.calc_ut(jd_max_ecl, 1, flag)
-#         return {
-#             "name": "lun",
-#             "jd": jd_max_ecl,
-#             "lon": mo[0],
-#             "type": format_eclipse_type(ecl_type),
-#         }
-#     except swe.Error as e:
-#         LOG.error(
-#             f"lunar eclipse error : {e}",
-#             extra=routing,
-#         )
-#         return None
-
-
-# def find_all_lunar_eclipses(jd_ut, conception_jd, flag):
-#     # search backwards from birth to conception for every eclipse
-#     eclipses = []
-#     search_jd = jd_ut
-#     while True:
-#         ecl = find_lunar_eclipse(search_jd, flag)
-#         if not ecl or ecl["jd"] < conception_jd:
-#             break
-#         eclipses.append(ecl)
-#         search_jd = ecl["jd"] - 1.0  # step back for next search
-#     return eclipses
 
 
 def find_eclipse(jd_ut, flag, kind, backwards=True):

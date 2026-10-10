@@ -4,10 +4,7 @@ import logging
 
 LOG = logging.getLogger(__name__)
 source = "tables"
-# routing = {"source": source, "route": ["terminal"]}
-routingtimeout4 = {"source": source, "route": ["terminal", "user"], "timeout": "4"}
-routingtimeout6 = {"source": source, "route": ["terminal", "user"], "timeout": "6"}
-routinguser = {"source": source, "route": ["terminal", "user"]}
+routeuser = {"source": source, "route": ["terminal", "user"]}
 from sweph.swetime import jd_to_custom_iso as jdtoiso
 from sweph.constants import PLANETARY_ORDER
 from ui.fonts.glyphs import get_glyph, PLANETS, SIGNS, ASPECTS, EXTRA

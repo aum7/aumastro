@@ -4,9 +4,9 @@ import logging
 
 LOG = logging.getLogger(__name__)
 source = "eventlocation"
-routing = {"source": source, "route": ["terminal"]}
-routingnone = {"source": source, "route": [""]}
+routeuser = {"source": source, "route": ["terminal", "user"]}
 import sqlite3
+from ui.sidepane.countries import COUNTRIES
 import gi
 
 gi.require_version("Gtk", "4.0")
@@ -17,38 +17,34 @@ class EventLocation:
     def __init__(self, mainwindow=None, app=None):
         if app is not None:
             self.app = app
-        LOG.debug(
-            f"whoisapp={app.__class__.__name__}"
-            f"whoismainwindow={mainwindow.__class__.__name__}",
-            extra=routingnone,
-        )
+        # LOG.debug(f"whoisapp={app.__class__.__name__}")
         if mainwindow is not None:
             self.mainwindow = mainwindow
         self.location_callback = None
-        self.countries = []
-        self.country_map = {}
+        # self.countries = []
+        # self.country_map = {}
         self.selected_city = ""
         self.entry = None
 
     def set_location_callback(self, callback):
         self.location_callback = callback
 
-    def get_countries(self):
-        with open("user/countries.txt", "r") as f:
-            for line in f:
-                line = line.strip().rstrip(",")
-                if line.startswith("("):
-                    parts = line[1:-1].split('", ')
-                    if len(parts) == 3:
-                        _, name, iso3 = (
-                            parts[0].strip('"'),
-                            parts[1].strip('"'),
-                            parts[2].strip('"'),
-                        )
-                    self.countries.append(name)  # type:ignore
-                    self.country_map[name] = iso3  # type:ignore
+    # def get_countries(self):
+    #     with open("user/countries.txt", "r") as f:
+    #         for line in f:
+    #             line = line.strip().rstrip(",")
+    #             if line.startswith("("):
+    #                 parts = line[1:-1].split('", ')
+    #                 if len(parts) == 3:
+    #                     _, name, iso3 = (
+    #                         parts[0].strip('"'),
+    #                         parts[1].strip('"'),
+    #                         parts[2].strip('"'),
+    #                     )
+    #                 self.countries.append(name)  # type:ignore
+    #                 self.country_map[name] = iso3  # type:ignore
 
-        return sorted(self.countries)
+    #     return sorted(self.countries)
 
     def get_city_from_atlas(
         self,
@@ -60,7 +56,7 @@ class EventLocation:
         city = ent_city.get_text().strip()
         country_index = ddn_country.get_selected()
         country = ddn_country.get_model().get_string(country_index)
-        iso3 = self.country_map.get(country)
+        iso3 = COUNTRIES.resolve(country)
         try:
             # todo hardcoded
             conn = sqlite3.connect("user/atlas/atlas.db")

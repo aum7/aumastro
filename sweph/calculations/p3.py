@@ -6,7 +6,7 @@ import logging
 
 LOG = logging.getLogger(__name__)
 source = "p3"
-routing = {"source": source, "route": ["terminal"]}
+routeuser = {"source": source, "route": ["terminal", "user"]}
 import swisseph as swe
 from helpers import (
     _object_name_to_code as objcode,
@@ -75,10 +75,7 @@ def calculate_p3(
             p3.append({"name": "tas", "lon": ascmc[0]})
             p3.append({"name": "tmc", "lon": ascmc[1]})
         except swe.Error as e:
-            LOG.error(
-                f"p3 sweph houses calculation error : {e}",
-                extra=routing,
-            )
+            LOG.error(f"p3 sweph houses calculation error : {e}")
             return err(e)
 
         e1_mc_arc = (e1_mc - e1_su) % 360.0 if e1_mc else 0.0

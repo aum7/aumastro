@@ -1,12 +1,12 @@
-# ui/sidepane/cycle.py
+# ui/sidepane/cycle.py CLEANED
 # calculate cycle wave
+# app IS aumastroapp
 # ruff: noqa: E402
 import logging
 
 LOG = logging.getLogger(__name__)
 source = "cycle"
-routingtimeout4 = {"source": source, "route": ["terminal"], "timeout": "4"}
-routingtimeout6 = {"source": source, "route": ["terminal"], "timeout": "6"}
+routeuser6s = {"source": source, "route": ["terminal", "user"], "timeout": "6"}
 import re
 import pandas as pd
 import gi
@@ -151,7 +151,6 @@ def validate_input(query: str, notify=None):
             rule = rule.strip().lower()
             if not rule:
                 continue
-            # rules.append(rule)
             tokens_parsed = []
             for token in rule.split():
                 ttype = None
@@ -192,7 +191,6 @@ def validate_input(query: str, notify=None):
 
 def setup_cycle(app) -> CollapsePanel:
     # separate search panel
-    # app IS aumastroapp
     # LOG.debug(f"setupcycle : {str(app.__class__.__name__)}")
     app.cycle = Cycler(app)
     pad_x = 7

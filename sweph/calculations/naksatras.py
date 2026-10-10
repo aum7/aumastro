@@ -6,7 +6,7 @@ import logging
 
 LOG = logging.getLogger(__name__)
 source = "naksatras"
-routing = {"source": source, "route": ["terminal"]}
+routeuser = {"source": source, "route": ["terminal", "user"]}
 from sweph.constants import NAKSATRAS27, MANSIONS28
 
 

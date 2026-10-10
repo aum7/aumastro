@@ -4,8 +4,7 @@ import logging
 
 LOG = logging.getLogger(__name__)
 source = "astrochart"
-routingtimeout4 = {"source": source, "route": ["terminal", "user"], "timeout": "4"}
-routingtimeout6 = {"source": source, "route": ["terminal", "user"], "timeout": "6"}
+routeuser6s = {"source": source, "route": ["terminal", "user"], "timeout": "6"}
 import math
 from ui.mainpanes.chart.chartinspector import ChartInspector
 from ui.mainpanes.chart.rings import Rings

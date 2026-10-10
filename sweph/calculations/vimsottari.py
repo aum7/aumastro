@@ -5,8 +5,7 @@ import logging
 
 LOG = logging.getLogger(__name__)
 source = "vimsottari"
-routing = {"source": source, "route": ["terminal"]}
-routingtimeout5 = {"source": source, "route": ["terminal", "user"], "timeout": "5"}
+routeuser5s = {"source": source, "route": ["terminal", "user"], "timeout": "5"}
 # import swisseph as swe
 from helpers import _decimal_to_ymd as decytoymd, ok, err
 from sweph.constants import NAKSATRAS27, DASA_YEARS
@@ -58,8 +57,7 @@ def calculate_vimso_progress(e1_jd, seed_lon, e2_jd, year_length):
     result = vim_seed_delta(e1_jd, seed_lon, e2_jd, year_length)
     if result is None:
         return err("event 2 before dasa start")
-    LOG.debug(f"calcvimsoprog : pseed={result[0]} delta={result[1]}")
-
+    # LOG.debug(f"calcvimsoprog : pseed={result[0]} delta={result[1]}")
     return ok({"pseed": result[0], "delta": result[1]})
 
 
@@ -148,7 +146,7 @@ def calculate_vimsottari(
         msg = "event 2 datetime required for levels 3-5 : level > 1"
         LOG.warning(
             msg,
-            extra=routingtimeout5,
+            extra=routeuser5s,
         )
         return err(msg)
 
@@ -162,7 +160,4 @@ def calculate_vimsottari(
     except Exception as e:
         LOG.error(f"vimsottari calculation error : {e}")
         return err(e)
-    # LOG.debug(
-    #     "vimsottari finished",
-    #     extra=routing,
-    # )
+    # LOG.debug("vimsottari finished")

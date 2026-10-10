@@ -5,25 +5,18 @@ import logging
 
 LOG = logging.getLogger(__name__)
 source = "signaler"
-routing = {"source": source, "route": ["terminal"]}
-routingnone = {"source": source, "route": [""]}
+routeuser = {"source": source, "route": ["terminal", "user"]}
 
 
 class Signaler:
     def __init__(self, app=None):
         self.app = app
-        LOG.debug(
-            f"whoisapp : {app.__class__.__name__}",
-            extra=routing,
-        )
+        # LOG.debug(f"whoisapp : {app.__class__.__name__}")
         # store handlers
         self.handlers = {}
 
     def connect(self, signal_name, handler):
-        LOG.debug(
-            f"connecting signal : {signal_name}",
-            extra=routingnone,
-        )
+        # LOG.debug(f"connecting signal : {signal_name}")
         if signal_name not in self.handlers:
             self.handlers[signal_name] = []
         if handler not in self.handlers[signal_name]:
@@ -34,10 +27,7 @@ class Signaler:
             self.handlers[signal_name].remove(handler)
 
     def emit(self, signal_name, *args, **kwargs):
-        LOG.debug(
-            f"emitting signal : {signal_name}",
-            extra=routingnone,
-        )
+        # LOG.debug(f"emitting signal : {signal_name}")
         for handler in self.handlers.get(signal_name, []):
             try:
                 handler(*args, **kwargs)
@@ -50,12 +40,4 @@ class Signaler:
                     handler_name,
                     # args,
                     # kwargs,
-                    extra=routing,
                 )
-                # LOG.error(
-                #     f"error emitting signal '{signal_name}' in "
-                #     f"handler '{handler_name}' : {e}",
-                #     extra=routing,
-                #     # upgrade error message to show more info
-                #     exc_info=True,
-                # )

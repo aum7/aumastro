@@ -4,9 +4,7 @@ import logging
 
 LOG = logging.getLogger(__name__)
 source = "uicycler"
-routinguser = {"source": source, "route": ["terminal", "user"]}
-routingtimeout4 = {"source": source, "route": ["terminal"], "timeout": "4"}
-routingtimeout6 = {"source": source, "route": ["terminal"], "timeout": "6"}
+routeuser = {"source": source, "route": ["terminal", "user"]}
 import os
 import pandas as pd
 import swisseph as swe
@@ -122,7 +120,7 @@ class Cycler:
             if start > end:
                 LOG.warning(
                     f"cycle time range {start} - {end} is outside file time range",
-                    extra=routinguser,
+                    extra=routeuser,
                 )
                 return
 
@@ -132,7 +130,7 @@ class Cycler:
         if dataframe_range.empty:
             LOG.warning(
                 "missing data for selected range",
-                extra=routinguser,
+                extra=routeuser,
             )
             return
 
@@ -152,7 +150,7 @@ class Cycler:
             if result_df is None or result_df.empty:
                 LOG.warning(
                     f"rule '{rule_str}' has no data",
-                    extra=routinguser,
+                    extra=routeuser,
                 )
                 continue
 
@@ -172,7 +170,7 @@ class Cycler:
             })
             LOG.info(
                 f"wave saved : {rule_filename}",
-                extra=routinguser,
+                extra=routeuser,
             )
 
         cycle = {"range": (start, end), "results": results}

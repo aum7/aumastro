@@ -4,8 +4,7 @@ import logging
 
 LOG = logging.getLogger(__name__)
 source = "uisearcher"
-routingtimeout4 = {"source": source, "route": ["terminal"], "timeout": "4"}
-routingtimeout6 = {"source": source, "route": ["terminal"], "timeout": "6"}
+routeuser6s = {"source": source, "route": ["terminal", "user"], "timeout": "6"}
 import os
 import swisseph as swe
 import pandas as pd
@@ -124,7 +123,7 @@ class Searcher:
                     self.sunrise_json(rows, start, end, outdir=save_dir)
                     LOG.info(
                         f"sunrise result saved to {save_dir} .json file",
-                        extra=routingtimeout6,
+                        extra=routeuser6s,
                     )
                 continue
             # make sure search time range fits into file time range
@@ -157,7 +156,7 @@ class Searcher:
                 self.app.signaler.emit("plot search result")
             LOG.info(
                 f"search result saved : {rule_filename}",
-                extra=routingtimeout6,
+                extra=routeuser6s,
             )
 
     def sunrise_json(self, rows, start, end, outdir="sunrise"):

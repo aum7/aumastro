@@ -8,12 +8,14 @@ source = "sidepane"
 import re
 from typing import Optional
 from datetime import datetime, timezone
-from ui.collapsepanel import CollapsePanel
 from sweph.swetime import custom_iso_to_jd, jd_to_custom_iso
+from ui.collapsepanel import CollapsePanel
+from .sidepanesettings import SidepaneSettings
 from .eventinput import setup_event
 from .search import setup_search
-from .sidepanesettings import SidepaneSettings
 from .cycle import setup_cycle
+from .diary import setup_diary
+from .addcountry import AddCountryPanel
 import gi
 
 gi.require_version("Gtk", "4.0")
@@ -58,11 +60,7 @@ class SidepaneManager:
         self.clp_event_one = None
         self.clp_event_two = None
         self.clp_settings = None
-        # LOG.debug(
-        #     f"\ninitsidepane : whoisme={self.__class__.__name__}"
-        #     f"\ninitsidepane : has-clpeventone={hasattr(self, 'clp_event_one')}",
-        #     extra=routingnone,
-        # )
+        # LOG.debug(f"\ninitsidepane : whoisme={self.__class__.__name__}")
         self.throttle_active = False
         self.pending_entry = None
 
@@ -119,15 +117,21 @@ class SidepaneManager:
         # cycle wave module
         self.clp_cycle = setup_cycle(self.app)
         self.clp_cycle.add_title_css_class("label-search")
+        self.clp_diary = setup_diary(self.app)
+        self.clp_diary.add_title_css_class("label-diary")
         # append to box
         box_sidepane.append(self.clp_change_time)
+        # country selector
+        box_sidepane.append(AddCountryPanel(self))
         box_sidepane.append(self.clp_event_one)
         box_sidepane.append(self.clp_event_two)
         box_sidepane.append(self.clp_settings)
         # search astro events
         box_sidepane.append(self.clp_search)
         # cycle wave calculations
-        box_sidepane.append(self.clp_cycle)
+        # box_sidepane.append(self.clp_cycle)
+        # personal diary module
+        box_sidepane.append(self.clp_diary)
         # main container scrolled window for collapse panels
         scw_sidepane = Gtk.ScrolledWindow()
         scw_sidepane.set_size_request(-1, -1)

@@ -5,7 +5,7 @@ import logging
 
 LOG = logging.getLogger(__name__)
 source = "chartinspector"
-routing = {"source": source, "route": ["terminal"]}
+routeuser = {"source": source, "route": ["terminal", "user"]}
 import math
 import cairo
 import ui.fonts.glyphs as glyphs

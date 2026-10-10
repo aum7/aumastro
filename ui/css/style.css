@@ -66,12 +66,28 @@ collapse-panel {
 
 /* sidepane settings label */
 .label-settings {
-  color: darkorange;
+  color: orange;
 }
 
 /* sidepane search label */
 .label-search {
   color: yellowgreen;
+}
+
+/* sidepane diary label */
+.label-diary {
+  /* color: steelblue; */
+  color: cornflowerblue;
+}
+
+/* sidepane country label */
+.label-country {
+  color: steelblue;
+  /* color: cornflowerblue; */
+}
+
+.frame.diary-focus {
+  border-color: cornflowerblue;
 }
 
 /* sidepane dropdown */
@@ -161,4 +177,14 @@ textview text {
 #tokens.filter {
   border-color: dodgerblue;
   color: dodgerblue;
+}
+
+/* gtk.entrysearch */
+.entry-search text {
+  margin-left: 8px;
+}
+
+#diary,
+#diary-placeholder {
+  font-size: 1.1em;
 }

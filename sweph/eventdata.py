@@ -1,4 +1,4 @@
-# sweph/eventdata.py
+# sweph/eventdata.py CLEANED
 # gather & process event input from user : data only - 0 zero ui
 # exclusive write access to app.EVENT_ONE & app.EVENT_TWO
 # ruff: noqa: E402
@@ -7,11 +7,11 @@ import logging
 # signaling
 LOG = logging.getLogger(__name__)
 source = "eventdata"
-routing = {"source": source, "route": ["terminal"]}
-routinguser = {"source": source, "route": ["terminal", "user"]}
+routeuser = {"source": source, "route": ["terminal", "user"]}
 from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
 from timezonefinder import TimezoneFinder
+from ui.sidepane.countries import COUNTRIES
 from helpers import _decimal_to_dms
 from sweph.swetime import (
     validate_datetime,
@@ -66,11 +66,12 @@ class EventData:
 
         item = self.country.get_selected_item()
         country = item.get_string() if item else ""
-        mainwindow = self.app.get_active_window()
+        # mainwindow = self.app.get_active_window()
         place = {
             "country": country,
             "city": self.city.get_text().strip(),
-            "iso3": mainwindow.event_location.country_map.get(country, ""),
+            "iso3": COUNTRIES.resolve(country),
+            # "iso3": mainwindow.event_location.country_map.get(country, ""),
         }
         if any(self.chart.get(key) != value for key, value in place.items()):
             self.chart.update(place)
@@ -126,17 +127,21 @@ class EventData:
         self.city.set_text(fields.get("city", ""))
         self.location.set_text(fields.get("location", ""))
         self.date_time.set_text(fields.get("datetime", ""))
-        model = self.country.get_model()
-        names = [model.get_string(i) for i in range(model.get_n_items())]
-        country = fields.get("country", "")
-        if country in names:
-            self.country.set_selected(names.index(country))
-        elif country:
-            LOG.warning(
-                f"country not found : {country} : use exact name from "
-                "countries.txt or enable country in same file",
-                extra=routinguser,
-            )
+        # model = self.country.get_model()
+        # names = [model.get_string(i) for i in range(model.get_n_items())]
+        # country = fields.get("country", "")
+        # if country in names:
+        #     self.country.set_selected(names.index(country))
+        country = fields.get("county", "")
+        if country:
+            iso3 = COUNTRIES.resolve(country)
+            if iso3:
+                self.country.set_selected(COUNTRIES.index(iso3))
+            else:
+                LOG.warning(
+                    f"country not found : {country} ",
+                    extra=routeuser,
+                )
         if self.id == "e2":
             self.on_location_change(self.location)  # empty = e2 place erased
         self.on_datetime_change(self.date_time)
@@ -148,7 +153,7 @@ class EventData:
             if self.id == "e1":
                 LOG.warning(
                     f"mandatory data missing : {location_name}",
-                    extra=routinguser,
+                    extra=routeuser,
                 )
                 return
 
@@ -161,7 +166,7 @@ class EventData:
                 self.old_location = ""
                 LOG.info(
                     "event 2 erased",
-                    extra=routinguser,
+                    extra=routeuser,
                 )
                 return
 
@@ -261,10 +266,7 @@ class EventData:
                 self.timezone = timezone_
         except Exception as e:
             # all above errors land here as exception e
-            LOG.error(
-                f"location calculation failed : {e}",
-                extra=routing,
-            )
+            LOG.error(f"location calculation failed : {e}")
             return
 
         if lon:
@@ -283,7 +285,7 @@ class EventData:
         self.sweph["alt"] = int(alt)
         self.read_place()
         self.dirty = True
-        # LOG.info("location input processed", extra=routing)
+        # LOG.info("location input processed")
         return
 
     def on_name_change(self, entry):
@@ -292,7 +294,7 @@ class EventData:
         if self.id == "e1" and not name:
             LOG.error(
                 f"mandatory data missing : {name_name}",
-                extra=routinguser,
+                extra=routeuser,
             )
             return
 
@@ -302,14 +304,14 @@ class EventData:
         if len(name) > 30:
             LOG.warning(
                 f"{name_name} too long : max 30 characters",
-                extra=routinguser,
+                extra=routeuser,
             )
             return
 
         self.old_name = name
         self.chart["name"] = name
         self.dirty = True
-        # LOG.info("name input processed", extra=routing)
+        # LOG.info("name input processed")
         return
 
     def clear_e2(self):
@@ -320,7 +322,7 @@ class EventData:
             self.old_date_time = ""
             self.dirty = False
             self.app.signaler.emit("e2 cleared", "e2")
-            LOG.info("event 2 cleared", extra=routinguser)
+            LOG.info("event 2 cleared", extra=routeuser)
 
     def on_datetime_change(self, entry):
         datetime_name = entry.get_name()
@@ -348,7 +350,7 @@ class EventData:
             if not self.lon:
                 LOG.warning(
                     "event one : set location first",
-                    extra=routinguser,
+                    extra=routeuser,
                 )
                 return
 
@@ -356,7 +358,7 @@ class EventData:
             if not E1.sweph.get("lon"):
                 LOG.warning(
                     "event two : event one must be set first",
-                    extra=routinguser,
+                    extra=routeuser,
                 )
                 return
 
@@ -391,10 +393,7 @@ class EventData:
                     calendar=b"g",
                 )
             except Exception as e:
-                LOG.error(
-                    f"{datetime_name} time now failed : {e}",
-                    extra=routing,
-                )
+                LOG.error(f"{datetime_name} time now failed : {e}")
                 self.is_hotkey_now = False
                 return
 
@@ -404,7 +403,7 @@ class EventData:
             if not date_time:
                 LOG.warning(
                     f"mandatory data missing for {datetime_name}",
-                    extra=routinguser,
+                    extra=routeuser,
                 )
                 return
 
@@ -454,17 +453,11 @@ class EventData:
                         Yu, Mu, Du, hu, mu, su = dt_utc
                         _, jd_ut = utc_to_jd(Yu, Mu, Du, hu, mu, su, calendar=cal)
             except Exception as e:
-                LOG.error(
-                    f"{datetime_name} error : {e}",
-                    extra=routing,
-                )
+                LOG.error(f"{datetime_name} error : {e}")
                 return
 
         if not jd_ut:
-            LOG.error(
-                "jd_ut is missing",
-                extra=routing,
-            )
+            LOG.error("jd_ut is missing")
             return
 
         if dt_event_str:
@@ -501,7 +494,7 @@ class EventData:
         self.app.signaler.emit("event changed", dataset)
         # remove flag on data process
         self.dirty = False
-        # LOG.info("datetime input processed", extra=routing)
+        # LOG.info("datetime input processed")
         return
 
     def on_datetime_capture(self, data):

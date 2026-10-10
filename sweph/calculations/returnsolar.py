@@ -6,7 +6,7 @@ import logging
 
 LOG = logging.getLogger(__name__)
 source = "returnsolar"
-routing = {"source": source, "route": ["terminal"]}
+routeuser = {"source": source, "route": ["terminal", "user"]}
 import swisseph as swe
 from helpers import _object_name_to_code as objcode, ok, err
 from sweph.calculations.stations import get_retro_phases

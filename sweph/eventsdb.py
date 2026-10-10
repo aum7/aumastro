@@ -6,7 +6,7 @@ import logging
 # signaling
 LOG = logging.getLogger(__name__)
 source = "eventsdb"
-routinguser = {"source": source, "route": ["terminal", "user"]}
+routeuser = {"source": source, "route": ["terminal", "user"]}
 import json
 import re
 import tomllib
@@ -40,7 +40,7 @@ def read_db() -> dict:
                 _cache["data"] = tomllib.load(file)
             _cache["error"] = False
         except (OSError, tomllib.TOMLDecodeError) as e:
-            LOG.error(f"events db unreadable : {e}", extra=routinguser)
+            LOG.error(f"events db unreadable : {e}", extra=routeuser)
             _cache["data"] = {}
             _cache["error"] = True
         _cache["mtime"] = mtime

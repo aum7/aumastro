@@ -1,14 +1,10 @@
-# ui/search.py
+# ui/search.py CLEANED
 # ruff: noqa: E402
 import logging
 
 LOG = logging.getLogger(__name__)
 source = "search"
-routing = {"source": source, "route": [""]}
-# extratimeout4 = {"source": "search", "route": ["terminal"], "timeout": 4}
-# extratimeout6 = {"source": "search", "route": ["terminal"], "timeout": 6}
-routinguser = {"source": source, "route": ["terminal", "user"]}
-
+routeuser = {"source": source, "route": ["terminal", "user"]}
 import re
 import pandas as pd
 from ui.collapsepanel import CollapsePanel
@@ -207,7 +203,6 @@ def validate_input(query: str, use_28=False, notify=None):
             rule = rule.strip().lower()
             if not rule:
                 continue
-            # rules.append(rule)
             tokens_parsed = []
             main_place = None
             for token in rule.split():
@@ -279,10 +274,7 @@ def validate_input(query: str, use_28=False, notify=None):
 
 def setup_search(app) -> CollapsePanel:
     # separate search collapse panel
-    LOG.debug(
-        f"hasappdispatcher : {hasattr(app, 'dispatcher')}",
-        extra=routing,
-    )
+    # LOG.debug(f"hasappdispatcher : {hasattr(app, 'dispatcher')}")
     app.search = Searcher(app)
     use_28 = app.dispatcher.mansions_28
     pad_x = 7
@@ -290,7 +282,6 @@ def setup_search(app) -> CollapsePanel:
     margin_end = 7
     clp_search = CollapsePanel(title="search", expanded=False)
     clp_search.set_margin_end(margin_end)
-
     box_search = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
     box_search.set_margin_start(14)
     # --- token viewer with filter
@@ -300,7 +291,6 @@ def setup_search(app) -> CollapsePanel:
     ent_filter.set_tooltip_text("below text box shows matches to filter text")
     ent_filter.set_margin_bottom(pad_y)
     ent_filter.set_margin_top(pad_y)
-
     box_tokens.append(ent_filter)
     # scrolled window for tokens
     scrolled = Gtk.ScrolledWindow()
@@ -319,7 +309,6 @@ def setup_search(app) -> CollapsePanel:
     txv_tokens.set_right_margin(pad_x)
     txv_tokens.set_top_margin(pad_y)
     txv_tokens.set_bottom_margin(pad_y)
-
     scrolled.set_child(txv_tokens)
     box_tokens.append(scrolled)
     # present tokens & examples
@@ -380,7 +369,7 @@ type 'clear' & execute it to clear all search plots from datagraph
                 if not ok:
                     LOG.error(
                         f"invalid input :\n{result}",
-                        extra=routinguser,
+                        extra=routeuser,
                     )
                     return True
                 # serve to searchsidepane
@@ -396,7 +385,6 @@ type 'clear' & execute it to clear all search plots from datagraph
     key_controller.connect("key-pressed", on_key)
     textview.add_controller(key_controller)
     textview.connect("notify::has-focus", on_focus_changed, txv_tokens)
-
     focus_controller = Gtk.EventControllerFocus()
     focus_controller.connect(
         "enter", on_entry_focus_in, ent_filter, txv_tokens, textview

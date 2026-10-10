@@ -1,0 +1,20 @@
+# diary : [[entry]] datetime jdut mood text
+[[entry]]
+datetime = "2026-10-10 07:02:32"
+jd_ut = 2461323.7100968445
+mood = 1
+text = """
+app finished - diary module added
+tag: success retro ve"""
+[[entry]]
+datetime = "2026-10-10 07:44:10"
+jd_ut = 2461323.7390088816
+mood = -2
+text = """
+very good bziing"""
+[[entry]]
+datetime = "2026-10-10 07:44:36"
+jd_ut = 2461323.7393098073
+mood = -1
+text = """
+tag: grumpy"""

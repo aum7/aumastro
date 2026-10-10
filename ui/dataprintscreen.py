@@ -7,7 +7,7 @@ import logging
 
 LOG = logging.getLogger(__name__)
 source = "dataprintscreen"
-routinguser = {"source": source, "route": ["terminal", "user"]}
+routeuser = {"source": source, "route": ["terminal", "user"]}
 import pandas as pd
 from pathlib import Path
 from datetime import datetime

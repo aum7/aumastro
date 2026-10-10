@@ -4,7 +4,7 @@ import logging
 
 LOG = logging.getLogger(__name__)
 source = "aspects"
-routing = {"source": source, "route": ["terminal"]}
+routeuser = {"source": source, "route": ["terminal", "user"]}
 from helpers import ok, err
 import math
 from ui.fonts.glyphs import ASPECTS
@@ -116,10 +116,7 @@ def calculate_aspects(positions, orb, harmonic_aspects):
             "speeds": speeds,
         })
     except Exception as e:
-        LOG.error(
-            f"aspects calculation error : {e}",
-            extra=routing,
-        )
+        LOG.error(f"aspects calculation error : {e}")
         return err(e)
 
 

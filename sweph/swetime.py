@@ -11,8 +11,7 @@ import logging
 LOG = logging.getLogger(__name__)
 # logging : messages sent from where & to which recipients
 source = "swetime"
-routing = {"source": source, "route": ["terminal"]}
-routinguser = {"source": source, "route": ["terminal", "user"]}
+routeuser = {"source": source, "route": ["terminal", "user"]}
 import re
 import swisseph as swe
 from helpers import _decimal_to_hms
@@ -51,7 +50,7 @@ def validate_datetime(date_time: str, lon=None):
             "\n\tj = julian calendar (default gregorian)"
             "\n\ta = local apparent time (default mean)",
         )
-        LOG.error(msg, extra=routinguser)
+        LOG.error(msg, extra=routeuser)
         return None, msg
     is_year_negative = date_time.lstrip().startswith("-")
     # print(f"negative year : {is_year_negative}")
@@ -70,7 +69,7 @@ def validate_datetime(date_time: str, lon=None):
             "\n\tie 1999 11 12 or 1999 11 12 13 14 00"
             "\nalso allowed j (julian calendar) & a (local apparent time)"
         )
-        LOG.error(msg, extra=routinguser)
+        LOG.error(msg, extra=routeuser)
         return None, msg
     Y = -nums[0] if is_year_negative else nums[0]
     M, D = nums[1], nums[2]
@@ -83,13 +82,13 @@ def validate_datetime(date_time: str, lon=None):
     if Y < -13200:
         LOG.info(
             f"year {Y} out of sweph range (-13200 - 17191)\n\tyear set to -13000",
-            extra=routinguser,
+            extra=routeuser,
         )
         Y = -13000
     elif Y > 17191:
         LOG.info(
             f"year {Y} out of sweph range (-13200 - 17191)\n\tyear set to 17000",
-            extra=routinguser,
+            extra=routeuser,
         )
         Y = 17000
     # check for calendar flag : g(regorian) is default
@@ -113,7 +112,7 @@ def validate_datetime(date_time: str, lon=None):
             "validatedatetime : dateconversion is not valid\n"
             f"using dt_corr : {dt_corr}",
         )
-        LOG.error(msg, extra=routinguser)
+        LOG.error(msg, extra=routeuser)
         Y, M, D, dec_h = dt_corr
         h, m, s = _decimal_to_hms(dec_h)
         LOG.debug(
@@ -149,7 +148,7 @@ def custom_iso_to_jd(
     if local_time == "a" and lon is None:
         LOG.error(
             "customisotojd : longitude missing for local apparent time",
-            extra=routinguser,
+            extra=routeuser,
         )
         return False, None, (Y, M, D, dec_h)
     is_valid, jd, dt_corr = swe.date_conversion(Y, M, D, dec_h, calendar)
