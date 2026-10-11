@@ -196,7 +196,7 @@ def setup_cycle(app) -> CollapsePanel:
     pad_x = 7
     pad_y = 0
     margin_end = 7
-    clp_cycle = CollapsePanel(title="cycle wave", expanded=False)
+    clp_cycle = CollapsePanel(title="cycle wave", key="cycle")
     clp_cycle.set_margin_end(margin_end)
     box_cycle = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
     box_cycle.set_margin_start(14)

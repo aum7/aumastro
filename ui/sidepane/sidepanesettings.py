@@ -21,7 +21,7 @@ from gi.repository import Gtk  # type:ignore
 
 class SidepaneSettings(CollapsePanel):
     def __init__(self, mainwindow=None):
-        super().__init__(title="settings", expanded=False)  # todo expand false
+        super().__init__(title="settings", key="settings")  # todo expand false
         # sidepane IS mainwindow
         if mainwindow is not None:
             self.mainwindow = mainwindow
@@ -132,9 +132,14 @@ class SidepaneSettings(CollapsePanel):
 
     def build_subpnl_objects(self) -> CollapsePanel:
         subpnl_objs = CollapsePanel(
-            title="objects / planets", indent=14, expanded=False
+            title="planets & objects",
+            key="objects",
         )
         subpnl_objs.set_title_tooltip("select objects to calculate & display on chart")
+        subsub_planets = CollapsePanel(
+            title="planets",
+            key="planets",
+        )
         box_objects = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5)
         # header buttons
         box_button = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=5)
@@ -152,18 +157,23 @@ class SidepaneSettings(CollapsePanel):
             "clicked", help.objects_toggle_event, self.app.dispatcher
         )
         box_button.append(btn_toggle_event)
-        btn_all = Gtk.Button(label="all")
-        btn_all.set_tooltip_text("select all objects")
-        btn_all.connect(
-            "clicked", help.objects_select_all_none, self.app.dispatcher, True
-        )
-        box_button.append(btn_all)
-        btn_none = Gtk.Button(label="none")
-        btn_none.set_tooltip_text("deselect all objects")
-        btn_none.connect(
-            "clicked", help.objects_select_all_none, self.app.dispatcher, False
-        )
-        box_button.append(btn_none)
+        # select all planets
+        for icon, tip, state in (
+            ("ok", "select all planets", True),
+            ("no", "deselect all planets\nsu & mo are always selected", False),
+        ):
+            ico = Gtk.Image.new_from_file(
+                f"ui/imgs/icons/hicolor/scalable/objects/{icon}.svg"
+            )
+            ico.set_pixel_size(30)
+            btn = Gtk.Button()
+            btn.add_css_class("button-event")
+            btn.set_child(ico)
+            btn.set_tooltip_text(tip)
+            btn.connect(
+                "clicked", help.objects_select_all_none, self.app.dispatcher, state
+            )
+            box_button.append(btn)
         box_objects.append(box_button)
         # main objects list from dispatcher
         lbx_objects = Gtk.ListBox()
@@ -203,9 +213,13 @@ class SidepaneSettings(CollapsePanel):
                 row.set_tooltip_text(f"{tooltip}\nalways calculated & shown")
             lbx_objects.append(row)
         box_objects.append(lbx_objects)
+        subsub_planets.add_widget(box_objects)
         # sub-sub-panel: lots
         lots = self.app.dispatcher.LOTS
-        subsub_lots = CollapsePanel(title="lots / parts", indent=21, expanded=False)
+        subsub_lots = CollapsePanel(
+            title="lots / parts",
+            key="lots",
+        )
         lbx_lots = Gtk.ListBox()
         lbx_lots.set_selection_mode(Gtk.SelectionMode.NONE)
         lbx_lots.connect(
@@ -227,7 +241,10 @@ class SidepaneSettings(CollapsePanel):
             lbx_lots.append(row)
         subsub_lots.add_widget(lbx_lots)
         # sub-sub-panel: prenatal
-        subsub_prenatal = CollapsePanel(title="prenatal", indent=21, expanded=False)
+        subsub_prenatal = CollapsePanel(
+            title="prenatal",
+            key="prenatal",
+        )
         lbx_prenatal = Gtk.ListBox()
         lbx_prenatal.set_selection_mode(Gtk.SelectionMode.NONE)
         lbx_prenatal.connect(
@@ -251,14 +268,17 @@ class SidepaneSettings(CollapsePanel):
             row.set_child(check)
             lbx_prenatal.append(row)
         subsub_prenatal.add_widget(lbx_prenatal)
-        subpnl_objs.add_widget(box_objects)
+        subpnl_objs.add_widget(subsub_planets)
         subpnl_objs.add_widget(subsub_lots)
         subpnl_objs.add_widget(subsub_prenatal)
 
         return subpnl_objs
 
     def build_subpnl_housesys(self) -> CollapsePanel:
-        subpnl_hsys = CollapsePanel(title="house system", indent=14, expanded=False)
+        subpnl_hsys = CollapsePanel(
+            title="house system",
+            key="houses",
+        )
         house_systems = self.app.dispatcher.HOUSE_SYSTEMS
         housesys_list = Gtk.StringList.new([
             f"({display}) {name}" for _, name, display in house_systems
@@ -274,7 +294,8 @@ class SidepaneSettings(CollapsePanel):
 
     def build_subpnl_chartsettings(self) -> CollapsePanel:
         subpnl_chartsett = CollapsePanel(
-            title="chart settings", indent=14, expanded=True
+            title="chart settings",
+            key="chartsettings",
         )
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5)
         chart_settings = self.app.dispatcher.CHART_SETTINGS
@@ -442,7 +463,10 @@ class SidepaneSettings(CollapsePanel):
         lbx_draw.append(row_terms)
         box.append(lbx_draw)
         # chart info sub-sub-panel
-        subsub_info = CollapsePanel(title="chart info", indent=21, expanded=False)
+        subsub_info = CollapsePanel(
+            title="chart info",
+            key="chartinfo",
+        )
         box_info = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
         lbl_info = Gtk.Label(label="event one info")
         lbl_info.set_halign(Gtk.Align.START)
@@ -471,7 +495,10 @@ class SidepaneSettings(CollapsePanel):
         return subpnl_chartsett
 
     def build_subpnl_flags(self) -> CollapsePanel:
-        subpnl_flags = CollapsePanel(title="sweph flags", indent=14, expanded=False)
+        subpnl_flags = CollapsePanel(
+            title="sweph flags",
+            key="swephflags",
+        )
         lbx_flags = Gtk.ListBox()
         lbx_flags.set_selection_mode(Gtk.SelectionMode.NONE)
         lbx_flags.connect(
@@ -499,7 +526,8 @@ class SidepaneSettings(CollapsePanel):
 
     def build_subpnl_sollunperiods(self) -> CollapsePanel:
         subpnl_sollunperiods = CollapsePanel(
-            title="solar & lunar periods", indent=14, expanded=False
+            title="solar & lunar periods",
+            key="solunperiods",
         )
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
         solar_years = self.app.dispatcher.SOLAR_YEARS
@@ -535,7 +563,10 @@ class SidepaneSettings(CollapsePanel):
         return subpnl_sollunperiods
 
     def build_subpnl_ayanamsa(self) -> CollapsePanel:
-        subpnl_ayanamsa = CollapsePanel(title="ayanamsa", indent=14, expanded=False)
+        subpnl_ayanamsa = CollapsePanel(
+            title="ayanamsa",
+            key="ayanamsa",
+        )
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
         ayanamsas = self.app.dispatcher.AYANAMSAS
         ayan_store = Gtk.StringList.new([f"{val[0]} {val[1]}" for val in ayanamsas])
@@ -547,7 +578,8 @@ class SidepaneSettings(CollapsePanel):
         box.append(ddn_ayan)
         # sub-sub custom ayanamsa
         subsub_custom_ayan = CollapsePanel(
-            title="custom ayanamsa", indent=21, expanded=False
+            title="custom ayanamsa",
+            key="customayanamsa",
         )
         # custom ayanamsa todo never called ???
         box_custom = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
@@ -588,7 +620,10 @@ class SidepaneSettings(CollapsePanel):
         return subpnl_ayanamsa
 
     def build_subpnl_files(self) -> CollapsePanel:
-        subpnl_files = CollapsePanel(title="files & paths", indent=14, expanded=False)
+        subpnl_files = CollapsePanel(
+            title="files & paths",
+            key="files",
+        )
         grid = Gtk.Grid(column_spacing=12, row_spacing=4)
         subpnl_files.set_title_tooltip("no validation here - dont do stupid things")
         files = self.app.dispatcher.FILES

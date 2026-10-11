@@ -61,7 +61,7 @@ class Countries:
         self.enable(self.added)
         self.enable([DEFAULT_E1.get("country"), DEFAULT_E2.get("country")])
         try:
-            db = tomllib.loads(DB_PATH.read_text(encoding="utf-8"))
+            db = tomllib.loads(DB_PATH.read_text(encoding="utf-8-sig"))
         except (OSError, tomllib.TOMLDecodeError) as e:
             LOG.warning(f"db.toml unreadable : {e}", extra=routeuser)
             return
@@ -118,6 +118,7 @@ class Countries:
         self.added.append(iso3)
         line = "added = [" + ", ".join(f'"{c}"' for c in self.added) + "]"
         text = PATH.read_text(encoding="utf-8-sig")
+        # write : utf-8 - read : utf-8-sig ! difference
         PATH.write_text(
             re.sub(r"^added\s*=.*$", line, text, count=1, flags=re.M), encoding="utf-8"
         )

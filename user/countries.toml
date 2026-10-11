@@ -1,10 +1,10 @@
 # user/countries.toml
-# master list of countries (geonames.org 2024-06-01) : key = iso3
-# added : countries you picked with [add country] - app maintains this line
-# master value : [name shown, continent, (official name)]
-# alias : alternate names for db.toml etc (case & accent insensitive)
+# list of all countries (geonames.org 2024-06-01)
 # countries used in db.toml are enabled automatically
-added = ["AFG", "DZA", "AND", "ALB", "ATA", "ASM", "AGO", "ATG", "ARG", "ABW", "AUS", "BMU", "BVT", "BRN"]
+# iso3 = name, continent, official name
+# alias : alternate names for db.toml etc (case & accent insensitive)
+# added : countries selected from [add country] - delete "..." to remov
+added = []
 [alias]
 slo = "SVN"
 cro = "HRV"

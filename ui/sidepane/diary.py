@@ -85,7 +85,7 @@ class DiaryPanel(CollapsePanel):
     """diary : search on top, mood, text, save"""
 
     def __init__(self, app):
-        super().__init__(title="diary", expanded=False)
+        super().__init__(title="diary", key="diary")
         self.app = app
         self.entries: list[dict] = []
         self.mood_last = ""
@@ -117,8 +117,9 @@ class DiaryPanel(CollapsePanel):
         # text with placeholder text, no tooltip
         self.txv_text = Gtk.TextView()
         self.txv_text.set_name("diary")
-        self.txv_text.set_wrap_mode(Gtk.WrapMode.WORD)
-        self.txv_text.set_size_request(270, 90)
+        self.txv_text.set_wrap_mode(Gtk.WrapMode.WORD_CHAR)
+        self.txv_text.set_hexpand(True)
+        self.txv_text.set_size_request(-1, 160)
         self.txv_text.set_accepts_tab(False)
         self.txv_text.set_top_margin(PAD_Y)
         self.txv_text.set_left_margin(PAD_X)
@@ -144,6 +145,8 @@ class DiaryPanel(CollapsePanel):
         overlay.set_clip_overlay(self.lbl_placeholder, True)
         frame = Gtk.Frame()
         frame.add_css_class("frame")
+        frame.add_css_class("diary-box")
+        frame.set_overflow(Gtk.Overflow.HIDDEN)
         frame.set_child(overlay)
         frame.set_hexpand(True)
         focus = Gtk.EventControllerFocus()
@@ -166,19 +169,18 @@ class DiaryPanel(CollapsePanel):
             "\nhk : ctrl+enter when text field is focused",
             self.save,
         )
-        self.ent_mood.set_valign(Gtk.Align.START)
-        btn_save.set_valign(Gtk.Align.START)
+        # self.ent_mood.set_valign(Gtk.Align.START)
+        self.ent_mood.set_valign(Gtk.Align.FILL)
         # put widgets in grid so we control tab navigation
-        row_entry = Gtk.Grid(column_spacing=7, row_spacing=7)
-        row_entry.attach(self.ent_mood, 0, 0, 1, 1)  # left top
-        row_entry.attach(frame, 1, 0, 1, 2)  # text spans both rows
-        row_entry.attach(btn_save, 0, 1, 1, 1)  # left below mood
-        for widget in (
-            self.ent_search,
-            self.box_hits,
-            row_entry,
-        ):
-            box.append(widget)
+        grid = Gtk.Grid(column_spacing=7, row_spacing=7)
+        grid.set_margin_bottom(PAD_Y)
+        # attach order : search mood hits text save
+        grid.attach(self.ent_mood, 1, 0, 1, 1)
+        grid.attach(self.ent_search, 0, 0, 1, 1)
+        grid.attach(self.box_hits, 0, 1, 3, 1)
+        grid.attach(btn_save, 2, 0, 1, 1)
+        grid.attach(frame, 0, 2, 3, 1)
+        box.append(grid)
         self.add_widget(box)
         self.set_placeholder(PLACEHOLDER)
         self.load_entries()
@@ -190,6 +192,7 @@ class DiaryPanel(CollapsePanel):
 
     def on_text_changed(self, buf):
         self.lbl_placeholder.set_visible(buf.get_char_count() == 0)
+        # GLib.idle_add(self.scw_text.queue_resize)  # growth lags 1 frame
 
     def on_mood_changed(self, entry):
         entry.remove_css_class("error")
@@ -228,7 +231,7 @@ class DiaryPanel(CollapsePanel):
 
         self.mtime = mtime
         try:
-            data = tomllib.loads(DIARY_PATH.read_text(encoding="utf-8"))
+            data = tomllib.loads(DIARY_PATH.read_text(encoding="utf-8-sig"))
         except (tomllib.TOMLDecodeError, OSError) as e:
             self.entries = []
             self.notify(False, f"diary file unreadable : {e}")
@@ -267,7 +270,7 @@ class DiaryPanel(CollapsePanel):
         )
         path = DIARY_PATH
         existed = path.exists()
-        old = path.read_text(encoding="utf-8") if existed else ""
+        old = path.read_text(encoding="utf-8-sig") if existed else ""
         if not old.strip():  # missing or empty file : header first
             block = DIARY_HEADER + block
         try:

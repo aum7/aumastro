@@ -1,0 +1,21 @@
+# panel : 0 collapse 1 expand - load on start & update on toggle by clpaneler
+[panels]
+addcountry = 0
+changetime = 1
+e1 = 1
+e1location = 0
+e1name = 0
+e1datetime = 1
+e2 = 0
+e2datetime = 1
+settings = 0
+search = 0
+cycle = 0
+diary = 1
+swephflags = 0
+chartsettings = 0
+chartinfo = 0
+objects = 0
+prenatal = 0
+lots = 0
+planets = 1

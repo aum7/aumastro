@@ -14,6 +14,7 @@ import cairo
 import ui.fonts.glyphs as glyphs
 from math import pi, radians, cos, sin
 from sweph.constants import TERMS
+from managers import optimizer
 
 
 class Rings:
@@ -827,6 +828,7 @@ class Rings:
         self.draw_extras(cr, "signs", signs_mid_r, self.package, ascmc)
         cr.restore()
         self.draw_info_ring(cr)
+        optimizer.stop(self.app.get_active_window())
 
     def get_object_radius_lat(
         self, name: str, lat: float, outer_r: float, mid_r: float, inner_r: float

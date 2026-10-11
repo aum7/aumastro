@@ -1,0 +1,37 @@
+# first chart load : [record] best run, [[run]] last 10 - app writes this
+
+[record]
+date = '2026-10-11 04:59:21'
+seconds = 3.885
+renderer = 'default'
+imports = 0.555
+ui = 0.714
+calc = 3.612
+calc_dur = 0.251
+
+[[run]]
+date = '2026-10-11 04:59:21'
+seconds = 3.885
+renderer = 'default'
+imports = 0.555
+ui = 0.714
+calc = 3.612
+calc_dur = 0.251
+
+[[run]]
+date = '2026-10-11 05:26:25'
+seconds = 5.222
+renderer = 'default'
+imports = 0.532
+ui = 0.673
+calc = 5.213
+calc_dur = 0.26
+
+[[run]]
+date = '2026-10-11 05:28:51'
+seconds = 5.358
+renderer = 'default'
+imports = 0.504
+ui = 0.656
+calc = 5.349
+calc_dur = 0.256

@@ -36,7 +36,7 @@ class AddCountryPanel(CollapsePanel):
     """countries not enabled yet : search / scroll > click = enable, save, select"""
 
     def __init__(self, mainwindow):
-        super().__init__(title="add country", expanded=True)
+        super().__init__(title="add country", key="addcountry")
         self.mainwindow = mainwindow
         self.add_title_css_class("label-country")
         self.set_margin_end(7)
@@ -48,7 +48,7 @@ class AddCountryPanel(CollapsePanel):
         self.ent_search.set_placeholder_text("search country")
         self.ent_search.set_tooltip_text(
             "add country for location & automatic geo coordinates from city"
-            "\ncountries used in user/eventsdb/db.toml are added automatically"
+            "\ncountries from user/eventsdb/db.toml are auto-added"
             "\nselected countries are saved in user/countries.toml"
         )
         self.ent_search.add_css_class("entry-search")

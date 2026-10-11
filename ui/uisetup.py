@@ -14,10 +14,6 @@ class UISetup:
     """class for setting up ui components"""
 
     set_child: Callable
-    # grid: Gtk.Grid
-    # icon_size: Gtk.IconSize
-    # rvl_side_pane: Gtk.Revealer
-    # btn_toggle_pane: Gtk.Button
     setup_side_pane: Callable
     on_toggle_sidepane: Callable
 
@@ -59,17 +55,9 @@ class UISetup:
             "ui/imgs/icons/hicolor/scalable/sidepane.svg"
         )
         ico_menu.set_pixel_size(24)
-        # icon_hmargin = icon_vmargin = 0
-        # ico_menu.set_margin_start(icon_hmargin)
-        # ico_menu.set_margin_end(icon_hmargin)
-        # ico_menu.set_margin_top(icon_vmargin)
-        # ico_menu.set_margin_bottom(icon_vmargin)
         self.btn_toggle_pane = Gtk.Button()
         self.btn_toggle_pane.add_css_class("flat")
-        # self.btn_toggle_pane.add_css_class("button-pane")
         self.btn_toggle_pane.set_child(ico_menu)
-        # self.btn_toggle_pane.set_halign(Gtk.Align.START)
-        # self.btn_toggle_pane.set_valign(Gtk.Align.START)
         self.btn_toggle_pane.set_tooltip_text(
             """left-click : toggle side pane (hk : shift+s)
 [shift+1-click] : single pane (hk : shift+1)

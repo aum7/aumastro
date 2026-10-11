@@ -36,6 +36,7 @@ from sweph.calculations.vimsottari import calculate_vimsottari, calculate_vimso_
 from sweph.calculations.naksatras import get_naksatra_ring
 from user.fixedstars import FIXEDSTARS
 from ui.mainpanes.chart.astroobject import AstroObject
+from managers import optimizer
 
 
 class Dispatcher:
@@ -932,8 +933,10 @@ class Dispatcher:
             self.refresh_package("e1", is_chart=False)
         self.refresh_package(event_id, is_chart=is_chart)
         self.update_titlebar()
+        optimizer.mark("calc")
         # calculations to skip drawing app freeze - redraw is in controled manner
         elapsed_ms = (time.perf_counter() - t0) * 1000
+        optimizer.note("calc_dur", elapsed_ms)  # 1st call only
         # exponent moving average : recent samples weighted more
         self.average_calc_ms = 0.3 * elapsed_ms + 0.7 * self.average_calc_ms
 
@@ -1134,20 +1137,20 @@ class Dispatcher:
         title = ""
         if dt1:
             prefix = "*" if selected == "e1" else ""
-            title += f"{prefix} e1 : {dt1}"
+            title += f"{prefix} e1 {dt1}"
         if dt2:
             prefix = "*" if selected == "e2" else ""
-            title += f" |{prefix} e2 : {dt2}"
+            title += f" |{prefix} e2 {dt2}"
         if dt1 and dt2:
             if self.age_years:
                 age_y_str = _decimal_to_ymd(
                     self.age_years, self.selected_year_period[1]
                 ).replace(" ", "")
-                title += f" | age : {age_y_str} y"
+                title += f" | age {age_y_str}"
             if self.age_months:
-                title += f" - lun : {self.age_months:.2f} m"
+                title += f" - lun {self.age_months:.2f} m"
         change_time = self.selected_change_time_label  # or "1 D"
-        title += f" | ct : {change_time}"
+        title += f" | ct {change_time}"
         #  send signal - subscribe in mainwindow
         self.app.signaler.emit("update titlebar", {"title": title})
 

@@ -8,25 +8,18 @@
 #   switch swisseph to pysweph (pyswisseph maintained fork) ???
 #   export to executable on linux & mswindows (10 & 11)
 #   sudarsana cakra : su-mo-asc lined up - su-mo ring matched to asc
-#
 # LOG
-# 2026-09-16 21-12
-#   app bumped v0 > v1 - major code redesign &
-#   (almost) all little bugs terminated + tiny upgrades
-# 2026-10-05 09-23
-#   v1.1 - added save / load events functionality
-#   jyotisa graha/bhava bala abandoned as also other qualitative techniques
-# 2026-10-07 07-55
-#   v1.2 - added astrochart zoom ; plethora of upgrades ie database popover
-#   vimsottari from mo su asc mc - 4 fixed seeds as dropdown
-# 2026-10-10 08-34
-#   v1.3 - added diary module
+# 2026-09-16 21-12 : app bumped v0 > v1 - major code redesign &
+# 2026-10-05 09-23 : v1.1 - added save / load events functionality
+# 2026-10-07 07-55 : v1.2 - astrochart zoom ; upgrades ie database popover
+# 2026-10-10 08-34 : v1.3 - added diary module
 import logging
 
 LOG = logging.getLogger(__name__)
 source = "main"
 routeuser = {"source": source, "route": ["terminal", "user"]}
 import os
+from managers import optimizer
 
 # suppress libEGL warnings on app init
 os.environ.setdefault("EGL_LOG_LEVEL", "fatal")
@@ -35,6 +28,8 @@ from ui.mainwindow import MainWindow
 from managers.notifier import Notifier
 from managers.signaler import Signaler
 from managers.dispatcher import Dispatcher
+
+optimizer.mark("imports")
 import gi
 
 gi.require_version("Gtk", "4.0")
@@ -61,6 +56,7 @@ class AumastroApp(Gtk.Application):
     def do_activate(self):
         # activate main window & notifications manager
         win = MainWindow(application=self)
+        optimizer.mark("ui")
         # handle app quit from mainwindow
         win.connect("close-request", win.close_request)
         LOG.info(

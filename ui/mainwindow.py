@@ -209,6 +209,7 @@ class MainWindow(
         self.hotkeys.register_hotkey("<Control>Right", self.obc_arrow_r)
         # call helper function for time now
         self.hotkeys.register_hotkey("<Control>n", lambda: self.on_time_now())
+        self.hotkeys.register_hotkey("<Control><Shift>n", self.run_toggle)
         # save & load popover
         self.hotkeys.register_hotkey("<Control>s", self.btn_db.quick_save)
         self.hotkeys.register_hotkey("<Control>o", self.btn_db.open)

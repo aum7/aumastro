@@ -280,7 +280,7 @@ def setup_search(app) -> CollapsePanel:
     pad_x = 7
     pad_y = 0
     margin_end = 7
-    clp_search = CollapsePanel(title="search", expanded=False)
+    clp_search = CollapsePanel(title="search", key="search")
     clp_search.set_margin_end(margin_end)
     box_search = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
     box_search.set_margin_start(14)

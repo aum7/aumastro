@@ -21,6 +21,13 @@ import gi
 gi.require_version("Gtk", "4.0")
 from gi.repository import Gtk, GLib  # type: ignore
 
+ICON_DIR = "ui/imgs/icons/hicolor/scalable/"
+RUN_SEC = 10  # runtime miliseconds
+RUN_TIP = (
+    "runtime on : event time follows computer clock"
+    "\ndouble click (hk : ctrl+shift+n) or ctrl+n : stop"
+)
+
 
 class SidepaneManager:
     """mixin class for managing side pane"""
@@ -28,7 +35,9 @@ class SidepaneManager:
     CHANGE_TIME_BUTTONS: dict[str, str] = {
         "arrow_l": "move time backward\n(hk : ctrl+arrow left)",
         "arrow_r": "move time forward\n(hk : ctrl+arrow right)",
-        "time_now": "time now (hk : ctrl+n)\nset time now for selected event",
+        "time_now": "time now (hk : ctrl+n)\nset time now for selected event"
+        "\n\ndouble-click (hk : ctrl+shift+n) : run time for selected event"
+        "\nevent time follows computer time",
         "arrow_up": "select previous time period\n(hk : ctrl+arrow up)",
         "arrow_dn": "select next time period\n(hk : ctrl+arrow down)",
     }
@@ -63,6 +72,10 @@ class SidepaneManager:
         # LOG.debug(f"\ninitsidepane : whoisme={self.__class__.__name__}")
         self.throttle_active = False
         self.pending_entry = None
+        self.run_id = 0  # glib source id 0 = runtime off
+        self.run_before = False
+        self.skip_click = False
+        self.btn_time_now = None
 
     def buttons_from_dict(
         self,
@@ -72,13 +85,14 @@ class SidepaneManager:
     ):
         # create buttons from dictionary with icon & tooltip
         # changetime events
-        icons_folder = "ui/imgs/icons/hicolor/scalable/"
+        icons_folder = ICON_DIR
         icons_path_cpl = icons_folder + icons_path if icons_path else icons_folder
         buttons = []
         if not buttons_dict:
             return buttons
         for button_name, tooltip in buttons_dict.items():
             button = Gtk.Button()
+            button.set_name(button_name)
             button.add_css_class("button-change-time")
             button.set_tooltip_text(tooltip)
             icon = Gtk.Image.new_from_file(f"{icons_path_cpl}{button_name}.svg")
@@ -101,36 +115,32 @@ class SidepaneManager:
         box_sidepane = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
         # create & put collapse panels into box
         self.clp_change_time = self.setup_change_time()
+        box_sidepane.append(self.clp_change_time)
+        # enable countries not picked on init
+        box_sidepane.append(AddCountryPanel(self))
         # 2 events : True/False = set expanded on/off on init
-        self.clp_event_one = setup_event(self, "e1", False)
-        self.clp_event_two = setup_event(self, "e2", False)
+        self.clp_event_one = setup_event(self, "e1")
+        self.clp_event_two = setup_event(self, "e2")
         if self.app.dispatcher.selected_event == "e1":
             self.clp_event_one.add_title_css_class("label-event-selected")
         else:
             self.clp_event_two.add_title_css_class("label-event-selected")
+        box_sidepane.append(self.clp_event_one)
+        box_sidepane.append(self.clp_event_two)
         # settings ie objects to calculate & flags to use etc
         self.clp_settings = SidepaneSettings(self)
         self.clp_settings.add_title_css_class("label-settings")
+        box_sidepane.append(self.clp_settings)
         # search module
         self.clp_search = setup_search(self.app)
         self.clp_search.add_title_css_class("label-search")
+        box_sidepane.append(self.clp_search)
         # cycle wave module
         self.clp_cycle = setup_cycle(self.app)
         self.clp_cycle.add_title_css_class("label-search")
+        box_sidepane.append(self.clp_cycle)
         self.clp_diary = setup_diary(self.app)
         self.clp_diary.add_title_css_class("label-diary")
-        # append to box
-        box_sidepane.append(self.clp_change_time)
-        # country selector
-        box_sidepane.append(AddCountryPanel(self))
-        box_sidepane.append(self.clp_event_one)
-        box_sidepane.append(self.clp_event_two)
-        box_sidepane.append(self.clp_settings)
-        # search astro events
-        box_sidepane.append(self.clp_search)
-        # cycle wave calculations
-        # box_sidepane.append(self.clp_cycle)
-        # personal diary module
         box_sidepane.append(self.clp_diary)
         # main container scrolled window for collapse panels
         scw_sidepane = Gtk.ScrolledWindow()
@@ -144,7 +154,7 @@ class SidepaneManager:
     def setup_change_time(self) -> CollapsePanel:
         """setup widget for changing time of the event one or two"""
         # main container of change time widget todo expand
-        clp_change_time = CollapsePanel(title="change time", expanded=False)  # todo
+        clp_change_time = CollapsePanel(title="change time", key="changetime")
         clp_change_time.set_margin_end(self.margin_end)
         clp_change_time.set_title_tooltip(
             """change time (ct) period for selected event (one or two)
@@ -170,6 +180,12 @@ ui/sidepane/sidepane.py"""
             buttons_dict=self.CHANGE_TIME_BUTTONS, icons_path="changetime/"
         ):
             box_time_icons.append(button)
+            if button.get_name() == "time_now":
+                self.btn_time_now = button
+                gesture = Gtk.GestureClick.new()
+                gesture.set_propagation_phase(Gtk.PropagationPhase.CAPTURE)
+                gesture.connect("pressed", self.on_time_now_press)
+                button.add_controller(gesture)
         # box for icons & dropdown for selecting time period
         box_change_time = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
         # dropdown time periods list
@@ -329,6 +345,11 @@ ui/sidepane/sidepane.py"""
         return False
 
     def on_time_now(self):
+        # time now (click | ctrl+n) : also stops runtime
+        self.run_stop()
+        self.set_time_now()
+
+    def set_time_now(self):
         """get time now (utc) for computer / app location"""
         if self.app.dispatcher.selected_event == "e1" and self.app.EVENT_ONE:
             entry = self.app.EVENT_ONE.date_time
@@ -338,6 +359,51 @@ ui/sidepane/sidepane.py"""
             entry = self.app.EVENT_TWO.date_time
             self.app.EVENT_TWO.is_hotkey_now = True
             self.app.EVENT_TWO.on_datetime_change(entry)
+
+    def on_time_now_press(self, gesture, n_press, x, y):
+        # click 1 remembers run state - click 2 (double) starts runtime
+        if n_press == 1:
+            self.run_before = bool(self.run_id)
+            self.skip_click = False
+        elif n_press == 2:
+            self.skip_click = True  # skip 2nd click
+            if not self.run_before:
+                self.run_start()
+
+    def run_toggle(self, *args):
+        if self.run_id:
+            self.run_stop()
+        else:
+            self.run_start()
+
+    def run_start(self):
+        if self.run_id:
+            return
+
+        self.set_time_now()
+        self.run_id = GLib.timeout_add(RUN_SEC * 1000, self.run_tick)
+        self.set_run_icon(True)
+
+    def run_stop(self):
+        if self.run_id:
+            GLib.source_remove(self.run_id)
+            self.run_id = 0
+            self.set_run_icon(False)
+
+    def run_tick(self):
+        self.set_time_now()
+
+        return True  # keep ticking
+
+    def set_run_icon(self, running: bool):
+        name = "time_run" if running else "time_now"
+        if self.btn_time_now:
+            self.btn_time_now.get_child().set_from_file(
+                f"{ICON_DIR}changetime/{name}.svg"
+            )
+            self.btn_time_now.set_tooltip_text(
+                RUN_TIP if running else self.CHANGE_TIME_BUTTONS["time_now"]
+            )
 
     # on button click handlers
     def obc_default(self, *args):
@@ -359,6 +425,9 @@ ui/sidepane/sidepane.py"""
 
     def obc_time_now(self, *args):
         """set time now for selected event"""
+        if self.skip_click:  # 2nd click of double-click
+            self.skip_click = False
+            return
         # obc_time_now needed because button created dynamically
         self.on_time_now()
 

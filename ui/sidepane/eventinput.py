@@ -27,12 +27,11 @@ def bind_entry_events(entry: Gtk.Entry, callback):
     entry.add_controller(focus_controller)
 
 
-def setup_event(mainwindow, event_name: str, expand: bool) -> CollapsePanel:
+def setup_event(mainwindow, event_name: str) -> CollapsePanel:
     # setup event one & two collapsible panels, incl location sub-panel
     # LOG.debug(f"setupevent : whoisme={mainwindow.__class__.__name__}")
     panel = CollapsePanel(
-        title="event one" if event_name == "e1" else "event two",
-        expanded=expand,  # todo
+        title="event one" if event_name == "e1" else "event two", key=event_name
     )
     panel.set_margin_end(mainwindow.margin_end)
     panel.add_title_css_class("label-event")
@@ -80,8 +79,7 @@ user/eventsdb/db.py (database)"""
     # location nested panel
     subpnl_location = CollapsePanel(
         title="location one" if event_name == "e1" else "location two",
-        expanded=True if event_name == "e1" else False,
-        indent=14,
+        key=f"{event_name}location",
     )
     lbl_country = Gtk.Label(label="country")
     lbl_country.add_css_class("label")
@@ -98,15 +96,7 @@ user/eventsdb/db.py (database)"""
     ddn_country.set_enable_search(True)
     ddn_country.set_name("country one" if event_name == "e1" else "country two")
     ddn_country.add_css_class("dropdown")
-    ddn_country.set_tooltip_text(
-        """select country for location
-in user/ folder there is file named
-countries.txt
-open it with text editor &
-un-comment any country of interest 
-(delete '# ' & save file) or
-comment (add '# ' & save file) uninterested country"""
-    )
+    ddn_country.set_tooltip_text("select country of event location")
     # insert country for default event 1 from user/usersettings.py
     # & store as widget so we access fresh data later
     if event_name == "e1":
@@ -210,8 +200,7 @@ only use [space] as separator
     # name
     subpnl_event_name = CollapsePanel(
         title="name / title one" if event_name == "e1" else "name / title two",
-        expanded=True if event_name == "e1" else False,
-        indent=14,
+        key=f"{event_name}name",
     )
     ent_event_name = Gtk.Entry()
     ent_event_name.set_name("name one" if event_name == "e1" else "name two")
@@ -241,8 +230,7 @@ only use [space] as separator
     # datetime
     subpnl_datetime = CollapsePanel(
         title="date & time one" if event_name == "e1" else "date & time two",
-        indent=14,
-        # expanded=True,
+        key=f"{event_name}datetime",
     )
     ent_datetime = Gtk.Entry()
     ent_datetime.set_name("datetime one" if event_name == "e1" else "datetime two")

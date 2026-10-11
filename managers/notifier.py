@@ -1,6 +1,5 @@
 # managers/notifier.py
 # ruff: noqa: E402
-# import os
 import logging
 
 LOG = logging.getLogger(__name__)
